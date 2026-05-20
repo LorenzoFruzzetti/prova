@@ -528,18 +528,37 @@
   /* ── Attack rows ── */
   .attack-row {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
     gap: 8px;
     align-items: center;
     padding: 8px 0;
     border-bottom: 1px solid rgba(92,74,42,0.3);
     font-size: 13px;
+    cursor: pointer;
   }
   .attack-row:last-child { border-bottom: none; }
+  .attack-row:active .attack-name { color: var(--gold-light); }
 
   .attack-name { font-weight: bold; }
   .attack-bonus { color: var(--gold-light); font-family: sans-serif; font-size: 12px; text-align: center; }
   .attack-damage { color: var(--red-light); font-family: sans-serif; font-size: 12px; text-align: right; }
+
+  .attack-del {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 2px 4px;
+    opacity: 0.5;
+    font-family: sans-serif;
+  }
+  .attack-del:active { color: var(--red-light); opacity: 1; }
+
+  /* ── Rollable stat pills ── */
+  .stat-pill.rollable { cursor: pointer; }
+  .stat-pill.rollable:active { border-color: var(--gold); }
 
   .add-btn {
     width: 100%;
@@ -875,7 +894,7 @@
           <input type="number" id="statAC" value="10" oninput="saveData()">
           <div class="stat-pill-label">Armor Class</div>
         </div>
-        <div class="stat-pill">
+        <div class="stat-pill rollable" onclick="rollInitiative()">
           <div class="stat-pill-value" id="statInit">+0</div>
           <div class="stat-pill-label">Initiative</div>
         </div>
@@ -889,7 +908,7 @@
           <input type="text" id="statHitDice" value="1d8" oninput="saveData()" style="font-size:16px">
           <div class="stat-pill-label">Hit Dice</div>
         </div>
-        <div class="stat-pill">
+        <div class="stat-pill rollable" onclick="rollSpellAtk()">
           <div class="stat-pill-value" id="statSpellAtk">+2</div>
           <div class="stat-pill-label">Spell Atk</div>
         </div>
@@ -1132,8 +1151,8 @@ function buildSavingThrows() {
     const prof = state.saveProficiencies.includes(s.ab);
     return `
     <li class="check-item ${prof ? 'proficient' : ''}"
-        onclick="toggleSaveProf('${s.ab}', this)">
-      <div class="prof-dot"></div>
+        onclick="rollSave('${s.ab}')">
+      <div class="prof-dot" onclick="event.stopPropagation(); toggleSaveProf('${s.ab}', this.closest('li'))"></div>
       <span class="check-modifier" id="save-mod-${s.ab}">+0</span>
       <span class="check-name">${s.name}</span>
       <span class="check-ability">${s.ab}</span>
@@ -1148,8 +1167,10 @@ function buildSkillsList() {
     const exp  = state.skillExpertise.includes(s.name);
     return `
     <li class="check-item ${exp ? 'expert' : prof ? 'proficient' : ''}"
-        onclick="cycleSkillProf('${s.name}', this)">
-      <div class="prof-dots"><div class="prof-dot"></div><div class="prof-dot"></div></div>
+        onclick="rollSkill('${s.name}')">
+      <div class="prof-dots" onclick="event.stopPropagation(); cycleSkillProf('${s.name}', this.closest('li'))">
+        <div class="prof-dot"></div><div class="prof-dot"></div>
+      </div>
       <span class="check-modifier" id="skill-mod-${s.name.replace(/\s/g,'_')}">+0</span>
       <span class="check-name">${s.name}</span>
       <span class="check-ability">${s.ab}</span>
@@ -1200,13 +1221,82 @@ function onAbilityInput(ab, val) {
   recalcAll();
 }
 
+// ── Dice helpers ───────────────────────────────────────────────────────
+function d20() { return Math.floor(Math.random() * 20) + 1; }
+function natMsg(roll) { return roll === 20 ? ' ★ NAT 20!' : roll === 1 ? ' ✦ Nat 1' : ''; }
+
+function rollDiceExpr(expr) {
+  if (!expr || expr === '—') return null;
+  let total = 0;
+  let s = expr.replace(/([+-]?)(\d+)d(\d+)/gi, (_, sign, n, y) => {
+    const sides = parseInt(y);
+    let sum = 0;
+    for (let i = 0; i < parseInt(n); i++) sum += Math.floor(Math.random() * sides) + 1;
+    return (sign === '-' ? -sum : '+' + sum).toString();
+  });
+  const parts = s.match(/[+-]?\d+/g);
+  if (!parts) return null;
+  parts.forEach(p => { total += parseInt(p); });
+  return total;
+}
+
+// ── Roll functions ─────────────────────────────────────────────────────
 function rollAbility(ab) {
-  const roll = Math.floor(Math.random() * 20) + 1;
+  const roll = d20();
   const m = mod(state.abilities[ab]);
   const total = roll + m;
   const label = ab.charAt(0) + ab.slice(1).toLowerCase();
-  const nat = roll === 20 ? ' ★ NAT 20!' : roll === 1 ? ' ✦ Nat 1' : '';
-  toast(`${label} check: d20(${roll}) ${fmtMod(m)} = ${fmtMod(total).replace('+','')}${nat}`);
+  toast(`${label} check: d20(${roll}) ${fmtMod(m)} = ${total}${natMsg(roll)}`);
+}
+
+function rollSave(ab) {
+  const roll = d20();
+  const el = document.getElementById(`save-mod-${ab}`);
+  const m = el ? parseInt(el.textContent) : 0;
+  const total = roll + m;
+  const name = SAVES.find(s => s.ab === ab).name;
+  toast(`${name} save: d20(${roll}) ${fmtMod(m)} = ${total}${natMsg(roll)}`);
+}
+
+function rollSkill(name) {
+  const roll = d20();
+  const key = name.replace(/\s/g, '_');
+  const el = document.getElementById(`skill-mod-${key}`);
+  const m = el ? parseInt(el.textContent) : 0;
+  const total = roll + m;
+  toast(`${name}: d20(${roll}) ${fmtMod(m)} = ${total}${natMsg(roll)}`);
+}
+
+function rollInitiative() {
+  const roll = d20();
+  const m = mod(state.abilities['DEX']);
+  const total = roll + m;
+  toast(`Initiative: d20(${roll}) ${fmtMod(m)} = ${total}${natMsg(roll)}`);
+}
+
+function rollSpellAtk() {
+  const el = document.getElementById('statSpellAtk');
+  if (!el || el.textContent === '—') { toast('No spellcasting ability set'); return; }
+  const roll = d20();
+  const m = parseInt(el.textContent) || 0;
+  const total = roll + m;
+  toast(`Spell attack: d20(${roll}) ${fmtMod(m)} = ${total}${natMsg(roll)}`);
+}
+
+function rollAttack(i) {
+  const a = state.attacks[i];
+  const roll = d20();
+  const nat = natMsg(roll);
+  let msg = `${a.name}: `;
+  if (a.bonus && a.bonus !== '—') {
+    const bonus = parseInt(a.bonus) || 0;
+    msg += `hit ${roll + bonus} (d20(${roll})${fmtMod(bonus)})`;
+  } else {
+    msg += `d20(${roll})`;
+  }
+  const dmg = rollDiceExpr(a.damage);
+  if (dmg !== null) msg += ` | dmg ${dmg}`;
+  toast(msg + nat);
 }
 
 function getProfBonus() {
@@ -1371,22 +1461,22 @@ function addAttack() {
 function renderAttacks() {
   const list = document.getElementById('attackList');
   if (!state.attacks.length) {
-    list.innerHTML = `<div class="attack-row">
+    list.innerHTML = `<div class="attack-row" style="cursor:default">
       <span class="attack-name" style="color:var(--text-muted);font-size:12px;font-style:italic">No attacks added</span>
-      <span></span><span></span></div>`;
+      <span></span><span></span><span></span></div>`;
     return;
   }
   list.innerHTML = state.attacks.map((a, i) => `
-    <div class="attack-row" onclick="removeAttack(${i})">
+    <div class="attack-row" onclick="rollAttack(${i})">
       <span class="attack-name">${a.name}</span>
       <span class="attack-bonus">${a.bonus}</span>
       <span class="attack-damage">${a.damage}</span>
+      <button class="attack-del" onclick="event.stopPropagation(); removeAttack(${i})" title="Remove">×</button>
     </div>
   `).join('');
 }
 
 function removeAttack(i) {
-  if (!confirm(`Remove ${state.attacks[i].name}?`)) return;
   state.attacks.splice(i, 1);
   renderAttacks();
   saveData();
