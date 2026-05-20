@@ -150,7 +150,12 @@ Contains structured game data that cannot be expressed as plain form inputs.
     { "name": "Sneak Attack",  "bonus": "—",  "damage": "4d6"   }
   ],
 
-  "conditions": ["Poisoned"]
+  "conditions": ["Poisoned"],
+
+  "classFeatures": [
+    { "name": "Channel Divinity", "max": 2, "used": 1, "recharge": "Short Rest" },
+    { "name": "Lay on Hands",     "max": 25, "used": 5, "recharge": "Long Rest"  }
+  ]
 }
 ```
 
@@ -236,6 +241,27 @@ Each object:
 | `name` | string | Weapon or ability name |
 | `bonus` | string | Attack roll modifier, e.g. `"+7"` or `"—"` |
 | `damage` | string | Damage expression, e.g. `"1d8+4"` |
+
+#### `classFeatures`
+Array of limited-use class feature objects. Can be empty (`[]`).
+
+Each object:
+
+| Key | Type | Description |
+|---|---|---|
+| `name` | string | Display name, e.g. `"Channel Divinity"` |
+| `max` | integer | Total uses / pool size (`0`–`99`) |
+| `used` | integer | Uses already expended; must be `≤ max` |
+| `recharge` | string | When it recharges, e.g. `"Short Rest"`, `"Long Rest"`, or `""` |
+
+```json
+"classFeatures": [
+  { "name": "Channel Divinity", "max": 2,  "used": 0, "recharge": "Short Rest" },
+  { "name": "Lay on Hands",     "max": 25, "used": 0, "recharge": "Long Rest"  }
+]
+```
+
+Non-ability-using characters can omit this key or set it to `[]`.
 
 #### `conditions`
 Array of active condition name strings.
@@ -325,7 +351,8 @@ Missing `form` keys leave the corresponding input at its HTML default. Missing `
       { "name": "Hand Crossbow", "bonus": "+7", "damage": "1d6+4" },
       { "name": "Sneak Attack",  "bonus": "—",  "damage": "4d6"   }
     ],
-    "conditions": []
+    "conditions": [],
+    "classFeatures": []
   }
 }
 ```
