@@ -940,6 +940,33 @@
     font-weight: bold;
   }
 
+  /* ── Feature editor sheet ── */
+  .fe-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    display: block;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .fe-input {
+    display: block;
+    width: 100%;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: 'Georgia', serif;
+    padding: 10px 12px;
+    outline: none;
+    -webkit-appearance: none;
+    margin-bottom: 12px;
+  }
+  .fe-input:focus { border-color: var(--gold); outline: none; }
+  .fe-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
   /* ── Step-size menu (reuses hp-dlg-* classes) ── */
   #stepBackdrop {
     position: fixed; inset: 0;
@@ -1479,14 +1506,32 @@
 
 <div id="stepBackdrop" onclick="dismissStepMenu()"></div>
 <div id="stepMenu">
-  <div class="hp-dlg-title">Charge Size</div>
-  <div class="hp-dlg-sub" id="stepMenuSub"></div>
-  <input class="hp-dlg-input" type="number" id="stepMenuInput" min="1" max="99"
+  <div class="hp-dlg-title" id="stepMenuTitle">Edit Feature</div>
+
+  <label class="fe-label">Name</label>
+  <input class="fe-input" type="text" id="stepMenuName" placeholder="e.g. Channel Divinity"
+         onkeydown="if(event.key==='Enter') document.getElementById('stepMenuMax').focus()">
+
+  <div class="fe-row2">
+    <div>
+      <label class="fe-label">Max uses / pool</label>
+      <input class="fe-input" type="number" id="stepMenuMax" min="0" max="999"
+             onkeydown="if(event.key==='Enter') document.getElementById('stepMenuStep').focus()">
+    </div>
+    <div>
+      <label class="fe-label">Pts per dot &amp; tap</label>
+      <input class="fe-input" type="number" id="stepMenuStep" min="1" max="999"
+             onkeydown="if(event.key==='Enter') document.getElementById('stepMenuRecharge').focus()">
+    </div>
+  </div>
+
+  <label class="fe-label">Recharges on</label>
+  <input class="fe-input" type="text" id="stepMenuRecharge" placeholder="e.g. Long Rest"
          onkeydown="if(event.key==='Enter') applyStepMenu()">
-  <div style="text-align:center;font-size:11px;color:var(--text-muted);font-family:sans-serif;margin-bottom:12px">points per dot &amp; per +/− tap</div>
+
   <div class="hp-dlg-btns">
     <button class="hp-dlg-btn" onclick="dismissStepMenu()">Cancel</button>
-    <button class="hp-dlg-btn primary" onclick="applyStepMenu()">Apply</button>
+    <button class="hp-dlg-btn primary" onclick="applyStepMenu()">Save</button>
   </div>
 </div>
 
@@ -2086,7 +2131,7 @@ function buildFeatures() {
   }
   body.innerHTML = state.classFeatures.map((f, i) => {
     const step = f.step || 1;
-    const stepHint = step > 1 ? `<span class="feature-step-hint">${step} pts/dot — hold to change</span>` : '<span class="feature-step-hint">hold to set charge size</span>';
+    const stepHint = step > 1 ? `<span class="feature-step-hint">${step} pts/dot</span>` : '';
     return `
       <div class="feature-row"
            onpointerdown="startFeatureLongPress(${i}, event)"
@@ -2192,12 +2237,23 @@ function cancelFeatureLongPress() { clearTimeout(featureLpTimer); }
 
 function showStepMenu(i) {
   currentStepMenuIdx = i;
-  const f = state.classFeatures[i];
-  document.getElementById('stepMenuSub').textContent = f.name;
-  document.getElementById('stepMenuInput').value = f.step || 1;
+  const isNew = i < 0;
+  document.getElementById('stepMenuTitle').textContent = isNew ? 'New Feature' : 'Edit Feature';
+  if (isNew) {
+    document.getElementById('stepMenuName').value = '';
+    document.getElementById('stepMenuMax').value = '1';
+    document.getElementById('stepMenuStep').value = '1';
+    document.getElementById('stepMenuRecharge').value = 'Long Rest';
+  } else {
+    const f = state.classFeatures[i];
+    document.getElementById('stepMenuName').value = f.name;
+    document.getElementById('stepMenuMax').value = f.max;
+    document.getElementById('stepMenuStep').value = f.step || 1;
+    document.getElementById('stepMenuRecharge').value = f.recharge || '';
+  }
   document.getElementById('stepBackdrop').classList.add('show');
   document.getElementById('stepMenu').classList.add('show');
-  setTimeout(() => document.getElementById('stepMenuInput').select(), 300);
+  setTimeout(() => document.getElementById('stepMenuName').focus(), 300);
 }
 function dismissStepMenu() {
   currentStepMenuIdx = -1;
@@ -2205,15 +2261,24 @@ function dismissStepMenu() {
   document.getElementById('stepMenu').classList.remove('show');
 }
 function applyStepMenu() {
-  if (currentStepMenuIdx < 0) { dismissStepMenu(); return; }
-  const step = Math.max(1, parseInt(document.getElementById('stepMenuInput').value) || 1);
-  const f = state.classFeatures[currentStepMenuIdx];
-  f.step = step;
-  f.used = Math.min(Math.round(f.used / step) * step, f.max);
+  const name = document.getElementById('stepMenuName').value.trim();
+  if (!name) { document.getElementById('stepMenuName').focus(); return; }
+  const max  = Math.max(0, parseInt(document.getElementById('stepMenuMax').value)  || 0);
+  const step = Math.max(1, parseInt(document.getElementById('stepMenuStep').value) || 1);
+  const recharge = document.getElementById('stepMenuRecharge').value.trim();
+  if (currentStepMenuIdx < 0) {
+    state.classFeatures.push({name, max: Math.max(1, max), used: 0, recharge, step});
+  } else {
+    const f = state.classFeatures[currentStepMenuIdx];
+    f.name = name;
+    f.max = max;
+    f.used = Math.min(Math.round(f.used / step) * step, max);
+    f.step = step;
+    f.recharge = recharge;
+  }
   buildFeatures();
   saveData();
   dismissStepMenu();
-  toast('Charge size: ' + step + ' pt' + (step > 1 ? 's' : '') + '/dot');
 }
 
 function setFeatureMax(i, val) {
@@ -2224,33 +2289,8 @@ function setFeatureMax(i, val) {
   saveData();
 }
 
-function addFeature() {
-  const name = prompt('Feature name (e.g. Channel Divinity):');
-  if (!name || !name.trim()) return;
-  const maxRaw = prompt('Max uses / pool size:', '1');
-  if (maxRaw === null) return;
-  const recharge = prompt('Recharges on (e.g. Short Rest, Long Rest):', 'Long Rest');
-  if (recharge === null) return;
-  state.classFeatures.push({name: name.trim(), max: Math.max(1, parseInt(maxRaw) || 1), used: 0, recharge: recharge.trim(), step: 1});
-  buildFeatures();
-  saveData();
-}
-
-function editFeature(i) {
-  const f = state.classFeatures[i];
-  const name = prompt('Feature name:', f.name);
-  if (name === null) return;
-  const maxRaw = prompt('Max uses / pool size:', String(f.max));
-  if (maxRaw === null) return;
-  const recharge = prompt('Recharges on:', f.recharge || '');
-  if (recharge === null) return;
-  f.name = name.trim() || f.name;
-  f.max = Math.max(0, parseInt(maxRaw) || 0);
-  f.used = Math.min(f.used, f.max);
-  f.recharge = recharge.trim();
-  buildFeatures();
-  saveData();
-}
+function addFeature()    { showStepMenu(-1); }
+function editFeature(i)  { showStepMenu(i);  }
 
 function removeFeature(i) {
   if (!confirm(`Remove "${state.classFeatures[i].name}"?`)) return;
