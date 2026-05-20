@@ -1815,6 +1815,7 @@ function rollDiceExpr(expr) {
 let rollLog = [];
 
 function showRoll(label, breakdown, total, nat, secondary) {
+  pushModalHistory();
   document.getElementById('rrLabel').textContent    = label;
   document.getElementById('rrTotal').textContent    = total;
   document.getElementById('rrBreak').textContent    = breakdown + ' = ' + total;
@@ -1830,6 +1831,7 @@ function showRoll(label, breakdown, total, nat, secondary) {
 }
 
 function dismissRollResult() {
+  popModalHistory();
   document.getElementById('rollResult').classList.remove('show');
   document.getElementById('rollBackdrop').classList.remove('show');
 }
@@ -2056,6 +2058,7 @@ function updateHP() {
 
 // ── HP Dialog ──────────────────────────────────────────────────────────
 function openHpDialog() {
+  pushModalHistory();
   const max = parseInt(document.getElementById('hpMax').value) || 1;
   document.getElementById('hpDlgSub').textContent = `Current: ${state.hpCurrent} / ${max} HP`;
   const inp = document.getElementById('hpDlgInput');
@@ -2067,6 +2070,7 @@ function openHpDialog() {
 }
 
 function dismissHpDialog() {
+  popModalHistory();
   document.getElementById('hpBackdrop').classList.remove('show');
   document.getElementById('hpDialog').classList.remove('show');
 }
@@ -2236,6 +2240,7 @@ function startFeatureLongPress(i, e) {
 function cancelFeatureLongPress() { clearTimeout(featureLpTimer); }
 
 function showStepMenu(i) {
+  pushModalHistory();
   currentStepMenuIdx = i;
   const isNew = i < 0;
   document.getElementById('stepMenuTitle').textContent = isNew ? 'New Feature' : 'Edit Feature';
@@ -2256,6 +2261,7 @@ function showStepMenu(i) {
   setTimeout(() => document.getElementById('stepMenuName').focus(), 300);
 }
 function dismissStepMenu() {
+  popModalHistory();
   currentStepMenuIdx = -1;
   document.getElementById('stepBackdrop').classList.remove('show');
   document.getElementById('stepMenu').classList.remove('show');
@@ -2560,6 +2566,29 @@ function setupSwipe() {
     if (next !== cur) switchTab(TABS[next]);
   }, {passive: true});
 }
+
+// ── Back-button / swipe-back (Android & iOS Safari) ───────────────────
+let _modalStatePushed = false;
+function pushModalHistory() {
+  _modalStatePushed = true;
+  history.pushState({dndModal: true}, '');
+}
+function popModalHistory() {
+  if (_modalStatePushed) {
+    _modalStatePushed = false;
+    history.back();
+  }
+}
+window.addEventListener('popstate', () => {
+  if (!_modalStatePushed) return;
+  _modalStatePushed = false;
+  const rollEl = document.getElementById('rollResult');
+  const stepEl = document.getElementById('stepMenu');
+  const hpEl   = document.getElementById('hpDialog');
+  if (rollEl?.classList.contains('show'))       dismissRollResult();
+  else if (stepEl?.classList.contains('show'))  dismissStepMenu();
+  else if (hpEl?.classList.contains('show'))    dismissHpDialog();
+});
 
 // ── Toast ──────────────────────────────────────────────────────────────
 let toastTimer;
