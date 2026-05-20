@@ -152,6 +152,8 @@ Contains structured game data that cannot be expressed as plain form inputs.
 
   "conditions": ["Poisoned"],
 
+  "hitDiceUsed": 2,
+
   "classFeatures": [
     { "name": "Channel Divinity", "max": 2,  "used": 1, "recharge": "Short Rest", "step": 1 },
     { "name": "Lay on Hands",     "max": 25, "used": 5, "recharge": "Long Rest",  "step": 5 }
@@ -266,6 +268,15 @@ With `step: 5` the sheet shows 8 dots (40 ÷ 5) and each +/− tap or dot click 
 
 Non-ability-using characters can omit this key or set it to `[]`.
 
+#### `hitDiceUsed`
+Integer. Number of hit dice already expended. Max is equal to the character's level (read from `form.charLevel`).
+
+```json
+"hitDiceUsed": 2
+```
+
+Omitting this key defaults to `0` (all hit dice available). A Long Rest resets this to `0`.
+
 #### `conditions`
 Array of active condition name strings.
 
@@ -356,6 +367,7 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
       { "name": "Divine Smite", "bonus": "—",  "damage": "2d8"    }
     ],
     "conditions": [],
+    "hitDiceUsed": 0,
     "classFeatures": [
       { "name": "Channel Divinity", "max": 1,  "used": 0, "recharge": "Short Rest", "step": 1 },
       { "name": "Lay on Hands",     "max": 25, "used": 0, "recharge": "Long Rest",  "step": 5 }
