@@ -1,0 +1,84 @@
+{
+  "form": {
+    "charName":       "Seraphina Dawnblade",
+    "charClass":      "Paladin",
+    "charSubclass":   "Oath of Devotion",
+    "charRace":       "Human",
+    "charLevel":      "8",
+    "charBackground": "Noble",
+    "charAlignment":  "Lawful Good",
+    "charXP":         "34000",
+
+    "personality":    "I can stare down a hell hound without flinching. I am always polite and respectful.",
+    "ideals":         "Greater Good. Our lot is to lay down our lives in defense of others.",
+    "bonds":          "I will face any challenge to win the approval of my order.",
+    "flaws":          "I judge others harshly, and myself even more severely.",
+    "features":       "Divine Smite\nLay on Hands (40 points)\nAura of Protection (CHA to saves within 10 ft)\nDivine Health (immune to disease)\nSacred Weapon (Holy Symbol)\nExtra Attack",
+
+    "hpMax":          "72",
+    "hpTemp":         "0",
+    "statAC":         "18",
+    "statSpeed":      "30",
+    "statHitDice":    "8d10",
+
+    "spellAbility":   "CHA",
+    "spellsList":     "Cantrips: —\n1st: Bless, Cure Wounds, Protection from Evil and Good, Shield of Faith\n2nd: Aid, Lesser Restoration, Find Steed",
+
+    "equipment":      "- Longsword (1d8 slashing, versatile 1d10)\n- Shield (+2 AC)\n- Plate Armor\n- Holy Symbol\n- Healer's Kit\n- Signet Ring of House Dawnblade",
+    "proficiencies":  "All armor, shields, simple weapons, martial weapons",
+    "languages":      "Common, Celestial, Elvish",
+    "notes":          "Lay on Hands pool: 40 hp remaining.\nDivine Smite: expend spell slot for +2d8 radiant per slot level (up to 5d8). +1d8 vs undead/fiends.",
+
+    "cp":  "0",
+    "sp":  "0",
+    "ep":  "0",
+    "gp":  "250",
+    "pp":  "12"
+  },
+  "state": {
+    "abilities": {
+      "STR": 18,
+      "DEX": 10,
+      "CON": 14,
+      "INT": 10,
+      "WIS": 12,
+      "CHA": 16
+    },
+
+    "saveProficiencies": ["WIS", "CHA"],
+
+    "skillProficiencies": [
+      "Athletics",
+      "Insight",
+      "Intimidation",
+      "Persuasion",
+      "Religion"
+    ],
+
+    "skillExpertise": [],
+
+    "inspiration": true,
+
+    "hpCurrent": 58,
+
+    "spellSlots": [
+      { "level": "1st", "max": 4, "used": 2 },
+      { "level": "2nd", "max": 3, "used": 1 },
+      { "level": "3rd", "max": 0, "used": 0 },
+      { "level": "4th", "max": 0, "used": 0 },
+      { "level": "5th", "max": 0, "used": 0 },
+      { "level": "6th", "max": 0, "used": 0 },
+      { "level": "7th", "max": 0, "used": 0 },
+      { "level": "8th", "max": 0, "used": 0 },
+      { "level": "9th", "max": 0, "used": 0 }
+    ],
+
+    "attacks": [
+      { "name": "Longsword",         "bonus": "+7", "damage": "1d8+4" },
+      { "name": "Longsword (2h)",     "bonus": "+7", "damage": "1d10+4" },
+      { "name": "Divine Smite (1st)", "bonus": "—",  "damage": "+2d8 radiant" }
+    ],
+
+    "conditions": []
+  }
+}

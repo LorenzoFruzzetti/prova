@@ -105,6 +105,7 @@
   }
 
   .header-btn:active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.15); }
+  .header-btn:disabled { opacity: 0.35; pointer-events: none; }
 
   /* ── Tab Bar ── */
   .tab-bar {
@@ -295,7 +296,9 @@
   .hp-display {
     flex: 1;
     text-align: center;
+    cursor: pointer;
   }
+  .hp-display:active .hp-current { color: var(--gold-light); }
 
   .hp-current {
     font-size: 36px;
@@ -528,18 +531,56 @@
   /* ── Attack rows ── */
   .attack-row {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
     gap: 8px;
     align-items: center;
     padding: 8px 0;
     border-bottom: 1px solid rgba(92,74,42,0.3);
     font-size: 13px;
+    cursor: pointer;
   }
   .attack-row:last-child { border-bottom: none; }
+  .attack-row:active .attack-name { color: var(--gold-light); }
 
   .attack-name { font-weight: bold; }
   .attack-bonus { color: var(--gold-light); font-family: sans-serif; font-size: 12px; text-align: center; }
   .attack-damage { color: var(--red-light); font-family: sans-serif; font-size: 12px; text-align: right; }
+
+  .attack-del {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--red-light);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 2px 4px;
+    font-family: sans-serif;
+    opacity: 0.8;
+  }
+  .attack-del:active { opacity: 1; }
+
+  .attack-row.del-ready .attack-del,
+  #attackList.delete-all .attack-del { display: inline-block; }
+
+  .attack-edit-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-family: sans-serif;
+    padding: 2px 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .attack-edit-btn.active { color: var(--gold); border-color: var(--gold); }
+
+  /* ── Rollable stat pills ── */
+  .stat-pill.rollable { cursor: pointer; }
+  .stat-pill.rollable:active { border-color: var(--gold); }
 
   .add-btn {
     width: 100%;
@@ -620,6 +661,195 @@
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* ── Roll Result Overlay ── */
+  #rollBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #rollBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #rollResult {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.85);
+    background: linear-gradient(160deg, #2e2010, #1e1608);
+    border: 2px solid var(--gold);
+    border-radius: 20px;
+    padding: 28px 36px 24px;
+    text-align: center;
+    z-index: 301;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    min-width: 220px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  }
+  #rollResult.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+
+  .rr-label {
+    font-size: 10px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: sans-serif;
+    margin-bottom: 6px;
+  }
+  .rr-total {
+    font-size: 80px;
+    font-weight: bold;
+    color: var(--text);
+    line-height: 1;
+    margin: 4px 0;
+  }
+  .rr-breakdown {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    margin-top: 4px;
+  }
+  .rr-secondary {
+    font-size: 14px;
+    color: var(--red-light);
+    font-family: sans-serif;
+    margin-top: 4px;
+    min-height: 18px;
+  }
+  .rr-nat {
+    font-size: 15px;
+    color: var(--gold-light);
+    margin-top: 8px;
+    min-height: 20px;
+    font-family: sans-serif;
+  }
+  .rr-dismiss {
+    display: block;
+    margin-top: 16px;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── Roll Log ── */
+  .roll-log-entry {
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(92,74,42,0.3);
+    font-family: sans-serif;
+  }
+  .roll-log-entry:last-child { border-bottom: none; }
+  .roll-log-top {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .roll-log-lbl { font-size: 12px; color: var(--text-muted); flex: 1; }
+  .roll-log-total { font-size: 18px; font-weight: bold; color: var(--gold-light); }
+  .roll-log-time { font-size: 10px; color: var(--text-muted); }
+  .roll-log-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+  .roll-log-nat { color: var(--gold); font-size: 11px; margin-left: 4px; }
+  .roll-log-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    font-size: 13px;
+    padding: 24px 0;
+  }
+
+  /* ── HP Dialog ── */
+  #hpBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 400;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #hpBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #hpDialog {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--gold);
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 40px;
+    z-index: 401;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
+  }
+  #hpDialog.show { transform: translateY(0); }
+
+  .hp-dlg-title {
+    text-align: center;
+    font-size: 10px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: sans-serif;
+    margin-bottom: 4px;
+  }
+  .hp-dlg-sub {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    margin-bottom: 16px;
+  }
+  .hp-dlg-input {
+    display: block;
+    width: 100%;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 36px;
+    font-family: 'Georgia', serif;
+    text-align: center;
+    padding: 12px;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .hp-dlg-input:focus { border-color: var(--gold); }
+  .hp-dlg-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .hp-dlg-btn {
+    padding: 13px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    font-family: sans-serif;
+    cursor: pointer;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .hp-dlg-btn.primary {
+    background: rgba(201,168,76,0.15);
+    border-color: var(--gold);
+    color: var(--gold-light);
+    font-weight: bold;
+  }
+
   /* ── Misc ── */
   .flex-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 
@@ -665,6 +895,7 @@
   <div class="header-top">
     <div class="header-title">Dungeons &amp; Dragons 5e</div>
     <div class="header-actions">
+      <button class="header-btn" id="undoBtn" onclick="undo()" disabled>↩ Undo</button>
       <button class="header-btn" onclick="exportToJSON()">&#128190; Save</button>
       <button class="header-btn" onclick="document.getElementById('jsonFileInput').click()">&#128194; Load</button>
     </div>
@@ -681,12 +912,13 @@
 <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="importFromJSON(this)">
 
 <div class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('overview')">Info</button>
-  <button class="tab-btn" onclick="switchTab('abilities')">Stats</button>
-  <button class="tab-btn" onclick="switchTab('skills')">Skills</button>
-  <button class="tab-btn" onclick="switchTab('combat')">Combat</button>
-  <button class="tab-btn" onclick="switchTab('spells')">Spells</button>
-  <button class="tab-btn" onclick="switchTab('inventory')">Gear</button>
+  <button class="tab-btn active" data-tab="overview"  onclick="switchTab('overview')">Info</button>
+  <button class="tab-btn"        data-tab="abilities" onclick="switchTab('abilities')">Stats</button>
+  <button class="tab-btn"        data-tab="skills"    onclick="switchTab('skills')">Skills</button>
+  <button class="tab-btn"        data-tab="combat"    onclick="switchTab('combat')">Combat</button>
+  <button class="tab-btn"        data-tab="spells"    onclick="switchTab('spells')">Spells</button>
+  <button class="tab-btn"        data-tab="inventory" onclick="switchTab('inventory')">Gear</button>
+  <button class="tab-btn"        data-tab="rolls"     onclick="switchTab('rolls')">Rolls</button>
 </div>
 
 <!-- ════════ OVERVIEW ════════ -->
@@ -857,7 +1089,7 @@
       </div>
       <div class="hp-tracker">
         <button class="hp-btn minus" onclick="adjustHP(-1)">−</button>
-        <div class="hp-display">
+        <div class="hp-display" onclick="openHpDialog()" title="Tap to set HP">
           <div class="hp-current" id="hpCurrent">10</div>
           <div class="hp-max-label">/ <span id="hpMaxLabel">10</span> HP</div>
           <div class="hp-bar"><div class="hp-bar-fill" id="hpBarFill" style="width:100%"></div></div>
@@ -875,7 +1107,7 @@
           <input type="number" id="statAC" value="10" oninput="saveData()">
           <div class="stat-pill-label">Armor Class</div>
         </div>
-        <div class="stat-pill">
+        <div class="stat-pill rollable" onclick="rollInitiative()">
           <div class="stat-pill-value" id="statInit">+0</div>
           <div class="stat-pill-label">Initiative</div>
         </div>
@@ -889,7 +1121,7 @@
           <input type="text" id="statHitDice" value="1d8" oninput="saveData()" style="font-size:16px">
           <div class="stat-pill-label">Hit Dice</div>
         </div>
-        <div class="stat-pill">
+        <div class="stat-pill rollable" onclick="rollSpellAtk()">
           <div class="stat-pill-value" id="statSpellAtk">+2</div>
           <div class="stat-pill-label">Spell Atk</div>
         </div>
@@ -936,7 +1168,10 @@
   </div>
 
   <div class="section">
-    <div class="section-title">Attacks</div>
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+      Attacks
+      <button class="attack-edit-btn" id="attackEditBtn" onclick="toggleAttackEdit()">Edit</button>
+    </div>
     <div class="section-body">
       <div id="attackList">
         <div class="attack-row">
@@ -1038,6 +1273,41 @@
 
 </div>
 
+<!-- ════════ ROLLS ════════ -->
+<div id="panel-rolls" class="panel">
+  <div class="section">
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+      Roll History
+      <button class="attack-edit-btn" onclick="clearRollLog()">Clear</button>
+    </div>
+    <div class="section-body" id="rollLogList">
+      <div class="roll-log-empty">No rolls yet this session</div>
+    </div>
+  </div>
+</div>
+
+<div id="hpBackdrop" onclick="dismissHpDialog()"></div>
+<div id="hpDialog">
+  <div class="hp-dlg-title">Set Hit Points</div>
+  <div class="hp-dlg-sub" id="hpDlgSub">0 / 10 HP</div>
+  <input class="hp-dlg-input" type="number" id="hpDlgInput" min="0"
+         onkeydown="if(event.key==='Enter') applyHpDialog()">
+  <div class="hp-dlg-btns">
+    <button class="hp-dlg-btn" onclick="dismissHpDialog()">Cancel</button>
+    <button class="hp-dlg-btn primary" onclick="applyHpDialog()">Set HP</button>
+  </div>
+</div>
+
+<div id="rollBackdrop" onclick="dismissRollResult()"></div>
+<div id="rollResult" onclick="dismissRollResult()">
+  <div class="rr-label" id="rrLabel">—</div>
+  <div class="rr-total" id="rrTotal">—</div>
+  <div class="rr-breakdown" id="rrBreak"></div>
+  <div class="rr-secondary" id="rrSecondary"></div>
+  <div class="rr-nat" id="rrNat"></div>
+  <span class="rr-dismiss">tap to dismiss</span>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -1107,13 +1377,74 @@ function init() {
   buildSpellSlots();
   recalcAll();
   setupAutoSave();
+  setupSwipe();
+}
+
+// ── Undo stack ─────────────────────────────────────────────────────────
+const undoStack = [];
+
+function pushUndo(action) {
+  undoStack.push(action);
+  if (undoStack.length > 50) undoStack.shift();
+  document.getElementById('undoBtn').disabled = false;
+}
+
+function undo() {
+  if (!undoStack.length) return;
+  applyUndo(undoStack.pop());
+  document.getElementById('undoBtn').disabled = undoStack.length === 0;
+}
+
+function applyUndo(a) {
+  switch (a.type) {
+    case 'removeAttack':
+      state.attacks.splice(a.index, 0, a.attack);
+      renderAttacks(); saveData(); toast('↩ Attack restored'); break;
+    case 'addAttack':
+      state.attacks.splice(a.index, 1);
+      renderAttacks(); saveData(); toast('↩ Attack removed'); break;
+    case 'hp':
+      state.hpCurrent = a.previous;
+      updateHP(); toast('↩ HP restored'); break;
+    case 'saveProf': {
+      const idx = state.saveProficiencies.indexOf(a.ab);
+      if (a.wasProficient && idx === -1) state.saveProficiencies.push(a.ab);
+      else if (!a.wasProficient && idx !== -1) state.saveProficiencies.splice(idx, 1);
+      buildSavingThrows(); recalcAll(); toast('↩ Saving throw'); break;
+    }
+    case 'skillProf': {
+      const pi = state.skillProficiencies.indexOf(a.name);
+      const ei = state.skillExpertise.indexOf(a.name);
+      if (pi !== -1) state.skillProficiencies.splice(pi, 1);
+      if (ei !== -1) state.skillExpertise.splice(ei, 1);
+      if (a.wasExpert) { state.skillProficiencies.push(a.name); state.skillExpertise.push(a.name); }
+      else if (a.wasProficient) { state.skillProficiencies.push(a.name); }
+      buildSkillsList(); recalcAll(); toast('↩ Skill proficiency'); break;
+    }
+    case 'ability': {
+      state.abilities[a.ab] = a.previous;
+      const inp = document.getElementById(`score-${a.ab}`);
+      if (inp) inp.value = a.previous;
+      recalcAll(); toast('↩ Ability score'); break;
+    }
+    case 'condition': {
+      const ci = state.conditions.indexOf(a.name);
+      if (a.wasActive && ci === -1) state.conditions.push(a.name);
+      else if (!a.wasActive && ci !== -1) state.conditions.splice(ci, 1);
+      buildConditions(); saveData(); toast('↩ Condition'); break;
+    }
+    case 'inspiration':
+      state.inspiration = a.previous;
+      document.getElementById('inspirationBtn')?.classList.toggle('active', a.previous);
+      saveData(); toast('↩ Inspiration'); break;
+  }
 }
 
 // ── Build UI ───────────────────────────────────────────────────────────
 function buildAbilityGrid() {
   const grid = document.getElementById('abilityGrid');
   grid.innerHTML = ABILITIES.map(ab => `
-    <div class="ability-card">
+    <div class="ability-card" onclick="rollAbility('${ab}')">
       <div class="ability-name">${ab}</div>
       <div class="ability-mod" id="mod-${ab}">+0</div>
       <div class="ability-score">
@@ -1132,8 +1463,8 @@ function buildSavingThrows() {
     const prof = state.saveProficiencies.includes(s.ab);
     return `
     <li class="check-item ${prof ? 'proficient' : ''}"
-        onclick="toggleSaveProf('${s.ab}', this)">
-      <div class="prof-dot"></div>
+        onclick="rollSave('${s.ab}')">
+      <div class="prof-dot" onclick="event.stopPropagation(); toggleSaveProf('${s.ab}', this.closest('li'))"></div>
       <span class="check-modifier" id="save-mod-${s.ab}">+0</span>
       <span class="check-name">${s.name}</span>
       <span class="check-ability">${s.ab}</span>
@@ -1148,8 +1479,10 @@ function buildSkillsList() {
     const exp  = state.skillExpertise.includes(s.name);
     return `
     <li class="check-item ${exp ? 'expert' : prof ? 'proficient' : ''}"
-        onclick="cycleSkillProf('${s.name}', this)">
-      <div class="prof-dots"><div class="prof-dot"></div><div class="prof-dot"></div></div>
+        onclick="rollSkill('${s.name}')">
+      <div class="prof-dots" onclick="event.stopPropagation(); cycleSkillProf('${s.name}', this.closest('li'))">
+        <div class="prof-dot"></div><div class="prof-dot"></div>
+      </div>
       <span class="check-modifier" id="skill-mod-${s.name.replace(/\s/g,'_')}">+0</span>
       <span class="check-name">${s.name}</span>
       <span class="check-ability">${s.ab}</span>
@@ -1194,10 +1527,137 @@ function renderSlotDots(i) {
 function mod(score) { return Math.floor((score - 10) / 2); }
 function fmtMod(m)  { return (m >= 0 ? '+' : '') + m; }
 
+const abilityUndoTimers = {};
 function onAbilityInput(ab, val) {
-  const v = parseInt(val) || 10;
-  state.abilities[ab] = Math.max(1, Math.min(30, v));
+  if (!abilityUndoTimers[ab]) pushUndo({type: 'ability', ab, previous: state.abilities[ab]});
+  clearTimeout(abilityUndoTimers[ab]);
+  abilityUndoTimers[ab] = setTimeout(() => { delete abilityUndoTimers[ab]; }, 1500);
+  state.abilities[ab] = Math.max(1, Math.min(30, parseInt(val) || 10));
   recalcAll();
+}
+
+// ── Dice helpers ───────────────────────────────────────────────────────
+function d20() { return Math.floor(Math.random() * 20) + 1; }
+function natMsg(roll) { return roll === 20 ? ' ★ NAT 20!' : roll === 1 ? ' ✦ Nat 1' : ''; }
+
+function rollDiceExpr(expr) {
+  if (!expr || expr === '—') return null;
+  let total = 0;
+  let s = expr.replace(/([+-]?)(\d+)d(\d+)/gi, (_, sign, n, y) => {
+    const sides = parseInt(y);
+    let sum = 0;
+    for (let i = 0; i < parseInt(n); i++) sum += Math.floor(Math.random() * sides) + 1;
+    return (sign === '-' ? -sum : '+' + sum).toString();
+  });
+  const parts = s.match(/[+-]?\d+/g);
+  if (!parts) return null;
+  parts.forEach(p => { total += parseInt(p); });
+  return total;
+}
+
+// ── Roll result overlay & log ──────────────────────────────────────────
+let rollLog = [];
+
+function showRoll(label, breakdown, total, nat, secondary) {
+  document.getElementById('rrLabel').textContent    = label;
+  document.getElementById('rrTotal').textContent    = total;
+  document.getElementById('rrBreak').textContent    = breakdown + ' = ' + total;
+  document.getElementById('rrSecondary').textContent = secondary || '';
+  document.getElementById('rrNat').textContent      = nat;
+  document.getElementById('rollResult').classList.add('show');
+  document.getElementById('rollBackdrop').classList.add('show');
+
+  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+  rollLog.unshift({label, breakdown, total, nat, secondary: secondary || '', time});
+  if (rollLog.length > 50) rollLog.pop();
+  renderRollLog();
+}
+
+function dismissRollResult() {
+  document.getElementById('rollResult').classList.remove('show');
+  document.getElementById('rollBackdrop').classList.remove('show');
+}
+
+function renderRollLog() {
+  const el = document.getElementById('rollLogList');
+  if (!el) return;
+  if (!rollLog.length) {
+    el.innerHTML = '<div class="roll-log-empty">No rolls yet this session</div>';
+    return;
+  }
+  el.innerHTML = rollLog.map(r => `
+    <div class="roll-log-entry">
+      <div class="roll-log-top">
+        <span class="roll-log-lbl">${r.label}</span>
+        <span class="roll-log-total">${r.total}</span>
+        <span class="roll-log-time">${r.time}</span>
+      </div>
+      <div class="roll-log-sub">
+        ${r.breakdown} = ${r.total}
+        ${r.secondary ? ' | ' + r.secondary : ''}
+        ${r.nat ? `<span class="roll-log-nat">${r.nat}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function clearRollLog() {
+  rollLog = [];
+  renderRollLog();
+}
+
+// ── Roll functions ─────────────────────────────────────────────────────
+function rollAbility(ab) {
+  const roll = d20();
+  const m = mod(state.abilities[ab]);
+  const label = ABILITY_NAMES[ABILITIES.indexOf(ab)] + ' Check';
+  showRoll(label, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
+}
+
+function rollSave(ab) {
+  const roll = d20();
+  const el = document.getElementById(`save-mod-${ab}`);
+  const m = el ? parseInt(el.textContent) : 0;
+  const name = SAVES.find(s => s.ab === ab).name;
+  showRoll(name + ' Save', `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
+}
+
+function rollSkill(name) {
+  const roll = d20();
+  const el = document.getElementById(`skill-mod-${name.replace(/\s/g, '_')}`);
+  const m = el ? parseInt(el.textContent) : 0;
+  showRoll(name, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
+}
+
+function rollInitiative() {
+  const roll = d20();
+  const m = mod(state.abilities['DEX']);
+  showRoll('Initiative', `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
+}
+
+function rollSpellAtk() {
+  const el = document.getElementById('statSpellAtk');
+  if (!el || el.textContent === '—') { toast('No spellcasting ability set'); return; }
+  const roll = d20();
+  const m = parseInt(el.textContent) || 0;
+  showRoll('Spell Attack', `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
+}
+
+function rollAttack(i) {
+  if (longPressActive) { longPressActive = false; return; }
+  const a = state.attacks[i];
+  const roll = d20();
+  let breakdown, total;
+  if (a.bonus && a.bonus !== '—') {
+    const bonus = parseInt(a.bonus) || 0;
+    breakdown = `d20(${roll}) ${fmtMod(bonus)}`;
+    total = roll + bonus;
+  } else {
+    breakdown = `d20(${roll})`;
+    total = roll;
+  }
+  const dmg = rollDiceExpr(a.damage);
+  showRoll(a.name, breakdown, total, natMsg(roll), dmg !== null ? `Dmg: ${dmg}` : '');
 }
 
 function getProfBonus() {
@@ -1271,6 +1731,7 @@ function recalcAll() {
 
 // ── Toggle proficiencies ───────────────────────────────────────────────
 function toggleSaveProf(ab, el) {
+  pushUndo({type: 'saveProf', ab, wasProficient: state.saveProficiencies.includes(ab)});
   const idx = state.saveProficiencies.indexOf(ab);
   if (idx === -1) {
     state.saveProficiencies.push(ab);
@@ -1283,6 +1744,9 @@ function toggleSaveProf(ab, el) {
 }
 
 function cycleSkillProf(name, el) {
+  pushUndo({type: 'skillProf', name,
+    wasProficient: state.skillProficiencies.includes(name),
+    wasExpert: state.skillExpertise.includes(name)});
   const profIdx = state.skillProficiencies.indexOf(name);
   const expIdx  = state.skillExpertise.indexOf(name);
   if (expIdx !== -1) {
@@ -1306,7 +1770,8 @@ function cycleSkillProf(name, el) {
 
 // ── HP ─────────────────────────────────────────────────────────────────
 function adjustHP(delta) {
-  const max    = parseInt(document.getElementById('hpMax').value) || 1;
+  pushUndo({type: 'hp', previous: state.hpCurrent});
+  const max = parseInt(document.getElementById('hpMax').value) || 1;
   state.hpCurrent = Math.max(0, Math.min(max, state.hpCurrent + delta));
   updateHP();
   if (state.hpCurrent === 0) toast('⚠ Unconscious!');
@@ -1333,6 +1798,34 @@ function updateHP() {
   saveData();
 }
 
+// ── HP Dialog ──────────────────────────────────────────────────────────
+function openHpDialog() {
+  const max = parseInt(document.getElementById('hpMax').value) || 1;
+  document.getElementById('hpDlgSub').textContent = `Current: ${state.hpCurrent} / ${max} HP`;
+  const inp = document.getElementById('hpDlgInput');
+  inp.value = state.hpCurrent;
+  inp.max   = max;
+  document.getElementById('hpBackdrop').classList.add('show');
+  document.getElementById('hpDialog').classList.add('show');
+  setTimeout(() => inp.select(), 300);
+}
+
+function dismissHpDialog() {
+  document.getElementById('hpBackdrop').classList.remove('show');
+  document.getElementById('hpDialog').classList.remove('show');
+}
+
+function applyHpDialog() {
+  const max = parseInt(document.getElementById('hpMax').value) || 1;
+  const val = parseInt(document.getElementById('hpDlgInput').value);
+  if (isNaN(val)) { dismissHpDialog(); return; }
+  pushUndo({type: 'hp', previous: state.hpCurrent});
+  state.hpCurrent = Math.max(0, Math.min(max, val));
+  updateHP();
+  dismissHpDialog();
+  if (state.hpCurrent === 0) toast('⚠ Unconscious!');
+}
+
 // ── Spell slots ────────────────────────────────────────────────────────
 function setSlotMax(i, val) {
   state.spellSlots[i].max = parseInt(val) || 0;
@@ -1349,12 +1842,47 @@ function toggleSlot(i, j) {
 }
 
 // ── Attacks ────────────────────────────────────────────────────────────
+let longPressTimer = null;
+let longPressActive = false;
+
+function startLongPress(e, i) {
+  if (e.target.closest('.attack-del')) return;
+  longPressActive = false;
+  clearTimeout(longPressTimer);
+  longPressTimer = setTimeout(() => {
+    longPressActive = true;
+    document.querySelectorAll('.attack-row.del-ready').forEach(r => r.classList.remove('del-ready'));
+    const row = document.querySelector(`.attack-row[data-idx="${i}"]`);
+    if (row) row.classList.add('del-ready');
+    document.addEventListener('pointerdown', dismissDelReady, {once: true, capture: true});
+  }, 500);
+}
+
+function cancelLongPress() { clearTimeout(longPressTimer); }
+
+function dismissDelReady(e) {
+  if (!e.target.closest('.attack-del')) {
+    document.querySelectorAll('.attack-row.del-ready').forEach(r => r.classList.remove('del-ready'));
+    longPressActive = false;
+  }
+}
+
+function toggleAttackEdit() {
+  const list = document.getElementById('attackList');
+  const btn  = document.getElementById('attackEditBtn');
+  const active = list.classList.toggle('delete-all');
+  document.querySelectorAll('.attack-row.del-ready').forEach(r => r.classList.remove('del-ready'));
+  longPressActive = false;
+  if (btn) { btn.textContent = active ? 'Done' : 'Edit'; btn.classList.toggle('active', active); }
+}
+
 function addAttack() {
   const name   = prompt('Attack name (e.g. Longsword):');
   if (!name) return;
   const bonus  = prompt('Attack bonus (e.g. +5):', '+5');
   const damage = prompt('Damage (e.g. 1d8+3):', '1d6');
   state.attacks.push({name, bonus: bonus||'—', damage: damage||'—'});
+  pushUndo({type: 'addAttack', index: state.attacks.length - 1});
   renderAttacks();
   saveData();
 }
@@ -1362,22 +1890,31 @@ function addAttack() {
 function renderAttacks() {
   const list = document.getElementById('attackList');
   if (!state.attacks.length) {
-    list.innerHTML = `<div class="attack-row">
+    list.innerHTML = `<div class="attack-row" style="cursor:default">
       <span class="attack-name" style="color:var(--text-muted);font-size:12px;font-style:italic">No attacks added</span>
-      <span></span><span></span></div>`;
+      <span></span><span></span><span></span></div>`;
     return;
   }
   list.innerHTML = state.attacks.map((a, i) => `
-    <div class="attack-row" onclick="removeAttack(${i})">
+    <div class="attack-row" data-idx="${i}"
+         onclick="rollAttack(${i})"
+         onpointerdown="startLongPress(event,${i})"
+         onpointerup="cancelLongPress()"
+         onpointercancel="cancelLongPress()"
+         oncontextmenu="return false">
       <span class="attack-name">${a.name}</span>
       <span class="attack-bonus">${a.bonus}</span>
       <span class="attack-damage">${a.damage}</span>
+      <button class="attack-del"
+              onpointerdown="event.stopPropagation()"
+              onclick="event.stopPropagation(); removeAttack(${i})"
+              title="Delete">🗑</button>
     </div>
   `).join('');
 }
 
 function removeAttack(i) {
-  if (!confirm(`Remove ${state.attacks[i].name}?`)) return;
+  pushUndo({type: 'removeAttack', attack: {...state.attacks[i]}, index: i});
   state.attacks.splice(i, 1);
   renderAttacks();
   saveData();
@@ -1385,6 +1922,7 @@ function removeAttack(i) {
 
 // ── Conditions ────────────────────────────────────────────────────────
 function toggleCondition(name, el) {
+  pushUndo({type: 'condition', name, wasActive: state.conditions.includes(name)});
   const idx = state.conditions.indexOf(name);
   if (idx === -1) { state.conditions.push(name); el.classList.add('active'); }
   else            { state.conditions.splice(idx,1); el.classList.remove('active'); }
@@ -1393,6 +1931,7 @@ function toggleCondition(name, el) {
 
 // ── Inspiration & Death Saves ──────────────────────────────────────────
 function toggleInspiration() {
+  pushUndo({type: 'inspiration', previous: state.inspiration});
   state.inspiration = !state.inspiration;
   document.getElementById('inspirationBtn').classList.toggle('active', state.inspiration);
   toast(state.inspiration ? '★ Inspiration gained!' : 'Inspiration spent');
@@ -1417,11 +1956,33 @@ function updateHeader() {
 }
 
 // ── Tabs ───────────────────────────────────────────────────────────────
+const TABS = ['overview','abilities','skills','combat','spells','inventory','rolls'];
+
 function switchTab(id) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + id).classList.add('active');
-  event.currentTarget.classList.add('active');
+  const btn = document.querySelector(`.tab-btn[data-tab="${id}"]`);
+  if (btn) { btn.classList.add('active'); btn.scrollIntoView({inline: 'center', block: 'nearest'}); }
+}
+
+function setupSwipe() {
+  let x0 = null, y0 = null;
+  document.body.addEventListener('touchstart', e => {
+    x0 = e.touches[0].clientX;
+    y0 = e.touches[0].clientY;
+  }, {passive: true});
+  document.body.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    const dy = e.changedTouches[0].clientY - y0;
+    x0 = null;
+    if (document.getElementById('rollResult').classList.contains('show')) return;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+    const cur = TABS.indexOf(document.querySelector('.tab-btn.active')?.dataset.tab ?? TABS[0]);
+    const next = Math.max(0, Math.min(TABS.length - 1, cur + (dx < 0 ? 1 : -1)));
+    if (next !== cur) switchTab(TABS[next]);
+  }, {passive: true});
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────
