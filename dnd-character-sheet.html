@@ -1398,12 +1398,12 @@
         <div class="spell-slots-dots" id="hitDiceDots"></div>
         <div class="mini-tracker">
           <button class="mini-btn minus"
-                  onpointerdown="startHitDiceHold(-1)"
+                  onpointerdown="startHitDiceHold(1)"
                   onpointerup="stopHitDiceHold()"
                   onpointercancel="stopHitDiceHold()">−</button>
           <span class="mini-val" id="hitDiceVal"></span>
           <button class="mini-btn plus"
-                  onpointerdown="startHitDiceHold(1)"
+                  onpointerdown="startHitDiceHold(-1)"
                   onpointerup="stopHitDiceHold()"
                   onpointercancel="stopHitDiceHold()">+</button>
         </div>
@@ -2267,12 +2267,12 @@ function buildFeatures() {
           <div class="feature-dots" id="feature-dots-${i}"></div>
           <div class="mini-tracker">
             <button class="mini-btn minus"
-                    onpointerdown="startFeatureHold(${i},-1)"
+                    onpointerdown="startFeatureHold(${i},1)"
                     onpointerup="stopFeatureHold()"
                     onpointercancel="stopFeatureHold()">−</button>
             <span class="mini-val" id="feature-val-${i}"></span>
             <button class="mini-btn plus"
-                    onpointerdown="startFeatureHold(${i},1)"
+                    onpointerdown="startFeatureHold(${i},-1)"
                     onpointerup="stopFeatureHold()"
                     onpointercancel="stopFeatureHold()">+</button>
           </div>
@@ -2306,7 +2306,7 @@ function renderFeatureDots(i) {
     `).join('');
   }
   const val = document.getElementById(`feature-val-${i}`);
-  if (val) val.textContent = `${f.used}/${f.max}`;
+  if (val) val.textContent = `${f.max - f.used}/${f.max}`;
 }
 
 function toggleFeatureDot(i, j) {
@@ -2441,7 +2441,7 @@ function renderHitDice() {
     `).join('');
   }
   const val = document.getElementById('hitDiceVal');
-  if (val) val.textContent = `${used}/${max}`;
+  if (val) val.textContent = `${max - used}/${max}`;
 }
 
 function toggleHitDie(j) {
