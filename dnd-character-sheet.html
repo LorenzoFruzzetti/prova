@@ -75,6 +75,37 @@
 
   .char-meta span { font-style: italic; }
 
+  /* ── Header actions ── */
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  .header-title { margin-bottom: 0; flex: 1; }
+
+  .header-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  .header-btn {
+    background: rgba(201,168,76,0.08);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    padding: 5px 9px;
+    font-size: 11px;
+    font-family: sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    letter-spacing: 0.3px;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    white-space: nowrap;
+  }
+
+  .header-btn:active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.15); }
+
   /* ── Tab Bar ── */
   .tab-bar {
     display: flex;
@@ -356,6 +387,12 @@
 
   .check-item:last-child { border-bottom: none; }
 
+  .prof-dots {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
   .prof-dot {
     width: 14px;
     height: 14px;
@@ -366,15 +403,22 @@
     transition: background 0.15s, border-color 0.15s;
   }
 
+  /* Saving throws: single dot, proficiency fills it */
   .check-item.proficient .prof-dot {
     background: var(--gold);
     border-color: var(--gold);
   }
 
-  .check-item.expert .prof-dot {
+  /* Skills proficiency: first dot filled, second stays empty */
+  .check-item.proficient .prof-dots .prof-dot:last-child {
+    background: none;
+    border-color: var(--border);
+  }
+
+  /* Skills expertise: both dots filled */
+  .check-item.expert .prof-dots .prof-dot {
     background: var(--gold-light);
     border-color: var(--gold-light);
-    box-shadow: 0 0 0 2px rgba(201,168,76,0.3);
   }
 
   .check-modifier {
@@ -618,7 +662,13 @@
 <body>
 
 <div class="header">
-  <div class="header-title">Dungeons &amp; Dragons 5e</div>
+  <div class="header-top">
+    <div class="header-title">Dungeons &amp; Dragons 5e</div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="exportToJSON()">&#128190; Save</button>
+      <button class="header-btn" onclick="document.getElementById('jsonFileInput').click()">&#128194; Load</button>
+    </div>
+  </div>
   <div class="char-name-display" id="headerName">Character Name</div>
   <div class="char-meta">
     <span id="metaClass">—</span>
@@ -628,6 +678,7 @@
     <span id="metaLevel">Lv 1</span>
   </div>
 </div>
+<input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="importFromJSON(this)">
 
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('overview')">Info</button>
@@ -1098,7 +1149,7 @@ function buildSkillsList() {
     return `
     <li class="check-item ${exp ? 'expert' : prof ? 'proficient' : ''}"
         onclick="cycleSkillProf('${s.name}', this)">
-      <div class="prof-dot"></div>
+      <div class="prof-dots"><div class="prof-dot"></div><div class="prof-dot"></div></div>
       <span class="check-modifier" id="skill-mod-${s.name.replace(/\s/g,'_')}">+0</span>
       <span class="check-name">${s.name}</span>
       <span class="check-ability">${s.ab}</span>
@@ -1235,14 +1286,18 @@ function cycleSkillProf(name, el) {
   const profIdx = state.skillProficiencies.indexOf(name);
   const expIdx  = state.skillExpertise.indexOf(name);
   if (expIdx !== -1) {
+    // Expert → None: remove from both arrays
     state.skillExpertise.splice(expIdx, 1);
+    state.skillProficiencies.splice(state.skillProficiencies.indexOf(name), 1);
     el.classList.remove('expert');
   } else if (profIdx !== -1) {
+    // Proficient → Expert
     state.skillExpertise.push(name);
     el.classList.remove('proficient');
     el.classList.add('expert');
     toast('Expertise!');
   } else {
+    // None → Proficient
     state.skillProficiencies.push(name);
     el.classList.add('proficient');
   }
@@ -1379,7 +1434,7 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
 }
 
-// ── Persistence (localStorage) ─────────────────────────────────────────
+// ── Persistence ────────────────────────────────────────────────────────
 function collectFormData() {
   const ids = ['charName','charClass','charSubclass','charRace','charLevel','charBackground',
     'charAlignment','charXP','personality','ideals','bonds','flaws','features',
@@ -1390,24 +1445,25 @@ function collectFormData() {
   return data;
 }
 
+function buildPayload() {
+  return {
+    form: collectFormData(),
+    state: {
+      abilities: state.abilities,
+      saveProficiencies: state.saveProficiencies,
+      skillProficiencies: state.skillProficiencies,
+      skillExpertise: state.skillExpertise,
+      inspiration: state.inspiration,
+      hpCurrent: state.hpCurrent,
+      spellSlots: state.spellSlots,
+      attacks: state.attacks,
+      conditions: state.conditions,
+    }
+  };
+}
+
 function saveData() {
-  try {
-    const payload = {
-      form: collectFormData(),
-      state: {
-        abilities: state.abilities,
-        saveProficiencies: state.saveProficiencies,
-        skillProficiencies: state.skillProficiencies,
-        skillExpertise: state.skillExpertise,
-        inspiration: state.inspiration,
-        hpCurrent: state.hpCurrent,
-        spellSlots: state.spellSlots,
-        attacks: state.attacks,
-        conditions: state.conditions,
-      }
-    };
-    localStorage.setItem('dnd5e_sheet', JSON.stringify(payload));
-  } catch(e) {}
+  try { localStorage.setItem('dnd5e_sheet', JSON.stringify(buildPayload())); } catch(e) {}
 }
 
 function loadData() {
@@ -1415,23 +1471,73 @@ function loadData() {
     const raw = localStorage.getItem('dnd5e_sheet');
     if (!raw) return;
     const payload = JSON.parse(raw);
-
     if (payload.form) {
       Object.entries(payload.form).forEach(([id, val]) => {
-        const el = document.getElementById(id);
-        if (el) el.value = val;
+        const el = document.getElementById(id); if (el) el.value = val;
       });
     }
     if (payload.state) {
       Object.assign(state, payload.state);
-      // Patch spellSlots array length
       if (state.spellSlots.length < 9) {
-        state.spellSlots = SPELL_SLOTS_DEFAULT.map((def, i) =>
-          state.spellSlots[i] || {...def}
-        );
+        state.spellSlots = SPELL_SLOTS_DEFAULT.map((def, i) => state.spellSlots[i] || {...def});
       }
     }
   } catch(e) {}
+}
+
+// ── JSON export ────────────────────────────────────────────────────────
+function exportToJSON() {
+  const payload  = buildPayload();
+  const charName = (document.getElementById('charName')?.value || 'character').trim();
+  const filename = (charName || 'character').replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.json';
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+  toast('Saved: ' + filename);
+}
+
+// ── JSON import ────────────────────────────────────────────────────────
+function importFromJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      applyPayload(JSON.parse(e.target.result));
+      saveData();
+      toast('Character loaded!');
+    } catch(err) {
+      toast('Error: invalid JSON file');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function applyPayload(payload) {
+  if (payload.form) {
+    Object.entries(payload.form).forEach(([id, val]) => {
+      const el = document.getElementById(id); if (el) el.value = val;
+    });
+  }
+  if (payload.state) {
+    Object.assign(state, payload.state);
+    if (state.spellSlots.length < 9) {
+      state.spellSlots = SPELL_SLOTS_DEFAULT.map((def, i) => state.spellSlots[i] || {...def});
+    }
+  }
+  buildAbilityGrid();
+  buildSavingThrows();
+  buildSkillsList();
+  buildConditions();
+  buildSpellSlots();
+  renderAttacks();
+  recalcAll();
+  updateHeader();
+  updateHP();
+  document.getElementById('inspirationBtn').classList.toggle('active', state.inspiration);
 }
 
 function setupAutoSave() {
