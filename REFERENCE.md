@@ -11,16 +11,22 @@ A self-contained single-file application. No build step, no dependencies. Open d
 dnd-character-sheet.html
 ├── <style>          CSS — variables, component classes
 ├── <body>
-│   ├── .header      Sticky top bar (title, Save/Load buttons, character name, meta)
+│   ├── .header      Sticky top bar (title, Undo/Save/Load buttons, character name, meta)
 │   ├── input#jsonFileInput   Hidden file picker for JSON import
-│   ├── .tab-bar     Six sticky tab buttons (Info / Stats / Skills / Combat / Spells / Gear)
+│   ├── .tab-bar     Seven sticky tab buttons (Info / Stats / Skills / Combat / Spells / Gear / Rolls)
+│   │                Each button carries data-tab="<id>" for programmatic activation
 │   ├── #panel-overview    Tab: character info + personality + features
 │   ├── #panel-abilities   Tab: ability scores + saving throws + passive perception + conditions
 │   ├── #panel-skills      Tab: 18 skills with proficiency/expertise dots
 │   ├── #panel-combat      Tab: HP tracker + combat stats + inspiration + death saves + attacks
 │   ├── #panel-spells      Tab: spellcasting ability + spell slots + spell list textarea
 │   ├── #panel-inventory   Tab: currency + equipment + proficiencies + notes
-│   └── #toast       Floating feedback message
+│   ├── #panel-rolls       Tab: session roll history log with Clear button
+│   ├── #hpBackdrop  Fixed backdrop for HP dialog
+│   ├── #hpDialog    Bottom-sheet for setting HP to a specific value
+│   ├── #rollBackdrop  Fixed backdrop for roll result overlay
+│   ├── #rollResult  Fixed centered overlay showing the last roll result
+│   └── #toast       Floating feedback message (non-roll events only)
 └── <script>         All application logic (no external libraries)
 ```
 
@@ -50,8 +56,8 @@ dnd-character-sheet.html
 |---|---|
 | `.header` | Sticky top bar; `z-index: 100` |
 | `.header-top` | Flex row inside header (title left, buttons right) |
-| `.header-btn` | Save / Load buttons in the header |
-| `.tab-bar` | Sticky tab strip below header; `z-index: 99` |
+| `.header-btn` | Undo / Save / Load buttons in the header; `:disabled` reduces opacity |
+| `.tab-bar` | Sticky tab strip below header; `z-index: 99`; horizontally scrollable |
 | `.tab-btn` | Individual tab button; `.active` adds gold underline |
 | `.panel` | Tab content area; hidden by default; `.active` shows it |
 | `.section` | Grouped content card (border + radius) |
@@ -59,25 +65,45 @@ dnd-character-sheet.html
 | `.section-body` | Padded content area inside a `.section` |
 | `.field-row` | CSS grid row for form inputs; `.col-2` / `.col-3` variants |
 | `.ability-grid` | 3-column grid of ability score cards |
-| `.ability-card` | One ability score (name, large modifier, score input) |
+| `.ability-card` | One ability score (name, large modifier, score input); tap to roll d20 + modifier |
 | `.check-list` | Unstyled `<ul>` for saving throws and skills |
-| `.check-item` | One row: dots + modifier + name + ability tag |
+| `.check-item` | One row: dots + modifier + name + ability tag; tap row to roll, tap dot to toggle prof |
 | `.check-item.proficient` | Fills the first (or only) prof dot gold |
 | `.check-item.expert` | Fills both dots in `.prof-dots` gold-light |
-| `.prof-dot` | Single circular dot (14 px) used in saving throws |
-| `.prof-dots` | Flex container with two `.prof-dot`s used in skills |
-| `.hp-tracker` | Flex row: minus button — HP display — plus button |
+| `.prof-dot` | Single circular dot (14 px) used in saving throws; tap to toggle proficiency |
+| `.prof-dots` | Flex container with two `.prof-dot`s used in skills; tap to cycle prof |
+| `.hp-display` | Flex center area showing current HP, max, and bar; tap to open HP dialog |
 | `.hp-bar` / `.hp-bar-fill` | Visual HP percentage bar |
 | `.stat-pills` | 3-column grid of combat stat tiles |
 | `.stat-pill` | One combat stat tile (value + label) |
+| `.stat-pill.rollable` | Adds `cursor:pointer` and gold border on active; tap to roll |
 | `.death-saves` | Side-by-side success/failure dot groups |
 | `.save-dot` | 22 px circle; `.filled` colors it green or red |
 | `.spell-level-row` | One spell-slot level row (label + dots + max input) |
 | `.slot-dot` | 18 px circle; `.available` = gold filled, `.used` = faded |
-| `.attack-row` | 3-column grid: name / bonus / damage |
+| `.attack-row` | 4-column grid: name / bonus / damage / delete; `cursor:pointer`; tap to roll |
+| `.attack-row.del-ready` | Shows the bin button for that row (long-press reveal) |
+| `.attack-del` | 🗑 bin button; hidden by default; shown via `.del-ready` or `#attackList.delete-all` |
+| `.attack-edit-btn` | Edit/Done toggle button in the Attacks section title |
 | `.condition-tag` | Pill chip; `.active` turns it red |
 | `.currency-grid` | 5-column grid for CP/SP/EP/GP/PP |
-| `#toast` | Fixed floating feedback pill; `.show` fades it in |
+| `#toast` | Fixed floating feedback pill (2 s); `.show` fades it in; used for non-roll events |
+| `#rollBackdrop` | Fixed full-screen dim layer behind the roll result; tap to dismiss |
+| `#rollResult` | Fixed centered card showing label, large total, breakdown, damage, nat callout |
+| `.rr-label` | Small uppercase label inside roll result (e.g. "Strength Check") |
+| `.rr-total` | 80 px bold total number inside roll result |
+| `.rr-breakdown` | Dice breakdown line (e.g. "d20(14) +4 = 18") |
+| `.rr-secondary` | Optional secondary line (e.g. damage for attacks) |
+| `.rr-nat` | Nat 20 / Nat 1 callout line |
+| `.roll-log-entry` | One row in the Rolls tab history list |
+| `.roll-log-lbl` | Roll label (left) |
+| `.roll-log-total` | Roll total (bold, gold) |
+| `.roll-log-time` | Timestamp (right, muted) |
+| `.roll-log-sub` | Breakdown + nat callout on the second line |
+| `#hpBackdrop` | Fixed dim layer behind the HP dialog; tap to dismiss |
+| `#hpDialog` | Bottom-sheet for setting HP to a specific value; slides up on open |
+| `.hp-dlg-input` | Large centered number input inside the HP dialog |
+| `.hp-dlg-btn` | Cancel / Set HP buttons; `.primary` styles the confirm button |
 
 ---
 
@@ -87,11 +113,13 @@ dnd-character-sheet.html
 
 ```js
 ABILITIES       // ['STR','DEX','CON','INT','WIS','CHA']
-ABILITY_NAMES   // Full names (unused in UI, available for reference)
+ABILITY_NAMES   // ['Strength','Dexterity','Constitution','Intelligence','Wisdom','Charisma']
 SAVES           // [{name, ab}] — 6 saving throw definitions
 SKILLS          // [{name, ab}] — 18 skill definitions
 CONDITIONS      // 15 condition strings
 SPELL_SLOTS_DEFAULT  // [{level, max}] — 9 levels, all max:0 except 1st:2
+TABS            // ['overview','abilities','skills','combat','spells','inventory','rolls']
+                //   Order used by swipe navigation and switchTab()
 ```
 
 ### Runtime state object
@@ -110,6 +138,15 @@ let state = {
 }
 ```
 
+Session-only (not persisted to localStorage):
+```js
+undoStack        // array of undo action objects (max 50)
+rollLog          // array of roll history entries (max 50)
+longPressTimer   // setTimeout handle for attack long-press
+longPressActive  // boolean — suppresses roll on release after long-press
+abilityUndoTimers // {[ab]: timerId} — debounce timers for ability undo entries
+```
+
 All other values (character name, HP max, AC, etc.) live in HTML form inputs and are read directly via `document.getElementById`.
 
 ---
@@ -126,7 +163,8 @@ DOMContentLoaded
        ├─ buildConditions()   inject condition chips into #conditionsGrid
        ├─ buildSpellSlots()   inject spell-slot rows into #spellSlotsBody
        ├─ recalcAll()         compute all derived values (modifiers, DC, etc.)
-       └─ setupAutoSave()     attach input/change listeners → saveData()
+       ├─ setupAutoSave()     attach input/change listeners → saveData()
+       └─ setupSwipe()        attach touchstart/touchend listeners for tab swiping
   └─ updateHeader()
   └─ updateHP()
   └─ renderAttacks()
@@ -141,15 +179,24 @@ DOMContentLoaded
 
 | Function | What it renders | Reads from |
 |---|---|---|
-| `buildAbilityGrid()` | 6 ability cards with score inputs | `state.abilities` |
-| `buildSavingThrows()` | 6 saving throw rows | `state.saveProficiencies` |
-| `buildSkillsList()` | 18 skill rows with 2 dots each | `state.skillProficiencies`, `state.skillExpertise` |
+| `buildAbilityGrid()` | 6 ability cards; tap card → roll d20+mod | `state.abilities` |
+| `buildSavingThrows()` | 6 rows; tap row → roll; tap prof dot → toggle proficiency | `state.saveProficiencies` |
+| `buildSkillsList()` | 18 skill rows; tap row → roll; tap prof dots → cycle prof | `state.skillProficiencies`, `state.skillExpertise` |
 | `buildConditions()` | 15 condition chips | `state.conditions` |
 | `buildSpellSlots()` | 9 spell-level rows | `state.spellSlots` |
 | `renderSlotDots(i)` | Dot row for one spell level | `state.spellSlots[i]` |
-| `renderAttacks()` | Attack rows or empty placeholder | `state.attacks` |
+| `renderAttacks()` | Attack rows (tap to roll, long-press/Edit for delete) or empty placeholder | `state.attacks` |
+| `renderRollLog()` | Roll history entries in #panel-rolls | `rollLog` |
 
 ---
+
+### Dice helpers
+
+| Function | Description |
+|---|---|
+| `d20()` | Returns a random integer 1–20 |
+| `natMsg(roll)` | Returns `' ★ NAT 20!'`, `' ✦ Nat 1'`, or `''` |
+| `rollDiceExpr(expr)` | Parses and rolls a dice expression (e.g. `"2d6+4"`, `"+2d8 radiant"`); returns integer total or `null` if unparseable |
 
 ### Calculation functions
 
@@ -166,25 +213,69 @@ DOMContentLoaded
 
 | Function | Trigger | Effect |
 |---|---|---|
-| `onAbilityInput(ab, val)` | Ability score input | Updates `state.abilities[ab]`, calls `recalcAll()` |
-| `toggleSaveProf(ab, el)` | Tap saving throw row | Toggles ability key in `state.saveProficiencies` |
-| `cycleSkillProf(name, el)` | Tap skill row | Cycles: None → Proficient → Expert → None |
-| `adjustHP(delta)` | +/− HP buttons | Clamps `state.hpCurrent` to `[0, max]`, calls `updateHP()` |
-| `updateHP()` | Max/Temp HP input or `adjustHP` | Refreshes HP display, bar, and color |
-| `setSlotMax(i, val)` | Spell slot max input | Updates `state.spellSlots[i].max`, rerenders dots |
+| `onAbilityInput(ab, val)` | Ability score input | Pushes debounced undo entry; updates `state.abilities[ab]`; calls `recalcAll()` |
+| `rollAbility(ab)` | Tap ability card | Rolls d20 + ability modifier; calls `showRoll()` |
+| `toggleSaveProf(ab, el)` | Tap prof dot on saving throw row | Pushes undo; toggles ability key in `state.saveProficiencies` |
+| `rollSave(ab)` | Tap saving throw row (outside dot) | Rolls d20 + save modifier; calls `showRoll()` |
+| `cycleSkillProf(name, el)` | Tap prof dots on skill row | Pushes undo; cycles None → Proficient → Expert → None |
+| `rollSkill(name)` | Tap skill row (outside dots) | Rolls d20 + skill modifier; calls `showRoll()` |
+| `rollInitiative()` | Tap Initiative stat pill | Rolls d20 + DEX modifier; calls `showRoll()` |
+| `rollSpellAtk()` | Tap Spell Atk stat pill | Rolls d20 + spell attack bonus; calls `showRoll()` (shows toast if no spell ability set) |
+| `rollAttack(i)` | Tap attack row | Rolls d20 + attack bonus and damage dice; calls `showRoll()`; no-ops if `longPressActive` |
+| `startLongPress(e, i)` | `pointerdown` on attack row | Starts 500 ms timer; on fire sets `del-ready` on that row and adds a one-shot dismiss listener |
+| `cancelLongPress()` | `pointerup` / `pointercancel` on attack row | Clears the long-press timer |
+| `dismissDelReady(e)` | Next `pointerdown` after long-press | Removes `del-ready` from all rows (skips if target is the bin button) |
+| `toggleAttackEdit()` | Tap Edit/Done button in Attacks section | Toggles `delete-all` class on `#attackList`; shows/hides all bin buttons |
+| `adjustHP(delta)` | +/− HP buttons | Pushes undo; clamps `state.hpCurrent` to `[0, max]`; calls `updateHP()` |
+| `updateHP()` | Max/Temp HP input or `adjustHP` / `applyHpDialog` | Refreshes HP display, bar color, and max label |
+| `openHpDialog()` | Tap HP display area | Populates and shows the HP bottom sheet; auto-selects the input after transition |
+| `dismissHpDialog()` | Cancel button or backdrop tap | Slides the HP dialog down |
+| `applyHpDialog()` | Set HP button or Enter key | Pushes undo; clamps input value to `[0, max]`; calls `updateHP()`; dismisses dialog |
+| `setSlotMax(i, val)` | Spell slot max input | Updates `state.spellSlots[i].max`; rerenders dots |
 | `toggleSlot(i, j)` | Tap spell slot dot | Toggles `state.spellSlots[i].used` |
-| `addAttack()` | "+ Add Attack" button | `prompt()` dialog → pushes to `state.attacks` |
-| `removeAttack(i)` | Tap attack row | `confirm()` dialog → splices `state.attacks` |
-| `toggleCondition(name, el)` | Tap condition chip | Toggles name in `state.conditions` |
-| `toggleInspiration()` | Tap inspiration button | Flips `state.inspiration` boolean |
-| `toggleDeathSave(dot, type)` | Tap death save dot | Toggles `.filled` class on the dot element |
+| `addAttack()` | "+ Add Attack" button | `prompt()` dialog → pushes to `state.attacks`; pushes undo entry |
+| `removeAttack(i)` | Tap bin button (🗑) on attack row | Pushes undo; splices `state.attacks`; rerenders |
+| `toggleCondition(name, el)` | Tap condition chip | Pushes undo; toggles name in `state.conditions` |
+| `toggleInspiration()` | Tap inspiration button | Pushes undo; flips `state.inspiration` boolean |
+| `toggleDeathSave(dot, type)` | Tap death save dot | Toggles `.filled` class on the dot element (not tracked by undo) |
 
 #### Skill proficiency cycle detail
 ```
-tap 1: None       → Proficient  (add to skillProficiencies)
-tap 2: Proficient → Expert      (add to skillExpertise; keep in skillProficiencies)
-tap 3: Expert     → None        (remove from BOTH skillExpertise and skillProficiencies)
+tap dots 1: None       → Proficient  (add to skillProficiencies)
+tap dots 2: Proficient → Expert      (add to skillExpertise; keep in skillProficiencies)
+tap dots 3: Expert     → None        (remove from BOTH skillExpertise and skillProficiencies)
 ```
+
+#### Attack row interaction model
+```
+Tap row            → rollAttack(i)         — rolls d20 + bonus, damage dice
+Long press row     → reveals bin button on that row only; tap elsewhere to dismiss
+Tap Edit button    → toggleAttackEdit()    — reveals bin buttons on all rows
+Tap bin button (🗑) → removeAttack(i)      — deletes with undo support; no confirm dialog
+```
+
+---
+
+### Roll result functions
+
+| Function | Description |
+|---|---|
+| `showRoll(label, breakdown, total, nat, secondary?)` | Displays the roll result overlay and logs to `rollLog`; `secondary` is optional (e.g. damage line for attacks) |
+| `dismissRollResult()` | Hides the roll result overlay and backdrop |
+| `renderRollLog()` | Renders all entries in `rollLog` into `#rollLogList` |
+| `clearRollLog()` | Empties `rollLog` and re-renders the log panel |
+
+---
+
+### Undo functions
+
+| Function | Description |
+|---|---|
+| `pushUndo(action)` | Appends an action object to `undoStack` (max 50); enables the Undo button |
+| `undo()` | Pops the top action from `undoStack`; calls `applyUndo()`; disables button if stack empties |
+| `applyUndo(action)` | Reverses the action by type: `removeAttack`, `addAttack`, `hp`, `saveProf`, `skillProf`, `ability`, `condition`, `inspiration` |
+
+Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled when the stack is empty.
 
 ---
 
@@ -207,8 +298,9 @@ tap 3: Expert     → None        (remove from BOTH skillExpertise and skillProf
 | Function | Description |
 |---|---|
 | `updateHeader()` | Reads name/class/race/level inputs → updates sticky header display |
-| `switchTab(id)` | Removes `.active` from all panels/buttons, adds to selected |
-| `toast(msg)` | Shows floating message for 2 seconds |
+| `switchTab(id)` | Deactivates all panels/buttons; activates the target; scrolls its tab button into view |
+| `setupSwipe()` | Attaches passive `touchstart`/`touchend` listeners to `document.body`; horizontal swipe ≥ 50 px (and greater than vertical movement) advances or retreats through `TABS`; ignored when roll result overlay is open |
+| `toast(msg)` | Shows floating message for 2 seconds; used for non-roll feedback (proficiency changes, inspiration, file ops) |
 | `setupAutoSave()` | Attaches `saveData` as `input` + `change` listener to every form element |
 
 ---
