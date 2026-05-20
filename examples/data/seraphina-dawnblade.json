@@ -13,7 +13,7 @@
     "ideals":         "Greater Good. Our lot is to lay down our lives in defense of others.",
     "bonds":          "I will face any challenge to win the approval of my order.",
     "flaws":          "I judge others harshly, and myself even more severely.",
-    "features":       "Divine Smite\nLay on Hands (40 points)\nAura of Protection (CHA to saves within 10 ft)\nDivine Health (immune to disease)\nSacred Weapon (Holy Symbol)\nExtra Attack",
+    "features":       "Divine Smite\nAura of Protection (CHA to saves within 10 ft)\nDivine Health (immune to disease)\nSacred Weapon (Holy Symbol)\nExtra Attack",
 
     "hpMax":          "72",
     "hpTemp":         "0",
@@ -27,7 +27,7 @@
     "equipment":      "- Longsword (1d8 slashing, versatile 1d10)\n- Shield (+2 AC)\n- Plate Armor\n- Holy Symbol\n- Healer's Kit\n- Signet Ring of House Dawnblade",
     "proficiencies":  "All armor, shields, simple weapons, martial weapons",
     "languages":      "Common, Celestial, Elvish",
-    "notes":          "Lay on Hands pool: 40 hp remaining.\nDivine Smite: expend spell slot for +2d8 radiant per slot level (up to 5d8). +1d8 vs undead/fiends.",
+    "notes":          "Divine Smite: expend spell slot for +2d8 radiant per slot level (up to 5d8). +1d8 vs undead/fiends.",
 
     "cp":  "0",
     "sp":  "0",
@@ -79,6 +79,11 @@
       { "name": "Divine Smite (1st)", "bonus": "—",  "damage": "+2d8 radiant" }
     ],
 
-    "conditions": []
+    "conditions": [],
+
+    "classFeatures": [
+      { "name": "Channel Divinity", "max": 1,  "used": 0, "recharge": "Short Rest", "step": 1 },
+      { "name": "Lay on Hands",     "max": 40, "used": 0, "recharge": "Long Rest",  "step": 5 }
+    ]
   }
 }
