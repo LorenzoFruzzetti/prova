@@ -658,6 +658,111 @@
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* ── Roll Result Overlay ── */
+  #rollBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #rollBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #rollResult {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.85);
+    background: linear-gradient(160deg, #2e2010, #1e1608);
+    border: 2px solid var(--gold);
+    border-radius: 20px;
+    padding: 28px 36px 24px;
+    text-align: center;
+    z-index: 301;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    min-width: 220px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  }
+  #rollResult.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+
+  .rr-label {
+    font-size: 10px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: sans-serif;
+    margin-bottom: 6px;
+  }
+  .rr-total {
+    font-size: 80px;
+    font-weight: bold;
+    color: var(--text);
+    line-height: 1;
+    margin: 4px 0;
+  }
+  .rr-breakdown {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    margin-top: 4px;
+  }
+  .rr-secondary {
+    font-size: 14px;
+    color: var(--red-light);
+    font-family: sans-serif;
+    margin-top: 4px;
+    min-height: 18px;
+  }
+  .rr-nat {
+    font-size: 15px;
+    color: var(--gold-light);
+    margin-top: 8px;
+    min-height: 20px;
+    font-family: sans-serif;
+  }
+  .rr-dismiss {
+    display: block;
+    margin-top: 16px;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── Roll Log ── */
+  .roll-log-entry {
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(92,74,42,0.3);
+    font-family: sans-serif;
+  }
+  .roll-log-entry:last-child { border-bottom: none; }
+  .roll-log-top {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .roll-log-lbl { font-size: 12px; color: var(--text-muted); flex: 1; }
+  .roll-log-total { font-size: 18px; font-weight: bold; color: var(--gold-light); }
+  .roll-log-time { font-size: 10px; color: var(--text-muted); }
+  .roll-log-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+  .roll-log-nat { color: var(--gold); font-size: 11px; margin-left: 4px; }
+  .roll-log-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    font-size: 13px;
+    padding: 24px 0;
+  }
+
   /* ── Misc ── */
   .flex-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 
@@ -725,6 +830,7 @@
   <button class="tab-btn" onclick="switchTab('combat')">Combat</button>
   <button class="tab-btn" onclick="switchTab('spells')">Spells</button>
   <button class="tab-btn" onclick="switchTab('inventory')">Gear</button>
+  <button class="tab-btn" onclick="switchTab('rolls')">Rolls</button>
 </div>
 
 <!-- ════════ OVERVIEW ════════ -->
@@ -1079,6 +1185,29 @@
 
 </div>
 
+<!-- ════════ ROLLS ════════ -->
+<div id="panel-rolls" class="panel">
+  <div class="section">
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+      Roll History
+      <button class="attack-edit-btn" onclick="clearRollLog()">Clear</button>
+    </div>
+    <div class="section-body" id="rollLogList">
+      <div class="roll-log-empty">No rolls yet this session</div>
+    </div>
+  </div>
+</div>
+
+<div id="rollBackdrop" onclick="dismissRollResult()"></div>
+<div id="rollResult" onclick="dismissRollResult()">
+  <div class="rr-label" id="rrLabel">—</div>
+  <div class="rr-total" id="rrTotal">—</div>
+  <div class="rr-breakdown" id="rrBreak"></div>
+  <div class="rr-secondary" id="rrSecondary"></div>
+  <div class="rr-nat" id="rrNat"></div>
+  <span class="rr-dismiss">tap to dismiss</span>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -1262,38 +1391,84 @@ function rollDiceExpr(expr) {
   return total;
 }
 
+// ── Roll result overlay & log ──────────────────────────────────────────
+let rollLog = [];
+
+function showRoll(label, breakdown, total, nat, secondary) {
+  document.getElementById('rrLabel').textContent    = label;
+  document.getElementById('rrTotal').textContent    = total;
+  document.getElementById('rrBreak').textContent    = breakdown + ' = ' + total;
+  document.getElementById('rrSecondary').textContent = secondary || '';
+  document.getElementById('rrNat').textContent      = nat;
+  document.getElementById('rollResult').classList.add('show');
+  document.getElementById('rollBackdrop').classList.add('show');
+
+  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+  rollLog.unshift({label, breakdown, total, nat, secondary: secondary || '', time});
+  if (rollLog.length > 50) rollLog.pop();
+  renderRollLog();
+}
+
+function dismissRollResult() {
+  document.getElementById('rollResult').classList.remove('show');
+  document.getElementById('rollBackdrop').classList.remove('show');
+}
+
+function renderRollLog() {
+  const el = document.getElementById('rollLogList');
+  if (!el) return;
+  if (!rollLog.length) {
+    el.innerHTML = '<div class="roll-log-empty">No rolls yet this session</div>';
+    return;
+  }
+  el.innerHTML = rollLog.map(r => `
+    <div class="roll-log-entry">
+      <div class="roll-log-top">
+        <span class="roll-log-lbl">${r.label}</span>
+        <span class="roll-log-total">${r.total}</span>
+        <span class="roll-log-time">${r.time}</span>
+      </div>
+      <div class="roll-log-sub">
+        ${r.breakdown} = ${r.total}
+        ${r.secondary ? ' | ' + r.secondary : ''}
+        ${r.nat ? `<span class="roll-log-nat">${r.nat}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function clearRollLog() {
+  rollLog = [];
+  renderRollLog();
+}
+
 // ── Roll functions ─────────────────────────────────────────────────────
 function rollAbility(ab) {
   const roll = d20();
   const m = mod(state.abilities[ab]);
-  const total = roll + m;
-  const label = ab.charAt(0) + ab.slice(1).toLowerCase();
-  toast(`${label} check: d20(${roll}) ${fmtMod(m)} = ${total}${natMsg(roll)}`);
+  const label = ABILITY_NAMES[ABILITIES.indexOf(ab)] + ' Check';
+  showRoll(label, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
 }
 
 function rollSave(ab) {
   const roll = d20();
   const el = document.getElementById(`save-mod-${ab}`);
   const m = el ? parseInt(el.textContent) : 0;
-  const total = roll + m;
   const name = SAVES.find(s => s.ab === ab).name;
-  toast(`${name} save: d20(${roll}) ${fmtMod(m)} = ${total}${natMsg(roll)}`);
+  showRoll(name + ' Save', `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
 }
 
 function rollSkill(name) {
   const roll = d20();
-  const key = name.replace(/\s/g, '_');
-  const el = document.getElementById(`skill-mod-${key}`);
+  const el = document.getElementById(`skill-mod-${name.replace(/\s/g, '_')}`);
   const m = el ? parseInt(el.textContent) : 0;
-  const total = roll + m;
-  toast(`${name}: d20(${roll}) ${fmtMod(m)} = ${total}${natMsg(roll)}`);
+  showRoll(name, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
 }
 
 function rollInitiative() {
   const roll = d20();
   const m = mod(state.abilities['DEX']);
-  const total = roll + m;
-  toast(`Initiative: d20(${roll}) ${fmtMod(m)} = ${total}${natMsg(roll)}`);
+  showRoll('Initiative', `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
 }
 
 function rollSpellAtk() {
@@ -1301,25 +1476,24 @@ function rollSpellAtk() {
   if (!el || el.textContent === '—') { toast('No spellcasting ability set'); return; }
   const roll = d20();
   const m = parseInt(el.textContent) || 0;
-  const total = roll + m;
-  toast(`Spell attack: d20(${roll}) ${fmtMod(m)} = ${total}${natMsg(roll)}`);
+  showRoll('Spell Attack', `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
 }
 
 function rollAttack(i) {
   if (longPressActive) { longPressActive = false; return; }
   const a = state.attacks[i];
   const roll = d20();
-  const nat = natMsg(roll);
-  let msg = `${a.name}: `;
+  let breakdown, total;
   if (a.bonus && a.bonus !== '—') {
     const bonus = parseInt(a.bonus) || 0;
-    msg += `hit ${roll + bonus} (d20(${roll})${fmtMod(bonus)})`;
+    breakdown = `d20(${roll}) ${fmtMod(bonus)}`;
+    total = roll + bonus;
   } else {
-    msg += `d20(${roll})`;
+    breakdown = `d20(${roll})`;
+    total = roll;
   }
   const dmg = rollDiceExpr(a.damage);
-  if (dmg !== null) msg += ` | dmg ${dmg}`;
-  toast(msg + nat);
+  showRoll(a.name, breakdown, total, natMsg(roll), dmg !== null ? `Dmg: ${dmg}` : '');
 }
 
 function getProfBonus() {
