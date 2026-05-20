@@ -387,6 +387,12 @@
 
   .check-item:last-child { border-bottom: none; }
 
+  .prof-dots {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
   .prof-dot {
     width: 14px;
     height: 14px;
@@ -397,15 +403,22 @@
     transition: background 0.15s, border-color 0.15s;
   }
 
+  /* Saving throws: single dot, proficiency fills it */
   .check-item.proficient .prof-dot {
     background: var(--gold);
     border-color: var(--gold);
   }
 
-  .check-item.expert .prof-dot {
+  /* Skills proficiency: first dot filled, second stays empty */
+  .check-item.proficient .prof-dots .prof-dot:last-child {
+    background: none;
+    border-color: var(--border);
+  }
+
+  /* Skills expertise: both dots filled */
+  .check-item.expert .prof-dots .prof-dot {
     background: var(--gold-light);
     border-color: var(--gold-light);
-    box-shadow: 0 0 0 2px rgba(201,168,76,0.3);
   }
 
   .check-modifier {
@@ -1136,7 +1149,7 @@ function buildSkillsList() {
     return `
     <li class="check-item ${exp ? 'expert' : prof ? 'proficient' : ''}"
         onclick="cycleSkillProf('${s.name}', this)">
-      <div class="prof-dot"></div>
+      <div class="prof-dots"><div class="prof-dot"></div><div class="prof-dot"></div></div>
       <span class="check-modifier" id="skill-mod-${s.name.replace(/\s/g,'_')}">+0</span>
       <span class="check-name">${s.name}</span>
       <span class="check-ability">${s.ab}</span>
