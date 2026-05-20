@@ -544,17 +544,36 @@
   .attack-damage { color: var(--red-light); font-family: sans-serif; font-size: 12px; text-align: right; }
 
   .attack-del {
+    display: none;
     background: none;
     border: none;
-    color: var(--text-muted);
+    color: var(--red-light);
     cursor: pointer;
     font-size: 15px;
     line-height: 1;
     padding: 2px 4px;
-    opacity: 0.5;
     font-family: sans-serif;
+    opacity: 0.8;
   }
-  .attack-del:active { color: var(--red-light); opacity: 1; }
+  .attack-del:active { opacity: 1; }
+
+  .attack-row.del-ready .attack-del,
+  #attackList.delete-all .attack-del { display: inline-block; }
+
+  .attack-edit-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-family: sans-serif;
+    padding: 2px 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .attack-edit-btn.active { color: var(--gold); border-color: var(--gold); }
 
   /* ── Rollable stat pills ── */
   .stat-pill.rollable { cursor: pointer; }
@@ -955,7 +974,10 @@
   </div>
 
   <div class="section">
-    <div class="section-title">Attacks</div>
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+      Attacks
+      <button class="attack-edit-btn" id="attackEditBtn" onclick="toggleAttackEdit()">Edit</button>
+    </div>
     <div class="section-body">
       <div id="attackList">
         <div class="attack-row">
@@ -1284,6 +1306,7 @@ function rollSpellAtk() {
 }
 
 function rollAttack(i) {
+  if (longPressActive) { longPressActive = false; return; }
   const a = state.attacks[i];
   const roll = d20();
   const nat = natMsg(roll);
@@ -1448,6 +1471,40 @@ function toggleSlot(i, j) {
 }
 
 // ── Attacks ────────────────────────────────────────────────────────────
+let longPressTimer = null;
+let longPressActive = false;
+
+function startLongPress(e, i) {
+  if (e.target.closest('.attack-del')) return;
+  longPressActive = false;
+  clearTimeout(longPressTimer);
+  longPressTimer = setTimeout(() => {
+    longPressActive = true;
+    document.querySelectorAll('.attack-row.del-ready').forEach(r => r.classList.remove('del-ready'));
+    const row = document.querySelector(`.attack-row[data-idx="${i}"]`);
+    if (row) row.classList.add('del-ready');
+    document.addEventListener('pointerdown', dismissDelReady, {once: true, capture: true});
+  }, 500);
+}
+
+function cancelLongPress() { clearTimeout(longPressTimer); }
+
+function dismissDelReady(e) {
+  if (!e.target.closest('.attack-del')) {
+    document.querySelectorAll('.attack-row.del-ready').forEach(r => r.classList.remove('del-ready'));
+    longPressActive = false;
+  }
+}
+
+function toggleAttackEdit() {
+  const list = document.getElementById('attackList');
+  const btn  = document.getElementById('attackEditBtn');
+  const active = list.classList.toggle('delete-all');
+  document.querySelectorAll('.attack-row.del-ready').forEach(r => r.classList.remove('del-ready'));
+  longPressActive = false;
+  if (btn) { btn.textContent = active ? 'Done' : 'Edit'; btn.classList.toggle('active', active); }
+}
+
 function addAttack() {
   const name   = prompt('Attack name (e.g. Longsword):');
   if (!name) return;
@@ -1467,11 +1524,19 @@ function renderAttacks() {
     return;
   }
   list.innerHTML = state.attacks.map((a, i) => `
-    <div class="attack-row" onclick="rollAttack(${i})">
+    <div class="attack-row" data-idx="${i}"
+         onclick="rollAttack(${i})"
+         onpointerdown="startLongPress(event,${i})"
+         onpointerup="cancelLongPress()"
+         onpointercancel="cancelLongPress()"
+         oncontextmenu="return false">
       <span class="attack-name">${a.name}</span>
       <span class="attack-bonus">${a.bonus}</span>
       <span class="attack-damage">${a.damage}</span>
-      <button class="attack-del" onclick="event.stopPropagation(); removeAttack(${i})" title="Remove">×</button>
+      <button class="attack-del"
+              onpointerdown="event.stopPropagation()"
+              onclick="event.stopPropagation(); removeAttack(${i})"
+              title="Delete">🗑</button>
     </div>
   `).join('');
 }
