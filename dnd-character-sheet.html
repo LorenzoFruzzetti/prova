@@ -75,6 +75,37 @@
 
   .char-meta span { font-style: italic; }
 
+  /* ── Header actions ── */
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  .header-title { margin-bottom: 0; flex: 1; }
+
+  .header-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  .header-btn {
+    background: rgba(201,168,76,0.08);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    padding: 5px 9px;
+    font-size: 11px;
+    font-family: sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    letter-spacing: 0.3px;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    white-space: nowrap;
+  }
+
+  .header-btn:active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.15); }
+
   /* ── Tab Bar ── */
   .tab-bar {
     display: flex;
@@ -618,7 +649,13 @@
 <body>
 
 <div class="header">
-  <div class="header-title">Dungeons &amp; Dragons 5e</div>
+  <div class="header-top">
+    <div class="header-title">Dungeons &amp; Dragons 5e</div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="exportToJSON()">&#128190; Save</button>
+      <button class="header-btn" onclick="document.getElementById('jsonFileInput').click()">&#128194; Load</button>
+    </div>
+  </div>
   <div class="char-name-display" id="headerName">Character Name</div>
   <div class="char-meta">
     <span id="metaClass">—</span>
@@ -628,6 +665,7 @@
     <span id="metaLevel">Lv 1</span>
   </div>
 </div>
+<input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="importFromJSON(this)">
 
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('overview')">Info</button>
@@ -1379,7 +1417,7 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
 }
 
-// ── Persistence (localStorage) ─────────────────────────────────────────
+// ── Persistence ────────────────────────────────────────────────────────
 function collectFormData() {
   const ids = ['charName','charClass','charSubclass','charRace','charLevel','charBackground',
     'charAlignment','charXP','personality','ideals','bonds','flaws','features',
@@ -1390,24 +1428,25 @@ function collectFormData() {
   return data;
 }
 
+function buildPayload() {
+  return {
+    form: collectFormData(),
+    state: {
+      abilities: state.abilities,
+      saveProficiencies: state.saveProficiencies,
+      skillProficiencies: state.skillProficiencies,
+      skillExpertise: state.skillExpertise,
+      inspiration: state.inspiration,
+      hpCurrent: state.hpCurrent,
+      spellSlots: state.spellSlots,
+      attacks: state.attacks,
+      conditions: state.conditions,
+    }
+  };
+}
+
 function saveData() {
-  try {
-    const payload = {
-      form: collectFormData(),
-      state: {
-        abilities: state.abilities,
-        saveProficiencies: state.saveProficiencies,
-        skillProficiencies: state.skillProficiencies,
-        skillExpertise: state.skillExpertise,
-        inspiration: state.inspiration,
-        hpCurrent: state.hpCurrent,
-        spellSlots: state.spellSlots,
-        attacks: state.attacks,
-        conditions: state.conditions,
-      }
-    };
-    localStorage.setItem('dnd5e_sheet', JSON.stringify(payload));
-  } catch(e) {}
+  try { localStorage.setItem('dnd5e_sheet', JSON.stringify(buildPayload())); } catch(e) {}
 }
 
 function loadData() {
@@ -1415,23 +1454,73 @@ function loadData() {
     const raw = localStorage.getItem('dnd5e_sheet');
     if (!raw) return;
     const payload = JSON.parse(raw);
-
     if (payload.form) {
       Object.entries(payload.form).forEach(([id, val]) => {
-        const el = document.getElementById(id);
-        if (el) el.value = val;
+        const el = document.getElementById(id); if (el) el.value = val;
       });
     }
     if (payload.state) {
       Object.assign(state, payload.state);
-      // Patch spellSlots array length
       if (state.spellSlots.length < 9) {
-        state.spellSlots = SPELL_SLOTS_DEFAULT.map((def, i) =>
-          state.spellSlots[i] || {...def}
-        );
+        state.spellSlots = SPELL_SLOTS_DEFAULT.map((def, i) => state.spellSlots[i] || {...def});
       }
     }
   } catch(e) {}
+}
+
+// ── JSON export ────────────────────────────────────────────────────────
+function exportToJSON() {
+  const payload  = buildPayload();
+  const charName = (document.getElementById('charName')?.value || 'character').trim();
+  const filename = (charName || 'character').replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.json';
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+  toast('Saved: ' + filename);
+}
+
+// ── JSON import ────────────────────────────────────────────────────────
+function importFromJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      applyPayload(JSON.parse(e.target.result));
+      saveData();
+      toast('Character loaded!');
+    } catch(err) {
+      toast('Error: invalid JSON file');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function applyPayload(payload) {
+  if (payload.form) {
+    Object.entries(payload.form).forEach(([id, val]) => {
+      const el = document.getElementById(id); if (el) el.value = val;
+    });
+  }
+  if (payload.state) {
+    Object.assign(state, payload.state);
+    if (state.spellSlots.length < 9) {
+      state.spellSlots = SPELL_SLOTS_DEFAULT.map((def, i) => state.spellSlots[i] || {...def});
+    }
+  }
+  buildAbilityGrid();
+  buildSavingThrows();
+  buildSkillsList();
+  buildConditions();
+  buildSpellSlots();
+  renderAttacks();
+  recalcAll();
+  updateHeader();
+  updateHP();
+  document.getElementById('inspirationBtn').classList.toggle('active', state.inspiration);
 }
 
 function setupAutoSave() {
