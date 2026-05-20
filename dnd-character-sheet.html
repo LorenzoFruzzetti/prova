@@ -1681,10 +1681,11 @@ function buildSpellSlots() {
 
 function renderSlotDots(i) {
   const s = state.spellSlots[i];
+  const split = s.max - s.used; // first split dots are gold (available)
   const dots = document.getElementById(`slots-dots-${i}`);
   if (dots) {
     dots.innerHTML = Array.from({length: s.max}, (_, j) => `
-      <div class="slot-dot ${j < s.used ? 'used' : 'available'}"
+      <div class="slot-dot ${j < split ? 'available' : 'used'}"
            onclick="toggleSlot(${i}, ${j})"></div>
     `).join('');
   }
@@ -2005,7 +2006,10 @@ function setSlotMax(i, val) {
 
 function toggleSlot(i, j) {
   const s = state.spellSlots[i];
-  s.used = (j < s.used) ? j : j + 1;
+  const split = s.max - s.used;
+  // j < split → clicking a gold dot → use slots from here to end
+  // j >= split → clicking a grey dot → restore this slot
+  s.used = j < split ? s.max - j : s.max - j - 1;
   renderSlotDots(i);
   saveData();
 }
@@ -2055,16 +2059,18 @@ function buildFeatures() {
           <button class="attack-edit-btn" onclick="removeFeature(${i})" style="color:var(--red-light)">✕</button>
         </div>
         <div class="feature-track">
-          <button class="mini-btn minus"
-                  onpointerdown="startFeatureHold(${i},-1)"
-                  onpointerup="stopFeatureHold()"
-                  onpointercancel="stopFeatureHold()">−</button>
           <div class="feature-dots" id="feature-dots-${i}"></div>
-          <span class="mini-val" id="feature-val-${i}"></span>
-          <button class="mini-btn plus"
-                  onpointerdown="startFeatureHold(${i},1)"
-                  onpointerup="stopFeatureHold()"
-                  onpointercancel="stopFeatureHold()">+</button>
+          <div class="mini-tracker">
+            <button class="mini-btn minus"
+                    onpointerdown="startFeatureHold(${i},-1)"
+                    onpointerup="stopFeatureHold()"
+                    onpointercancel="stopFeatureHold()">−</button>
+            <span class="mini-val" id="feature-val-${i}"></span>
+            <button class="mini-btn plus"
+                    onpointerdown="startFeatureHold(${i},1)"
+                    onpointerup="stopFeatureHold()"
+                    onpointercancel="stopFeatureHold()">+</button>
+          </div>
           <input type="number" min="0" max="999" value="${f.max}"
             style="width:40px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
                    border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:sans-serif"
@@ -2085,10 +2091,12 @@ function renderFeatureDots(i) {
   const f = state.classFeatures[i];
   const step = f.step || 1;
   const numDots = Math.ceil(f.max / step);
+  const usedDots = Math.ceil(f.used / step);
+  const split = numDots - usedDots; // first split dots are gold (available)
   const el = document.getElementById(`feature-dots-${i}`);
   if (el) {
     el.innerHTML = Array.from({length: numDots}, (_, j) => `
-      <div class="slot-dot ${(j + 1) * step <= f.used ? 'used' : 'available'}"
+      <div class="slot-dot ${j < split ? 'available' : 'used'}"
            onclick="toggleFeatureDot(${i},${j})"></div>
     `).join('');
   }
@@ -2099,8 +2107,14 @@ function renderFeatureDots(i) {
 function toggleFeatureDot(i, j) {
   const f = state.classFeatures[i];
   const step = f.step || 1;
-  const usedDots = Math.floor(f.used / step);
-  f.used = j < usedDots ? j * step : Math.min(f.max, (j + 1) * step);
+  const numDots = Math.ceil(f.max / step);
+  const usedDots = Math.ceil(f.used / step);
+  const split = numDots - usedDots;
+  // j < split → gold dot → use from here rightward
+  // j >= split → grey dot → restore this dot
+  f.used = j < split
+    ? Math.min(f.max, (numDots - j) * step)
+    : (numDots - j - 1) * step;
   renderFeatureDots(i);
   saveData();
 }
