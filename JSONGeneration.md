@@ -299,45 +299,47 @@ Missing `form` keys leave the corresponding input at its HTML default. Missing `
 
 ## Complete annotated example
 
+The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatures`.
+
 ```json
 {
   "form": {
-    "charName":       "Aria Swiftblade",
-    "charClass":      "Rogue",
-    "charSubclass":   "Arcane Trickster",
-    "charRace":       "Half-Elf",
-    "charLevel":      "7",
-    "charBackground": "Criminal",
-    "charAlignment":  "Chaotic Neutral",
-    "charXP":         "23000",
-    "personality":    "I always have a plan for when things go wrong.",
-    "ideals":         "Freedom. Chains are meant to be broken.",
-    "bonds":          "I owe my mentor a life debt.",
-    "flaws":          "I turn tail and run when things look bad.",
-    "features":       "Sneak Attack 4d6\nCunning Action\nUncanny Dodge",
-    "hpMax":          "52",
+    "charName":       "Ser Aldric Stoneheart",
+    "charClass":      "Paladin",
+    "charSubclass":   "Oath of Devotion",
+    "charRace":       "Human",
+    "charLevel":      "5",
+    "charBackground": "Noble",
+    "charAlignment":  "Lawful Good",
+    "charXP":         "6500",
+    "personality":    "I face problems head-on. A simple, direct solution is best.",
+    "ideals":         "Responsibility. I do what I must and accept the consequences.",
+    "bonds":          "I will face any challenge to protect those in my charge.",
+    "flaws":          "I hide a truly scandalous secret that could ruin my family.",
+    "features":       "Divine Smite\nAura of Protection\nSacred Weapon",
+    "hpMax":          "47",
     "hpTemp":         "0",
-    "statAC":         "15",
+    "statAC":         "18",
     "statSpeed":      "30",
-    "statHitDice":    "7d8",
-    "spellAbility":   "INT",
-    "spellsList":     "Cantrips: Mage Hand, Minor Illusion\n1st: Charm Person",
-    "equipment":      "- Rapier\n- Hand Crossbow\n- Thieves' Tools",
-    "proficiencies":  "Light armor, simple weapons, rapiers, shortswords",
-    "languages":      "Common, Elvish, Thieves' Cant",
+    "statHitDice":    "5d10",
+    "spellAbility":   "CHA",
+    "spellsList":     "1st: Bless, Cure Wounds, Shield of Faith\n2nd: Aid, Lesser Restoration",
+    "equipment":      "- Longsword (1d8 slashing)\n- Shield\n- Plate Armor\n- Holy Symbol\n- Explorer's Pack",
+    "proficiencies":  "All armor, shields, simple and martial weapons",
+    "languages":      "Common, Celestial",
     "notes":          "",
-    "cp": "0", "sp": "50", "ep": "0", "gp": "340", "pp": "5"
+    "cp": "0", "sp": "0", "ep": "0", "gp": "150", "pp": "2"
   },
   "state": {
-    "abilities": { "STR": 10, "DEX": 18, "CON": 14, "INT": 16, "WIS": 12, "CHA": 14 },
-    "saveProficiencies": ["DEX", "INT"],
-    "skillProficiencies": ["Acrobatics", "Deception", "Perception", "Sleight of Hand", "Stealth"],
-    "skillExpertise": ["Stealth", "Sleight of Hand"],
+    "abilities": { "STR": 18, "DEX": 10, "CON": 16, "INT": 8, "WIS": 12, "CHA": 16 },
+    "saveProficiencies": ["WIS", "CHA"],
+    "skillProficiencies": ["Athletics", "Insight", "Persuasion", "Religion"],
+    "skillExpertise": [],
     "inspiration": false,
-    "hpCurrent": 45,
+    "hpCurrent": 47,
     "spellSlots": [
-      { "level": "1st", "max": 3, "used": 1 },
-      { "level": "2nd", "max": 0, "used": 0 },
+      { "level": "1st", "max": 4, "used": 1 },
+      { "level": "2nd", "max": 2, "used": 0 },
       { "level": "3rd", "max": 0, "used": 0 },
       { "level": "4th", "max": 0, "used": 0 },
       { "level": "5th", "max": 0, "used": 0 },
@@ -347,12 +349,14 @@ Missing `form` keys leave the corresponding input at its HTML default. Missing `
       { "level": "9th", "max": 0, "used": 0 }
     ],
     "attacks": [
-      { "name": "Rapier",        "bonus": "+7", "damage": "1d8+4" },
-      { "name": "Hand Crossbow", "bonus": "+7", "damage": "1d6+4" },
-      { "name": "Sneak Attack",  "bonus": "—",  "damage": "4d6"   }
+      { "name": "Longsword",    "bonus": "+6", "damage": "1d8+4"  },
+      { "name": "Divine Smite", "bonus": "—",  "damage": "2d8"    }
     ],
     "conditions": [],
-    "classFeatures": []
+    "classFeatures": [
+      { "name": "Channel Divinity", "max": 1,  "used": 0, "recharge": "Short Rest" },
+      { "name": "Lay on Hands",     "max": 25, "used": 0, "recharge": "Long Rest"  }
+    ]
   }
 }
 ```
