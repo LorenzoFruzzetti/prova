@@ -1862,12 +1862,12 @@ function buildSpellSlots() {
       <div class="spell-slots-dots" id="slots-dots-${i}"></div>
       <div class="mini-tracker">
         <button class="mini-btn minus"
-                onpointerdown="startSlotHold(${i},-1)"
+                onpointerdown="startSlotHold(${i},1)"
                 onpointerup="stopSlotHold()"
                 onpointercancel="stopSlotHold()">−</button>
         <span class="mini-val" id="slot-val-${i}"></span>
         <button class="mini-btn plus"
-                onpointerdown="startSlotHold(${i},1)"
+                onpointerdown="startSlotHold(${i},-1)"
                 onpointerup="stopSlotHold()"
                 onpointercancel="stopSlotHold()">+</button>
       </div>
@@ -1891,7 +1891,7 @@ function renderSlotDots(i) {
     `).join('');
   }
   const val = document.getElementById(`slot-val-${i}`);
-  if (val) val.textContent = `${s.used}/${s.max}`;
+  if (val) val.textContent = `${s.max - s.used}/${s.max}`;
 }
 
 // ── Ability logic ──────────────────────────────────────────────────────
