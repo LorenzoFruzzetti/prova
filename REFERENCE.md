@@ -13,17 +13,20 @@ dnd-character-sheet.html
 ├── <body>
 │   ├── .header      Sticky top bar (title, Undo/Save/Load buttons, character name, meta)
 │   ├── input#jsonFileInput   Hidden file picker for JSON import
-│   ├── .tab-bar     Seven sticky tab buttons (Info / Stats / Skills / Combat / Spells / Gear / Rolls)
+│   ├── .tab-bar     Eight sticky tab buttons (Info / Stats / Skills / Combat / Spells / Features / Gear / Rolls)
 │   │                Each button carries data-tab="<id>" for programmatic activation
-│   ├── #panel-overview    Tab: character info + personality + features
+│   ├── #panel-overview    Tab: character info + personality + features + Long Rest button
 │   ├── #panel-abilities   Tab: ability scores + saving throws + passive perception + conditions
 │   ├── #panel-skills      Tab: 18 skills with proficiency/expertise dots
-│   ├── #panel-combat      Tab: HP tracker + combat stats + inspiration + death saves + attacks
-│   ├── #panel-spells      Tab: spellcasting ability + spell slots + spell list textarea
+│   ├── #panel-combat      Tab: HP tracker + combat stats + hit dice tracker + inspiration + death saves + attacks
+│   ├── #panel-spells      Tab: spellcasting ability + spell slots (with ↺ All) + spell list textarea
+│   ├── #panel-features    Tab: limited-use class features with dot trackers and +/− controls
 │   ├── #panel-inventory   Tab: currency + equipment + proficiencies + notes
 │   ├── #panel-rolls       Tab: session roll history log with Clear button
 │   ├── #hpBackdrop  Fixed backdrop for HP dialog
 │   ├── #hpDialog    Bottom-sheet for setting HP to a specific value
+│   ├── #stepBackdrop  Fixed backdrop for feature editor sheet
+│   ├── #stepMenu    Bottom-sheet for adding/editing a class feature (name, max, step, recharge)
 │   ├── #rollBackdrop  Fixed backdrop for roll result overlay
 │   ├── #rollResult  Fixed centered overlay showing the last roll result
 │   └── #toast       Floating feedback message (non-roll events only)
@@ -79,8 +82,21 @@ dnd-character-sheet.html
 | `.stat-pill.rollable` | Adds `cursor:pointer` and gold border on active; tap to roll |
 | `.death-saves` | Side-by-side success/failure dot groups |
 | `.save-dot` | 22 px circle; `.filled` colors it green or red |
-| `.spell-level-row` | One spell-slot level row (label + dots + max input) |
-| `.slot-dot` | 18 px circle; `.available` = gold filled, `.used` = faded |
+| `.spell-level-row` | One spell-slot level row (label + dots + mini tracker + max input) |
+| `.slot-dot` | 18 px circle; `.available` = gold left (remaining), `.used` = grey right (expended) |
+| `.mini-tracker` | Flex row grouping `[−][counter][+]` tightly together |
+| `.mini-btn` | 28 px circular button for mini trackers; `.minus` = red, `.plus` = green |
+| `.mini-val` | Small `n/max` counter label inside a mini tracker |
+| `.feature-row` | One class feature block (header + track row + optional step hint) |
+| `.feature-header` | Flex row: name · recharge · ↺ · Edit · ✕ buttons |
+| `.feature-name` | Gold-light bold feature name inside the header |
+| `.feature-recharge` | Italic muted recharge label (e.g. "Short Rest") |
+| `.feature-track` | Flex row: dots · mini tracker · max input |
+| `.feature-dots` | Wrapping flex container for feature `.slot-dot`s |
+| `.feature-step-hint` | Tiny italic label shown below track row when step > 1 (e.g. "5 pts/dot") |
+| `.fe-label` | Small uppercase label inside the feature editor sheet |
+| `.fe-input` | Compact text/number input inside the feature editor sheet (15 px font) |
+| `.fe-row2` | Two-column grid inside the feature editor sheet (Max + Step fields) |
 | `.attack-row` | 4-column grid: name / bonus / damage / delete; `cursor:pointer`; tap to roll |
 | `.attack-row.del-ready` | Shows the bin button for that row (long-press reveal) |
 | `.attack-del` | 🗑 bin button; hidden by default; shown via `.del-ready` or `#attackList.delete-all` |
@@ -102,8 +118,10 @@ dnd-character-sheet.html
 | `.roll-log-sub` | Breakdown + nat callout on the second line |
 | `#hpBackdrop` | Fixed dim layer behind the HP dialog; tap to dismiss |
 | `#hpDialog` | Bottom-sheet for setting HP to a specific value; slides up on open |
-| `.hp-dlg-input` | Large centered number input inside the HP dialog |
-| `.hp-dlg-btn` | Cancel / Set HP buttons; `.primary` styles the confirm button |
+| `.hp-dlg-input` | Large centered number input inside the HP dialog (36 px font) |
+| `.hp-dlg-btn` | Cancel / confirm buttons; `.primary` styles the confirm button |
+| `#stepBackdrop` | Fixed dim layer behind the feature editor sheet; tap to dismiss |
+| `#stepMenu` | Bottom-sheet for adding or editing a class feature; contains Name, Max, Step, Recharge fields |
 
 ---
 
@@ -118,7 +136,7 @@ SAVES           // [{name, ab}] — 6 saving throw definitions
 SKILLS          // [{name, ab}] — 18 skill definitions
 CONDITIONS      // 15 condition strings
 SPELL_SLOTS_DEFAULT  // [{level, max}] — 9 levels, all max:0 except 1st:2
-TABS            // ['overview','abilities','skills','combat','spells','inventory','rolls']
+TABS            // ['overview','abilities','skills','combat','spells','features','inventory','rolls']
                 //   Order used by swipe navigation and switchTab()
 ```
 
@@ -135,16 +153,24 @@ let state = {
   spellSlots:         [ { level, max, used } ],  // 9 entries
   attacks:            [ { name, bonus, damage } ],
   conditions:         [],   // condition name strings
+  hitDiceUsed:        0,    // number of hit dice expended; max = charLevel
+  classFeatures:      [],   // [ { name, max, used, recharge, step } ]
 }
 ```
 
 Session-only (not persisted to localStorage):
 ```js
-undoStack        // array of undo action objects (max 50)
-rollLog          // array of roll history entries (max 50)
-longPressTimer   // setTimeout handle for attack long-press
-longPressActive  // boolean — suppresses roll on release after long-press
-abilityUndoTimers // {[ab]: timerId} — debounce timers for ability undo entries
+undoStack           // array of undo action objects (max 50)
+rollLog             // array of roll history entries (max 50)
+longPressTimer      // setTimeout handle for attack long-press
+longPressActive     // boolean — suppresses roll on release after long-press
+abilityUndoTimers   // {[ab]: timerId} — debounce timers for ability undo entries
+hpHoldTimer/Interval       // hold-to-repeat timers for HP +/− buttons
+slotHoldTimer/Interval     // hold-to-repeat timers for spell slot +/− buttons
+featureHoldTimer/Interval  // hold-to-repeat timers for feature +/− buttons
+hitDiceHoldTimer/Interval  // hold-to-repeat timers for hit dice +/− buttons
+featureLpTimer      // long-press timer for opening the feature editor sheet
+currentStepMenuIdx  // index of the feature currently being edited (−1 = new feature)
 ```
 
 All other values (character name, HP max, AC, etc.) live in HTML form inputs and are read directly via `document.getElementById`.
@@ -162,6 +188,8 @@ DOMContentLoaded
        ├─ buildSkillsList()   inject skill rows into #skillsList
        ├─ buildConditions()   inject condition chips into #conditionsGrid
        ├─ buildSpellSlots()   inject spell-slot rows into #spellSlotsBody
+       ├─ buildFeatures()     inject class feature rows into #featuresBody
+       ├─ renderHitDice()     inject hit dice dots into #hitDiceDots
        ├─ recalcAll()         compute all derived values (modifiers, DC, etc.)
        ├─ setupAutoSave()     attach input/change listeners → saveData()
        └─ setupSwipe()        attach touchstart/touchend listeners for tab swiping
@@ -183,8 +211,11 @@ DOMContentLoaded
 | `buildSavingThrows()` | 6 rows; tap row → roll; tap prof dot → toggle proficiency | `state.saveProficiencies` |
 | `buildSkillsList()` | 18 skill rows; tap row → roll; tap prof dots → cycle prof | `state.skillProficiencies`, `state.skillExpertise` |
 | `buildConditions()` | 15 condition chips | `state.conditions` |
-| `buildSpellSlots()` | 9 spell-level rows | `state.spellSlots` |
-| `renderSlotDots(i)` | Dot row for one spell level | `state.spellSlots[i]` |
+| `buildSpellSlots()` | 9 spell-level rows, each with dots and a mini +/− tracker | `state.spellSlots` |
+| `renderSlotDots(i)` | Dot row + counter for one spell level (gold left = available, grey right = used) | `state.spellSlots[i]` |
+| `buildFeatures()` | Class feature rows in #featuresBody, or empty-state placeholder | `state.classFeatures` |
+| `renderFeatureDots(i)` | Dot row + counter for one feature, scaled by `step` | `state.classFeatures[i]` |
+| `renderHitDice()` | Hit dice dots in #hitDiceDots; max = character level | `state.hitDiceUsed`, `charLevel` input |
 | `renderAttacks()` | Attack rows (tap to roll, long-press/Edit for delete) or empty placeholder | `state.attacks` |
 | `renderRollLog()` | Roll history entries in #panel-rolls | `rollLog` |
 
@@ -226,13 +257,38 @@ DOMContentLoaded
 | `cancelLongPress()` | `pointerup` / `pointercancel` on attack row | Clears the long-press timer |
 | `dismissDelReady(e)` | Next `pointerdown` after long-press | Removes `del-ready` from all rows (skips if target is the bin button) |
 | `toggleAttackEdit()` | Tap Edit/Done button in Attacks section | Toggles `delete-all` class on `#attackList`; shows/hides all bin buttons |
-| `adjustHP(delta)` | +/− HP buttons | Pushes undo; clamps `state.hpCurrent` to `[0, max]`; calls `updateHP()` |
-| `updateHP()` | Max/Temp HP input or `adjustHP` / `applyHpDialog` | Refreshes HP display, bar color, and max label |
+| `adjustHP(delta)` | +/− HP buttons (single tap) | Pushes undo; clamps `state.hpCurrent` to `[0, max]`; calls `updateHP()` |
+| `startHpHold(delta)` / `stopHpHold()` | `pointerdown` / `pointerup` on HP buttons | Calls `adjustHP` immediately, then repeats at 80 ms after a 500 ms delay |
+| `resetHPToFull()` | ↺ Restore HP button | Pushes undo; sets `state.hpCurrent = hpMax`; calls `updateHP()` |
+| `updateHP()` | Max/Temp HP input or any HP adjustment | Refreshes HP display, bar color, and max label |
 | `openHpDialog()` | Tap HP display area | Populates and shows the HP bottom sheet; auto-selects the input after transition |
 | `dismissHpDialog()` | Cancel button or backdrop tap | Slides the HP dialog down |
 | `applyHpDialog()` | Set HP button or Enter key | Pushes undo; clamps input value to `[0, max]`; calls `updateHP()`; dismisses dialog |
 | `setSlotMax(i, val)` | Spell slot max input | Updates `state.spellSlots[i].max`; rerenders dots |
-| `toggleSlot(i, j)` | Tap spell slot dot | Toggles `state.spellSlots[i].used` |
+| `toggleSlot(i, j)` | Tap spell slot dot | Gold dot → use from here to end; grey dot → restore that dot |
+| `slotAdjust(i, delta)` | Mini +/− buttons on slot row | Clamps `state.spellSlots[i].used` by ±1; rerenders dots |
+| `startSlotHold(i, delta)` / `stopSlotHold()` | `pointerdown` / `pointerup` on slot +/− | Hold-to-repeat at 80 ms |
+| `restoreAllSlots()` | ↺ All button in Spell Slots section | Sets all slot `used` to `0`; rerenders all dot rows |
+| `renderFeatureDots(i)` | Any feature use/restore | Updates dots and `n/max` counter for feature `i` |
+| `toggleFeatureDot(i, j)` | Tap feature dot | Gold → use dots from here right; grey → restore that dot (respects `step`) |
+| `featureAdjust(i, delta)` | Feature mini +/− buttons | Changes `f.used` by `±step`; rerenders dots |
+| `startFeatureHold(i, delta)` / `stopFeatureHold()` | `pointerdown` / `pointerup` on feature +/− | Hold-to-repeat at 80 ms |
+| `setFeatureMax(i, val)` | Feature max input | Updates `f.max`; clamps `f.used`; rerenders dots |
+| `restoreFeature(i)` | ↺ button on a feature row | Sets `f.used = 0`; rerenders dots; shows toast |
+| `restoreAllFeatures()` | ↺ All button in Features section | Sets all feature `used` to `0`; rerenders all dot rows |
+| `addFeature()` | + Add button | Opens feature editor sheet in "New Feature" mode (`currentStepMenuIdx = -1`) |
+| `editFeature(i)` | Edit button on a feature row | Opens feature editor sheet pre-filled with feature `i` |
+| `removeFeature(i)` | ✕ button on a feature row | `confirm()` dialog → splices `state.classFeatures`; rebuilds feature list |
+| `startFeatureLongPress(i, e)` / `cancelFeatureLongPress()` | `pointerdown` / `pointerup` on feature row | 600 ms timer; opens feature editor sheet; ignored if target is a button or input |
+| `showStepMenu(i)` | Long-press or Edit; `i = -1` for new | Populates and shows the feature editor sheet |
+| `dismissStepMenu()` | Cancel button or backdrop tap | Hides the feature editor sheet |
+| `applyStepMenu()` | Save button or Enter on last field | Validates name; creates or updates the feature; rebuilds list; hides sheet |
+| `renderHitDice()` | Any hit dice change or level change | Updates dots in #hitDiceDots and counter in #hitDiceVal |
+| `toggleHitDie(j)` | Tap hit dice dot | Gold → use from here right; grey → restore that die |
+| `hitDiceAdjust(delta)` | Hit dice mini +/− buttons | Changes `state.hitDiceUsed` by ±1 |
+| `startHitDiceHold(delta)` / `stopHitDiceHold()` | `pointerdown` / `pointerup` on hit dice +/− | Hold-to-repeat at 80 ms |
+| `restoreHitDice()` | ↺ Restore button in Hit Dice section | Sets `state.hitDiceUsed = 0`; rerenders |
+| `fullLongRest()` | ⟳ Long Rest button in Overview panel | Restores HP to max, resets hit dice, all spell slots, and all class features; saves |
 | `addAttack()` | "+ Add Attack" button | `prompt()` dialog → pushes to `state.attacks`; pushes undo entry |
 | `removeAttack(i)` | Tap bin button (🗑) on attack row | Pushes undo; splices `state.attacks`; rerenders |
 | `toggleCondition(name, el)` | Tap condition chip | Pushes undo; toggles name in `state.conditions` |
@@ -284,7 +340,7 @@ Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled
 | Function | Description |
 |---|---|
 | `collectFormData()` | Reads all 29 form input values by element ID into a plain object |
-| `buildPayload()` | Returns `{ form, state }` — the canonical serialisation format |
+| `buildPayload()` | Returns `{ form, state }` — the canonical serialisation format; `state` includes `spellSlots`, `attacks`, `conditions`, `classFeatures`, `hitDiceUsed`, and all ability/proficiency data |
 | `saveData()` | Writes `buildPayload()` to `localStorage` key `dnd5e_sheet` |
 | `loadData()` | Reads from `localStorage`, populates form fields and `state` (no UI rebuild) |
 | `exportToJSON()` | Downloads `buildPayload()` as `<charname>.json` via a temporary `<a>` element |
