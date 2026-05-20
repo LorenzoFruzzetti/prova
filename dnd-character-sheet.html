@@ -1286,14 +1286,18 @@ function cycleSkillProf(name, el) {
   const profIdx = state.skillProficiencies.indexOf(name);
   const expIdx  = state.skillExpertise.indexOf(name);
   if (expIdx !== -1) {
+    // Expert → None: remove from both arrays
     state.skillExpertise.splice(expIdx, 1);
+    state.skillProficiencies.splice(state.skillProficiencies.indexOf(name), 1);
     el.classList.remove('expert');
   } else if (profIdx !== -1) {
+    // Proficient → Expert
     state.skillExpertise.push(name);
     el.classList.remove('proficient');
     el.classList.add('expert');
     toast('Expertise!');
   } else {
+    // None → Proficient
     state.skillProficiencies.push(name);
     el.classList.add('proficient');
   }
