@@ -518,12 +518,12 @@
   }
 
   .mini-btn {
-    width: 28px;
-    height: 28px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     border: 2px solid var(--border);
     background: var(--surface2);
-    font-size: 17px;
+    font-size: 22px;
     line-height: 1;
     cursor: pointer;
     display: flex;
@@ -1029,6 +1029,100 @@
     border-color: var(--red-light);
     color: var(--red-light);
   }
+
+  /* ── Settings menu ── */
+  #settingsBackdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 400;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #settingsBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #settingsMenu {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    max-width: 480px; margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--gold);
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 40px;
+    z-index: 401;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
+  }
+  #settingsMenu.show { transform: translateY(0); }
+
+  .settings-full-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    font-family: sans-serif;
+    cursor: pointer;
+    background: var(--bg);
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 10px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .settings-full-btn:active { border-color: var(--gold); color: var(--gold-light); }
+
+  .settings-divider {
+    border: none;
+    border-top: 1px solid rgba(92,74,42,0.4);
+    margin: 14px 0;
+  }
+
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+  }
+  .settings-row-label {
+    font-size: 13px;
+    font-family: sans-serif;
+    color: var(--text);
+  }
+  .settings-row-label small {
+    display: block;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    letter-spacing: 0.3px;
+  }
+
+  .font-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .font-ctrl-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s, color 0.15s;
+    flex-shrink: 0;
+    font-family: sans-serif;
+  }
+  .font-ctrl-btn:active { border-color: var(--gold); color: var(--gold); }
+  .font-ctrl-value {
+    min-width: 46px;
+    text-align: center;
+    font-size: 13px;
+    font-family: sans-serif;
+    color: var(--gold-light);
+    font-weight: bold;
+  }
 </style>
 </head>
 <body>
@@ -1038,8 +1132,7 @@
     <div class="header-title">Dungeons &amp; Dragons 5e</div>
     <div class="header-actions">
       <button class="header-btn" id="undoBtn" onclick="undo()" disabled>↩ Undo</button>
-      <button class="header-btn" onclick="exportToJSON()">&#128190; Save</button>
-      <button class="header-btn" onclick="document.getElementById('jsonFileInput').click()">&#128194; Load</button>
+      <button class="header-btn" onclick="openSettings()">⚙ Settings</button>
     </div>
   </div>
   <div class="char-name-display" id="headerName">Character Name</div>
@@ -1305,12 +1398,12 @@
         <div class="spell-slots-dots" id="hitDiceDots"></div>
         <div class="mini-tracker">
           <button class="mini-btn minus"
-                  onpointerdown="startHitDiceHold(-1)"
+                  onpointerdown="startHitDiceHold(1)"
                   onpointerup="stopHitDiceHold()"
                   onpointercancel="stopHitDiceHold()">−</button>
           <span class="mini-val" id="hitDiceVal"></span>
           <button class="mini-btn plus"
-                  onpointerdown="startHitDiceHold(1)"
+                  onpointerdown="startHitDiceHold(-1)"
                   onpointerup="stopHitDiceHold()"
                   onpointercancel="stopHitDiceHold()">+</button>
         </div>
@@ -1545,6 +1638,28 @@
   <span class="rr-dismiss">tap to dismiss</span>
 </div>
 
+<div id="settingsBackdrop" onclick="dismissSettings()"></div>
+<div id="settingsMenu">
+  <div class="hp-dlg-title">Settings</div>
+  <div style="height:16px"></div>
+  <button class="settings-full-btn" onclick="exportToJSON(); dismissSettings()">&#128190; Save Character</button>
+  <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(()=>document.getElementById('jsonFileInput').click(), 100)">&#128194; Load Character</button>
+  <hr class="settings-divider">
+  <div class="settings-row">
+    <div class="settings-row-label">
+      Font Size
+      <small>Adjust text size for the entire sheet</small>
+    </div>
+    <div class="font-ctrl">
+      <button class="font-ctrl-btn" onclick="changeFontSize(-1)">−</button>
+      <span class="font-ctrl-value" id="fontSizeLabel">100%</span>
+      <button class="font-ctrl-btn" onclick="changeFontSize(1)">+</button>
+    </div>
+  </div>
+  <hr class="settings-divider">
+  <button class="hp-dlg-btn" onclick="dismissSettings()" style="width:100%">Close</button>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -1747,12 +1862,12 @@ function buildSpellSlots() {
       <div class="spell-slots-dots" id="slots-dots-${i}"></div>
       <div class="mini-tracker">
         <button class="mini-btn minus"
-                onpointerdown="startSlotHold(${i},-1)"
+                onpointerdown="startSlotHold(${i},1)"
                 onpointerup="stopSlotHold()"
                 onpointercancel="stopSlotHold()">−</button>
         <span class="mini-val" id="slot-val-${i}"></span>
         <button class="mini-btn plus"
-                onpointerdown="startSlotHold(${i},1)"
+                onpointerdown="startSlotHold(${i},-1)"
                 onpointerup="stopSlotHold()"
                 onpointercancel="stopSlotHold()">+</button>
       </div>
@@ -1776,7 +1891,7 @@ function renderSlotDots(i) {
     `).join('');
   }
   const val = document.getElementById(`slot-val-${i}`);
-  if (val) val.textContent = `${s.used}/${s.max}`;
+  if (val) val.textContent = `${s.max - s.used}/${s.max}`;
 }
 
 // ── Ability logic ──────────────────────────────────────────────────────
@@ -2152,12 +2267,12 @@ function buildFeatures() {
           <div class="feature-dots" id="feature-dots-${i}"></div>
           <div class="mini-tracker">
             <button class="mini-btn minus"
-                    onpointerdown="startFeatureHold(${i},-1)"
+                    onpointerdown="startFeatureHold(${i},1)"
                     onpointerup="stopFeatureHold()"
                     onpointercancel="stopFeatureHold()">−</button>
             <span class="mini-val" id="feature-val-${i}"></span>
             <button class="mini-btn plus"
-                    onpointerdown="startFeatureHold(${i},1)"
+                    onpointerdown="startFeatureHold(${i},-1)"
                     onpointerup="stopFeatureHold()"
                     onpointercancel="stopFeatureHold()">+</button>
           </div>
@@ -2191,7 +2306,7 @@ function renderFeatureDots(i) {
     `).join('');
   }
   const val = document.getElementById(`feature-val-${i}`);
-  if (val) val.textContent = `${f.used}/${f.max}`;
+  if (val) val.textContent = `${f.max - f.used}/${f.max}`;
 }
 
 function toggleFeatureDot(i, j) {
@@ -2326,7 +2441,7 @@ function renderHitDice() {
     `).join('');
   }
   const val = document.getElementById('hitDiceVal');
-  if (val) val.textContent = `${used}/${max}`;
+  if (val) val.textContent = `${max - used}/${max}`;
 }
 
 function toggleHitDie(j) {
@@ -2585,10 +2700,51 @@ window.addEventListener('popstate', () => {
   const rollEl = document.getElementById('rollResult');
   const stepEl = document.getElementById('stepMenu');
   const hpEl   = document.getElementById('hpDialog');
-  if (rollEl?.classList.contains('show'))       dismissRollResult();
-  else if (stepEl?.classList.contains('show'))  dismissStepMenu();
-  else if (hpEl?.classList.contains('show'))    dismissHpDialog();
+  const settingsEl = document.getElementById('settingsMenu');
+  if (rollEl?.classList.contains('show'))            dismissRollResult();
+  else if (stepEl?.classList.contains('show'))       dismissStepMenu();
+  else if (hpEl?.classList.contains('show'))         dismissHpDialog();
+  else if (settingsEl?.classList.contains('show'))   dismissSettings();
 });
+
+// ── Settings menu ─────────────────────────────────────────────────────
+function openSettings() {
+  document.getElementById('settingsBackdrop').classList.add('show');
+  document.getElementById('settingsMenu').classList.add('show');
+  document.getElementById('fontSizeLabel').textContent = FONT_SIZES[fontSizeIdx] + '%';
+  pushModalHistory();
+}
+
+function dismissSettings() {
+  document.getElementById('settingsBackdrop').classList.remove('show');
+  document.getElementById('settingsMenu').classList.remove('show');
+  popModalHistory();
+}
+
+// ── Font size ──────────────────────────────────────────────────────────
+const FONT_SIZES = [75, 85, 100, 110, 125, 150];
+let fontSizeIdx = 2; // default 100%
+
+function loadFontSize() {
+  const saved = localStorage.getItem('dnd5e_fontsize');
+  if (saved !== null) {
+    const idx = FONT_SIZES.indexOf(parseInt(saved, 10));
+    if (idx !== -1) fontSizeIdx = idx;
+  }
+  applyFontSize();
+}
+
+function applyFontSize() {
+  document.body.style.zoom = FONT_SIZES[fontSizeIdx] / 100;
+  const label = document.getElementById('fontSizeLabel');
+  if (label) label.textContent = FONT_SIZES[fontSizeIdx] + '%';
+}
+
+function changeFontSize(dir) {
+  fontSizeIdx = Math.max(0, Math.min(FONT_SIZES.length - 1, fontSizeIdx + dir));
+  applyFontSize();
+  localStorage.setItem('dnd5e_fontsize', FONT_SIZES[fontSizeIdx]);
+}
 
 // ── Toast ──────────────────────────────────────────────────────────────
 let toastTimer;
@@ -2723,6 +2879,7 @@ function setupAutoSave() {
 
 // ── Boot ───────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+  loadFontSize();
   init();
   updateHeader();
   updateHP();
