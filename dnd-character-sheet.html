@@ -1113,7 +1113,7 @@ function init() {
 function buildAbilityGrid() {
   const grid = document.getElementById('abilityGrid');
   grid.innerHTML = ABILITIES.map(ab => `
-    <div class="ability-card">
+    <div class="ability-card" onclick="rollAbility('${ab}')">
       <div class="ability-name">${ab}</div>
       <div class="ability-mod" id="mod-${ab}">+0</div>
       <div class="ability-score">
@@ -1198,6 +1198,15 @@ function onAbilityInput(ab, val) {
   const v = parseInt(val) || 10;
   state.abilities[ab] = Math.max(1, Math.min(30, v));
   recalcAll();
+}
+
+function rollAbility(ab) {
+  const roll = Math.floor(Math.random() * 20) + 1;
+  const m = mod(state.abilities[ab]);
+  const total = roll + m;
+  const label = ab.charAt(0) + ab.slice(1).toLowerCase();
+  const nat = roll === 20 ? ' ★ NAT 20!' : roll === 1 ? ' ✦ Nat 1' : '';
+  toast(`${label} check: d20(${roll}) ${fmtMod(m)} = ${fmtMod(total).replace('+','')}${nat}`);
 }
 
 function getProfBonus() {
