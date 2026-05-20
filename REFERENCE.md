@@ -85,7 +85,7 @@ dnd-character-sheet.html
 | `.spell-level-row` | One spell-slot level row (label + dots + mini tracker + max input) |
 | `.slot-dot` | 18 px circle; `.available` = gold left (remaining), `.used` = grey right (expended) |
 | `.mini-tracker` | Flex row grouping `[−][counter][+]` tightly together |
-| `.mini-btn` | 28 px circular button for mini trackers; `.minus` = red, `.plus` = green |
+| `.mini-btn` | 38 px circular button for mini trackers; `.minus` = red, `.plus` = green |
 | `.mini-val` | Small `n/max` counter label inside a mini tracker |
 | `.feature-row` | One class feature block (header + track row + optional step hint) |
 | `.feature-header` | Flex row: name · recharge · ↺ · Edit · ✕ buttons |
@@ -122,6 +122,14 @@ dnd-character-sheet.html
 | `.hp-dlg-btn` | Cancel / confirm buttons; `.primary` styles the confirm button |
 | `#stepBackdrop` | Fixed dim layer behind the feature editor sheet; tap to dismiss |
 | `#stepMenu` | Bottom-sheet for adding or editing a class feature; contains Name, Max, Step, Recharge fields |
+| `#settingsBackdrop` | Fixed dim layer behind the settings sheet; tap to dismiss |
+| `#settingsMenu` | Bottom-sheet opened by the ⚙ Settings header button; contains Save, Load, and font-size controls |
+| `.settings-full-btn` | Full-width action button inside the settings sheet (Save / Load) |
+| `.settings-divider` | Thin horizontal rule separating sections inside the settings sheet |
+| `.settings-row` | Flex row pairing a label+sub-label on the left with a control on the right |
+| `.font-ctrl` | Flex row grouping `[−][value][+]` for the font-size control |
+| `.font-ctrl-btn` | 36 px circular `−`/`+` buttons for font-size adjustment |
+| `.font-ctrl-value` | Gold-light bold label showing current font size percentage |
 
 ---
 
@@ -138,6 +146,7 @@ CONDITIONS      // 15 condition strings
 SPELL_SLOTS_DEFAULT  // [{level, max}] — 9 levels, all max:0 except 1st:2
 TABS            // ['overview','abilities','skills','combat','spells','features','inventory','rolls']
                 //   Order used by swipe navigation and switchTab()
+FONT_SIZES      // [75, 85, 100, 110, 125, 150] — allowed zoom levels in percent
 ```
 
 ### Runtime state object
@@ -171,6 +180,7 @@ featureHoldTimer/Interval  // hold-to-repeat timers for feature +/− buttons
 hitDiceHoldTimer/Interval  // hold-to-repeat timers for hit dice +/− buttons
 featureLpTimer      // long-press timer for opening the feature editor sheet
 currentStepMenuIdx  // index of the feature currently being edited (−1 = new feature)
+fontSizeIdx         // index into FONT_SIZES; persisted separately in localStorage as 'dnd5e_fontsize'
 ```
 
 All other values (character name, HP max, AC, etc.) live in HTML form inputs and are read directly via `document.getElementById`.
@@ -181,6 +191,7 @@ All other values (character name, HP max, AC, etc.) live in HTML form inputs and
 
 ```
 DOMContentLoaded
+  └─ loadFontSize()    restore font-size zoom from localStorage; apply to body
   └─ init()
        ├─ loadData()          restore state + form fields from localStorage
        ├─ buildAbilityGrid()  inject ability score cards into #abilityGrid
@@ -283,9 +294,9 @@ DOMContentLoaded
 | `showStepMenu(i)` | Long-press or Edit; `i = -1` for new | Populates and shows the feature editor sheet |
 | `dismissStepMenu()` | Cancel button or backdrop tap | Hides the feature editor sheet |
 | `applyStepMenu()` | Save button or Enter on last field | Validates name; creates or updates the feature; rebuilds list; hides sheet |
-| `renderHitDice()` | Any hit dice change or level change | Updates dots in #hitDiceDots and counter in #hitDiceVal |
+| `renderHitDice()` | Any hit dice change or level change | Updates dots in #hitDiceDots; counter shows `(max − used)/max` |
 | `toggleHitDie(j)` | Tap hit dice dot | Gold → use from here right; grey → restore that die |
-| `hitDiceAdjust(delta)` | Hit dice mini +/− buttons | Changes `state.hitDiceUsed` by ±1 |
+| `hitDiceAdjust(delta)` | Hit dice mini +/− buttons | Changes `state.hitDiceUsed` by ±1; `−` button passes `+1` (use), `+` passes `−1` (restore) |
 | `startHitDiceHold(delta)` / `stopHitDiceHold()` | `pointerdown` / `pointerup` on hit dice +/− | Hold-to-repeat at 80 ms |
 | `restoreHitDice()` | ↺ Restore button in Hit Dice section | Sets `state.hitDiceUsed = 0`; rerenders |
 | `fullLongRest()` | ⟳ Long Rest button in Overview panel | Restores HP to max, resets hit dice, all spell slots, and all class features; saves |
@@ -358,6 +369,10 @@ Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled
 | `setupSwipe()` | Attaches passive `touchstart`/`touchend` listeners to `document.body`; horizontal swipe ≥ 50 px (and greater than vertical movement) advances or retreats through `TABS`; ignored when roll result overlay is open |
 | `toast(msg)` | Shows floating message for 2 seconds; used for non-roll feedback (proficiency changes, inspiration, file ops) |
 | `setupAutoSave()` | Attaches `saveData` as `input` + `change` listener to every form element |
+| `openSettings()` / `dismissSettings()` | Opens / closes the ⚙ settings bottom-sheet; manages `pushModalHistory` / `popModalHistory` |
+| `loadFontSize()` | Reads `dnd5e_fontsize` from `localStorage`; resolves index into `FONT_SIZES`; calls `applyFontSize()` |
+| `applyFontSize()` | Sets `document.body.style.zoom` to the current `FONT_SIZES[fontSizeIdx]` value; updates `#fontSizeLabel` |
+| `changeFontSize(dir)` | Increments or decrements `fontSizeIdx` (clamped to `FONT_SIZES` bounds); calls `applyFontSize()`; persists to `localStorage` |
 
 ---
 
