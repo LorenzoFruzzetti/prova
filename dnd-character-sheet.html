@@ -105,6 +105,7 @@
   }
 
   .header-btn:active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.15); }
+  .header-btn:disabled { opacity: 0.35; pointer-events: none; }
 
   /* ── Tab Bar ── */
   .tab-bar {
@@ -295,7 +296,9 @@
   .hp-display {
     flex: 1;
     text-align: center;
+    cursor: pointer;
   }
+  .hp-display:active .hp-current { color: var(--gold-light); }
 
   .hp-current {
     font-size: 36px;
@@ -763,6 +766,90 @@
     padding: 24px 0;
   }
 
+  /* ── HP Dialog ── */
+  #hpBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 400;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #hpBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #hpDialog {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--gold);
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 40px;
+    z-index: 401;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
+  }
+  #hpDialog.show { transform: translateY(0); }
+
+  .hp-dlg-title {
+    text-align: center;
+    font-size: 10px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: sans-serif;
+    margin-bottom: 4px;
+  }
+  .hp-dlg-sub {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    margin-bottom: 16px;
+  }
+  .hp-dlg-input {
+    display: block;
+    width: 100%;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 36px;
+    font-family: 'Georgia', serif;
+    text-align: center;
+    padding: 12px;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .hp-dlg-input:focus { border-color: var(--gold); }
+  .hp-dlg-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .hp-dlg-btn {
+    padding: 13px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    font-family: sans-serif;
+    cursor: pointer;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .hp-dlg-btn.primary {
+    background: rgba(201,168,76,0.15);
+    border-color: var(--gold);
+    color: var(--gold-light);
+    font-weight: bold;
+  }
+
   /* ── Misc ── */
   .flex-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 
@@ -808,6 +895,7 @@
   <div class="header-top">
     <div class="header-title">Dungeons &amp; Dragons 5e</div>
     <div class="header-actions">
+      <button class="header-btn" id="undoBtn" onclick="undo()" disabled>↩ Undo</button>
       <button class="header-btn" onclick="exportToJSON()">&#128190; Save</button>
       <button class="header-btn" onclick="document.getElementById('jsonFileInput').click()">&#128194; Load</button>
     </div>
@@ -1001,7 +1089,7 @@
       </div>
       <div class="hp-tracker">
         <button class="hp-btn minus" onclick="adjustHP(-1)">−</button>
-        <div class="hp-display">
+        <div class="hp-display" onclick="openHpDialog()" title="Tap to set HP">
           <div class="hp-current" id="hpCurrent">10</div>
           <div class="hp-max-label">/ <span id="hpMaxLabel">10</span> HP</div>
           <div class="hp-bar"><div class="hp-bar-fill" id="hpBarFill" style="width:100%"></div></div>
@@ -1198,6 +1286,18 @@
   </div>
 </div>
 
+<div id="hpBackdrop" onclick="dismissHpDialog()"></div>
+<div id="hpDialog">
+  <div class="hp-dlg-title">Set Hit Points</div>
+  <div class="hp-dlg-sub" id="hpDlgSub">0 / 10 HP</div>
+  <input class="hp-dlg-input" type="number" id="hpDlgInput" min="0"
+         onkeydown="if(event.key==='Enter') applyHpDialog()">
+  <div class="hp-dlg-btns">
+    <button class="hp-dlg-btn" onclick="dismissHpDialog()">Cancel</button>
+    <button class="hp-dlg-btn primary" onclick="applyHpDialog()">Set HP</button>
+  </div>
+</div>
+
 <div id="rollBackdrop" onclick="dismissRollResult()"></div>
 <div id="rollResult" onclick="dismissRollResult()">
   <div class="rr-label" id="rrLabel">—</div>
@@ -1278,6 +1378,66 @@ function init() {
   recalcAll();
   setupAutoSave();
   setupSwipe();
+}
+
+// ── Undo stack ─────────────────────────────────────────────────────────
+const undoStack = [];
+
+function pushUndo(action) {
+  undoStack.push(action);
+  if (undoStack.length > 50) undoStack.shift();
+  document.getElementById('undoBtn').disabled = false;
+}
+
+function undo() {
+  if (!undoStack.length) return;
+  applyUndo(undoStack.pop());
+  document.getElementById('undoBtn').disabled = undoStack.length === 0;
+}
+
+function applyUndo(a) {
+  switch (a.type) {
+    case 'removeAttack':
+      state.attacks.splice(a.index, 0, a.attack);
+      renderAttacks(); saveData(); toast('↩ Attack restored'); break;
+    case 'addAttack':
+      state.attacks.splice(a.index, 1);
+      renderAttacks(); saveData(); toast('↩ Attack removed'); break;
+    case 'hp':
+      state.hpCurrent = a.previous;
+      updateHP(); toast('↩ HP restored'); break;
+    case 'saveProf': {
+      const idx = state.saveProficiencies.indexOf(a.ab);
+      if (a.wasProficient && idx === -1) state.saveProficiencies.push(a.ab);
+      else if (!a.wasProficient && idx !== -1) state.saveProficiencies.splice(idx, 1);
+      buildSavingThrows(); recalcAll(); toast('↩ Saving throw'); break;
+    }
+    case 'skillProf': {
+      const pi = state.skillProficiencies.indexOf(a.name);
+      const ei = state.skillExpertise.indexOf(a.name);
+      if (pi !== -1) state.skillProficiencies.splice(pi, 1);
+      if (ei !== -1) state.skillExpertise.splice(ei, 1);
+      if (a.wasExpert) { state.skillProficiencies.push(a.name); state.skillExpertise.push(a.name); }
+      else if (a.wasProficient) { state.skillProficiencies.push(a.name); }
+      buildSkillsList(); recalcAll(); toast('↩ Skill proficiency'); break;
+    }
+    case 'ability': {
+      state.abilities[a.ab] = a.previous;
+      const inp = document.getElementById(`score-${a.ab}`);
+      if (inp) inp.value = a.previous;
+      recalcAll(); toast('↩ Ability score'); break;
+    }
+    case 'condition': {
+      const ci = state.conditions.indexOf(a.name);
+      if (a.wasActive && ci === -1) state.conditions.push(a.name);
+      else if (!a.wasActive && ci !== -1) state.conditions.splice(ci, 1);
+      buildConditions(); saveData(); toast('↩ Condition'); break;
+    }
+    case 'inspiration':
+      state.inspiration = a.previous;
+      document.getElementById('inspirationBtn')?.classList.toggle('active', a.previous);
+      saveData(); toast('↩ Inspiration'); break;
+  }
 }
 
 // ── Build UI ───────────────────────────────────────────────────────────
@@ -1367,9 +1527,12 @@ function renderSlotDots(i) {
 function mod(score) { return Math.floor((score - 10) / 2); }
 function fmtMod(m)  { return (m >= 0 ? '+' : '') + m; }
 
+const abilityUndoTimers = {};
 function onAbilityInput(ab, val) {
-  const v = parseInt(val) || 10;
-  state.abilities[ab] = Math.max(1, Math.min(30, v));
+  if (!abilityUndoTimers[ab]) pushUndo({type: 'ability', ab, previous: state.abilities[ab]});
+  clearTimeout(abilityUndoTimers[ab]);
+  abilityUndoTimers[ab] = setTimeout(() => { delete abilityUndoTimers[ab]; }, 1500);
+  state.abilities[ab] = Math.max(1, Math.min(30, parseInt(val) || 10));
   recalcAll();
 }
 
@@ -1568,6 +1731,7 @@ function recalcAll() {
 
 // ── Toggle proficiencies ───────────────────────────────────────────────
 function toggleSaveProf(ab, el) {
+  pushUndo({type: 'saveProf', ab, wasProficient: state.saveProficiencies.includes(ab)});
   const idx = state.saveProficiencies.indexOf(ab);
   if (idx === -1) {
     state.saveProficiencies.push(ab);
@@ -1580,6 +1744,9 @@ function toggleSaveProf(ab, el) {
 }
 
 function cycleSkillProf(name, el) {
+  pushUndo({type: 'skillProf', name,
+    wasProficient: state.skillProficiencies.includes(name),
+    wasExpert: state.skillExpertise.includes(name)});
   const profIdx = state.skillProficiencies.indexOf(name);
   const expIdx  = state.skillExpertise.indexOf(name);
   if (expIdx !== -1) {
@@ -1603,7 +1770,8 @@ function cycleSkillProf(name, el) {
 
 // ── HP ─────────────────────────────────────────────────────────────────
 function adjustHP(delta) {
-  const max    = parseInt(document.getElementById('hpMax').value) || 1;
+  pushUndo({type: 'hp', previous: state.hpCurrent});
+  const max = parseInt(document.getElementById('hpMax').value) || 1;
   state.hpCurrent = Math.max(0, Math.min(max, state.hpCurrent + delta));
   updateHP();
   if (state.hpCurrent === 0) toast('⚠ Unconscious!');
@@ -1628,6 +1796,34 @@ function updateHP() {
   }
   document.getElementById('hpMaxLabel').textContent = max + (temp > 0 ? ` (+${temp})` : '');
   saveData();
+}
+
+// ── HP Dialog ──────────────────────────────────────────────────────────
+function openHpDialog() {
+  const max = parseInt(document.getElementById('hpMax').value) || 1;
+  document.getElementById('hpDlgSub').textContent = `Current: ${state.hpCurrent} / ${max} HP`;
+  const inp = document.getElementById('hpDlgInput');
+  inp.value = state.hpCurrent;
+  inp.max   = max;
+  document.getElementById('hpBackdrop').classList.add('show');
+  document.getElementById('hpDialog').classList.add('show');
+  setTimeout(() => inp.select(), 300);
+}
+
+function dismissHpDialog() {
+  document.getElementById('hpBackdrop').classList.remove('show');
+  document.getElementById('hpDialog').classList.remove('show');
+}
+
+function applyHpDialog() {
+  const max = parseInt(document.getElementById('hpMax').value) || 1;
+  const val = parseInt(document.getElementById('hpDlgInput').value);
+  if (isNaN(val)) { dismissHpDialog(); return; }
+  pushUndo({type: 'hp', previous: state.hpCurrent});
+  state.hpCurrent = Math.max(0, Math.min(max, val));
+  updateHP();
+  dismissHpDialog();
+  if (state.hpCurrent === 0) toast('⚠ Unconscious!');
 }
 
 // ── Spell slots ────────────────────────────────────────────────────────
@@ -1686,6 +1882,7 @@ function addAttack() {
   const bonus  = prompt('Attack bonus (e.g. +5):', '+5');
   const damage = prompt('Damage (e.g. 1d8+3):', '1d6');
   state.attacks.push({name, bonus: bonus||'—', damage: damage||'—'});
+  pushUndo({type: 'addAttack', index: state.attacks.length - 1});
   renderAttacks();
   saveData();
 }
@@ -1717,6 +1914,7 @@ function renderAttacks() {
 }
 
 function removeAttack(i) {
+  pushUndo({type: 'removeAttack', attack: {...state.attacks[i]}, index: i});
   state.attacks.splice(i, 1);
   renderAttacks();
   saveData();
@@ -1724,6 +1922,7 @@ function removeAttack(i) {
 
 // ── Conditions ────────────────────────────────────────────────────────
 function toggleCondition(name, el) {
+  pushUndo({type: 'condition', name, wasActive: state.conditions.includes(name)});
   const idx = state.conditions.indexOf(name);
   if (idx === -1) { state.conditions.push(name); el.classList.add('active'); }
   else            { state.conditions.splice(idx,1); el.classList.remove('active'); }
@@ -1732,6 +1931,7 @@ function toggleCondition(name, el) {
 
 // ── Inspiration & Death Saves ──────────────────────────────────────────
 function toggleInspiration() {
+  pushUndo({type: 'inspiration', previous: state.inspiration});
   state.inspiration = !state.inspiration;
   document.getElementById('inspirationBtn').classList.toggle('active', state.inspiration);
   toast(state.inspiration ? '★ Inspiration gained!' : 'Inspiration spent');
