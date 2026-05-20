@@ -488,7 +488,7 @@
   .spell-level-row {
     display: flex;
     align-items: center;
-    padding: 6px 0;
+    padding: 9px 0;
     border-bottom: 1px solid rgba(92,74,42,0.3);
     gap: 8px;
   }
@@ -499,13 +499,53 @@
     color: var(--text-muted);
     font-family: sans-serif;
     text-transform: uppercase;
-    min-width: 50px;
+    min-width: 28px;
   }
 
   .spell-slots-dots {
     display: flex;
+    flex-wrap: wrap;
     gap: 5px;
     flex: 1;
+  }
+
+  /* ── Mini tracker (features + spell slots) ── */
+  .mini-tracker {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
+  .mini-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+    font-family: sans-serif;
+    color: var(--text);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .mini-btn:active { background: var(--surface); border-color: var(--gold); }
+  .mini-btn.minus { color: var(--red-light); border-color: #5a2020; }
+  .mini-btn.plus  { color: var(--green);     border-color: #1a5a2a; }
+
+  .mini-val {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    min-width: 30px;
+    text-align: center;
   }
 
   .slot-dot {
@@ -560,7 +600,7 @@
   .feature-track {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
   }
 
   .feature-dots {
@@ -568,6 +608,14 @@
     flex-wrap: wrap;
     gap: 5px;
     flex: 1;
+  }
+
+  .feature-step-hint {
+    font-size: 9px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    font-style: italic;
+    margin-left: 2px;
   }
 
   /* ── Attack rows ── */
@@ -891,6 +939,31 @@
     color: var(--gold-light);
     font-weight: bold;
   }
+
+  /* ── Step-size menu (reuses hp-dlg-* classes) ── */
+  #stepBackdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 400;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #stepBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #stepMenu {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    max-width: 480px; margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--gold);
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 40px;
+    z-index: 401;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
+  }
+  #stepMenu.show { transform: translateY(0); }
 
   /* ── Misc ── */
   .flex-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -1365,6 +1438,19 @@
   </div>
 </div>
 
+<div id="stepBackdrop" onclick="dismissStepMenu()"></div>
+<div id="stepMenu">
+  <div class="hp-dlg-title">Charge Size</div>
+  <div class="hp-dlg-sub" id="stepMenuSub"></div>
+  <input class="hp-dlg-input" type="number" id="stepMenuInput" min="1" max="99"
+         onkeydown="if(event.key==='Enter') applyStepMenu()">
+  <div style="text-align:center;font-size:11px;color:var(--text-muted);font-family:sans-serif;margin-bottom:12px">points per dot &amp; per +/− tap</div>
+  <div class="hp-dlg-btns">
+    <button class="hp-dlg-btn" onclick="dismissStepMenu()">Cancel</button>
+    <button class="hp-dlg-btn primary" onclick="applyStepMenu()">Apply</button>
+  </div>
+</div>
+
 <div id="rollBackdrop" onclick="dismissRollResult()"></div>
 <div id="rollResult" onclick="dismissRollResult()">
   <div class="rr-label" id="rrLabel">—</div>
@@ -1573,8 +1659,19 @@ function buildSpellSlots() {
     <div class="spell-level-row">
       <span class="spell-level-num">${s.level}</span>
       <div class="spell-slots-dots" id="slots-dots-${i}"></div>
+      <div class="mini-tracker">
+        <button class="mini-btn minus"
+                onpointerdown="startSlotHold(${i},-1)"
+                onpointerup="stopSlotHold()"
+                onpointercancel="stopSlotHold()">−</button>
+        <span class="mini-val" id="slot-val-${i}"></span>
+        <button class="mini-btn plus"
+                onpointerdown="startSlotHold(${i},1)"
+                onpointerup="stopSlotHold()"
+                onpointercancel="stopSlotHold()">+</button>
+      </div>
       <input type="number" min="0" max="9" value="${s.max}"
-        style="width:36px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
+        style="width:34px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
                border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:sans-serif"
         oninput="setSlotMax(${i}, this.value)" title="Max slots">
     </div>
@@ -1585,11 +1682,14 @@ function buildSpellSlots() {
 function renderSlotDots(i) {
   const s = state.spellSlots[i];
   const dots = document.getElementById(`slots-dots-${i}`);
-  if (!dots) return;
-  dots.innerHTML = Array.from({length: s.max}, (_, j) => `
-    <div class="slot-dot ${j < s.used ? 'used' : 'available'}"
-         onclick="toggleSlot(${i}, ${j})"></div>
-  `).join('');
+  if (dots) {
+    dots.innerHTML = Array.from({length: s.max}, (_, j) => `
+      <div class="slot-dot ${j < s.used ? 'used' : 'available'}"
+           onclick="toggleSlot(${i}, ${j})"></div>
+    `).join('');
+  }
+  const val = document.getElementById(`slot-val-${i}`);
+  if (val) val.textContent = `${s.used}/${s.max}`;
 }
 
 // ── Ability logic ──────────────────────────────────────────────────────
@@ -1910,6 +2010,27 @@ function toggleSlot(i, j) {
   saveData();
 }
 
+function slotAdjust(i, delta) {
+  const s = state.spellSlots[i];
+  s.used = Math.max(0, Math.min(s.max, s.used + delta));
+  renderSlotDots(i);
+  saveData();
+}
+
+let slotHoldTimer = null, slotHoldInterval = null;
+function startSlotHold(i, delta) {
+  slotAdjust(i, delta);
+  slotHoldTimer = setTimeout(() => {
+    slotHoldInterval = setInterval(() => slotAdjust(i, delta), 80);
+  }, 500);
+}
+function stopSlotHold() {
+  clearTimeout(slotHoldTimer);
+  clearInterval(slotHoldInterval);
+  slotHoldTimer = null;
+  slotHoldInterval = null;
+}
+
 // ── Class Features ─────────────────────────────────────────────────────
 function buildFeatures() {
   const body = document.getElementById('featuresBody');
@@ -1918,24 +2039,41 @@ function buildFeatures() {
     body.innerHTML = '<div style="color:var(--text-muted);font-size:12px;font-style:italic;padding:8px 0">No features added yet. Tap + Add to track a class feature.</div>';
     return;
   }
-  body.innerHTML = state.classFeatures.map((f, i) => `
-    <div class="feature-row">
-      <div class="feature-header">
-        <span class="feature-name">${escHtml(f.name)}</span>
-        <span class="feature-recharge">${escHtml(f.recharge || '')}</span>
-        <button class="attack-edit-btn" onclick="restoreFeature(${i})" title="Restore">↺</button>
-        <button class="attack-edit-btn" onclick="editFeature(${i})">Edit</button>
-        <button class="attack-edit-btn" onclick="removeFeature(${i})" style="color:var(--red-light)">✕</button>
+  body.innerHTML = state.classFeatures.map((f, i) => {
+    const step = f.step || 1;
+    const stepHint = step > 1 ? `<span class="feature-step-hint">${step} pts/dot — hold to change</span>` : '<span class="feature-step-hint">hold to set charge size</span>';
+    return `
+      <div class="feature-row"
+           onpointerdown="startFeatureLongPress(${i}, event)"
+           onpointerup="cancelFeatureLongPress()"
+           onpointercancel="cancelFeatureLongPress()">
+        <div class="feature-header">
+          <span class="feature-name">${escHtml(f.name)}</span>
+          <span class="feature-recharge">${escHtml(f.recharge || '')}</span>
+          <button class="attack-edit-btn" onclick="restoreFeature(${i})">↺</button>
+          <button class="attack-edit-btn" onclick="editFeature(${i})">Edit</button>
+          <button class="attack-edit-btn" onclick="removeFeature(${i})" style="color:var(--red-light)">✕</button>
+        </div>
+        <div class="feature-track">
+          <button class="mini-btn minus"
+                  onpointerdown="startFeatureHold(${i},-1)"
+                  onpointerup="stopFeatureHold()"
+                  onpointercancel="stopFeatureHold()">−</button>
+          <div class="feature-dots" id="feature-dots-${i}"></div>
+          <span class="mini-val" id="feature-val-${i}"></span>
+          <button class="mini-btn plus"
+                  onpointerdown="startFeatureHold(${i},1)"
+                  onpointerup="stopFeatureHold()"
+                  onpointercancel="stopFeatureHold()">+</button>
+          <input type="number" min="0" max="999" value="${f.max}"
+            style="width:40px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
+                   border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:sans-serif"
+            oninput="setFeatureMax(${i}, this.value)" title="Max">
+        </div>
+        ${stepHint}
       </div>
-      <div class="feature-track">
-        <div class="feature-dots" id="feature-dots-${i}"></div>
-        <input type="number" min="0" max="99" value="${f.max}"
-          style="width:40px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
-                 border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:sans-serif"
-          oninput="setFeatureMax(${i}, this.value)" title="Max uses">
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
   state.classFeatures.forEach((_, i) => renderFeatureDots(i));
 }
 
@@ -1945,19 +2083,82 @@ function escHtml(s) {
 
 function renderFeatureDots(i) {
   const f = state.classFeatures[i];
+  const step = f.step || 1;
+  const numDots = Math.ceil(f.max / step);
   const el = document.getElementById(`feature-dots-${i}`);
-  if (!el) return;
-  el.innerHTML = Array.from({length: f.max}, (_, j) => `
-    <div class="slot-dot ${j < f.used ? 'used' : 'available'}"
-         onclick="toggleFeatureDot(${i},${j})"></div>
-  `).join('');
+  if (el) {
+    el.innerHTML = Array.from({length: numDots}, (_, j) => `
+      <div class="slot-dot ${(j + 1) * step <= f.used ? 'used' : 'available'}"
+           onclick="toggleFeatureDot(${i},${j})"></div>
+    `).join('');
+  }
+  const val = document.getElementById(`feature-val-${i}`);
+  if (val) val.textContent = `${f.used}/${f.max}`;
 }
 
 function toggleFeatureDot(i, j) {
   const f = state.classFeatures[i];
-  f.used = (j < f.used) ? j : j + 1;
+  const step = f.step || 1;
+  const usedDots = Math.floor(f.used / step);
+  f.used = j < usedDots ? j * step : Math.min(f.max, (j + 1) * step);
   renderFeatureDots(i);
   saveData();
+}
+
+function featureAdjust(i, delta) {
+  const f = state.classFeatures[i];
+  const step = f.step || 1;
+  f.used = Math.max(0, Math.min(f.max, f.used + delta * step));
+  renderFeatureDots(i);
+  saveData();
+}
+
+let featureHoldTimer = null, featureHoldInterval = null;
+function startFeatureHold(i, delta) {
+  featureAdjust(i, delta);
+  featureHoldTimer = setTimeout(() => {
+    featureHoldInterval = setInterval(() => featureAdjust(i, delta), 80);
+  }, 500);
+}
+function stopFeatureHold() {
+  clearTimeout(featureHoldTimer);
+  clearInterval(featureHoldInterval);
+  featureHoldTimer = null;
+  featureHoldInterval = null;
+}
+
+let featureLpTimer = null;
+let currentStepMenuIdx = -1;
+function startFeatureLongPress(i, e) {
+  if (e.target.closest('button') || e.target.closest('input')) return;
+  featureLpTimer = setTimeout(() => showStepMenu(i), 600);
+}
+function cancelFeatureLongPress() { clearTimeout(featureLpTimer); }
+
+function showStepMenu(i) {
+  currentStepMenuIdx = i;
+  const f = state.classFeatures[i];
+  document.getElementById('stepMenuSub').textContent = f.name;
+  document.getElementById('stepMenuInput').value = f.step || 1;
+  document.getElementById('stepBackdrop').classList.add('show');
+  document.getElementById('stepMenu').classList.add('show');
+  setTimeout(() => document.getElementById('stepMenuInput').select(), 300);
+}
+function dismissStepMenu() {
+  currentStepMenuIdx = -1;
+  document.getElementById('stepBackdrop').classList.remove('show');
+  document.getElementById('stepMenu').classList.remove('show');
+}
+function applyStepMenu() {
+  if (currentStepMenuIdx < 0) { dismissStepMenu(); return; }
+  const step = Math.max(1, parseInt(document.getElementById('stepMenuInput').value) || 1);
+  const f = state.classFeatures[currentStepMenuIdx];
+  f.step = step;
+  f.used = Math.min(Math.round(f.used / step) * step, f.max);
+  buildFeatures();
+  saveData();
+  dismissStepMenu();
+  toast('Charge size: ' + step + ' pt' + (step > 1 ? 's' : '') + '/dot');
 }
 
 function setFeatureMax(i, val) {
@@ -1975,7 +2176,7 @@ function addFeature() {
   if (maxRaw === null) return;
   const recharge = prompt('Recharges on (e.g. Short Rest, Long Rest):', 'Long Rest');
   if (recharge === null) return;
-  state.classFeatures.push({name: name.trim(), max: Math.max(1, parseInt(maxRaw) || 1), used: 0, recharge: recharge.trim()});
+  state.classFeatures.push({name: name.trim(), max: Math.max(1, parseInt(maxRaw) || 1), used: 0, recharge: recharge.trim(), step: 1});
   buildFeatures();
   saveData();
 }

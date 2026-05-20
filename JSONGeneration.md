@@ -153,8 +153,8 @@ Contains structured game data that cannot be expressed as plain form inputs.
   "conditions": ["Poisoned"],
 
   "classFeatures": [
-    { "name": "Channel Divinity", "max": 2, "used": 1, "recharge": "Short Rest" },
-    { "name": "Lay on Hands",     "max": 25, "used": 5, "recharge": "Long Rest"  }
+    { "name": "Channel Divinity", "max": 2,  "used": 1, "recharge": "Short Rest", "step": 1 },
+    { "name": "Lay on Hands",     "max": 25, "used": 5, "recharge": "Long Rest",  "step": 5 }
   ]
 }
 ```
@@ -250,16 +250,19 @@ Each object:
 | Key | Type | Description |
 |---|---|---|
 | `name` | string | Display name, e.g. `"Channel Divinity"` |
-| `max` | integer | Total uses / pool size (`0`–`99`) |
-| `used` | integer | Uses already expended; must be `≤ max` |
+| `max` | integer | Total uses / pool size (`0`–`999`) |
+| `used` | integer | Amount already expended; must be `≤ max` |
 | `recharge` | string | When it recharges, e.g. `"Short Rest"`, `"Long Rest"`, or `""` |
+| `step` | integer | Points per dot and per +/− tap (default `1`); set to e.g. `5` for Lay on Hands |
 
 ```json
 "classFeatures": [
-  { "name": "Channel Divinity", "max": 2,  "used": 0, "recharge": "Short Rest" },
-  { "name": "Lay on Hands",     "max": 25, "used": 0, "recharge": "Long Rest"  }
+  { "name": "Channel Divinity", "max": 2,  "used": 0, "recharge": "Short Rest", "step": 1 },
+  { "name": "Lay on Hands",     "max": 40, "used": 0, "recharge": "Long Rest",  "step": 5 }
 ]
 ```
+
+With `step: 5` the sheet shows 8 dots (40 ÷ 5) and each +/− tap or dot click moves the counter by 5. Omitting `step` defaults to `1`.
 
 Non-ability-using characters can omit this key or set it to `[]`.
 
@@ -354,8 +357,8 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
     ],
     "conditions": [],
     "classFeatures": [
-      { "name": "Channel Divinity", "max": 1,  "used": 0, "recharge": "Short Rest" },
-      { "name": "Lay on Hands",     "max": 25, "used": 0, "recharge": "Long Rest"  }
+      { "name": "Channel Divinity", "max": 1,  "used": 0, "recharge": "Short Rest", "step": 1 },
+      { "name": "Lay on Hands",     "max": 25, "used": 0, "recharge": "Long Rest",  "step": 5 }
     ]
   }
 }

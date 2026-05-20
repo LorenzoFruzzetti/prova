@@ -82,8 +82,8 @@
     "conditions": [],
 
     "classFeatures": [
-      { "name": "Channel Divinity", "max": 1,  "used": 0, "recharge": "Short Rest" },
-      { "name": "Lay on Hands",     "max": 40, "used": 0, "recharge": "Long Rest"  }
+      { "name": "Channel Divinity", "max": 1,  "used": 0, "recharge": "Short Rest", "step": 1 },
+      { "name": "Lay on Hands",     "max": 40, "used": 0, "recharge": "Long Rest",  "step": 5 }
     ]
   }
 }
