@@ -123,13 +123,16 @@ dnd-character-sheet.html
 | `#stepBackdrop` | Fixed dim layer behind the feature editor sheet; tap to dismiss |
 | `#stepMenu` | Bottom-sheet for adding or editing a class feature; contains Name, Max, Step, Recharge fields |
 | `#settingsBackdrop` | Fixed dim layer behind the settings sheet; tap to dismiss |
-| `#settingsMenu` | Bottom-sheet opened by the ⚙ Settings header button; contains Save, Load, and font-size controls |
+| `#settingsMenu` | Bottom-sheet opened by the ⚙ Settings header button; contains Save, Load, font-size, and lefty-mode controls |
 | `.settings-full-btn` | Full-width action button inside the settings sheet (Save / Load) |
 | `.settings-divider` | Thin horizontal rule separating sections inside the settings sheet |
 | `.settings-row` | Flex row pairing a label+sub-label on the left with a control on the right |
 | `.font-ctrl` | Flex row grouping `[−][value][+]` for the font-size control |
 | `.font-ctrl-btn` | 36 px circular `−`/`+` buttons for font-size adjustment |
 | `.font-ctrl-value` | Gold-light bold label showing current font size percentage |
+| `.settings-toggle` | Pill-shaped On/Off toggle button; `.on` styles it gold when active |
+| `.tracker-row` | Flex row wrapping hit-dice dots + mini-tracker (replaces inline flex style) |
+| `body.lefty` | Applied when lefty mode is on; swaps CSS `order` of dots and mini-tracker in every tracker row |
 
 ---
 
@@ -181,6 +184,7 @@ hitDiceHoldTimer/Interval  // hold-to-repeat timers for hit dice +/− buttons
 featureLpTimer      // long-press timer for opening the feature editor sheet
 currentStepMenuIdx  // index of the feature currently being edited (−1 = new feature)
 fontSizeIdx         // index into FONT_SIZES; persisted separately in localStorage as 'dnd5e_fontsize'
+leftyMode           // boolean; persisted separately in localStorage as 'dnd5e_lefty'
 ```
 
 All other values (character name, HP max, AC, etc.) live in HTML form inputs and are read directly via `document.getElementById`.
@@ -192,6 +196,7 @@ All other values (character name, HP max, AC, etc.) live in HTML form inputs and
 ```
 DOMContentLoaded
   └─ loadFontSize()    restore font-size zoom from localStorage; apply to body
+  └─ loadLeftyMode()   restore lefty-mode flag from localStorage; apply body.lefty class
   └─ init()
        ├─ loadData()          restore state + form fields from localStorage
        ├─ buildAbilityGrid()  inject ability score cards into #abilityGrid
@@ -373,6 +378,9 @@ Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled
 | `loadFontSize()` | Reads `dnd5e_fontsize` from `localStorage`; resolves index into `FONT_SIZES`; calls `applyFontSize()` |
 | `applyFontSize()` | Sets `document.body.style.zoom` to the current `FONT_SIZES[fontSizeIdx]` value; updates `#fontSizeLabel` |
 | `changeFontSize(dir)` | Increments or decrements `fontSizeIdx` (clamped to `FONT_SIZES` bounds); calls `applyFontSize()`; persists to `localStorage` |
+| `loadLeftyMode()` | Reads `dnd5e_lefty` from `localStorage`; calls `applyLeftyMode()` |
+| `applyLeftyMode()` | Toggles `body.lefty` class and updates `#leftyToggle` button state |
+| `toggleLeftyMode()` | Flips `leftyMode`; calls `applyLeftyMode()`; persists to `localStorage` |
 
 ---
 

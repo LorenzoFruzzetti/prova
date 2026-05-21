@@ -494,6 +494,28 @@
   }
   .spell-level-row:last-child { border-bottom: none; }
 
+  /* default child order for lefty-swappable rows */
+  .spell-level-row .spell-level-num  { order: 1; }
+  .spell-level-row .spell-slots-dots { order: 2; }
+  .spell-level-row .mini-tracker     { order: 3; }
+  .spell-level-row > input           { order: 4; }
+
+  .feature-track .feature-dots  { order: 1; }
+  .feature-track .mini-tracker  { order: 2; }
+  .feature-track > input        { order: 3; }
+
+  .tracker-row { display: flex; align-items: center; gap: 8px; }
+  .tracker-row .spell-slots-dots { order: 1; }
+  .tracker-row .mini-tracker     { order: 2; }
+
+  /* lefty mode: swap dots and mini-tracker */
+  body.lefty .spell-level-row .spell-slots-dots { order: 3; }
+  body.lefty .spell-level-row .mini-tracker     { order: 2; }
+  body.lefty .feature-track .feature-dots       { order: 2; }
+  body.lefty .feature-track .mini-tracker       { order: 1; }
+  body.lefty .tracker-row .spell-slots-dots     { order: 2; }
+  body.lefty .tracker-row .mini-tracker         { order: 1; }
+
   .spell-level-num {
     font-size: 11px;
     color: var(--text-muted);
@@ -1123,6 +1145,24 @@
     color: var(--gold-light);
     font-weight: bold;
   }
+
+  .settings-toggle {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: sans-serif;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .settings-toggle.on {
+    background: rgba(201,168,76,0.15);
+    border-color: var(--gold);
+    color: var(--gold-light);
+  }
 </style>
 </head>
 <body>
@@ -1394,7 +1434,7 @@
       <button class="attack-edit-btn" onclick="restoreHitDice()">↺ Restore</button>
     </div>
     <div class="section-body">
-      <div style="display:flex;align-items:center;gap:8px">
+      <div class="tracker-row">
         <div class="spell-slots-dots" id="hitDiceDots"></div>
         <div class="mini-tracker">
           <button class="mini-btn minus"
@@ -1655,6 +1695,13 @@
       <span class="font-ctrl-value" id="fontSizeLabel">100%</span>
       <button class="font-ctrl-btn" onclick="changeFontSize(1)">+</button>
     </div>
+  </div>
+  <div class="settings-row">
+    <div class="settings-row-label">
+      Lefty Mode
+      <small>Move +/− buttons to the left of each tracker</small>
+    </div>
+    <button class="settings-toggle" id="leftyToggle" onclick="toggleLeftyMode()">Off</button>
   </div>
   <hr class="settings-divider">
   <button class="hp-dlg-btn" onclick="dismissSettings()" style="width:100%">Close</button>
@@ -2746,6 +2793,29 @@ function changeFontSize(dir) {
   localStorage.setItem('dnd5e_fontsize', FONT_SIZES[fontSizeIdx]);
 }
 
+// ── Lefty mode ─────────────────────────────────────────────────────────
+let leftyMode = false;
+
+function loadLeftyMode() {
+  leftyMode = localStorage.getItem('dnd5e_lefty') === '1';
+  applyLeftyMode();
+}
+
+function applyLeftyMode() {
+  document.body.classList.toggle('lefty', leftyMode);
+  const btn = document.getElementById('leftyToggle');
+  if (btn) {
+    btn.textContent = leftyMode ? 'On' : 'Off';
+    btn.classList.toggle('on', leftyMode);
+  }
+}
+
+function toggleLeftyMode() {
+  leftyMode = !leftyMode;
+  applyLeftyMode();
+  localStorage.setItem('dnd5e_lefty', leftyMode ? '1' : '0');
+}
+
 // ── Toast ──────────────────────────────────────────────────────────────
 let toastTimer;
 function toast(msg) {
@@ -2880,6 +2950,7 @@ function setupAutoSave() {
 // ── Boot ───────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   loadFontSize();
+  loadLeftyMode();
   init();
   updateHeader();
   updateHP();
