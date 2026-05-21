@@ -604,11 +604,52 @@
     text-transform: uppercase;
   }
 
+  /* ── Inspiration + Death Saves Row ── */
+  .inspiration-death-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .inspiration-block {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 8px;
+  }
+
+  .insp-block-title,
+  .death-block-title {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: sans-serif;
+    color: var(--gold);
+    text-align: center;
+  }
+
+  .death-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+
   /* ── Death Saves ── */
   .death-saves {
     display: flex;
-    gap: 16px;
-    align-items: center;
+    gap: 12px;
+    align-items: flex-start;
   }
 
   .save-group {
@@ -2093,33 +2134,29 @@
   </div>
 
   <div class="section">
-    <div class="section-title">Inspiration</div>
-    <div class="section-body">
-      <div class="flex-row">
+    <div class="section-body inspiration-death-row">
+      <div class="inspiration-block">
+        <div class="insp-block-title">Inspiration</div>
         <button class="inspiration-btn" id="inspirationBtn" onclick="toggleInspiration()">★</button>
-        <span style="font-size:13px;color:var(--text-muted)">Tap to toggle Inspiration</span>
       </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Death Saving Throws</div>
-    <div class="section-body">
-      <div class="death-saves">
-        <div class="save-group">
-          <div class="save-group-label success">Successes</div>
-          <div class="save-dots" id="deathSuccess">
-            <div class="save-dot success-dot" onclick="toggleDeathSave(this,'success')"></div>
-            <div class="save-dot success-dot" onclick="toggleDeathSave(this,'success')"></div>
-            <div class="save-dot success-dot" onclick="toggleDeathSave(this,'success')"></div>
+      <div class="death-block">
+        <div class="death-block-title">Death Saving Throws</div>
+        <div class="death-saves">
+          <div class="save-group">
+            <div class="save-group-label success">Successes</div>
+            <div class="save-dots" id="deathSuccess">
+              <div class="save-dot success-dot" onclick="toggleDeathSave(this,'success')"></div>
+              <div class="save-dot success-dot" onclick="toggleDeathSave(this,'success')"></div>
+              <div class="save-dot success-dot" onclick="toggleDeathSave(this,'success')"></div>
+            </div>
           </div>
-        </div>
-        <div class="save-group">
-          <div class="save-group-label failure">Failures</div>
-          <div class="save-dots" id="deathFailure">
-            <div class="save-dot failure-dot" onclick="toggleDeathSave(this,'failure')"></div>
-            <div class="save-dot failure-dot" onclick="toggleDeathSave(this,'failure')"></div>
-            <div class="save-dot failure-dot" onclick="toggleDeathSave(this,'failure')"></div>
+          <div class="save-group">
+            <div class="save-group-label failure">Failures</div>
+            <div class="save-dots" id="deathFailure">
+              <div class="save-dot failure-dot" onclick="toggleDeathSave(this,'failure')"></div>
+              <div class="save-dot failure-dot" onclick="toggleDeathSave(this,'failure')"></div>
+              <div class="save-dot failure-dot" onclick="toggleDeathSave(this,'failure')"></div>
+            </div>
           </div>
         </div>
       </div>
