@@ -210,7 +210,8 @@
     "attacks": [
       { "name": "Longsword",         "bonus": "+7", "damage": "1d8+4" },
       { "name": "Longsword (2h)",     "bonus": "+7", "damage": "1d10+4" },
-      { "name": "Divine Smite (1st)", "bonus": "—",  "damage": "+2d8 radiant" }
+      { "name": "Divine Smite (1st)", "bonus": "—",  "damage": "+2d8 radiant" },
+      { "name": "Guiding Bolt",       "bonus": "+6", "damage": "4d6 radiant" }
     ],
 
     "conditions": [],
