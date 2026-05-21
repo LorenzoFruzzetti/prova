@@ -13,7 +13,6 @@
     "ideals":         "Greater Good. Our lot is to lay down our lives in defense of others.",
     "bonds":          "I will face any challenge to win the approval of my order.",
     "flaws":          "I judge others harshly, and myself even more severely.",
-    "features":       "Divine Smite\nAura of Protection (CHA to saves within 10 ft)\nDivine Health (immune to disease)\nSacred Weapon (Holy Symbol)\nExtra Attack",
 
     "hpMax":          "72",
     "hpTemp":         "0",
@@ -84,7 +83,13 @@
         "saveAbility": "",
         "concentration": true,
         "ritual": false,
-        "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice. It can roll the die before or after making the ability check. The spell then ends."
+        "attackRoll": false,
+        "rollDamage": false,
+        "damage": "",
+        "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice. It can roll the die before or after making the ability check. The spell then ends.",
+        "showInCombat": false,
+        "combatActionType": "action",
+        "showInFeatures": false
       },
       {
         "name": "Sacred Flame",
@@ -97,7 +102,13 @@
         "saveAbility": "DEX",
         "concentration": false,
         "ritual": false,
-        "description": "Flame-like radiance descends on a creature that you can see within range. The target must succeed on a Dexterity saving throw or take 1d8 radiant damage. The target gains no benefit from cover for this saving throw. The spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8)."
+        "attackRoll": false,
+        "rollDamage": true,
+        "damage": "1d8 radiant",
+        "description": "Flame-like radiance descends on a creature that you can see within range. The target must succeed on a Dexterity saving throw or take 1d8 radiant damage. The target gains no benefit from cover for this saving throw. The spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8).",
+        "showInCombat": true,
+        "combatActionType": "action",
+        "showInFeatures": false
       },
       {
         "name": "Guiding Bolt",
@@ -111,8 +122,12 @@
         "concentration": false,
         "ritual": false,
         "attackRoll": true,
+        "rollDamage": true,
         "damage": "4d6 radiant",
-        "description": "A flash of light streaks toward a creature of your choice within range. Make a ranged spell attack against the target. On a hit, the target takes 4d6 radiant damage, and the next attack roll made against this target before the end of your next turn has advantage, thanks to the mystical dim light glittering on the target until then.\nWhen you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st."
+        "description": "A flash of light streaks toward a creature of your choice within range. Make a ranged spell attack against the target. On a hit, the target takes 4d6 radiant damage, and the next attack roll made against this target before the end of your next turn has advantage, thanks to the mystical dim light glittering on the target until then.\nWhen you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st.",
+        "showInCombat": true,
+        "combatActionType": "action",
+        "showInFeatures": false
       },
       {
         "name": "Bless",
@@ -125,7 +140,13 @@
         "saveAbility": "",
         "concentration": true,
         "ritual": false,
-        "description": "You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target can roll a d4 and add the number rolled to the attack roll or saving throw. When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st."
+        "attackRoll": false,
+        "rollDamage": false,
+        "damage": "",
+        "description": "You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target can roll a d4 and add the number rolled to the attack roll or saving throw. When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.",
+        "showInCombat": false,
+        "combatActionType": "action",
+        "showInFeatures": false
       },
       {
         "name": "Command",
@@ -138,7 +159,13 @@
         "saveAbility": "WIS",
         "concentration": false,
         "ritual": false,
-        "description": "You speak a one-word command to a creature you can see within range. The target must succeed on a Wisdom saving throw or follow the command on its next turn. The spell has no effect if the target is undead, if it doesn't understand your language, or if your command is directly harmful to it. When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st."
+        "attackRoll": false,
+        "rollDamage": false,
+        "damage": "",
+        "description": "You speak a one-word command to a creature you can see within range. The target must succeed on a Wisdom saving throw or follow the command on its next turn. The spell has no effect if the target is undead, if it doesn't understand your language, or if your command is directly harmful to it. When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st.",
+        "showInCombat": false,
+        "combatActionType": "action",
+        "showInFeatures": false
       },
       {
         "name": "Detect Magic",
@@ -151,7 +178,13 @@
         "saveAbility": "",
         "concentration": true,
         "ritual": true,
-        "description": "For the duration, you sense the presence of magic within 30 feet of you. If you sense magic in this way, you can use your action to see a faint aura around any visible creature or object in the area that bears magic, and you learn its school of magic, if any. The spell can penetrate most barriers, but is blocked by 1 foot of stone, 1 inch of common metal, a thin sheet of lead, or 3 feet of wood or dirt."
+        "attackRoll": false,
+        "rollDamage": false,
+        "damage": "",
+        "description": "For the duration, you sense the presence of magic within 30 feet of you. If you sense magic in this way, you can use your action to see a faint aura around any visible creature or object in the area that bears magic, and you learn its school of magic, if any. The spell can penetrate most barriers, but is blocked by 1 foot of stone, 1 inch of common metal, a thin sheet of lead, or 3 feet of wood or dirt.",
+        "showInCombat": false,
+        "combatActionType": "action",
+        "showInFeatures": false
       },
       {
         "name": "Aid",
@@ -164,7 +197,13 @@
         "saveAbility": "",
         "concentration": false,
         "ritual": false,
-        "description": "Your spell bolsters your allies with toughness and resolve. Choose up to three creatures within range. Each target's hit point maximum and current hit points increase by 5 for the duration. When you cast this spell using a spell slot of 3rd level or higher, a target's hit points increase by an additional 5 for each slot level above 2nd."
+        "attackRoll": false,
+        "rollDamage": false,
+        "damage": "",
+        "description": "Your spell bolsters your allies with toughness and resolve. Choose up to three creatures within range. Each target's hit point maximum and current hit points increase by 5 for the duration. When you cast this spell using a spell slot of 3rd level or higher, a target's hit points increase by an additional 5 for each slot level above 2nd.",
+        "showInCombat": false,
+        "combatActionType": "action",
+        "showInFeatures": false
       },
       {
         "name": "Hold Person",
@@ -177,7 +216,13 @@
         "saveAbility": "WIS",
         "concentration": true,
         "ritual": false,
-        "description": "Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration. At the end of each of its turns, the target can make another Wisdom saving throw. On a success, the spell ends on the target. When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd."
+        "attackRoll": false,
+        "rollDamage": false,
+        "damage": "",
+        "description": "Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration. At the end of each of its turns, the target can make another Wisdom saving throw. On a success, the spell ends on the target. When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd.",
+        "showInCombat": false,
+        "combatActionType": "action",
+        "showInFeatures": false
       },
       {
         "name": "Zone of Truth",
@@ -190,7 +235,13 @@
         "saveAbility": "CHA",
         "concentration": false,
         "ritual": false,
-        "description": "You create a magical zone that guards against deception in a 15-foot-radius sphere centered on a point of your choice within range, for the duration. A creature that enters the spell's area for the first time on a turn or starts its turn there must make a Charisma saving throw. On a failed save, a creature can't speak a deliberate lie while in the radius. You know whether each creature succeeds or fails on its saving throw."
+        "attackRoll": false,
+        "rollDamage": false,
+        "damage": "",
+        "description": "You create a magical zone that guards against deception in a 15-foot-radius sphere centered on a point of your choice within range, for the duration. A creature that enters the spell's area for the first time on a turn or starts its turn there must make a Charisma saving throw. On a failed save, a creature can't speak a deliberate lie while in the radius. You know whether each creature succeeds or fails on its saving throw.",
+        "showInCombat": false,
+        "combatActionType": "action",
+        "showInFeatures": false
       },
       {
         "name": "Dispel Magic",
@@ -203,15 +254,20 @@
         "saveAbility": "",
         "concentration": false,
         "ritual": false,
-        "description": "Choose one creature, object, or magical effect within range. Any spell of 3rd level or lower on the target ends. For each spell of 4th level or higher on the target, make an ability check using your spellcasting ability. The DC equals 10 + the spell's level. On a successful check, the spell ends. When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell's level is equal to or less than the level of the spell slot you used."
+        "attackRoll": false,
+        "rollDamage": false,
+        "damage": "",
+        "description": "Choose one creature, object, or magical effect within range. Any spell of 3rd level or lower on the target ends. For each spell of 4th level or higher on the target, make an ability check using your spellcasting ability. The DC equals 10 + the spell's level. On a successful check, the spell ends. When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell's level is equal to or less than the level of the spell slot you used.",
+        "showInCombat": false,
+        "combatActionType": "action",
+        "showInFeatures": false
       }
     ],
 
     "attacks": [
-      { "name": "Longsword",         "bonus": "+7", "damage": "1d8+4" },
-      { "name": "Longsword (2h)",     "bonus": "+7", "damage": "1d10+4" },
-      { "name": "Divine Smite (1st)", "bonus": "—",  "damage": "+2d8 radiant" },
-      { "name": "Guiding Bolt",       "bonus": "+6", "damage": "4d6 radiant" }
+      { "name": "Longsword",         "bonus": "+7", "damage": "1d8+4",     "actionType": "action" },
+      { "name": "Longsword (2h)",     "bonus": "+7", "damage": "1d10+4",   "actionType": "action" },
+      { "name": "Divine Smite (1st)", "bonus": "—",  "damage": "+2d8 radiant", "actionType": "action" }
     ],
 
     "conditions": [],
@@ -221,6 +277,13 @@
     "classFeatures": [
       { "name": "Channel Divinity", "max": 1,  "used": 0, "recharge": "Short Rest", "step": 1 },
       { "name": "Lay on Hands",     "max": 40, "used": 0, "recharge": "Long Rest",  "step": 5 }
+    ],
+    "infoTraits": [
+      { "name": "Divine Smite",       "description": "When you hit with a melee weapon attack, expend a spell slot to deal +2d8 radiant damage per slot level (max 5d8). +1d8 extra vs undead or fiends." },
+      { "name": "Aura of Protection", "description": "While you are conscious, you and friendly creatures within 10 ft add your CHA modifier (minimum +1) to all saving throws." },
+      { "name": "Divine Health",      "description": "The divine magic flowing through you makes you immune to disease." },
+      { "name": "Sacred Weapon",      "description": "As an action, imbue a weapon with your holy symbol. For 1 minute it becomes magical, your CHA modifier is added to attack rolls, and it sheds bright light (20 ft) and dim light (20 ft further)." },
+      { "name": "Extra Attack",       "description": "You can attack twice whenever you take the Attack action on your turn." }
     ]
   }
 }
