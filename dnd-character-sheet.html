@@ -4098,7 +4098,6 @@ function buildFeatures() {
   }
   body.innerHTML = state.classFeatures.map((f, i) => {
     const step = f.step || 1;
-    const stepHint = step > 1 ? `<span class="feature-step-hint">${step} pts/dot</span>` : '';
     const hasTags = f.saveAbility || (f.rollDamage && f.damage);
     const tags = [];
     if (f.saveAbility) tags.push(`<span class="spell-item-tag" style="color:var(--gold)">${escHtml(f.saveAbility)}</span>`);
@@ -4115,6 +4114,7 @@ function buildFeatures() {
               <span class="feature-name">${escHtml(f.name)}</span>
               ${tags.join('')}
             </div>
+            ${step > 1 ? `<span class="feature-step-hint">${step} pts/dot</span>` : ''}
           </div>
           <div class="feature-dots" id="feature-dots-${i}"></div>
         </div>
@@ -4134,13 +4134,6 @@ function buildFeatures() {
                     onpointerdown="startFeatureHold(${i},-1)"
                     onpointerup="stopFeatureHold()"
                     onpointercancel="stopFeatureHold()">+</button>
-          </div>
-          <div class="feature-max-stack">
-            <input type="number" min="0" max="999" value="${f.max}"
-              style="width:40px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
-                     border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:sans-serif"
-              oninput="setFeatureMax(${i}, this.value)" title="Max">
-            ${stepHint}
           </div>
         </div>
       </div>
@@ -4299,7 +4292,6 @@ function buildFeaturedSpells() {
   body.innerHTML = featured.map(sp => {
     const i = state.spells.indexOf(sp);
     const step    = sp.featureStep || 1;
-    const stepHint = step > 1 ? `<span class="feature-step-hint">${step} pts/dot</span>` : '';
     const levelStr = sp.level === 0 ? 'Cantrip' : LEVEL_LABELS[sp.level] + '-level';
     return `
       <div class="feature-row">
@@ -4311,6 +4303,7 @@ function buildFeaturedSpells() {
                oncontextmenu="return false">
             <span class="feature-name">${escHtml(sp.name)}</span>
             <span class="feature-recharge" style="font-size:10px;opacity:0.7">${escHtml(levelStr)}</span>
+            ${step > 1 ? `<span class="feature-step-hint">${step} pts/dot</span>` : ''}
           </div>
           <div class="feature-dots" id="feat-spell-dots-${i}"></div>
         </div>
@@ -4330,13 +4323,6 @@ function buildFeaturedSpells() {
                     onpointerdown="startFeatSpellHold(${i},-1)"
                     onpointerup="stopFeatSpellHold()"
                     onpointercancel="stopFeatSpellHold()">+</button>
-          </div>
-          <div class="feature-max-stack">
-            <input type="number" min="0" max="999" value="${sp.featureMax || 0}"
-              style="width:40px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
-                     border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:sans-serif"
-              oninput="setFeatSpellMax(${i}, this.value)" title="Max">
-            ${stepHint}
           </div>
         </div>
       </div>`;
