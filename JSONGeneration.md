@@ -308,14 +308,16 @@ Each object:
 | `concentration` | boolean | `true` if the spell requires concentration |
 | `ritual` | boolean | `true` if the spell can be cast as a ritual |
 | `attackRoll` | boolean | `true` if the spell requires a ranged/melee spell attack roll (shows a tappable roll button in the view panel) |
-| `damage` | string | Damage expression displayed under the attack roll button, e.g. `"4d6 radiant"` (optional, only meaningful when `attackRoll` is `true`) |
+| `rollDamage` | boolean | `true` to show a tappable damage roll button in the view panel (can be used independently of `attackRoll`, e.g. for save-or-damage spells) |
+| `damage` | string | Damage expression, e.g. `"4d6 radiant"`. Rolled when `attackRoll` or `rollDamage` is `true` |
 | `description` | string | Full spell description; newlines are preserved |
-| `showInCombat` | boolean | `true` to show the spell as a row in the combat attack block (regardless of whether it has an attack roll) |
+| `showInCombat` | boolean | `true` to show the spell as a row in the combat attack block. Use this instead of duplicating the spell in `state.attacks[]` |
 | `combatActionType` | string | `"action"` (default) or `"bonus"` — which sub-section of the combat block the spell appears in when `showInCombat` is `true` |
+| `showInFeatures` | boolean | `true` to show the spell in the "Featured Spells" block inside the Features tab — useful for spells that function like limited-use class features |
 
 When a spell has a `saveAbility` set, the view panel automatically pulls the current **Spell Save DC** (derived from the chosen spellcasting ability) and displays it prominently. When `attackRoll` is `true`, the view panel shows a tappable attack-roll card; tapping it rolls d20 + the current spell attack bonus and optionally rolls the `damage` expression as a secondary result.
 
-Spells with `showInCombat: true` appear in the combat attack block under "Actions" or "Bonus Actions" depending on `combatActionType`. Tapping a combat spell row opens the full spell panel (view mode). The spell level is shown as a gold circle badge (level 1–9); cantrips (level 0) show no badge. Spells without an `attackRoll` still display their description when tapped.
+Spells with `showInCombat: true` appear in the combat attack block under "Actions" or "Bonus Actions" depending on `combatActionType`. Tapping a combat spell row opens the full spell panel (view mode). The spell level is shown as a gold circle badge (level 1–9); cantrips (level 0) show no badge. **Do not duplicate a spell in `state.attacks[]` — set `showInCombat: true` on the spell object instead.**
 
 ```json
 "spells": [
@@ -325,27 +327,27 @@ Spells with `showInCombat: true` appear in the combat attack block under "Action
     "components": "V, S, M (a tiny ball of bat guano and sulfur)",
     "duration": "Instantaneous", "saveAbility": "DEX",
     "concentration": false, "ritual": false,
-    "attackRoll": false, "damage": "",
+    "attackRoll": false, "rollDamage": true, "damage": "8d6 fire",
     "description": "A bright streak flashes from your pointing finger...",
-    "showInCombat": true, "combatActionType": "action"
+    "showInCombat": true, "combatActionType": "action", "showInFeatures": false
   },
   {
     "name": "Guiding Bolt", "level": 1, "school": "Evocation",
     "castingTime": "1 action", "range": "120 feet",
     "components": "V, S", "duration": "1 round",
     "saveAbility": "", "concentration": false, "ritual": false,
-    "attackRoll": true, "damage": "4d6 radiant",
+    "attackRoll": true, "rollDamage": true, "damage": "4d6 radiant",
     "description": "A flash of light streaks toward a creature...",
-    "showInCombat": true, "combatActionType": "action"
+    "showInCombat": true, "combatActionType": "action", "showInFeatures": false
   },
   {
     "name": "Healing Word", "level": 1, "school": "Evocation",
     "castingTime": "1 bonus action", "range": "60 ft",
     "components": "V", "duration": "Instantaneous",
     "saveAbility": "", "concentration": false, "ritual": false,
-    "attackRoll": false, "damage": "1d4+3",
+    "attackRoll": false, "rollDamage": true, "damage": "1d4+3",
     "description": "A creature of your choice regains HP equal to 1d4 + your spellcasting modifier.",
-    "showInCombat": true, "combatActionType": "bonus"
+    "showInCombat": true, "combatActionType": "bonus", "showInFeatures": false
   }
 ]
 ```
@@ -385,25 +387,37 @@ Each object:
 
 | Key | Type | Description |
 |---|---|---|
-| `name` | string | Display name, e.g. `"Channel Divinity"` |
-| `max` | integer | Total uses / pool size (`0`–`999`) |
-| `used` | integer | Amount already expended; must be `≤ max` |
+| `name` | string | Display name, e.g. `"Channel Divinity"` (required) |
+| `max` | integer | Total uses / pool size (`0`–`999`) (required) |
+| `used` | integer | Amount already expended; must be `≤ max` (required) |
 | `recharge` | string | When it recharges, e.g. `"Short Rest"`, `"Long Rest"`, or `""` |
 | `step` | integer | Points per dot and per +/− tap (default `1`); set to e.g. `5` for Lay on Hands |
+| `description` | string | Full description shown in the feature view panel (optional) |
+| `damage` | string | Damage expression, e.g. `"2d8 radiant"` — shown as a rollable card in the view panel (optional) |
+| `rollDamage` | boolean | `true` to enable a tappable damage roll button in the view panel |
+| `saveAbility` | string | Ability key for a saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` |
+| `saveDC` | integer | Override DC; if `0` or omitted, the sheet's current Spell Save DC is used |
+
+Tap the feature name area to open a view panel (description + optional damage roll card). Hold (500 ms) on the name area to open an edit panel.
 
 ```json
 "classFeatures": [
-  { "name": "Channel Divinity", "max": 2,  "used": 0, "recharge": "Short Rest", "step": 1 },
-  { "name": "Lay on Hands",     "max": 40, "used": 0, "recharge": "Long Rest",  "step": 5 }
+  { "name": "Channel Divinity", "max": 2,  "used": 0, "recharge": "Short Rest", "step": 1,
+    "description": "Sacred Weapon: imbue a weapon with your holy symbol for 1 minute." },
+  { "name": "Lay on Hands",     "max": 40, "used": 0, "recharge": "Long Rest",  "step": 5,
+    "description": "Restore HP by touching a creature (pool of 40 HP per Long Rest)." },
+  { "name": "Divine Smite",     "max": 0,  "used": 0, "recharge": "",           "step": 1,
+    "description": "Expend a spell slot on a melee hit to deal radiant damage.",
+    "damage": "2d8 radiant", "rollDamage": true }
 ]
 ```
 
-With `step: 5` the sheet shows 8 dots (40 ÷ 5) and each +/− tap or dot click moves the counter by 5. Omitting `step` defaults to `1`.
+With `step: 5` the sheet shows 8 dots (40 ÷ 5) and each +/− tap or dot click moves the counter by 5. Omitting `step` defaults to `1`. Features with `max: 0` display no tracking dots but still show a tappable name area.
 
 Non-ability-using characters can omit this key or set it to `[]`.
 
 #### `infoTraits`
-Array of feature and trait objects displayed in the Info tab. Can be empty (`[]`).
+Array of feature and trait objects displayed in the Info tab (Features & Traits section). Can be empty (`[]`).
 
 Each object:
 
@@ -411,13 +425,22 @@ Each object:
 |---|---|---|
 | `name` | string | Feature or trait name (required) |
 | `description` | string | Full description text; newlines are preserved (optional) |
+| `damage` | string | Damage expression, e.g. `"2d6 fire"` — shown as a rollable card in the view panel (optional) |
+| `rollDamage` | boolean | `true` to enable a tappable damage roll button in the view panel |
+| `saveAbility` | string | Ability key for a saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` |
+| `saveDC` | integer | Override DC; if `0` or omitted, the sheet's current Spell Save DC is used |
+| `showInCombat` | boolean | `true` to show this trait as a row in the combat attack block |
+| `combatActionType` | string | `"action"` (default) or `"bonus"` — which sub-section of the combat block it appears in |
 
-Tap a row to view the full description in a panel. Hold (500 ms) to edit.
+Tap a row to view the full description in a panel (with optional damage roll button and save DC display). Hold (500 ms) to edit.
 
 ```json
 "infoTraits": [
   { "name": "Darkvision",   "description": "See in darkness as dim light, dim light as bright light within 60 ft." },
-  { "name": "Fey Ancestry", "description": "Advantage on saves against being charmed; magic cannot put you to sleep." }
+  { "name": "Fey Ancestry", "description": "Advantage on saves against being charmed; magic cannot put you to sleep." },
+  { "name": "Breath Weapon", "description": "Exhale destructive energy (5 ft × 30 ft line).",
+    "damage": "2d6 fire", "rollDamage": true, "saveAbility": "DEX", "saveDC": 0,
+    "showInCombat": true, "combatActionType": "action" }
 ]
 ```
 
@@ -569,5 +592,6 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
 | Misspelled skill or condition name | Entry is silently ignored | Use exact names from the lists above |
 | `attacks[].actionType` set to `"Action"` (capital A) | Attack appears under "Actions" only if the check is case-insensitive, but may silently fall through | Use lowercase `"action"` or `"bonus"` |
 | Spell in `state.spells` with `showInCombat: true` but no `spellAbility` set in `form` | Spell attack bonus shows as `+0`; roll still works | Set `form.spellAbility` to the correct ability key |
+| Spell duplicated in both `state.spells` and `state.attacks[]` | The spell appears twice in the combat block | Remove the `attacks[]` entry; set `showInCombat: true` on the spell object instead |
 | `attacks[].saveDC` as a string (`"15"`) | DC displays correctly but numeric comparison may fail in future | Use an integer: `15` not `"15"` |
 | `form.features` present in file | Field is silently ignored (the textarea no longer exists); data is lost | Move features to `state.infoTraits` as `{ name, description }` objects |

@@ -141,16 +141,17 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.mini-tracker` | Flex row grouping `[−][counter][+]` tightly together |
 | `.mini-btn` | 38 px circular button for mini trackers; `.minus` = red, `.plus` = green |
 | `.mini-val` | Small `n/max` counter label inside a mini tracker |
-| `.feature-row` | One class feature block (header + track row + optional step hint) |
-| `.feature-header` | Flex row: name · recharge · ↺ · Edit · ✕ buttons |
-| `.feature-name` | Gold-light bold feature name inside the header |
-| `.feature-recharge` | Italic muted recharge label (e.g. "Short Rest") |
-| `.feature-track` | Flex row: dots · mini tracker · max input |
-| `.feature-dots` | Wrapping flex container for feature `.slot-dot`s |
-| `.feature-step-hint` | Tiny italic label shown below track row when step > 1 (e.g. "5 pts/dot") |
-| `.fe-label` | Small uppercase label inside the feature editor sheet |
-| `.fe-input` | Compact text/number input inside the feature editor sheet (15 px font) |
-| `.fe-row2` | Two-column grid inside the feature editor sheet (Max + Step fields) |
+| `.feature-row` | One class feature row: clickable name area (left) + optional tracker (right) |
+| `.feature-name-area` | Left section of `.feature-row`; gold left-border tint; tap to view, hold 500 ms to edit; `.holding` class added during hold |
+| `.feature-max-stack` | Right section of `.feature-row`; stacks max input above step hint and dots |
+| `.feature-dots` | Flex container for feature `.slot-dot`s (rendered inside `.feature-max-stack`) |
+| `.feature-step-hint` | Tiny italic label below max input (e.g. "5 pts/dot") |
+| `#featurePanelBackdrop` | Fixed full-screen dim layer behind the feature panel; tap to dismiss |
+| `#featurePanel` | Fixed centered card (≤500 px, scrollable) for viewing or editing a class feature; gold border in view mode, blue border in edit mode; `.edit-mode` toggles `.fp-view-section` / `.fp-edit-section` |
+| `.fp-view-section` | Wrapper for all feature panel view-mode content; hidden when `#featurePanel.edit-mode` |
+| `.fp-edit-section` | Wrapper for all feature panel edit form; hidden by default, shown when `#featurePanel.edit-mode` |
+| `#featuredSpellsSection` | Block in the Features tab showing spells with `showInFeatures: true`; hidden when empty |
+| `#featuredSpellsBody` | Container for spell rows inside `#featuredSpellsSection` |
 | `.attack-row` | 4-column grid: name / bonus / damage / manage button; `cursor:pointer`; tap to view/roll |
 | `.attack-row.spell-atk` | Spell variant of `.attack-row`; blue left-border tint; tap opens the spell panel instead of rolling |
 | `.attack-row.atk-hidden` | Hidden attack row; `display:none` normally; revealed when `#attackList.manage-mode` is active |
@@ -205,8 +206,8 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `#hpDialog` | Bottom-sheet for setting HP to a specific value; slides up on open |
 | `.hp-dlg-input` | Large centered number input inside the HP dialog (36 px font) |
 | `.hp-dlg-btn` | Cancel / confirm buttons; `.primary` styles the confirm button |
-| `#stepBackdrop` | Fixed dim layer behind the feature editor sheet; tap to dismiss |
-| `#stepMenu` | Bottom-sheet for adding or editing a class feature; contains Name, Max, Step, Recharge fields |
+| `#stepBackdrop` | Fixed dim layer behind the legacy feature editor sheet (retained in HTML but no longer triggered) |
+| `#stepMenu` | Legacy bottom-sheet for adding/editing class features; superseded by `#featurePanel` |
 | `#settingsBackdrop` | Fixed dim layer behind the settings sheet; tap to dismiss |
 | `#settingsMenu` | Bottom-sheet opened by the ⚙ Settings header button; contains Save, Load, font-size, lefty-mode, and theme controls |
 | `.settings-full-btn` | Full-width action button inside the settings sheet (Save / Load) |
@@ -263,10 +264,12 @@ let state = {
                           concentration,         //   boolean
                           ritual,                //   boolean
                           attackRoll,            //   boolean — true if spell uses a spell attack roll
-                          damage,                //   string — damage expression, e.g. "4d6 radiant" (used with attackRoll)
+                          rollDamage,            //   boolean — true to show a damage roll button (independent of attackRoll)
+                          damage,                //   string — damage expression, e.g. "4d6 radiant"
                           description,           //   free text (newlines preserved)
-                          showInCombat,          //   boolean — true if spell appears in the combat attack block
-                          combatActionType,       //   'action' | 'bonus' — sub-section in the combat block (default: 'action')
+                          showInCombat,          //   boolean — true if spell appears in the combat attack block (do NOT duplicate in attacks[])
+                          combatActionType,      //   'action' | 'bonus' — sub-section in the combat block (default: 'action')
+                          showInFeatures,        //   boolean — true if spell appears in the Featured Spells block in the Features tab
                         } ],
   attacks:            [ {
                           name,                  //   string — weapon or ability name
@@ -280,8 +283,21 @@ let state = {
                       } ],
   conditions:         [],   // condition name strings
   hitDiceUsed:        0,    // number of hit dice expended; max = charLevel
-  classFeatures:      [],   // Features tab trackers: [ { name, max, used, recharge, step } ]
-  infoTraits:         [ { name, description } ],  // features & traits shown in the Info tab
+  classFeatures:      [ {   // Features tab trackers
+                          name, max, used, recharge, step,
+                          description,           //   optional — shown in feature view panel
+                          damage,                //   optional damage expression (rollable)
+                          rollDamage,            //   boolean — show damage roll button in view panel
+                          saveAbility,           //   ability key or ""
+                          saveDC,                //   integer, 0 = use current Spell Save DC
+                        } ],
+  infoTraits:         [ {   // Features & Traits shown in the Info tab
+                          name, description,
+                          damage, rollDamage,    //   optional damage roll support
+                          saveAbility, saveDC,   //   optional saving throw display
+                          showInCombat,          //   boolean — show as row in the combat block
+                          combatActionType,      //   'action' | 'bonus' (default: 'action')
+                        } ],
 }
 ```
 
@@ -303,8 +319,9 @@ hpHoldTimer/Interval       // hold-to-repeat timers for HP +/− buttons
 slotHoldTimer/Interval     // hold-to-repeat timers for spell slot +/− buttons
 featureHoldTimer/Interval  // hold-to-repeat timers for feature +/− buttons
 hitDiceHoldTimer/Interval  // hold-to-repeat timers for hit dice +/− buttons
-featureLpTimer      // long-press timer for opening the feature editor sheet
-currentStepMenuIdx  // index of the feature currently being edited (−1 = new feature)
+featureNamePressTimer      // setTimeout handle for feature name long-press (500 ms → edit mode)
+featureNamePressActive     // boolean — true during and after a held feature name press
+featurePanelEditIdx        // index into state.classFeatures currently being edited; −1 = new feature
 fontSizeIdx         // index into FONT_SIZES; persisted separately in localStorage as 'dnd5e_fontsize'
 leftyMode           // boolean; persisted separately in localStorage as 'dnd5e_lefty'
 currentTheme        // string — active theme key; persisted in localStorage as 'dnd5e_theme'
@@ -328,10 +345,11 @@ DOMContentLoaded
        ├─ buildSkillsList()   inject skill rows into #skillsList
        ├─ buildConditions()   inject condition chips into #conditionsGrid
        ├─ buildSpellSlots()   inject pill strip + active rows into #spellSlotsBody; levels with max=0 appear only as pills
-       ├─ buildSpellList()    inject spell rows grouped by level into #spellListBody
-       ├─ buildFeatures()     inject class feature rows into #featuresBody
-       ├─ buildInfoTraits()  inject features & traits rows into #infoTraitsBody
-       ├─ renderHitDice()     inject hit dice dots into #hitDiceDots
+       ├─ buildSpellList()      inject spell rows grouped by level into #spellListBody
+       ├─ buildFeatures()       inject class feature rows into #featuresBody
+       ├─ buildFeaturedSpells() inject featured spell rows into #featuredSpellsBody (Features tab)
+       ├─ buildInfoTraits()     inject features & traits rows into #infoTraitsBody
+       ├─ renderHitDice()       inject hit dice dots into #hitDiceDots
        ├─ recalcAll()         compute all derived values (modifiers, DC, etc.)
        ├─ setupAutoSave()     attach input/change listeners → saveData()
        └─ setupSwipe()        attach touchstart/touchend listeners for tab swiping
@@ -341,7 +359,7 @@ DOMContentLoaded
   └─ set inspiration button state
 ```
 
-`applyPayload(payload)` runs the same sequence (minus `loadData` and `setupAutoSave`) and is used for JSON import. It calls `buildInfoTraits();` as part of that sequence.
+`applyPayload(payload)` runs the same sequence (minus `loadData` and `setupAutoSave`) and is used for JSON import. It calls `buildFeaturedSpells()` and `buildInfoTraits()` as part of that sequence.
 
 ---
 
@@ -357,12 +375,14 @@ DOMContentLoaded
 | `expandSpellLevel(i)` | Sets `state.spellSlots[i].max` to 1 and rebuilds spell slots (moves that level from the pill strip into the active rows) | `state.spellSlots[i]` |
 | `renderSlotDots(i)` | Dot row + counter for one spell level (gold left = available, grey right = used); counter shows `(max − used)/max` | `state.spellSlots[i]` |
 | `buildSpellList()` | Groups `state.spells` by level and renders level dividers + spell rows into `#spellListBody`; shows placeholder when empty | `state.spells` |
-| `buildFeatures()` | Class feature rows in #featuresBody, or empty-state placeholder | `state.classFeatures` |
+| `buildFeatures()` | Class feature rows in `#featuresBody` (clickable name area + optional dot tracker); empty-state placeholder when no features | `state.classFeatures` |
+| `buildFeaturedSpells()` | "Featured Spells" block in `#featuredSpellsBody`; hidden when no spells have `showInFeatures: true` | `state.spells` |
 | `buildInfoTraits()` | Features & Traits rows in `#infoTraitsBody`, or empty-state placeholder | `state.infoTraits` |
 | `renderFeatureDots(i)` | Dot row + counter for one feature, scaled by `step` | `state.classFeatures[i]` |
-| `renderHitDice()` | Hit dice dots in #hitDiceDots; max = character level | `state.hitDiceUsed`, `charLevel` input |
-| `renderAttacks()` | Attack rows split into "Actions" and "Bonus Actions" sub-sections; combat spells (`.showInCombat`) injected into each section; hidden rows only shown in manage mode; empty placeholder when no attacks | `state.attacks`, `state.spells` |
+| `renderHitDice()` | Hit dice dots in `#hitDiceDots`; max = character level | `state.hitDiceUsed`, `charLevel` input |
+| `renderAttacks()` | Attack rows split into "Actions" and "Bonus Actions" sub-sections; combat spells (`showInCombat`) and combat traits (`showInCombat`) injected into each section; hidden rows only shown in manage mode | `state.attacks`, `state.spells`, `state.infoTraits` |
 | `makeSpellRow(sp, spIdx)` | Returns HTML string for one spell row in the combat block; shows gold level pip for level > 0 | `state.spells[spIdx]` |
+| `makeTraitRow(t, tIdx)` | Returns HTML string for one trait row in the combat block (gold colour scheme) | `state.infoTraits[tIdx]` |
 | `getSpellAtkBonus()` | Returns formatted spell attack bonus string (e.g. `"+5"`) from current spellcasting ability and proficiency bonus | form inputs, `state.abilities` |
 | `renderRollLog()` | Roll history entries in #panel-rolls | `rollLog` |
 
@@ -440,9 +460,9 @@ DOMContentLoaded
 | `openSpellPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `spellPanelEditIdx = i` in both modes; shows backdrop + panel |
 | `addSpell()` | Tap + Add button in Spells section | Opens spell panel in edit mode with empty form; sets `spellPanelEditIdx = -1` |
 | `populateSpellViewPanel(i)` | Internal | Fills view-mode elements from `state.spells[i]`; shows save DC box if `saveAbility` is set; shows attack roll card if `attackRoll` is `true` |
-| `populateSpellEditForm(i)` | Internal | Fills edit form from `state.spells[i]` including `attackRoll` checkbox, `damage` field, `showInCombat` checkbox, and `combatActionType` select; blanks all fields when `i = -1` |
-| `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes to `state.spells[idx]` or pushes new entry including `attackRoll`, `damage`, `showInCombat`, and `combatActionType`; calls `buildSpellList()` + `renderAttacks()` + `saveData()`; dismisses panel |
-| `deleteCurrentSpell()` | Tap Delete in edit mode | Confirms; splices from `state.spells`; calls `buildSpellList()` + `saveData()`; dismisses panel |
+| `populateSpellEditForm(i)` | Internal | Fills edit form from `state.spells[i]` including `attackRoll`, `rollDamage`, `damage`, `showInCombat`, `combatActionType`, and `showInFeatures`; blanks all fields when `i = -1` |
+| `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes all fields including `rollDamage`, `showInCombat`, `combatActionType`, `showInFeatures`; calls `buildSpellList()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
+| `deleteCurrentSpell()` | Tap Delete in edit mode | Confirms; splices from `state.spells`; calls `buildSpellList()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
 | `dismissSpellPanel()` | Backdrop tap or Cancel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#spellPanel` |
 | `renderFeatureDots(i)` | Any feature use/restore | Updates dots and `n/max` counter for feature `i` |
 | `toggleFeatureDot(i, j)` | Tap feature dot | Gold → use dots from here right; grey → restore that dot (respects `step`) |
@@ -451,13 +471,17 @@ DOMContentLoaded
 | `setFeatureMax(i, val)` | Feature max input | Updates `f.max`; clamps `f.used`; rerenders dots |
 | `restoreFeature(i)` | ↺ button on a feature row | Sets `f.used = 0`; rerenders dots; shows toast |
 | `restoreAllFeatures()` | ↺ All button in Features section | Sets all feature `used` to `0`; rerenders all dot rows |
-| `addFeature()` | + Add button | Opens feature editor sheet in "New Feature" mode (`currentStepMenuIdx = -1`) |
-| `editFeature(i)` | Edit button on a feature row | Opens feature editor sheet pre-filled with feature `i` |
-| `removeFeature(i)` | ✕ button on a feature row | `confirm()` dialog → splices `state.classFeatures`; rebuilds feature list |
-| `startFeatureLongPress(i, e)` / `cancelFeatureLongPress()` | `pointerdown` / `pointerup` on feature row | 600 ms timer; opens feature editor sheet; ignored if target is a button or input |
-| `showStepMenu(i)` | Long-press or Edit; `i = -1` for new | Populates and shows the feature editor sheet |
-| `dismissStepMenu()` | Cancel button or backdrop tap | Hides the feature editor sheet |
-| `applyStepMenu()` | Save button or Enter on last field | Validates name; creates or updates the feature; rebuilds list; hides sheet |
+| `startFeatureNamePress(e, i)` | `pointerdown` on `.feature-name-area` | Starts 500 ms timer; adds `.holding` visual on fire; on fire opens feature panel in edit mode |
+| `clickFeatureName(e, i)` | `click` on `.feature-name-area` | If timer hasn't fired, opens feature panel in view mode; clears timer |
+| `cancelFeatureNamePress()` | `pointercancel` on `.feature-name-area` | Clears timer and removes `.holding` class |
+| `openFeaturePanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `featurePanelEditIdx = i`; shows `#featurePanelBackdrop` and `#featurePanel`; `i = -1` means new feature |
+| `addFeature()` | + Add button | Calls `openFeaturePanel(-1, true)` (new feature mode) |
+| `populateFeatureViewPanel(i)` | Internal | Fills view-mode elements from `state.classFeatures[i]`; shows damage roll card if `rollDamage` is true; shows save DC box if `saveAbility` is set |
+| `populateFeatureEditForm(i)` | Internal | Fills edit form from `state.classFeatures[i]`; blanks all fields when `i = -1` |
+| `saveFeaturePanel()` | Tap Save in feature panel edit mode | Validates name; writes all fields to `state.classFeatures[idx]` or pushes new entry; calls `buildFeatures()` + `saveData()`; dismisses panel |
+| `rollFeatureDamage()` | Tap damage card in feature panel view mode | Rolls `f.damage` via `rollDiceExpr()`; shows roll result |
+| `deleteFeatureFromPanel()` | Tap Delete in feature panel edit mode | `confirm()` dialog → splices `state.classFeatures`; calls `buildFeatures()` + `saveData()`; dismisses panel |
+| `dismissFeaturePanel()` | Backdrop tap or Cancel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#featurePanel` |
 | `renderHitDice()` | Any hit dice change or level change | Updates dots in #hitDiceDots; counter shows `(max − used)/max` |
 | `toggleHitDie(j)` | Tap hit dice dot | Gold → use from here right; grey → restore that die |
 | `hitDiceAdjust(delta)` | Hit dice mini +/− buttons | Changes `state.hitDiceUsed` by ±1; `−` button passes `+1` (use), `+` passes `−1` (restore) |
