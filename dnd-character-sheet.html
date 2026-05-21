@@ -10,17 +10,124 @@
     --surface: #2a2018;
     --surface2: #352a1e;
     --border: #5c4a2a;
+    --border-rgb: 92,74,42;
     --gold: #c9a84c;
     --gold-light: #e8c96a;
+    --accent-rgb: 201,168,76;
     --red: #c0392b;
     --red-light: #e74c3c;
     --green: #27ae60;
     --text: #e8d9b8;
     --text-muted: #9a8a6a;
     --tab-active: #3d2e1a;
+    --header-bg-1: #2a1a0a;
+    --header-bg-2: #1a0e05;
+    --tabbar-bg: #120d08;
+    --panel-bg-1: #2a1e0e;
+    --panel-bg-2: #1a1206;
+    --spell: var(--spell);
+    --spell-light: var(--spell-light);
+    --spell-rgb: 91,174,255;
+    --spell-dark: var(--spell-dark);
     --radius: 8px;
     --shadow: 0 2px 8px rgba(0,0,0,0.5);
     --roll-border: 2px;   /* width of the gold border on tappable/rollable elements */
+  }
+
+  /* ── Dark theme ── */
+  :root[data-theme="dark"] {
+    --bg: #0f0f12;
+    --surface: #1a1a20;
+    --surface2: #222228;
+    --border: #38383f;
+    --border-rgb: 56,56,63;
+    --gold: #9090b0;
+    --gold-light: #b0b0d0;
+    --accent-rgb: 144,144,176;
+    --text: #d8d8e8;
+    --text-muted: #686878;
+    --tab-active: #252530;
+    --header-bg-1: #151518;
+    --header-bg-2: #0a0a0e;
+    --tabbar-bg: #090910;
+    --panel-bg-1: #1e1e26;
+    --panel-bg-2: #14141c;
+    --spell: #b07fff;
+    --spell-light: #c8a0ff;
+    --spell-rgb: 176,127,255;
+    --spell-dark: #8855d0;
+  }
+
+  /* ── Red / Crimson theme ── */
+  :root[data-theme="red"] {
+    --bg: #150808;
+    --surface: #201010;
+    --surface2: #2c1414;
+    --border: #5c2828;
+    --border-rgb: 92,40,40;
+    --gold: #c94c4c;
+    --gold-light: #e87070;
+    --accent-rgb: 201,76,76;
+    --text: #e8d0d0;
+    --text-muted: #9a6a6a;
+    --tab-active: #2e1818;
+    --header-bg-1: #2a1010;
+    --header-bg-2: #1a0808;
+    --tabbar-bg: #0d0606;
+    --panel-bg-1: #2a1414;
+    --panel-bg-2: #1a0c0c;
+    --spell: #ffad50;
+    --spell-light: #ffc87a;
+    --spell-rgb: 255,173,80;
+    --spell-dark: #e08820;
+  }
+
+  /* ── Forest / Green theme ── */
+  :root[data-theme="forest"] {
+    --bg: #08130a;
+    --surface: #101e12;
+    --surface2: #162816;
+    --border: #2a5c30;
+    --border-rgb: 42,92,48;
+    --gold: #4caa60;
+    --gold-light: #6ec87a;
+    --accent-rgb: 76,170,96;
+    --text: #d0e8d2;
+    --text-muted: #6a9a70;
+    --tab-active: #182a1a;
+    --header-bg-1: #0c2010;
+    --header-bg-2: #081408;
+    --tabbar-bg: #060e06;
+    --panel-bg-1: #122018;
+    --panel-bg-2: #0c160e;
+    --spell: #40c8c0;
+    --spell-light: #70e0da;
+    --spell-rgb: 64,200,192;
+    --spell-dark: #28a09a;
+  }
+
+  /* ── Ocean / Blue theme ── */
+  :root[data-theme="ocean"] {
+    --bg: #080e18;
+    --surface: #101828;
+    --surface2: #182030;
+    --border: #28405c;
+    --border-rgb: 40,64,92;
+    --gold: #4a80c8;
+    --gold-light: #6aa0e0;
+    --accent-rgb: 74,128,200;
+    --text: #d0dce8;
+    --text-muted: #6a7a90;
+    --tab-active: #182030;
+    --header-bg-1: #0c1828;
+    --header-bg-2: #080e18;
+    --tabbar-bg: #060a12;
+    --panel-bg-1: #141e30;
+    --panel-bg-2: #0c1420;
+    --spell: #c06eff;
+    --spell-light: #d896ff;
+    --spell-rgb: 192,110,255;
+    --spell-dark: #9048c8;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -37,7 +144,7 @@
 
   /* ── Header ── */
   .header {
-    background: linear-gradient(135deg, #2a1a0a, #1a0e05);
+    background: linear-gradient(135deg, var(--header-bg-1), var(--header-bg-2));
     border-bottom: 2px solid var(--gold);
     padding: 12px 16px 8px;
     position: sticky;
@@ -89,7 +196,7 @@
   .header-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
   .header-btn {
-    background: rgba(201,168,76,0.08);
+    background: rgba(var(--accent-rgb),0.08);
     border: 1px solid var(--border);
     border-radius: 6px;
     color: var(--text-muted);
@@ -105,13 +212,13 @@
     white-space: nowrap;
   }
 
-  .header-btn:active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.15); }
+  .header-btn:active { border-color: var(--gold); color: var(--gold); background: rgba(var(--accent-rgb),0.15); }
   .header-btn:disabled { opacity: 0.35; pointer-events: none; }
 
   /* ── Tab Bar ── */
   .tab-bar {
     display: flex;
-    background: #120d08;
+    background: var(--tabbar-bg);
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 72px;
@@ -220,14 +327,14 @@
   }
 
   .ability-card {
-    background: rgba(201,168,76,0.03);
-    border: var(--roll-border) solid rgba(201,168,76,0.4);
+    background: rgba(var(--accent-rgb),0.03);
+    border: var(--roll-border) solid rgba(var(--accent-rgb),0.4);
     border-radius: var(--radius);
     padding: 7px 8px 0;
     cursor: pointer;
   }
 
-  .ability-card:active { border-color: var(--gold); background: rgba(201,168,76,0.14); }
+  .ability-card:active { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
 
   .ability-header {
     display: flex;
@@ -275,12 +382,12 @@
     gap: 7px;
     margin-top: 0;
     padding: 8px 6px;
-    border-top: 1px solid rgba(92,74,42,0.4);
+    border-top: 1px solid rgba(var(--border-rgb),0.4);
     border-radius: 0 0 var(--radius) var(--radius);
     cursor: pointer;
   }
 
-  .ability-save:active { background: rgba(201,168,76,0.1); }
+  .ability-save:active { background: rgba(var(--accent-rgb),0.1); }
 
   .ability-save .save-mod {
     font-size: 17px;
@@ -428,11 +535,11 @@
     align-items: center;
     gap: 10px;
     padding: 7px 0;
-    border-bottom: 1px solid rgba(92,74,42,0.3);
+    border-bottom: 1px solid rgba(var(--border-rgb),0.3);
     cursor: pointer;
   }
 
-  .check-item:active { background: rgba(201,168,76,0.08); }
+  .check-item:active { background: rgba(var(--accent-rgb),0.08); }
 
   .check-item:last-child { border-bottom: none; }
 
@@ -481,7 +588,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    border-left: var(--roll-border) solid rgba(201,168,76,0.4);
+    border-left: var(--roll-border) solid rgba(var(--accent-rgb),0.4);
     padding-left: 8px;
   }
 
@@ -541,7 +648,7 @@
     display: flex;
     align-items: center;
     padding: 9px 0;
-    border-bottom: 1px solid rgba(92,74,42,0.3);
+    border-bottom: 1px solid rgba(var(--border-rgb),0.3);
     gap: 8px;
   }
   .spell-level-row:last-child { border-bottom: none; }
@@ -562,8 +669,8 @@
   .tracker-row .hit-die-roll     { order: 3; }
 
   .hit-die-roll {
-    background: rgba(201,168,76,0.03);
-    border: var(--roll-border) solid rgba(201,168,76,0.4);
+    background: rgba(var(--accent-rgb),0.03);
+    border: var(--roll-border) solid rgba(var(--accent-rgb),0.4);
     border-radius: var(--radius);
     padding: 5px 10px;
     font-size: 13px;
@@ -576,7 +683,7 @@
     -webkit-user-select: none;
     user-select: none;
   }
-  .hit-die-roll:active { border-color: var(--gold); background: rgba(201,168,76,0.14); }
+  .hit-die-roll:active { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
 
   /* lefty mode: swap dots and mini-tracker */
   body.lefty .spell-level-row .spell-slots-dots { order: 3; }
@@ -649,7 +756,7 @@
     transition: background 0.15s;
   }
 
-  .slot-dot.used { background: rgba(201,168,76,0.15); border-color: var(--border); }
+  .slot-dot.used { background: rgba(var(--accent-rgb),0.15); border-color: var(--border); }
   .slot-dot.available { background: var(--gold); }
 
   .spell-slots-max {
@@ -667,7 +774,7 @@
     gap: 6px;
     padding-bottom: 10px;
     margin-bottom: 8px;
-    border-bottom: 1px solid rgba(92,74,42,0.3);
+    border-bottom: 1px solid rgba(var(--border-rgb),0.3);
   }
   .spell-slot-add-btn {
     background: none;
@@ -685,7 +792,7 @@
   .spell-slot-add-btn:active {
     border-color: var(--gold);
     color: var(--gold);
-    background: rgba(201,168,76,0.08);
+    background: rgba(var(--accent-rgb),0.08);
   }
 
   /* ── Spell list ── */
@@ -696,7 +803,7 @@
     letter-spacing: 2px;
     font-family: sans-serif;
     padding: 8px 0 4px;
-    border-bottom: 1px solid rgba(201,168,76,0.3);
+    border-bottom: 1px solid rgba(var(--accent-rgb),0.3);
     margin-bottom: 2px;
     display: flex;
     align-items: center;
@@ -709,19 +816,19 @@
     align-items: center;
     gap: 8px;
     padding: 11px 0 11px calc(var(--roll-border) + 6px);
-    border-bottom: 1px solid rgba(92,74,42,0.25);
+    border-bottom: 1px solid rgba(var(--border-rgb),0.25);
     margin-bottom: 2px;
     cursor: pointer;
-    box-shadow: inset var(--roll-border) 0 0 0 rgba(201,168,76,0.3);
-    background: rgba(201,168,76,0.02);
+    box-shadow: inset var(--roll-border) 0 0 0 rgba(var(--accent-rgb),0.3);
+    background: rgba(var(--accent-rgb),0.02);
     user-select: none;
     -webkit-user-select: none;
     touch-action: manipulation;
     transition: background 0.12s;
   }
   .spell-item:last-of-type { border-bottom: none; margin-bottom: 0; }
-  .spell-item:active { background: rgba(201,168,76,0.10); }
-  .spell-item.holding { background: rgba(90,174,255,0.08); box-shadow: inset var(--roll-border) 0 0 0 rgba(90,174,255,0.5); }
+  .spell-item:active { background: rgba(var(--accent-rgb),0.10); }
+  .spell-item.holding { background: rgba(var(--spell-rgb),0.08); box-shadow: inset var(--roll-border) 0 0 0 rgba(var(--spell-rgb),0.5); }
 
   .spell-item-name {
     flex: 1;
@@ -736,20 +843,20 @@
     font-family: sans-serif;
     font-weight: bold;
     letter-spacing: 0.5px;
-    background: rgba(201,168,76,0.15);
-    border: 1px solid rgba(201,168,76,0.4);
+    background: rgba(var(--accent-rgb),0.15);
+    border: 1px solid rgba(var(--accent-rgb),0.4);
     border-radius: 3px;
     padding: 1px 4px;
     color: var(--gold);
     flex-shrink: 0;
   }
-  .spell-item-tag.sp-tag-conc { color: #7ec8ff; border-color: rgba(126,200,255,0.4); background: rgba(126,200,255,0.08); }
+  .spell-item-tag.sp-tag-conc { color: var(--spell-light); border-color: rgba(var(--spell-rgb),0.4); background: rgba(var(--spell-rgb),0.08); }
   .spell-item-tag.sp-tag-ritual { color: var(--gold); }
 
   .spell-lvl-pip {
     display: inline-flex; align-items: center; justify-content: center;
     width: 15px; height: 15px; border-radius: 50%;
-    background: var(--gold); color: #1a1410;
+    background: var(--gold); color: var(--bg);
     font-size: 9px; font-weight: bold; font-family: sans-serif;
     flex-shrink: 0;
   }
@@ -773,7 +880,7 @@
   /* ── Class Features ── */
   .feature-row {
     padding: 10px 0;
-    border-bottom: 1px solid rgba(92,74,42,0.3);
+    border-bottom: 1px solid rgba(var(--border-rgb),0.3);
   }
   .feature-row:last-child { border-bottom: none; }
 
@@ -828,15 +935,15 @@
     align-items: center;
     padding: 8px 0 8px calc(var(--roll-border) + 6px);
     margin-bottom: 6px;
-    border-bottom: 1px solid rgba(92,74,42,0.3);
+    border-bottom: 1px solid rgba(var(--border-rgb),0.3);
     font-size: 13px;
     cursor: pointer;
-    box-shadow: inset var(--roll-border) 0 0 0 rgba(201,168,76,0.4);
-    background: rgba(201,168,76,0.02);
+    box-shadow: inset var(--roll-border) 0 0 0 rgba(var(--accent-rgb),0.4);
+    background: rgba(var(--accent-rgb),0.02);
   }
   .attack-row:last-child { border-bottom: none; margin-bottom: 0; }
   .attack-row:active .attack-name { color: var(--gold-light); }
-  .attack-row:active { background: rgba(201,168,76,0.12); }
+  .attack-row:active { background: rgba(var(--accent-rgb),0.12); }
 
   .attack-name { font-weight: bold; }
   .attack-bonus { color: var(--gold-light); font-family: sans-serif; font-size: 12px; text-align: center; }
@@ -876,10 +983,10 @@
   .stat-pill.rollable {
     cursor: pointer;
     border-width: var(--roll-border);
-    border-color: rgba(201,168,76,0.4);
-    background: rgba(201,168,76,0.03);
+    border-color: rgba(var(--accent-rgb),0.4);
+    background: rgba(var(--accent-rgb),0.03);
   }
-  .stat-pill.rollable:active { border-color: var(--gold); background: rgba(201,168,76,0.14); }
+  .stat-pill.rollable:active { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
 
   .add-btn {
     width: 100%;
@@ -925,7 +1032,7 @@
     transition: border-color 0.2s, background 0.2s;
     flex-shrink: 0;
   }
-  .inspiration-btn.active { border-color: var(--gold); background: rgba(201,168,76,0.15); }
+  .inspiration-btn.active { border-color: var(--gold); background: rgba(var(--accent-rgb),0.15); }
 
   /* ── Currency ── */
   .currency-grid {
@@ -977,7 +1084,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0.85);
-    background: linear-gradient(160deg, #2e2010, #1e1608);
+    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
     border: 2px solid var(--gold);
     border-radius: 20px;
     padding: 28px 36px 24px;
@@ -1008,7 +1115,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0.88);
-    background: linear-gradient(160deg, #2a1e0e, #1a1206);
+    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
     border: 2px solid var(--gold);
     border-radius: 20px;
     padding: 22px 24px 20px;
@@ -1022,7 +1129,7 @@
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
   }
   #spellPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
-  #spellPanel.edit-mode { border-color: #5baeff; }
+  #spellPanel.edit-mode { border-color: var(--spell); }
 
   .sp-mode-badge {
     font-size: 9px;
@@ -1032,7 +1139,7 @@
     color: var(--gold);
     margin-bottom: 6px;
   }
-  #spellPanel.edit-mode .sp-mode-badge { color: #5baeff; }
+  #spellPanel.edit-mode .sp-mode-badge { color: var(--spell); }
 
   .sp-name {
     font-size: 22px;
@@ -1071,8 +1178,8 @@
   .sp-detail-value { color: var(--text); }
 
   .sp-save-dc-box {
-    background: rgba(201,168,76,0.08);
-    border: 1px solid rgba(201,168,76,0.35);
+    background: rgba(var(--accent-rgb),0.08);
+    border: 1px solid rgba(var(--accent-rgb),0.35);
     border-radius: 10px;
     padding: 10px 14px;
     text-align: center;
@@ -1094,8 +1201,8 @@
   .sp-save-dc-ability { font-size: 11px; color: var(--text-muted); }
 
   .sp-atk-box {
-    background: rgba(91,174,255,0.08);
-    border: 1px solid rgba(91,174,255,0.35);
+    background: rgba(var(--spell-rgb),0.08);
+    border: 1px solid rgba(var(--spell-rgb),0.35);
     border-radius: 10px;
     padding: 10px 14px;
     text-align: center;
@@ -1106,7 +1213,7 @@
     -webkit-user-select: none;
     transition: background 0.15s;
   }
-  .sp-atk-box:active { background: rgba(91,174,255,0.18); }
+  .sp-atk-box:active { background: rgba(var(--spell-rgb),0.18); }
   .sp-atk-label {
     font-size: 9px;
     color: var(--text-muted);
@@ -1116,7 +1223,7 @@
   .sp-atk-bonus {
     font-size: 34px;
     font-weight: bold;
-    color: #5baeff;
+    color: var(--spell);
     line-height: 1.1;
   }
   .sp-atk-damage { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
@@ -1150,7 +1257,7 @@
   .sp-edit-field label {
     display: block;
     font-size: 9px;
-    color: #5baeff;
+    color: var(--spell);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     font-family: sans-serif;
@@ -1161,8 +1268,8 @@
   .sp-edit-field textarea {
     width: 100%;
     box-sizing: border-box;
-    background: rgba(91,174,255,0.06);
-    border: 1px solid rgba(91,174,255,0.4);
+    background: rgba(var(--spell-rgb),0.06);
+    border: 1px solid rgba(var(--spell-rgb),0.4);
     border-radius: 6px;
     color: var(--text);
     font-size: 13px;
@@ -1173,9 +1280,9 @@
   }
   .sp-edit-field input:focus,
   .sp-edit-field select:focus,
-  .sp-edit-field textarea:focus { border-color: #5baeff; }
+  .sp-edit-field textarea:focus { border-color: var(--spell); }
   .sp-edit-field textarea { min-height: 110px; resize: vertical; line-height: 1.5; }
-  .sp-edit-field select option { background: #1a1206; }
+  .sp-edit-field select option { background: var(--panel-bg-2); }
 
   .sp-edit-checkbox-row {
     display: flex;
@@ -1203,8 +1310,8 @@
     margin-top: 14px;
   }
   .sp-edit-save-btn {
-    background: #5baeff;
-    color: #0a0e14;
+    background: var(--spell);
+    color: var(--bg);
     border: none;
     border-radius: 6px;
     padding: 9px 20px;
@@ -1214,7 +1321,7 @@
     cursor: pointer;
     transition: background 0.15s;
   }
-  .sp-edit-save-btn:active { background: #3d8fe0; }
+  .sp-edit-save-btn:active { background: var(--spell-dark); }
   .sp-edit-cancel-btn {
     background: none;
     border: 1px solid var(--border);
@@ -1289,7 +1396,7 @@
   /* ── Roll Log ── */
   .roll-log-entry {
     padding: 9px 0;
-    border-bottom: 1px solid rgba(92,74,42,0.3);
+    border-bottom: 1px solid rgba(var(--border-rgb),0.3);
     font-family: sans-serif;
   }
   .roll-log-entry:last-child { border-bottom: none; }
@@ -1393,7 +1500,7 @@
     color: var(--text);
   }
   .hp-dlg-btn.primary {
-    background: rgba(201,168,76,0.15);
+    background: rgba(var(--accent-rgb),0.15);
     border-color: var(--gold);
     color: var(--gold-light);
     font-weight: bold;
@@ -1532,7 +1639,7 @@
 
   .settings-divider {
     border: none;
-    border-top: 1px solid rgba(92,74,42,0.4);
+    border-top: 1px solid rgba(var(--border-rgb),0.4);
     margin: 14px 0;
   }
 
@@ -1596,10 +1703,29 @@
     white-space: nowrap;
   }
   .settings-toggle.on {
-    background: rgba(201,168,76,0.15);
+    background: rgba(var(--accent-rgb),0.15);
     border-color: var(--gold);
     color: var(--gold-light);
   }
+
+  /* ── Theme swatches ── */
+  .theme-swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+  .theme-swatch {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.12s;
+    flex-shrink: 0;
+    outline: none;
+  }
+  .theme-swatch:active { transform: scale(0.9); }
+  .theme-swatch.active { border-color: var(--text); transform: scale(1.15); }
+  .theme-swatch[data-theme="gold"]   { background: radial-gradient(circle at 35% 35%, #e8c96a, #c9a84c 55%, #8a6020); }
+  .theme-swatch[data-theme="dark"]   { background: radial-gradient(circle at 35% 35%, #b0b0d0, #9090b0 55%, #505070); }
+  .theme-swatch[data-theme="red"]    { background: radial-gradient(circle at 35% 35%, #e87070, #c94c4c 55%, #801818); }
+  .theme-swatch[data-theme="forest"] { background: radial-gradient(circle at 35% 35%, #6ec87a, #4caa60 55%, #1a6030); }
+  .theme-swatch[data-theme="ocean"]  { background: radial-gradient(circle at 35% 35%, #6aa0e0, #4a80c8 55%, #1a4080); }
 
   /* ── Attack section labels ── */
   .attack-section-label {
@@ -1609,18 +1735,18 @@
     letter-spacing: 2px;
     font-family: sans-serif;
     padding: 6px 0 4px;
-    border-bottom: 1px solid rgba(201,168,76,0.3);
+    border-bottom: 1px solid rgba(var(--accent-rgb),0.3);
     margin-bottom: 2px;
   }
 
   /* Spell rows inside the attack block */
   .attack-row.spell-atk {
-    box-shadow: inset var(--roll-border) 0 0 0 rgba(91,174,255,0.4);
-    background: rgba(91,174,255,0.02);
+    box-shadow: inset var(--roll-border) 0 0 0 rgba(var(--spell-rgb),0.4);
+    background: rgba(var(--spell-rgb),0.02);
     cursor: pointer;
   }
-  .attack-row.spell-atk:active { background: rgba(91,174,255,0.10); }
-  .attack-row.spell-atk .attack-name { color: #5baeff; }
+  .attack-row.spell-atk:active { background: rgba(var(--spell-rgb),0.10); }
+  .attack-row.spell-atk .attack-name { color: var(--spell); }
 
   /* Hidden attack rows - hidden by default, shown in manage mode */
   .attack-row.atk-hidden { display: none; opacity: 0.5; }
@@ -1683,7 +1809,7 @@
   #attackPanel {
     position: fixed; top: 50%; left: 50%;
     transform: translate(-50%, -50%) scale(0.88);
-    background: linear-gradient(160deg, #2a1e0e, #1a1206);
+    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
     border: 2px solid var(--gold); border-radius: 20px;
     padding: 22px 24px 20px; z-index: 301;
     opacity: 0; transition: opacity 0.2s, transform 0.2s, border-color 0.25s;
@@ -1692,7 +1818,7 @@
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
   }
   #attackPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
-  #attackPanel.edit-mode { border-color: #5baeff; }
+  #attackPanel.edit-mode { border-color: var(--spell); }
 
   .atk-edit-section { display: none; }
   #attackPanel.edit-mode .atk-view-section { display: none; }
@@ -2361,6 +2487,19 @@
     </div>
     <button class="settings-toggle" id="leftyToggle" onclick="toggleLeftyMode()">Off</button>
   </div>
+  <div class="settings-row" style="align-items:flex-start;flex-direction:column;gap:10px">
+    <div class="settings-row-label">
+      Theme
+      <small>Change the colour scheme</small>
+    </div>
+    <div class="theme-swatches">
+      <button class="theme-swatch" data-theme="gold"   title="Gold"   onclick="setTheme('gold')"></button>
+      <button class="theme-swatch" data-theme="dark"   title="Dark"   onclick="setTheme('dark')"></button>
+      <button class="theme-swatch" data-theme="red"    title="Red"    onclick="setTheme('red')"></button>
+      <button class="theme-swatch" data-theme="forest" title="Forest" onclick="setTheme('forest')"></button>
+      <button class="theme-swatch" data-theme="ocean"  title="Ocean"  onclick="setTheme('ocean')"></button>
+    </div>
+  </div>
   <hr class="settings-divider">
   <button class="hp-dlg-btn" onclick="dismissSettings()" style="width:100%">Close</button>
 </div>
@@ -2391,7 +2530,7 @@
   </div>
   <!-- Edit mode -->
   <div class="atk-edit-section">
-    <div class="sp-mode-badge" style="color:#5baeff">Editing Attack</div>
+    <div class="sp-mode-badge" style="color:var(--spell)">Editing Attack</div>
     <div class="sp-edit-field">
       <label>Name</label>
       <input type="text" id="atkEditName" placeholder="e.g. Longsword">
@@ -3086,7 +3225,7 @@ function buildSpellList() {
           <span class="spell-item-name">${escHtml(sp.name)}</span>
           ${sp.concentration ? '<span class="spell-item-tag sp-tag-conc">C</span>' : ''}
           ${sp.ritual ? '<span class="spell-item-tag sp-tag-ritual">R</span>' : ''}
-          ${sp.showInCombat ? '<span class="spell-item-tag" style="color:#c0392b;border-color:rgba(192,57,43,0.4);background:rgba(192,57,43,0.08)">⚔</span>' : ''}
+          ${sp.showInCombat ? '<span class="spell-item-tag" style="color:var(--red);border-color:rgba(var(--border-rgb),0.4);background:rgba(var(--border-rgb),0.08)">⚔</span>' : ''}
           <span class="spell-item-school">${escHtml(sp.school || '')}</span>
         </div>`;
     });
@@ -3809,7 +3948,7 @@ function renderAttacks() {
            onclick="openSpellPanel(${spIdx}, false)"
            oncontextmenu="return false">
         <span class="attack-name" style="display:flex;align-items:center;gap:5px">${escHtml(sp.name)}${sp.level > 0 ? `<span class="spell-lvl-pip">${sp.level}</span>` : ''}</span>
-        <span class="attack-bonus" style="color:#5baeff">${escHtml(bonus)}</span>
+        <span class="attack-bonus" style="color:var(--spell)">${escHtml(bonus)}</span>
         <span class="attack-damage">${escHtml(sp.damage || '—')}</span>
         <div></div>
       </div>`;
@@ -4014,6 +4153,29 @@ function toggleLeftyMode() {
   localStorage.setItem('dnd5e_lefty', leftyMode ? '1' : '0');
 }
 
+// ── Theme ──────────────────────────────────────────────────────────────
+const THEMES = ['gold', 'dark', 'red', 'forest', 'ocean'];
+let currentTheme = 'gold';
+
+function loadTheme() {
+  const saved = localStorage.getItem('dnd5e_theme') || 'gold';
+  applyTheme(saved);
+}
+
+function applyTheme(theme) {
+  if (!THEMES.includes(theme)) theme = 'gold';
+  currentTheme = theme;
+  document.documentElement.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-swatch').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === theme);
+  });
+}
+
+function setTheme(theme) {
+  applyTheme(theme);
+  localStorage.setItem('dnd5e_theme', theme);
+}
+
 // ── Toast ──────────────────────────────────────────────────────────────
 let toastTimer;
 function toast(msg) {
@@ -4150,6 +4312,7 @@ function setupAutoSave() {
 
 // ── Boot ───────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+  loadTheme();
   loadFontSize();
   loadLeftyMode();
   init();
