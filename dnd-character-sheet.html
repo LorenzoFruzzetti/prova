@@ -648,16 +648,16 @@
   /* ── Death Saves ── */
   .death-saves {
     display: flex;
-    align-items: flex-start;
+    flex-direction: column;
   }
 
   .save-group {
-    flex: 1;
-    padding: 0 12px;
+    padding: 6px 0;
+    text-align: center;
   }
 
   .save-group + .save-group {
-    border-left: 1px solid var(--border);
+    border-top: 1px solid var(--border);
   }
 
   .save-group-label {
@@ -674,9 +674,8 @@
 
   .save-dots {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    align-items: center;
+    gap: 8px;
+    justify-content: center;
   }
 
   .save-dot {
