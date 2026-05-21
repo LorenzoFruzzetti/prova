@@ -43,20 +43,44 @@ dnd-character-sheet.html
 
 ### Design tokens (`:root` variables)
 
-| Variable | Value | Role |
+| Variable | Gold default | Role |
 |---|---|---|
 | `--bg` | `#1a1410` | Page background |
 | `--surface` | `#2a2018` | Card/section background |
 | `--surface2` | `#352a1e` | Section title strip |
 | `--border` | `#5c4a2a` | All borders |
-| `--gold` | `#c9a84c` | Primary accent, labels |
-| `--gold-light` | `#e8c96a` | Values, active states |
-| `--red-light` | `#e74c3c` | Damage, failures, danger HP |
-| `--green` | `#27ae60` | Healthy HP, successes |
+| `--border-rgb` | `92,74,42` | Border colour as `r,g,b` channels (used in `rgba()`) |
+| `--gold` | `#c9a84c` | Primary accent colour — overridden by each theme |
+| `--gold-light` | `#e8c96a` | Lighter accent — overridden by each theme |
+| `--accent-rgb` | `201,168,76` | Accent colour as `r,g,b` channels (used in `rgba()`) |
+| `--red` | `#c0392b` | Danger / failure (semantic; unchanged across themes) |
+| `--red-light` | `#e74c3c` | Damage, failures, danger HP (semantic) |
+| `--green` | `#27ae60` | Healthy HP, successes (semantic) |
 | `--text` | `#e8d9b8` | Body text |
 | `--text-muted` | `#9a8a6a` | Labels, secondary info |
+| `--tab-active` | `#3d2e1a` | Active tab background |
+| `--header-bg-1` | `#2a1a0a` | Header gradient start |
+| `--header-bg-2` | `#1a0e05` | Header gradient end |
+| `--tabbar-bg` | `#120d08` | Tab bar background |
+| `--panel-bg-1` | `#2a1e0e` | Modal panel gradient start (roll result, spell panel, attack panel) |
+| `--panel-bg-2` | `#1a1206` | Modal panel gradient end |
+| `--spell` | `#5baeff` | Spell accent colour (concentration badges, spell panel borders, spell attack bonus) |
+| `--spell-light` | `#7ec8ff` | Lighter spell accent (concentration badge chip) |
+| `--spell-rgb` | `91,174,255` | Spell colour as `r,g,b` channels |
+| `--spell-dark` | `#3d8fe0` | Pressed/active state of spell-coloured buttons |
 | `--radius` | `8px` | Shared border-radius |
-| `--roll-border` | `2px` | Border width on all tappable/rollable elements (ability cards, stat pills, skill/save rows, attack rows); increase to make affordance more prominent |
+| `--shadow` | `0 2px 8px rgba(0,0,0,0.5)` | Shared box-shadow |
+| `--roll-border` | `2px` | Border width on all tappable/rollable elements |
+
+Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the structural/accent variables above (but leaves `--red`, `--green`, `--radius`, `--roll-border` unchanged).
+
+| Theme key | Accent feel | Spell accent |
+|---|---|---|
+| `gold` | Warm gold (default) | Blue `#5baeff` |
+| `dark` | Silver / slate | Purple `#b07fff` |
+| `red` | Crimson | Amber `#ffad50` |
+| `forest` | Emerald green | Teal `#40c8c0` |
+| `ocean` | Sapphire blue | Violet `#c06eff` |
 
 ### Key component classes
 
@@ -167,7 +191,7 @@ dnd-character-sheet.html
 | `#stepBackdrop` | Fixed dim layer behind the feature editor sheet; tap to dismiss |
 | `#stepMenu` | Bottom-sheet for adding or editing a class feature; contains Name, Max, Step, Recharge fields |
 | `#settingsBackdrop` | Fixed dim layer behind the settings sheet; tap to dismiss |
-| `#settingsMenu` | Bottom-sheet opened by the ⚙ Settings header button; contains Save, Load, font-size, and lefty-mode controls |
+| `#settingsMenu` | Bottom-sheet opened by the ⚙ Settings header button; contains Save, Load, font-size, lefty-mode, and theme controls |
 | `.settings-full-btn` | Full-width action button inside the settings sheet (Save / Load) |
 | `.settings-divider` | Thin horizontal rule separating sections inside the settings sheet |
 | `.settings-row` | Flex row pairing a label+sub-label on the left with a control on the right |
@@ -175,6 +199,8 @@ dnd-character-sheet.html
 | `.font-ctrl-btn` | 36 px circular `−`/`+` buttons for font-size adjustment |
 | `.font-ctrl-value` | Gold-light bold label showing current font size percentage |
 | `.settings-toggle` | Pill-shaped On/Off toggle button; `.on` styles it gold when active |
+| `.theme-swatches` | Flex row containing one `.theme-swatch` button per available theme |
+| `.theme-swatch` | 30 px circular swatch button; `.active` adds a white ring and 1.15× scale; `data-theme` attribute matches a key in `THEMES` |
 | `.tracker-row` | Flex row wrapping hit-dice dots + mini-tracker (replaces inline flex style) |
 | `body.lefty` | Applied when lefty mode is on; swaps CSS `order` of dots and mini-tracker in every tracker row |
 
@@ -195,6 +221,7 @@ LEVEL_LABELS    // ['Cantrip','1st','2nd',...,'9th'] — display labels for spel
 TABS            // ['overview','abilities','skills','combat','spells','features','inventory','rolls']
                 //   Order used by swipe navigation and switchTab()
 FONT_SIZES      // [75, 85, 100, 110, 125, 150] — allowed zoom levels in percent
+THEMES          // ['gold', 'dark', 'red', 'forest', 'ocean'] — valid data-theme values
 ```
 
 ### Runtime state object
@@ -259,6 +286,7 @@ featureLpTimer      // long-press timer for opening the feature editor sheet
 currentStepMenuIdx  // index of the feature currently being edited (−1 = new feature)
 fontSizeIdx         // index into FONT_SIZES; persisted separately in localStorage as 'dnd5e_fontsize'
 leftyMode           // boolean; persisted separately in localStorage as 'dnd5e_lefty'
+currentTheme        // string — active theme key; persisted in localStorage as 'dnd5e_theme'
 ```
 
 All other values (character name, HP max, AC, etc.) live in HTML form inputs and are read directly via `document.getElementById`.
@@ -269,6 +297,7 @@ All other values (character name, HP max, AC, etc.) live in HTML form inputs and
 
 ```
 DOMContentLoaded
+  └─ loadTheme()       restore theme from localStorage; set data-theme on <html>; mark active swatch
   └─ loadFontSize()    restore font-size zoom from localStorage; apply to body
   └─ loadLeftyMode()   restore lefty-mode flag from localStorage; apply body.lefty class
   └─ init()
@@ -488,6 +517,9 @@ Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled
 | `loadLeftyMode()` | Reads `dnd5e_lefty` from `localStorage`; calls `applyLeftyMode()` |
 | `applyLeftyMode()` | Toggles `body.lefty` class and updates `#leftyToggle` button state |
 | `toggleLeftyMode()` | Flips `leftyMode`; calls `applyLeftyMode()`; persists to `localStorage` |
+| `loadTheme()` | Reads `dnd5e_theme` from `localStorage` (defaults to `'gold'`); calls `applyTheme()` |
+| `applyTheme(theme)` | Sets `data-theme` attribute on `<html>`; marks the matching `.theme-swatch` as `.active` |
+| `setTheme(theme)` | Calls `applyTheme()`; persists choice to `localStorage` key `dnd5e_theme` |
 
 ---
 
