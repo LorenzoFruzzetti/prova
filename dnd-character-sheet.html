@@ -673,14 +673,15 @@
     grid-template-columns: 1fr auto auto auto;
     gap: 8px;
     align-items: center;
-    padding: 12px 0 12px calc(var(--roll-border) + 6px);
+    padding: 8px 0 8px calc(var(--roll-border) + 6px);
+    margin-bottom: 6px;
     border-bottom: 1px solid rgba(92,74,42,0.3);
     font-size: 13px;
     cursor: pointer;
     box-shadow: inset var(--roll-border) 0 0 0 rgba(201,168,76,0.4);
     background: rgba(201,168,76,0.02);
   }
-  .attack-row:last-child { border-bottom: none; }
+  .attack-row:last-child { border-bottom: none; margin-bottom: 0; }
   .attack-row:active .attack-name { color: var(--gold-light); }
   .attack-row:active { background: rgba(201,168,76,0.12); }
 
