@@ -398,7 +398,7 @@ Each object:
 | `saveAbility` | string | Ability key for a saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` |
 | `saveDC` | integer | Override DC; if `0` or omitted, the sheet's current Spell Save DC is used |
 
-Tap the feature name area to open a view panel (description + optional damage roll card). Hold (500 ms) on the name area to open an edit panel.
+Tap the feature name area to open a view panel (description + optional damage roll card). Hold (500 ms) on the name area, or tap the **EDIT** button on the right side of the row, to open the edit panel. The `max` value can only be changed through the edit panel — there is no inline max input on the row.
 
 ```json
 "classFeatures": [
