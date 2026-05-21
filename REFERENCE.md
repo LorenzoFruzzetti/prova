@@ -127,6 +127,9 @@ dnd-character-sheet.html
 | `.sp-detail-value` | Value text in the details grid |
 | `.sp-save-dc-box` | Gold-tinted box shown only when the spell has a saving throw; displays the current Spell Save DC and ability |
 | `.sp-save-dc-value` | 34 px bold DC number inside `.sp-save-dc-box` |
+| `.sp-atk-box` | Blue-tinted tappable card shown only when `sp.attackRoll === true`; displays current spell attack bonus and damage expression; tapping calls `rollSpellFromPanel()` |
+| `.sp-atk-bonus` | 34 px bold attack bonus in blue inside `.sp-atk-box` |
+| `.sp-atk-damage` | Small damage expression line inside `.sp-atk-box` |
 | `.sp-description` | Pre-wrapped description text block |
 | `.sp-dismiss-hint` | Tiny uppercase footer "tap to dismiss · hold to edit" |
 | `.sp-view-section` | Wrapper for all view-mode content; hidden when `#spellPanel.edit-mode` |
@@ -204,6 +207,8 @@ let state = {
                           saveAbility,           //   ability key ("STR"|"DEX"|"CON"|"INT"|"WIS"|"CHA") or ""
                           concentration,         //   boolean
                           ritual,                //   boolean
+                          attackRoll,            //   boolean — true if spell uses a spell attack roll
+                          damage,                //   string — damage expression, e.g. "4d6 radiant" (used with attackRoll)
                           description,           //   free text (newlines preserved)
                         } ],
   attacks:            [ { name, bonus, damage } ],
@@ -317,6 +322,7 @@ DOMContentLoaded
 | `rollSkill(name)` | Tap skill row (outside dots) | Rolls d20 + skill modifier; calls `showRoll()` |
 | `rollInitiative()` | Tap Initiative stat pill | Rolls d20 + DEX modifier; calls `showRoll()` |
 | `rollSpellAtk()` | Tap Spell Atk stat pill | Rolls d20 + spell attack bonus; calls `showRoll()` (shows toast if no spell ability set) |
+| `rollSpellFromPanel()` | Tap attack card in spell view panel | Reads current spell from `spellPanelEditIdx`; rolls d20 + spell attack bonus; rolls `sp.damage` as secondary if set; calls `showRoll()` |
 | `rollAttack(i)` | Tap attack row | Rolls d20 + attack bonus and damage dice; calls `showRoll()`; no-ops if `longPressActive` |
 | `startLongPress(e, i)` | `pointerdown` on attack row | Starts 500 ms timer; on fire sets `del-ready` on that row and adds a one-shot dismiss listener |
 | `cancelLongPress()` | `pointerup` / `pointercancel` on attack row | Clears the long-press timer |
@@ -338,11 +344,11 @@ DOMContentLoaded
 | `startSpellPress(e, i)` | `pointerdown` on spell row | Starts 500 ms timer; adds `.holding` visual on fire; on fire opens panel in edit mode |
 | `endSpellPress(e, i)` | `pointerup` on spell row | If timer hasn't fired, opens panel in view mode; clears timer |
 | `cancelSpellPress()` | `pointercancel` on spell row | Clears timer and removes `.holding` class |
-| `openSpellPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; shows backdrop + panel |
+| `openSpellPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `spellPanelEditIdx = i` in both modes; shows backdrop + panel |
 | `addSpell()` | Tap + Add button in Spells section | Opens spell panel in edit mode with empty form; sets `spellPanelEditIdx = -1` |
-| `populateSpellViewPanel(i)` | Internal | Fills view-mode elements from `state.spells[i]`; shows save DC box if `saveAbility` is set |
-| `populateSpellEditForm(i)` | Internal | Fills edit form from `state.spells[i]`; blanks all fields when `i = -1` |
-| `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes to `state.spells[idx]` or pushes new entry; calls `buildSpellList()` + `saveData()`; dismisses panel |
+| `populateSpellViewPanel(i)` | Internal | Fills view-mode elements from `state.spells[i]`; shows save DC box if `saveAbility` is set; shows attack roll card if `attackRoll` is `true` |
+| `populateSpellEditForm(i)` | Internal | Fills edit form from `state.spells[i]` including `attackRoll` checkbox and `damage` field; blanks all fields when `i = -1` |
+| `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes to `state.spells[idx]` or pushes new entry including `attackRoll` and `damage`; calls `buildSpellList()` + `saveData()`; dismisses panel |
 | `deleteCurrentSpell()` | Tap Delete in edit mode | Confirms; splices from `state.spells`; calls `buildSpellList()` + `saveData()`; dismisses panel |
 | `dismissSpellPanel()` | Backdrop tap or Cancel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#spellPanel` |
 | `renderFeatureDots(i)` | Any feature use/restore | Updates dots and `n/max` counter for feature `i` |
