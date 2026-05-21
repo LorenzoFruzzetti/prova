@@ -290,9 +290,11 @@ Each object:
 | `saveAbility` | string | Ability for the saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` if the spell has no save |
 | `concentration` | boolean | `true` if the spell requires concentration |
 | `ritual` | boolean | `true` if the spell can be cast as a ritual |
+| `attackRoll` | boolean | `true` if the spell requires a ranged/melee spell attack roll (shows a tappable roll button in the view panel) |
+| `damage` | string | Damage expression displayed under the attack roll button, e.g. `"4d6 radiant"` (optional, only meaningful when `attackRoll` is `true`) |
 | `description` | string | Full spell description; newlines are preserved |
 
-When a spell has a `saveAbility` set, the view panel automatically pulls the current **Spell Save DC** (derived from the chosen spellcasting ability) and displays it prominently.
+When a spell has a `saveAbility` set, the view panel automatically pulls the current **Spell Save DC** (derived from the chosen spellcasting ability) and displays it prominently. When `attackRoll` is `true`, the view panel shows a tappable attack-roll card; tapping it rolls d20 + the current spell attack bonus and optionally rolls the `damage` expression as a secondary result.
 
 ```json
 "spells": [
@@ -302,7 +304,16 @@ When a spell has a `saveAbility` set, the view panel automatically pulls the cur
     "components": "V, S, M (a tiny ball of bat guano and sulfur)",
     "duration": "Instantaneous", "saveAbility": "DEX",
     "concentration": false, "ritual": false,
+    "attackRoll": false, "damage": "",
     "description": "A bright streak flashes from your pointing finger..."
+  },
+  {
+    "name": "Guiding Bolt", "level": 1, "school": "Evocation",
+    "castingTime": "1 action", "range": "120 feet",
+    "components": "V, S", "duration": "1 round",
+    "saveAbility": "", "concentration": false, "ritual": false,
+    "attackRoll": true, "damage": "4d6 radiant",
+    "description": "A flash of light streaks toward a creature..."
   }
 ]
 ```

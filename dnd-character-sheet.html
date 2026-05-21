@@ -914,7 +914,7 @@
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.55);
-    z-index: 300;
+    z-index: 350;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s;
@@ -931,7 +931,7 @@
     border-radius: 20px;
     padding: 28px 36px 24px;
     text-align: center;
-    z-index: 301;
+    z-index: 351;
     opacity: 0;
     transition: opacity 0.2s, transform 0.2s;
     pointer-events: none;
@@ -1041,6 +1041,34 @@
     line-height: 1.1;
   }
   .sp-save-dc-ability { font-size: 11px; color: var(--text-muted); }
+
+  .sp-atk-box {
+    background: rgba(91,174,255,0.08);
+    border: 1px solid rgba(91,174,255,0.35);
+    border-radius: 10px;
+    padding: 10px 14px;
+    text-align: center;
+    margin-bottom: 14px;
+    font-family: sans-serif;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 0.15s;
+  }
+  .sp-atk-box:active { background: rgba(91,174,255,0.18); }
+  .sp-atk-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .sp-atk-bonus {
+    font-size: 34px;
+    font-weight: bold;
+    color: #5baeff;
+    line-height: 1.1;
+  }
+  .sp-atk-damage { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
   .sp-description {
     font-size: 13px;
@@ -2054,6 +2082,11 @@
       <div class="sp-save-dc-value" id="spSaveDcValue">—</div>
       <div class="sp-save-dc-ability" id="spSaveDcAbility"></div>
     </div>
+    <div class="sp-atk-box" id="spAtkBox" style="display:none" onclick="rollSpellFromPanel()">
+      <div class="sp-atk-label">Spell Attack — tap to roll</div>
+      <div class="sp-atk-bonus" id="spAtkBonus">—</div>
+      <div class="sp-atk-damage" id="spAtkDamage"></div>
+    </div>
     <div class="sp-description" id="spDescView"></div>
     <span class="sp-dismiss-hint">tap to dismiss · hold to edit</span>
   </div>
@@ -2123,6 +2156,18 @@
         <div class="sp-edit-checkbox-row">
           <label><input type="checkbox" id="spEditConc"> Conc.</label>
           <label><input type="checkbox" id="spEditRitual"> Ritual</label>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="sp-edit-field">
+        <label>Damage</label>
+        <input type="text" id="spEditDamage" placeholder="e.g. 4d6 radiant">
+      </div>
+      <div class="sp-edit-field">
+        <label>&nbsp;</label>
+        <div class="sp-edit-checkbox-row">
+          <label><input type="checkbox" id="spEditAttackRoll"> Attack Roll</label>
         </div>
       </div>
     </div>
@@ -2549,6 +2594,22 @@ function rollSpellAtk() {
   showRoll('Spell Attack', `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
 }
 
+function rollSpellFromPanel() {
+  if (spellPanelEditIdx < 0) return;
+  const sp = state.spells[spellPanelEditIdx];
+  if (!sp || !sp.attackRoll) return;
+  const el = document.getElementById('statSpellAtk');
+  if (!el || el.textContent === '—') { toast('No spellcasting ability set'); return; }
+  const roll = d20();
+  const m = parseInt(el.textContent) || 0;
+  let secondary;
+  if (sp.damage) {
+    const dmg = rollDiceExpr(sp.damage);
+    secondary = `${sp.damage} = ${dmg}`;
+  }
+  showRoll(sp.name, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll), secondary);
+}
+
 function rollAttack(i) {
   if (longPressActive) { longPressActive = false; return; }
   const a = state.attacks[i];
@@ -2858,6 +2919,7 @@ function openSpellPanel(i, editMode) {
   } else {
     panel.classList.remove('edit-mode');
     populateSpellViewPanel(i);
+    spellPanelEditIdx = i;
   }
   document.getElementById('spellBackdrop').classList.add('show');
   panel.classList.add('show');
@@ -2904,6 +2966,16 @@ function populateSpellViewPanel(i) {
   } else {
     saveDcBox.style.display = 'none';
   }
+  const atkBox = document.getElementById('spAtkBox');
+  if (sp.attackRoll) {
+    const atkEl = document.getElementById('statSpellAtk');
+    const bonus = atkEl ? atkEl.textContent : '—';
+    document.getElementById('spAtkBonus').textContent = bonus;
+    document.getElementById('spAtkDamage').textContent = sp.damage || '';
+    atkBox.style.display = '';
+  } else {
+    atkBox.style.display = 'none';
+  }
   document.getElementById('spDescView').textContent = sp.description || '';
 }
 
@@ -2917,9 +2989,11 @@ function populateSpellEditForm(i) {
   document.getElementById('spEditComponents').value  = sp ? (sp.components    || '') : '';
   document.getElementById('spEditDuration').value    = sp ? (sp.duration      || '') : '';
   document.getElementById('spEditSaveAbility').value = sp ? (sp.saveAbility   || '') : '';
-  document.getElementById('spEditConc').checked      = sp ? !!sp.concentration : false;
-  document.getElementById('spEditRitual').checked    = sp ? !!sp.ritual        : false;
-  document.getElementById('spEditDescription').value = sp ? (sp.description   || '') : '';
+  document.getElementById('spEditConc').checked        = sp ? !!sp.concentration : false;
+  document.getElementById('spEditRitual').checked      = sp ? !!sp.ritual        : false;
+  document.getElementById('spEditAttackRoll').checked  = sp ? !!sp.attackRoll    : false;
+  document.getElementById('spEditDamage').value        = sp ? (sp.damage         || '') : '';
+  document.getElementById('spEditDescription').value   = sp ? (sp.description    || '') : '';
 }
 
 function saveSpellEdit() {
@@ -2936,6 +3010,8 @@ function saveSpellEdit() {
     saveAbility:   document.getElementById('spEditSaveAbility').value,
     concentration: document.getElementById('spEditConc').checked,
     ritual:        document.getElementById('spEditRitual').checked,
+    attackRoll:    document.getElementById('spEditAttackRoll').checked,
+    damage:        document.getElementById('spEditDamage').value.trim(),
     description:   document.getElementById('spEditDescription').value.trim(),
   };
   if (spellPanelEditIdx >= 0) {
