@@ -734,8 +734,8 @@
   /* lefty mode: swap dots and mini-tracker */
   body.lefty .spell-level-row .spell-slots-dots { order: 3; }
   body.lefty .spell-level-row .mini-tracker     { order: 2; }
-  body.lefty .feature-track .feature-dots       { order: 2; }
-  body.lefty .feature-track .mini-tracker       { order: 1; }
+  body.lefty .feature-row .feature-name-area    { order: 2; }
+  body.lefty .feature-row .feature-right-col    { order: 1; }
   body.lefty .tracker-row .spell-slots-dots     { order: 2; }
   body.lefty .tracker-row .mini-tracker         { order: 1; }
 
@@ -964,7 +964,8 @@
   /* ── Class Features ── */
   .feature-row {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: stretch;
     padding: 4px 0;
     border-bottom: 1px solid rgba(var(--border-rgb),0.25);
     margin-bottom: 2px;
@@ -1000,10 +1001,17 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
   }
   .feature-name-area:active { background: rgba(var(--accent-rgb),0.13); }
   .feature-name-area.holding { background: rgba(var(--accent-rgb),0.18); }
+
+  .feature-dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
 
   .feature-name {
     font-size: 13px;
@@ -1019,6 +1027,41 @@
     font-style: italic;
   }
 
+  .feature-right-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 6px 4px 8px;
+    flex-shrink: 0;
+    border-left: 1px solid rgba(var(--border-rgb),0.2);
+  }
+
+  .feature-ctrl-top {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .feature-restore-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .feature-restore-btn:active { border-color: var(--gold); color: var(--gold); }
+
   .feature-controls {
     display: flex;
     align-items: center;
@@ -1029,9 +1072,9 @@
 
   .feature-max-stack {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
     flex-shrink: 0;
   }
 
@@ -4066,10 +4109,14 @@ function buildFeatures() {
             <span class="feature-name">${escHtml(f.name)}</span>
             ${tags.join('')}
           </div>
-          ${f.recharge ? `<div class="feature-recharge">${escHtml(f.recharge)}</div>` : ''}
-        </div>
-        <div class="feature-track">
           <div class="feature-dots" id="feature-dots-${i}"></div>
+        </div>
+        <div class="feature-right-col">
+          <div class="feature-ctrl-top">
+            ${f.recharge ? `<span class="feature-recharge">${escHtml(f.recharge)}</span>` : ''}
+            <button class="feature-restore-btn" onclick="restoreFeature(${i})">⏻</button>
+            <button class="attack-edit-btn" onclick="editFeature(${i})">EDIT</button>
+          </div>
           <div class="mini-tracker">
             <button class="mini-btn minus"
                     onpointerdown="startFeatureHold(${i},1)"
@@ -4089,7 +4136,6 @@ function buildFeatures() {
             ${stepHint}
           </div>
         </div>
-        <button class="attack-edit-btn" onclick="restoreFeature(${i})" style="flex-shrink:0">↺</button>
       </div>
     `;
   }).join('');
