@@ -622,6 +622,14 @@
   .spell-level-row.collapsed .mini-tracker,
   .spell-level-row.collapsed > input { display: none; }
 
+  /* Fix flex order: .spell-level-num has order:1 from the shared rule,
+     so the collapsed siblings must be ≥2 to appear after the label */
+  .spell-level-row.collapsed .spell-level-no-slots { order: 2; }
+  .spell-level-row.collapsed .spell-uncollapse-btn { order: 3; }
+
+  /* Make collapsed rows more compact so they clearly differ from expanded ones */
+  .spell-level-row.collapsed { padding: 4px 0; }
+
   .spell-uncollapse-btn {
     background: none;
     border: 1px solid var(--border);
