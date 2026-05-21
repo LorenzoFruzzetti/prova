@@ -2222,6 +2222,10 @@
       <div class="sp-atk-bonus" id="spAtkBonus">—</div>
       <div class="sp-atk-damage" id="spAtkDamage"></div>
     </div>
+    <div class="sp-atk-box" id="spDmgBox" style="display:none" onclick="rollDamageFromSpellPanel()">
+      <div class="sp-atk-label">Damage — tap to roll</div>
+      <div class="sp-atk-bonus" id="spDmgDice"></div>
+    </div>
     <div class="sp-description" id="spDescView"></div>
     <span class="sp-dismiss-hint">tap to dismiss · hold to edit</span>
   </div>
@@ -2303,6 +2307,7 @@
         <label>&nbsp;</label>
         <div class="sp-edit-checkbox-row">
           <label><input type="checkbox" id="spEditAttackRoll"> Attack Roll</label>
+          <label><input type="checkbox" id="spEditRollDamage"> Roll Dmg</label>
         </div>
       </div>
     </div>
@@ -2830,6 +2835,15 @@ function rollSpellFromPanel() {
   showRoll(sp.name, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll), secondary);
 }
 
+function rollDamageFromSpellPanel() {
+  if (spellPanelEditIdx < 0) return;
+  const sp = state.spells[spellPanelEditIdx];
+  if (!sp || !sp.damage) return;
+  const dmg = rollDiceExpr(sp.damage);
+  if (dmg === null) return;
+  showRoll(sp.name + ' Damage', sp.damage, dmg, '', '');
+}
+
 function getProfBonus() {
   const lvl = parseInt(document.getElementById('charLevel')?.value) || 1;
   return Math.ceil(lvl / 4) + 1;
@@ -3179,6 +3193,13 @@ function populateSpellViewPanel(i) {
   } else {
     atkBox.style.display = 'none';
   }
+  const dmgBox = document.getElementById('spDmgBox');
+  if (sp.rollDamage && !sp.attackRoll && sp.damage) {
+    document.getElementById('spDmgDice').textContent = sp.damage;
+    dmgBox.style.display = '';
+  } else {
+    dmgBox.style.display = 'none';
+  }
   document.getElementById('spDescView').textContent = sp.description || '';
 }
 
@@ -3195,6 +3216,7 @@ function populateSpellEditForm(i) {
   document.getElementById('spEditConc').checked           = sp ? !!sp.concentration : false;
   document.getElementById('spEditRitual').checked         = sp ? !!sp.ritual        : false;
   document.getElementById('spEditAttackRoll').checked     = sp ? !!sp.attackRoll    : false;
+  document.getElementById('spEditRollDamage').checked     = sp ? !!sp.rollDamage    : false;
   document.getElementById('spEditDamage').value           = sp ? (sp.damage         || '') : '';
   document.getElementById('spEditDescription').value      = sp ? (sp.description    || '') : '';
   document.getElementById('spEditShowInCombat').checked   = sp ? !!sp.showInCombat  : false;
@@ -3216,6 +3238,7 @@ function saveSpellEdit() {
     concentration:    document.getElementById('spEditConc').checked,
     ritual:           document.getElementById('spEditRitual').checked,
     attackRoll:       document.getElementById('spEditAttackRoll').checked,
+    rollDamage:       document.getElementById('spEditRollDamage').checked,
     damage:           document.getElementById('spEditDamage').value.trim(),
     description:      document.getElementById('spEditDescription').value.trim(),
     showInCombat:     document.getElementById('spEditShowInCombat').checked,
