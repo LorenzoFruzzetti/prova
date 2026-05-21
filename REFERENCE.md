@@ -141,11 +141,14 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.mini-tracker` | Flex row grouping `[−][counter][+]` tightly together |
 | `.mini-btn` | 38 px circular button for mini trackers; `.minus` = red, `.plus` = green |
 | `.mini-val` | Small `n/max` counter label inside a mini tracker |
-| `.feature-row` | One class feature row: clickable name area (left) + optional tracker (right) |
-| `.feature-name-area` | Left section of `.feature-row`; gold left-border tint; tap to view, hold 500 ms to edit; `.holding` class added during hold |
-| `.feature-max-stack` | Right section of `.feature-row`; stacks max input above step hint and dots |
-| `.feature-dots` | Flex container for feature `.slot-dot`s (rendered inside `.feature-max-stack`) |
-| `.feature-step-hint` | Tiny italic label below max input (e.g. "5 pts/dot") |
+| `.feature-row` | One class feature row: horizontal two-column layout — left column (name + dots) and right column (controls) |
+| `.feature-left-col` | Left flex column inside `.feature-row`; `flex:1`; holds `.feature-name-area` above and `.feature-dots` below |
+| `.feature-name-area` | Clickable area inside `.feature-left-col`; gold left-border tint; tap to view, hold 500 ms to edit; `.holding` class added during hold; shows feature name, tags, and (when `step > 1`) the pts/dot hint |
+| `.feature-dots` | Wrapping flex row of `.slot-dot`s inside `.feature-left-col`, below `.feature-name-area` and outside the clickable zone — dots can be tapped independently |
+| `.feature-step-hint` | Tiny italic label inside `.feature-name-area` below the feature name (e.g. "5 pts/dot"); shown only when `step > 1` |
+| `.feature-right-col` | Right controls column inside `.feature-row`; stacks `.feature-ctrl-top`, `.mini-tracker`, and (for featured spells) recharge info vertically; separated from the left column by a subtle border |
+| `.feature-ctrl-top` | Top row of `.feature-right-col`; flex row containing the recharge label, the restore button, and the EDIT button |
+| `.feature-restore-btn` | 28 px circular ⏻ button in `.feature-ctrl-top`; resets uses to 0 for that feature/spell |
 | `#featurePanelBackdrop` | Fixed full-screen dim layer behind the feature panel; tap to dismiss |
 | `#featurePanel` | Fixed centered card (≤500 px, scrollable) for viewing or editing a class feature; gold border in view mode, blue border in edit mode; `.edit-mode` toggles `.fp-view-section` / `.fp-edit-section` |
 | `.fp-view-section` | Wrapper for all feature panel view-mode content; hidden when `#featurePanel.edit-mode` |
@@ -220,7 +223,7 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.theme-swatches` | Flex row containing one `.theme-swatch` button per available theme |
 | `.theme-swatch` | 30 px circular swatch button; `.active` adds a white ring and 1.15× scale; `data-theme` attribute matches a key in `THEMES` |
 | `.tracker-row` | Flex row wrapping hit-dice dots + mini-tracker (replaces inline flex style) |
-| `body.lefty` | Applied when lefty mode is on; swaps CSS `order` of dots and mini-tracker in every tracker row |
+| `body.lefty` | Applied when lefty mode is on; swaps CSS `order` of `.feature-left-col` and `.feature-right-col` in feature rows, and of dots and mini-tracker in spell-slot and hit-dice tracker rows |
 
 ---
 
@@ -375,8 +378,8 @@ DOMContentLoaded
 | `expandSpellLevel(i)` | Sets `state.spellSlots[i].max` to 1 and rebuilds spell slots (moves that level from the pill strip into the active rows) | `state.spellSlots[i]` |
 | `renderSlotDots(i)` | Dot row + counter for one spell level (gold left = available, grey right = used); counter shows `(max − used)/max` | `state.spellSlots[i]` |
 | `buildSpellList()` | Groups `state.spells` by level and renders level dividers + spell rows into `#spellListBody`; shows placeholder when empty | `state.spells` |
-| `buildFeatures()` | Class feature rows in `#featuresBody` (clickable name area + optional dot tracker); empty-state placeholder when no features | `state.classFeatures` |
-| `buildFeaturedSpells()` | "Featured Spells" block in `#featuredSpellsBody`; hidden when no spells have `showInFeatures: true` | `state.spells` |
+| `buildFeatures()` | Class feature rows in `#featuresBody`; each row has a left column (clickable name area + dots below) and a right column (recharge label, ⏻ restore, EDIT button, mini tracker); pts/dot hint shown below the name when `step > 1`; empty-state placeholder when no features | `state.classFeatures` |
+| `buildFeaturedSpells()` | "Featured Spells" block in `#featuredSpellsBody`; uses the same two-column layout as `buildFeatures()`; hidden when no spells have `showInFeatures: true` | `state.spells` |
 | `buildInfoTraits()` | Features & Traits rows in `#infoTraitsBody`, or empty-state placeholder | `state.infoTraits` |
 | `renderFeatureDots(i)` | Dot row + counter for one feature, scaled by `step` | `state.classFeatures[i]` |
 | `renderHitDice()` | Hit dice dots in `#hitDiceDots`; max = character level | `state.hitDiceUsed`, `charLevel` input |
@@ -468,8 +471,9 @@ DOMContentLoaded
 | `toggleFeatureDot(i, j)` | Tap feature dot | Gold → use dots from here right; grey → restore that dot (respects `step`) |
 | `featureAdjust(i, delta)` | Feature mini +/− buttons | Changes `f.used` by `±step`; rerenders dots |
 | `startFeatureHold(i, delta)` / `stopFeatureHold()` | `pointerdown` / `pointerup` on feature +/− | Hold-to-repeat at 80 ms |
-| `setFeatureMax(i, val)` | Feature max input | Updates `f.max`; clamps `f.used`; rerenders dots |
-| `restoreFeature(i)` | ↺ button on a feature row | Sets `f.used = 0`; rerenders dots; shows toast |
+| `setFeatureMax(i, val)` | (internal — no longer called from the row UI; `max` is now changed only via the edit panel) | Updates `f.max`; clamps `f.used`; rerenders dots |
+| `editFeature(i)` | EDIT button on a feature row | Calls `openFeaturePanel(i, true)` to open the feature in edit mode |
+| `restoreFeature(i)` | ⏻ button on a feature row | Sets `f.used = 0`; rerenders dots; shows toast |
 | `restoreAllFeatures()` | ↺ All button in Features section | Sets all feature `used` to `0`; rerenders all dot rows |
 | `startFeatureNamePress(e, i)` | `pointerdown` on `.feature-name-area` | Starts 500 ms timer; adds `.holding` visual on fire; on fire opens feature panel in edit mode |
 | `clickFeatureName(e, i)` | `click` on `.feature-name-area` | If timer hasn't fired, opens feature panel in view mode; clears timer |
