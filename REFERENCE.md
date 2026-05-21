@@ -115,10 +115,10 @@ dnd-character-sheet.html
 | `.condition-tag` | Pill chip; `.active` turns it red |
 | `.currency-grid` | 5-column grid for CP/SP/EP/GP/PP |
 | `#toast` | Fixed floating feedback pill (2 s); `.show` fades it in; used for non-roll events |
-| `#rollBackdrop` | Fixed full-screen dim layer behind the roll result; tap to dismiss |
-| `#rollResult` | Fixed centered card showing label, large total, breakdown, damage, nat callout |
-| `#spellBackdrop` | Fixed full-screen dim layer behind the spell panel; tap to dismiss |
-| `#spellPanel` | Fixed centered card (≤500 px, scrollable) showing spell details; gold border in view mode, blue border in edit mode; `.edit-mode` class toggles between `.sp-view-section` and `.sp-edit-section` |
+| `#rollBackdrop` | Fixed full-screen dim layer behind the roll result; `z-index: 350`; tap to dismiss |
+| `#rollResult` | Fixed centered card showing label, large total, breakdown, damage, nat callout; `z-index: 351` (above spell panel at 301, below HP/settings at 400) |
+| `#spellBackdrop` | Fixed full-screen dim layer behind the spell panel; `z-index: 300`; tap to dismiss |
+| `#spellPanel` | Fixed centered card (≤500 px, scrollable) showing spell details; `z-index: 301`; gold border in view mode, blue border in edit mode; `.edit-mode` class toggles between `.sp-view-section` and `.sp-edit-section` |
 | `.sp-mode-badge` | Tiny uppercase label ("Spell" / "Editing Spell") at the top of the spell panel; gold in view, blue in edit |
 | `.sp-name` | Large spell name heading inside the spell panel |
 | `.sp-meta` | Italic muted line (level · school · Concentration · Ritual) |
