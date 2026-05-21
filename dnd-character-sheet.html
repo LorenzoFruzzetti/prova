@@ -2753,23 +2753,6 @@ function rollSpellFromPanel() {
   showRoll(sp.name, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll), secondary);
 }
 
-function rollAttack(i) {
-  if (longPressActive) { longPressActive = false; return; }
-  const a = state.attacks[i];
-  const roll = d20();
-  let breakdown, total;
-  if (a.bonus && a.bonus !== '—') {
-    const bonus = parseInt(a.bonus) || 0;
-    breakdown = `d20(${roll}) ${fmtMod(bonus)}`;
-    total = roll + bonus;
-  } else {
-    breakdown = `d20(${roll})`;
-    total = roll;
-  }
-  const dmg = rollDiceExpr(a.damage);
-  showRoll(a.name, breakdown, total, natMsg(roll), dmg !== null ? `Dmg: ${dmg}` : '');
-}
-
 function getProfBonus() {
   const lvl = parseInt(document.getElementById('charLevel')?.value) || 1;
   return Math.ceil(lvl / 4) + 1;
@@ -3012,7 +2995,7 @@ function buildSpellList() {
           <span class="spell-item-name">${escHtml(sp.name)}</span>
           ${sp.concentration ? '<span class="spell-item-tag sp-tag-conc">C</span>' : ''}
           ${sp.ritual ? '<span class="spell-item-tag sp-tag-ritual">R</span>' : ''}
-          ${sp.showInCombat ? '<span class="spell-item-tag" style="color:#c9a84c;border-color:rgba(201,168,76,0.5);background:rgba(201,168,76,0.12)">⚔</span>' : ''}
+          ${sp.showInCombat ? '<span class="spell-item-tag" style="color:#c0392b;border-color:rgba(192,57,43,0.4);background:rgba(192,57,43,0.08)">⚔</span>' : ''}
           <span class="spell-item-school">${escHtml(sp.school || '')}</span>
         </div>`;
     });
