@@ -12,7 +12,6 @@
     "ideals":         "",
     "bonds":          "",
     "flaws":          "",
-    "features":       "Healing Hands\nResistance to Necrotic and Radiant damage\nDarkvision 60 ft\nPact of the Chain",
     "hpMax":          "10",
     "hpTemp":         "0",
     "statAC":         "14",
@@ -195,6 +194,12 @@
     "hitDiceUsed": 0,
     "classFeatures": [
       { "name": "Healing Hands", "max": 1, "used": 0, "recharge": "Long Rest", "step": 1 }
+    ],
+    "infoTraits": [
+      { "name": "Healing Hands",  "description": "As an action, touch a creature and restore a number of HP equal to your level. Recharges on a Long Rest." },
+      { "name": "Necrotic & Radiant Resistance", "description": "You have resistance to necrotic damage and radiant damage." },
+      { "name": "Darkvision",    "description": "You can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light. You cannot discern colour in darkness." },
+      { "name": "Pact of the Chain", "description": "You learn the Find Familiar spell and can cast it as a ritual. Your familiar can take the Attack action when you use your action to command it." }
     ]
   }
 }

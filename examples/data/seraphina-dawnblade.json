@@ -13,7 +13,6 @@
     "ideals":         "Greater Good. Our lot is to lay down our lives in defense of others.",
     "bonds":          "I will face any challenge to win the approval of my order.",
     "flaws":          "I judge others harshly, and myself even more severely.",
-    "features":       "Divine Smite\nAura of Protection (CHA to saves within 10 ft)\nDivine Health (immune to disease)\nSacred Weapon (Holy Symbol)\nExtra Attack",
 
     "hpMax":          "72",
     "hpTemp":         "0",
@@ -221,6 +220,13 @@
     "classFeatures": [
       { "name": "Channel Divinity", "max": 1,  "used": 0, "recharge": "Short Rest", "step": 1 },
       { "name": "Lay on Hands",     "max": 40, "used": 0, "recharge": "Long Rest",  "step": 5 }
+    ],
+    "infoTraits": [
+      { "name": "Divine Smite",       "description": "When you hit with a melee weapon attack, expend a spell slot to deal +2d8 radiant damage per slot level (max 5d8). +1d8 extra vs undead or fiends." },
+      { "name": "Aura of Protection", "description": "While you are conscious, you and friendly creatures within 10 ft add your CHA modifier (minimum +1) to all saving throws." },
+      { "name": "Divine Health",      "description": "The divine magic flowing through you makes you immune to disease." },
+      { "name": "Sacred Weapon",      "description": "As an action, imbue a weapon with your holy symbol. For 1 minute it becomes magical, your CHA modifier is added to attack rolls, and it sheds bright light (20 ft) and dim light (20 ft further)." },
+      { "name": "Extra Attack",       "description": "You can attack twice whenever you take the Attack action on your turn." }
     ]
   }
 }

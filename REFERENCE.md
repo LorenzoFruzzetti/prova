@@ -15,7 +15,7 @@ dnd-character-sheet.html
 │   ├── input#jsonFileInput   Hidden file picker for JSON import
 │   ├── .tab-bar     Eight sticky tab buttons (Info / Stats / Skills / Combat / Spells / Features / Gear / Rolls)
 │   │                Each button carries data-tab="<id>" for programmatic activation
-│   ├── #panel-overview    Tab: character info + personality + features + Long Rest button
+│   ├── #panel-overview    Tab: character info + features & traits (structured list, tap/hold) + personality + Long Rest button
 │   ├── #panel-abilities   Tab: ability scores + saving throws + passive perception + conditions
 │   ├── #panel-skills      Tab: 18 skills with proficiency/expertise dots
 │   ├── #panel-combat      Tab: HP tracker + combat stats + hit dice tracker + inspiration + death saves + attacks
@@ -33,6 +33,8 @@ dnd-character-sheet.html
 │   ├── #spellPanel  Fixed centered overlay showing spell details (view mode) or editable form (edit mode)
 │   ├── #attackPanelBackdrop  Fixed backdrop for attack view / edit panel
 │   ├── #attackPanel  Fixed centered overlay showing attack details (view mode) or editable form (edit mode)
+│   ├── #traitBackdrop  Fixed backdrop for the trait view/edit panel
+│   ├── #traitPanel  Fixed centered overlay showing a feature/trait (view mode) or editable form (edit mode)
 │   └── #toast       Floating feedback message (non-roll events only)
 └── <script>         All application logic (no external libraries)
 ```
@@ -109,8 +111,13 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.stat-pills` | 3-column grid of combat stat tiles |
 | `.stat-pill` | One combat stat tile (value + label) |
 | `.stat-pill.rollable` | Adds `cursor:pointer` and gold border on active; tap to roll |
-| `.death-saves` | Side-by-side success/failure dot groups |
+| `.death-saves` | Flex column stacking Successes above Failures; a `border-top` on `.save-group + .save-group` creates the horizontal divider |
 | `.save-dot` | 22 px circle; `.filled` colors it green or red |
+| `.inspiration-death-row` | Flex row containing the inspiration block (left) and death saves block (right) side by side inside a single `.section` |
+| `.inspiration-block` | Compact left sub-card (`flex:0 0 auto`); holds `.insp-block-title` and the `#inspirationBtn`; centered column layout |
+| `.insp-block-title` | Tiny gold uppercase label "Inspiration" inside `.inspiration-block` |
+| `.death-block` | Wider right sub-card (`flex:1`); holds `.death-block-title` and the `.death-saves` column |
+| `.death-block-title` | Tiny gold uppercase label "Death Saving Throws" inside `.death-block` |
 | `.spell-level-row` | One spell-slot level row (label + dots + mini tracker + max input); only rendered when `max > 0` |
 | `.spell-slots-add-row` | Flex-wrap pill strip at the top of `#spellSlotsBody`; shown only when one or more levels have `max === 0`; contains one `.spell-slot-add-btn` per hidden level |
 | `.spell-slot-add-btn` | Dashed-border pill chip (e.g. `+ 3rd`); clicking calls `expandSpellLevel(i)` to set that level's max to 1 and make it appear |
@@ -121,6 +128,16 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.spell-item-school` | Italic muted school label (right side) inside a `.spell-item` |
 | `.spell-item-tag` | Small badge chip on a spell row; `.sp-tag-conc` = blue "C" (Concentration); `.sp-tag-ritual` = gold "R" (Ritual) |
 | `.spell-empty-msg` | Italic placeholder shown in `#spellListBody` when no spells have been added |
+| `.trait-item` | One Features & Traits row in the Info tab; tap to view, hold 500 ms to edit; `.holding` class added during hold |
+| `.trait-item-name` | Bold feature/trait name inside a `.trait-item` |
+| `.trait-item-preview` | Truncated first line of the description (muted, small text, `text-overflow:ellipsis`) |
+| `#traitBackdrop` | Fixed full-screen dim layer behind the trait panel; tap to dismiss |
+| `#traitPanel` | Fixed centered card (≤500 px, scrollable) for viewing or editing a feature/trait; gold border in view mode, blue border in edit mode; `.edit-mode` toggles `.tr-view-section` / `.tr-edit-section` |
+| `.tr-mode-badge` | Tiny uppercase label ("Feature / Trait" or "Editing Feature / Trait") at the top of the trait panel |
+| `.tr-name` | Large feature/trait name heading inside the trait panel view section |
+| `.tr-description` | Pre-wrapped description text block in the trait panel view section |
+| `.tr-view-section` | Wrapper for all trait panel view-mode content; hidden when `#traitPanel.edit-mode` |
+| `.tr-edit-section` | Wrapper for all trait panel edit form; hidden by default, shown when `#traitPanel.edit-mode` |
 | `.mini-tracker` | Flex row grouping `[−][counter][+]` tightly together |
 | `.mini-btn` | 38 px circular button for mini trackers; `.minus` = red, `.plus` = green |
 | `.mini-val` | Small `n/max` counter label inside a mini tracker |
@@ -263,7 +280,8 @@ let state = {
                       } ],
   conditions:         [],   // condition name strings
   hitDiceUsed:        0,    // number of hit dice expended; max = charLevel
-  classFeatures:      [],   // [ { name, max, used, recharge, step } ]
+  classFeatures:      [],   // Features tab trackers: [ { name, max, used, recharge, step } ]
+  infoTraits:         [ { name, description } ],  // features & traits shown in the Info tab
 }
 ```
 
@@ -276,6 +294,9 @@ longPressActive     // boolean — suppresses roll on release after long-press
 spellPressTimer     // setTimeout handle for spell long-press (500 ms → edit mode)
 spellPressActive    // boolean — true during and after a held spell press
 spellPanelEditIdx   // index into state.spells currently being edited; −1 = new spell
+traitPressTimer     // setTimeout handle for trait row long-press (500 ms → edit mode)
+traitPressActive    // boolean — true during and after a held trait press
+traitPanelEditIdx   // index into state.infoTraits currently being edited; −1 = new trait
 attackPanelIdx      // index into state.attacks currently being edited; −1 = new attack
 abilityUndoTimers   // {[ab]: timerId} — debounce timers for ability undo entries
 hpHoldTimer/Interval       // hold-to-repeat timers for HP +/− buttons
@@ -309,6 +330,7 @@ DOMContentLoaded
        ├─ buildSpellSlots()   inject pill strip + active rows into #spellSlotsBody; levels with max=0 appear only as pills
        ├─ buildSpellList()    inject spell rows grouped by level into #spellListBody
        ├─ buildFeatures()     inject class feature rows into #featuresBody
+       ├─ buildInfoTraits()  inject features & traits rows into #infoTraitsBody
        ├─ renderHitDice()     inject hit dice dots into #hitDiceDots
        ├─ recalcAll()         compute all derived values (modifiers, DC, etc.)
        ├─ setupAutoSave()     attach input/change listeners → saveData()
@@ -319,7 +341,7 @@ DOMContentLoaded
   └─ set inspiration button state
 ```
 
-`applyPayload(payload)` runs the same sequence (minus `loadData` and `setupAutoSave`) and is used for JSON import.
+`applyPayload(payload)` runs the same sequence (minus `loadData` and `setupAutoSave`) and is used for JSON import. It calls `buildInfoTraits();` as part of that sequence.
 
 ---
 
@@ -336,6 +358,7 @@ DOMContentLoaded
 | `renderSlotDots(i)` | Dot row + counter for one spell level (gold left = available, grey right = used); counter shows `(max − used)/max` | `state.spellSlots[i]` |
 | `buildSpellList()` | Groups `state.spells` by level and renders level dividers + spell rows into `#spellListBody`; shows placeholder when empty | `state.spells` |
 | `buildFeatures()` | Class feature rows in #featuresBody, or empty-state placeholder | `state.classFeatures` |
+| `buildInfoTraits()` | Features & Traits rows in `#infoTraitsBody`, or empty-state placeholder | `state.infoTraits` |
 | `renderFeatureDots(i)` | Dot row + counter for one feature, scaled by `step` | `state.classFeatures[i]` |
 | `renderHitDice()` | Hit dice dots in #hitDiceDots; max = character level | `state.hitDiceUsed`, `charLevel` input |
 | `renderAttacks()` | Attack rows split into "Actions" and "Bonus Actions" sub-sections; combat spells (`.showInCombat`) injected into each section; hidden rows only shown in manage mode; empty placeholder when no attacks | `state.attacks`, `state.spells` |
@@ -406,6 +429,14 @@ DOMContentLoaded
 | `startSpellPress(e, i)` | `pointerdown` on spell row | Starts 500 ms timer; adds `.holding` visual on fire; on fire opens panel in edit mode |
 | `endSpellPress(e, i)` | `pointerup` on spell row | If timer hasn't fired, opens panel in view mode; clears timer |
 | `cancelSpellPress()` | `pointercancel` on spell row | Clears timer and removes `.holding` class |
+| `startTraitPress(e, i)` | `pointerdown` on a trait row | Starts 500 ms timer; adds `.holding` visual on fire; opens trait panel in edit mode |
+| `clickTraitItem(e, i)` | `click` on a trait row | If timer hasn't fired, opens trait panel in view mode; clears timer |
+| `cancelTraitPress()` | `pointercancel` on a trait row | Clears timer and removes `.holding` class |
+| `openTraitPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `traitPanelEditIdx = i`; shows `#traitBackdrop` and `#traitPanel`; `i = -1` means new trait |
+| `addInfoTrait()` | Tap + Add in Features & Traits section header | Opens trait panel in edit mode with empty form; sets `traitPanelEditIdx = -1` |
+| `saveTraitEdit()` | Tap Save in trait panel edit mode | Validates name; writes to `state.infoTraits[idx]` or pushes new entry; calls `buildInfoTraits()` + `saveData()`; dismisses panel |
+| `deleteCurrentTrait()` | Tap Delete in trait panel edit mode | `confirm()` dialog → splices `state.infoTraits`; calls `buildInfoTraits()` + `saveData()`; dismisses panel |
+| `dismissTraitPanel()` | Backdrop tap or Cancel in panel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#traitPanel` |
 | `openSpellPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `spellPanelEditIdx = i` in both modes; shows backdrop + panel |
 | `addSpell()` | Tap + Add button in Spells section | Opens spell panel in edit mode with empty form; sets `spellPanelEditIdx = -1` |
 | `populateSpellViewPanel(i)` | Internal | Fills view-mode elements from `state.spells[i]`; shows save DC box if `saveAbility` is set; shows attack roll card if `attackRoll` is `true` |
@@ -491,8 +522,8 @@ Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled
 
 | Function | Description |
 |---|---|
-| `collectFormData()` | Reads all 29 form input values by element ID into a plain object |
-| `buildPayload()` | Returns `{ form, state }` — the canonical serialisation format; `state` includes `spellSlots`, `attacks`, `conditions`, `classFeatures`, `hitDiceUsed`, and all ability/proficiency data |
+| `collectFormData()` | Reads all 28 form input values by element ID into a plain object |
+| `buildPayload()` | Returns `{ form, state }` — the canonical serialisation format; `state` includes `spellSlots`, `attacks`, `conditions`, `classFeatures`, `infoTraits`, `hitDiceUsed`, and all ability/proficiency data |
 | `saveData()` | Writes `buildPayload()` to `localStorage` key `dnd5e_sheet` |
 | `loadData()` | Reads from `localStorage`, populates form fields and `state` (no UI rebuild) |
 | `exportToJSON()` | Downloads `buildPayload()` as `<charname>.json` via a temporary `<a>` element |
@@ -511,6 +542,8 @@ Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled
 | `toast(msg)` | Shows floating message for 2 seconds; used for non-roll feedback (proficiency changes, inspiration, file ops) |
 | `setupAutoSave()` | Attaches `saveData` as `input` + `change` listener to every form element |
 | `openSettings()` / `dismissSettings()` | Opens / closes the ⚙ settings bottom-sheet; manages `pushModalHistory` / `popModalHistory` |
+| `pushModalHistory()` | Calls `history.pushState()` to add an entry so the browser back button can dismiss the open modal |
+| `popModalHistory()` | Called by each dismiss function; the `popstate` handler fires on browser back and calls the appropriate dismiss function — cascade order: `#rollResult` → `#spellPanel` → `#traitPanel` → `#attackPanel` → settings sheet → HP dialog → feature editor sheet |
 | `loadFontSize()` | Reads `dnd5e_fontsize` from `localStorage`; resolves index into `FONT_SIZES`; calls `applyFontSize()` |
 | `applyFontSize()` | Sets `document.body.style.zoom` to the current `FONT_SIZES[fontSizeIdx]` value; updates `#fontSizeLabel` |
 | `changeFontSize(dir)` | Increments or decrements `fontSizeIdx` (clamped to `FONT_SIZES` bounds); calls `applyFontSize()`; persists to `localStorage` |

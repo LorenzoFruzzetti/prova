@@ -36,7 +36,6 @@ Contains every HTML form field value as a **string**, even when the field holds 
   "ideals":         "Freedom. Chains are meant to be broken.",
   "bonds":          "I owe my mentor a life debt.",
   "flaws":          "I turn tail and run when things look bad.",
-  "features":       "Sneak Attack 4d6\nCunning Action\nUncanny Dodge",
 
   "hpMax":          "52",
   "hpTemp":         "0",
@@ -75,7 +74,6 @@ Contains every HTML form field value as a **string**, even when the field holds 
 | `ideals` | string | Free text |
 | `bonds` | string | Free text |
 | `flaws` | string | Free text |
-| `features` | string | Free text |
 | `hpMax` | string (int) | `"1"` or higher |
 | `hpTemp` | string (int) | `"0"` or higher |
 | `statAC` | string (int) | Any integer |
@@ -210,6 +208,12 @@ Contains structured game data that cannot be expressed as plain form inputs.
   "classFeatures": [
     { "name": "Channel Divinity", "max": 2,  "used": 1, "recharge": "Short Rest", "step": 1 },
     { "name": "Lay on Hands",     "max": 25, "used": 5, "recharge": "Long Rest",  "step": 5 }
+  ],
+
+  "infoTraits": [
+    { "name": "Sneak Attack", "description": "Once per turn, deal extra 4d6 damage when you have advantage or an ally is adjacent to the target." },
+    { "name": "Cunning Action", "description": "As a bonus action, Dash, Disengage, or Hide." },
+    { "name": "Uncanny Dodge", "description": "When an attacker you can see hits you, use your reaction to halve the attack's damage." }
   ]
 }
 ```
@@ -398,6 +402,25 @@ With `step: 5` the sheet shows 8 dots (40 ÷ 5) and each +/− tap or dot click 
 
 Non-ability-using characters can omit this key or set it to `[]`.
 
+#### `infoTraits`
+Array of feature and trait objects displayed in the Info tab. Can be empty (`[]`).
+
+Each object:
+
+| Key | Type | Description |
+|---|---|---|
+| `name` | string | Feature or trait name (required) |
+| `description` | string | Full description text; newlines are preserved (optional) |
+
+Tap a row to view the full description in a panel. Hold (500 ms) to edit.
+
+```json
+"infoTraits": [
+  { "name": "Darkvision",   "description": "See in darkness as dim light, dim light as bright light within 60 ft." },
+  { "name": "Fey Ancestry", "description": "Advantage on saves against being charmed; magic cannot put you to sleep." }
+]
+```
+
 #### `hitDiceUsed`
 Integer. Number of hit dice already expended. Max is equal to the character's level (read from `form.charLevel`).
 
@@ -460,7 +483,6 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
     "ideals":         "Responsibility. I do what I must and accept the consequences.",
     "bonds":          "I will face any challenge to protect those in my charge.",
     "flaws":          "I hide a truly scandalous secret that could ruin my family.",
-    "features":       "Divine Smite\nAura of Protection\nSacred Weapon",
     "hpMax":          "47",
     "hpTemp":         "0",
     "statAC":         "18",
@@ -524,6 +546,11 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
     "classFeatures": [
       { "name": "Channel Divinity", "max": 1,  "used": 0, "recharge": "Short Rest", "step": 1 },
       { "name": "Lay on Hands",     "max": 25, "used": 0, "recharge": "Long Rest",  "step": 5 }
+    ],
+    "infoTraits": [
+      { "name": "Divine Smite",      "description": "When you hit with a melee weapon, expend a spell slot to deal +2d8 radiant damage per slot level (max 5d8). +1d8 vs undead or fiends." },
+      { "name": "Aura of Protection","description": "While conscious, you and friendly creatures within 10 ft add your CHA modifier (min +1) to saving throws." },
+      { "name": "Sacred Weapon",     "description": "As an action, imbue a weapon with your holy symbol for 1 minute. It becomes magical, adds CHA modifier to attack rolls, and sheds light." }
     ]
   }
 }
@@ -543,3 +570,4 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
 | `attacks[].actionType` set to `"Action"` (capital A) | Attack appears under "Actions" only if the check is case-insensitive, but may silently fall through | Use lowercase `"action"` or `"bonus"` |
 | Spell in `state.spells` with `showInCombat: true` but no `spellAbility` set in `form` | Spell attack bonus shows as `+0`; roll still works | Set `form.spellAbility` to the correct ability key |
 | `attacks[].saveDC` as a string (`"15"`) | DC displays correctly but numeric comparison may fail in future | Use an integer: `15` not `"15"` |
+| `form.features` present in file | Field is silently ignored (the textarea no longer exists); data is lost | Move features to `state.infoTraits` as `{ name, description }` objects |
