@@ -215,7 +215,7 @@
   /* ── Ability Scores ── */
   .ability-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
 
@@ -223,7 +223,7 @@
     background: rgba(201,168,76,0.03);
     border: var(--roll-border) solid rgba(201,168,76,0.4);
     border-radius: var(--radius);
-    padding: 7px 6px 0;
+    padding: 10px 10px 0;
     cursor: pointer;
   }
 
@@ -233,11 +233,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 3px;
+    margin-bottom: 4px;
   }
 
   .ability-name {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: bold;
     color: var(--gold);
     text-transform: uppercase;
@@ -246,10 +246,10 @@
   }
 
   .ability-header input {
-    width: 36px;
+    width: 44px;
     text-align: center;
-    font-size: 13px;
-    padding: 2px 1px;
+    font-size: 15px;
+    padding: 3px 2px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 4px;
@@ -259,12 +259,12 @@
   }
 
   .ability-mod {
-    font-size: 26px;
+    font-size: 32px;
     font-weight: bold;
     color: var(--text);
     line-height: 1.1;
     text-align: center;
-    margin: 0 0 6px;
+    margin: 0 0 8px;
   }
 
   /* ── Ability Save Row (inside ability card) ── */
@@ -272,9 +272,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
-    margin-top: 6px;
-    padding: 4px 4px 2px;
+    gap: 7px;
+    margin-top: 0;
+    padding: 7px 6px;
     border-top: 1px solid rgba(92,74,42,0.4);
     border-radius: 0 0 var(--radius) var(--radius);
     cursor: pointer;
@@ -283,16 +283,16 @@
   .ability-save:active { background: rgba(201,168,76,0.1); }
 
   .ability-save .save-mod {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: bold;
     color: var(--gold-light);
     font-family: sans-serif;
-    min-width: 22px;
+    min-width: 26px;
     text-align: right;
   }
 
   .ability-save .save-label {
-    font-size: 8px;
+    font-size: 10px;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
