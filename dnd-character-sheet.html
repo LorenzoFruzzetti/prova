@@ -617,39 +617,32 @@
     text-align: right;
   }
 
-  /* ── Collapsed spell level row ── */
-  .spell-level-row.collapsed .spell-slots-dots,
-  .spell-level-row.collapsed .mini-tracker,
-  .spell-level-row.collapsed > input { display: none; }
-
-  /* Fix flex order: .spell-level-num has order:1 from the shared rule,
-     so the collapsed siblings must be ≥2 to appear after the label */
-  .spell-level-row.collapsed .spell-level-no-slots { order: 2; }
-  .spell-level-row.collapsed .spell-uncollapse-btn { order: 3; }
-
-  /* Make collapsed rows more compact so they clearly differ from expanded ones */
-  .spell-level-row.collapsed { padding: 4px 0; }
-
-  .spell-uncollapse-btn {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text-muted);
-    font-size: 11px;
-    font-family: sans-serif;
-    padding: 2px 8px;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-    flex-shrink: 0;
+  /* ── Add-level pill row (top of spell slots panel) ── */
+  .spell-slots-add-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-bottom: 10px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(92,74,42,0.3);
   }
-  .spell-uncollapse-btn:active { border-color: var(--gold); color: var(--gold); }
-
-  .spell-level-no-slots {
-    flex: 1;
-    font-size: 11px;
+  .spell-slot-add-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
     color: var(--text-muted);
+    font-size: 10px;
     font-family: sans-serif;
-    font-style: italic;
+    padding: 3px 10px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .spell-slot-add-btn:active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(201,168,76,0.08);
   }
 
   /* ── Spell list ── */
@@ -2374,15 +2367,17 @@ function buildConditions() {
 
 function buildSpellSlots() {
   const body = document.getElementById('spellSlotsBody');
-  body.innerHTML = state.spellSlots.map((s, i) => {
-    if (s.max === 0) {
-      return `
-        <div class="spell-level-row collapsed">
-          <span class="spell-level-num">${s.level}</span>
-          <span class="spell-level-no-slots">No slots</span>
-          <button class="spell-uncollapse-btn" onclick="expandSpellLevel(${i})">▸ Add</button>
-        </div>`;
-    }
+
+  // Pills for hidden levels (max=0) shown at the top
+  const hiddenPills = state.spellSlots
+    .map((s, i) => s.max === 0
+      ? `<button class="spell-slot-add-btn" onclick="expandSpellLevel(${i})">+ ${s.level}</button>`
+      : '')
+    .join('');
+
+  // Rows only for active levels (max>0)
+  const activeRows = state.spellSlots.map((s, i) => {
+    if (s.max === 0) return '';
     return `
       <div class="spell-level-row">
         <span class="spell-level-num">${s.level}</span>
@@ -2401,9 +2396,14 @@ function buildSpellSlots() {
         <input type="number" min="0" max="9" value="${s.max}"
           style="width:34px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
                  border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:sans-serif"
-          oninput="setSlotMax(${i}, this.value)" title="Max slots (set to 0 to collapse)">
+          oninput="setSlotMax(${i}, this.value)" title="Max slots (set to 0 to remove)">
       </div>`;
   }).join('');
+
+  body.innerHTML =
+    (hiddenPills ? `<div class="spell-slots-add-row">${hiddenPills}</div>` : '') +
+    activeRows;
+
   state.spellSlots.forEach((s, i) => { if (s.max > 0) renderSlotDots(i); });
 }
 

@@ -19,7 +19,7 @@ dnd-character-sheet.html
 │   ├── #panel-abilities   Tab: ability scores + saving throws + passive perception + conditions
 │   ├── #panel-skills      Tab: 18 skills with proficiency/expertise dots
 │   ├── #panel-combat      Tab: HP tracker + combat stats + hit dice tracker + inspiration + death saves + attacks
-│   ├── #panel-spells      Tab: spellcasting ability + spell slots (collapsed when max=0) + structured spell list (add/tap/hold)
+│   ├── #panel-spells      Tab: spellcasting ability + spell slots (hidden levels shown as "+ Nth" pills at top; active levels show dot rows) + structured spell list (add/tap/hold)
 │   ├── #panel-features    Tab: limited-use class features with dot trackers and +/− controls
 │   ├── #panel-inventory   Tab: currency + equipment + proficiencies + notes
 │   ├── #panel-rolls       Tab: session roll history log with Clear button
@@ -85,10 +85,9 @@ dnd-character-sheet.html
 | `.stat-pill.rollable` | Adds `cursor:pointer` and gold border on active; tap to roll |
 | `.death-saves` | Side-by-side success/failure dot groups |
 | `.save-dot` | 22 px circle; `.filled` colors it green or red |
-| `.spell-level-row` | One spell-slot level row (label + dots + mini tracker + max input); `.collapsed` variant used when `max === 0` |
-| `.spell-level-row.collapsed` | Collapsed slot row (hides dots, mini-tracker, and max input); shows level label + "No slots" text + `▸ Add` button |
-| `.spell-uncollapse-btn` | Small `▸ Add` button on a collapsed slot row; calls `expandSpellLevel(i)` to set max to 1 |
-| `.spell-level-no-slots` | Italic muted "No slots" text inside a collapsed slot row |
+| `.spell-level-row` | One spell-slot level row (label + dots + mini tracker + max input); only rendered when `max > 0` |
+| `.spell-slots-add-row` | Flex-wrap pill strip at the top of `#spellSlotsBody`; shown only when one or more levels have `max === 0`; contains one `.spell-slot-add-btn` per hidden level |
+| `.spell-slot-add-btn` | Dashed-border pill chip (e.g. `+ 3rd`); clicking calls `expandSpellLevel(i)` to set that level's max to 1 and make it appear |
 | `.slot-dot` | 18 px circle; `.available` = gold left (remaining), `.used` = grey right (expended) |
 | `.spell-level-divider` | Section header dividing spells by level (e.g. "Cantrips", "1st Level") inside `#spellListBody` |
 | `.spell-item` | One spell row in the list; tap to view, hold 500 ms to edit; `.holding` class added during hold |
@@ -250,7 +249,7 @@ DOMContentLoaded
        ├─ buildSavingThrows() inject saving throw rows into #savingThrowsList
        ├─ buildSkillsList()   inject skill rows into #skillsList
        ├─ buildConditions()   inject condition chips into #conditionsGrid
-       ├─ buildSpellSlots()   inject spell-slot rows into #spellSlotsBody (collapsed when max=0)
+       ├─ buildSpellSlots()   inject pill strip + active rows into #spellSlotsBody; levels with max=0 appear only as pills
        ├─ buildSpellList()    inject spell rows grouped by level into #spellListBody
        ├─ buildFeatures()     inject class feature rows into #featuresBody
        ├─ renderHitDice()     inject hit dice dots into #hitDiceDots
@@ -275,8 +274,8 @@ DOMContentLoaded
 | `buildSavingThrows()` | 6 rows; tap row → roll; tap prof dot → toggle proficiency | `state.saveProficiencies` |
 | `buildSkillsList()` | 18 skill rows; tap row → roll; tap prof dots → cycle prof | `state.skillProficiencies`, `state.skillExpertise` |
 | `buildConditions()` | 15 condition chips | `state.conditions` |
-| `buildSpellSlots()` | 9 spell-level rows; levels with `max=0` render as collapsed rows with a `▸ Add` button; expanded levels show dots and mini +/− tracker | `state.spellSlots` |
-| `expandSpellLevel(i)` | Sets `state.spellSlots[i].max` to 1 and calls `buildSpellSlots()` | `state.spellSlots[i]` |
+| `buildSpellSlots()` | Renders `#spellSlotsBody`: a pill strip of hidden levels (max=0) at the top, then one row per active level (max>0) with dots and mini +/− tracker | `state.spellSlots` |
+| `expandSpellLevel(i)` | Sets `state.spellSlots[i].max` to 1 and rebuilds spell slots (moves that level from the pill strip into the active rows) | `state.spellSlots[i]` |
 | `renderSlotDots(i)` | Dot row + counter for one spell level (gold left = available, grey right = used); counter shows `(max − used)/max` | `state.spellSlots[i]` |
 | `buildSpellList()` | Groups `state.spells` by level and renders level dividers + spell rows into `#spellListBody`; shows placeholder when empty | `state.spells` |
 | `buildFeatures()` | Class feature rows in #featuresBody, or empty-state placeholder | `state.classFeatures` |
