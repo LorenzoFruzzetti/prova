@@ -223,18 +223,38 @@
     background: rgba(201,168,76,0.03);
     border: var(--roll-border) solid rgba(201,168,76,0.4);
     border-radius: var(--radius);
-    text-align: center;
-    padding: 8px 4px;
+    padding: 7px 6px 0;
     cursor: pointer;
   }
 
   .ability-card:active { border-color: var(--gold); background: rgba(201,168,76,0.14); }
 
+  .ability-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 3px;
+  }
+
   .ability-name {
-    font-size: 9px;
+    font-size: 10px;
+    font-weight: bold;
     color: var(--gold);
     text-transform: uppercase;
     letter-spacing: 1px;
+    font-family: sans-serif;
+  }
+
+  .ability-header input {
+    width: 36px;
+    text-align: center;
+    font-size: 13px;
+    padding: 2px 1px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    outline: none;
     font-family: sans-serif;
   }
 
@@ -243,27 +263,8 @@
     font-weight: bold;
     color: var(--text);
     line-height: 1.1;
-    margin: 2px 0;
-  }
-
-  .ability-score {
-    display: block;
-    font-size: 11px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-  }
-
-  .ability-score input {
-    width: 44px;
     text-align: center;
-    font-size: 12px;
-    padding: 3px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text);
-    outline: none;
-    font-family: sans-serif;
+    margin: 0 0 6px;
   }
 
   /* ── Ability Save Row (inside ability card) ── */
@@ -2382,14 +2383,14 @@ function buildAbilityGrid() {
     const prof = state.saveProficiencies.includes(ab);
     return `
     <div class="ability-card" onclick="rollAbility('${ab}')">
-      <div class="ability-name">${ab}</div>
-      <div class="ability-mod" id="mod-${ab}">+0</div>
-      <div class="ability-score">
+      <div class="ability-header">
+        <span class="ability-name">${ab}</span>
         <input type="number" id="score-${ab}" value="${state.abilities[ab]}"
           min="1" max="30"
           oninput="onAbilityInput('${ab}', this.value)"
           onclick="event.stopPropagation()">
       </div>
+      <div class="ability-mod" id="mod-${ab}">+0</div>
       <div class="ability-save ${prof ? 'proficient' : ''}"
            onclick="event.stopPropagation(); rollSave('${ab}')">
         <div class="prof-dot"
