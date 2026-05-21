@@ -734,7 +734,7 @@
   /* lefty mode: swap dots and mini-tracker */
   body.lefty .spell-level-row .spell-slots-dots { order: 3; }
   body.lefty .spell-level-row .mini-tracker     { order: 2; }
-  body.lefty .feature-row .feature-name-area    { order: 2; }
+  body.lefty .feature-row .feature-left-col     { order: 2; }
   body.lefty .feature-row .feature-right-col    { order: 1; }
   body.lefty .tracker-row .spell-slots-dots     { order: 2; }
   body.lefty .tracker-row .mini-tracker         { order: 1; }
@@ -987,8 +987,14 @@
     flex-shrink: 0;
   }
 
-  .feature-name-area {
+  .feature-left-col {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .feature-name-area {
     padding: 8px 8px 8px calc(var(--roll-border) + 6px);
     box-shadow: inset var(--roll-border) 0 0 0 rgba(var(--accent-rgb),0.35);
     background: rgba(var(--accent-rgb),0.04);
@@ -998,7 +1004,6 @@
     -webkit-user-select: none;
     touch-action: manipulation;
     transition: background 0.12s;
-    min-width: 0;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -4100,14 +4105,16 @@ function buildFeatures() {
     if (f.rollDamage && f.damage) tags.push('<span class="spell-item-tag" style="color:var(--red-light)">DMG</span>');
     return `
       <div class="feature-row">
-        <div class="feature-name-area"
-             onpointerdown="startFeatureNamePress(event, ${i})"
-             onclick="clickFeatureName(event, ${i})"
-             onpointercancel="cancelFeatureNamePress()"
-             oncontextmenu="return false">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span class="feature-name">${escHtml(f.name)}</span>
-            ${tags.join('')}
+        <div class="feature-left-col">
+          <div class="feature-name-area"
+               onpointerdown="startFeatureNamePress(event, ${i})"
+               onclick="clickFeatureName(event, ${i})"
+               onpointercancel="cancelFeatureNamePress()"
+               oncontextmenu="return false">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span class="feature-name">${escHtml(f.name)}</span>
+              ${tags.join('')}
+            </div>
           </div>
           <div class="feature-dots" id="feature-dots-${i}"></div>
         </div>
@@ -4296,8 +4303,7 @@ function buildFeaturedSpells() {
     const levelStr = sp.level === 0 ? 'Cantrip' : LEVEL_LABELS[sp.level] + '-level';
     return `
       <div class="feature-row">
-        <div class="feature-top">
-          <div class="feature-dots-col" id="feat-spell-dots-${i}"></div>
+        <div class="feature-left-col">
           <div class="feature-name-area"
                onpointerdown="startSpellPress(event, ${i})"
                onclick="clickSpellItem(event, ${i})"
@@ -4306,14 +4312,13 @@ function buildFeaturedSpells() {
             <span class="feature-name">${escHtml(sp.name)}</span>
             <span class="feature-recharge" style="font-size:10px;opacity:0.7">${escHtml(levelStr)}</span>
           </div>
+          <div class="feature-dots" id="feat-spell-dots-${i}"></div>
         </div>
-        <div class="feature-controls">
-          <div class="feature-max-stack">
-            <input type="number" min="0" max="999" value="${sp.featureMax || 0}"
-              style="width:40px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
-                     border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:sans-serif"
-              oninput="setFeatSpellMax(${i}, this.value)" title="Max">
-            ${stepHint}
+        <div class="feature-right-col">
+          <div class="feature-ctrl-top">
+            ${sp.featureRecharge ? `<span class="feature-recharge">${escHtml(sp.featureRecharge)}</span>` : ''}
+            <button class="feature-restore-btn" onclick="restoreFeatSpell(${i})">⏻</button>
+            <button class="attack-edit-btn" onclick="openSpellPanel(${i}, true)">EDIT</button>
           </div>
           <div class="mini-tracker">
             <button class="mini-btn minus"
@@ -4326,8 +4331,13 @@ function buildFeaturedSpells() {
                     onpointerup="stopFeatSpellHold()"
                     onpointercancel="stopFeatSpellHold()">+</button>
           </div>
-          <button class="attack-edit-btn" onclick="restoreFeatSpell(${i})" style="flex-shrink:0">↺</button>
-          ${sp.featureRecharge ? `<span class="feature-recharge" style="margin-left:auto">${escHtml(sp.featureRecharge)}</span>` : ''}
+          <div class="feature-max-stack">
+            <input type="number" min="0" max="999" value="${sp.featureMax || 0}"
+              style="width:40px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
+                     border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:sans-serif"
+              oninput="setFeatSpellMax(${i}, this.value)" title="Max">
+            ${stepHint}
+          </div>
         </div>
       </div>`;
   }).join('');
