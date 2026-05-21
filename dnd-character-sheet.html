@@ -1894,6 +1894,14 @@
   .attack-row.spell-atk:active { background: rgba(var(--spell-rgb),0.10); }
   .attack-row.spell-atk .attack-name { color: var(--spell); }
 
+  .attack-row.feat-atk {
+    box-shadow: inset var(--roll-border) 0 0 0 rgba(var(--accent-rgb),0.4);
+    background: rgba(var(--accent-rgb),0.03);
+    cursor: pointer;
+  }
+  .attack-row.feat-atk:active { background: rgba(var(--accent-rgb),0.12); }
+  .attack-row.feat-atk .attack-name { color: var(--gold-light); }
+
   /* Hidden attack rows - hidden by default, shown in manage mode */
   .attack-row.atk-hidden { display: none; opacity: 0.5; }
   #attackList.manage-mode .attack-row.atk-hidden { display: grid; }
@@ -2613,6 +2621,15 @@
   <div class="tr-view-section">
     <div class="tr-mode-badge">Feature / Trait</div>
     <div class="tr-name" id="trNameView"></div>
+    <div class="sp-save-dc-box" id="trSaveDcBox" style="display:none">
+      <div class="sp-save-dc-label">Saving Throw DC</div>
+      <div class="sp-save-dc-value" id="trSaveDcValue">—</div>
+      <div class="sp-save-dc-ability" id="trSaveDcAbility"></div>
+    </div>
+    <div class="sp-atk-box" id="trDmgBox" style="display:none" onclick="rollTraitDamage()">
+      <div class="sp-atk-label">Damage — tap to roll</div>
+      <div class="sp-atk-bonus" id="trDmgDice"></div>
+    </div>
     <div class="tr-description" id="trDescView"></div>
     <span class="sp-dismiss-hint">tap to dismiss · hold to edit</span>
   </div>
@@ -2623,9 +2640,54 @@
       <label>Name</label>
       <input type="text" id="trEditName" placeholder="e.g. Darkvision, Second Wind…">
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="sp-edit-field">
+        <label>Damage</label>
+        <input type="text" id="trEditDamage" placeholder="e.g. 2d8 radiant">
+      </div>
+      <div class="sp-edit-field">
+        <label>&nbsp;</label>
+        <div class="sp-edit-checkbox-row">
+          <label><input type="checkbox" id="trEditRollDamage"> Roll Dmg</label>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="sp-edit-field">
+        <label>Saving Throw</label>
+        <select id="trEditSaveAbility">
+          <option value="">— No save</option>
+          <option value="STR">Strength</option>
+          <option value="DEX">Dexterity</option>
+          <option value="CON">Constitution</option>
+          <option value="INT">Intelligence</option>
+          <option value="WIS">Wisdom</option>
+          <option value="CHA">Charisma</option>
+        </select>
+      </div>
+      <div class="sp-edit-field">
+        <label>Save DC <span style="font-size:8px;color:var(--text-muted)">(0 = spell DC)</span></label>
+        <input type="number" id="trEditSaveDC" min="0" max="30" placeholder="e.g. 15">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="sp-edit-field">
+        <label>Combat Panel</label>
+        <div class="sp-edit-checkbox-row">
+          <label><input type="checkbox" id="trEditShowInCombat"> Show in Combat</label>
+        </div>
+      </div>
+      <div class="sp-edit-field">
+        <label>Action Type</label>
+        <select id="trEditCombatType">
+          <option value="action">Action</option>
+          <option value="bonus">Bonus Action</option>
+        </select>
+      </div>
+    </div>
     <div class="sp-edit-field">
       <label>Description</label>
-      <textarea id="trEditDescription" placeholder="Describe the feature or trait…" style="min-height:140px"></textarea>
+      <textarea id="trEditDescription" placeholder="Describe the feature or trait…" style="min-height:110px"></textarea>
     </div>
     <div class="sp-edit-actions">
       <button class="sp-edit-delete-btn" id="trEditDeleteBtn" onclick="deleteCurrentTrait()">Delete</button>
@@ -3444,15 +3506,24 @@ function buildInfoTraits() {
     body.innerHTML = '<div style="color:var(--text-muted);font-size:12px;font-style:italic;padding:4px 0">No features added yet. Tap + Add.</div>';
     return;
   }
-  body.innerHTML = state.infoTraits.map((t, i) => `
+  body.innerHTML = state.infoTraits.map((t, i) => {
+    const tags = [];
+    if (t.showInCombat) tags.push('<span class="spell-item-tag" style="color:var(--red);border-color:rgba(var(--border-rgb),0.4);background:rgba(var(--border-rgb),0.08)">⚔</span>');
+    if (t.saveAbility)  tags.push(`<span class="spell-item-tag" style="color:var(--gold)">${escHtml(t.saveAbility)}</span>`);
+    if (t.rollDamage && t.damage) tags.push('<span class="spell-item-tag" style="color:var(--red-light)">DMG</span>');
+    return `
     <div class="trait-item" data-trait-idx="${i}"
          onpointerdown="startTraitPress(event, ${i})"
          onclick="clickTraitItem(event, ${i})"
          onpointercancel="cancelTraitPress()"
          oncontextmenu="return false">
-      <span class="trait-item-name">${escHtml(t.name)}</span>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span class="trait-item-name">${escHtml(t.name)}</span>
+        ${tags.join('')}
+      </div>
       ${t.description ? `<span class="trait-item-preview">${escHtml(t.description.split('\n')[0].slice(0, 80))}</span>` : ''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 let traitPressTimer = null;
@@ -3484,21 +3555,54 @@ function cancelTraitPress() {
 
 let traitPanelEditIdx = -1;
 
+function populateTraitViewPanel(i) {
+  const t = state.infoTraits[i];
+  if (!t) return;
+  document.getElementById('trNameView').textContent = t.name;
+  document.getElementById('trDescView').textContent = t.description || '';
+  const saveDcBox = document.getElementById('trSaveDcBox');
+  if (t.saveAbility) {
+    const dc = (t.saveDC && t.saveDC > 0)
+      ? String(t.saveDC)
+      : (document.getElementById('statSpellDC')?.textContent || '—');
+    document.getElementById('trSaveDcValue').textContent = dc;
+    document.getElementById('trSaveDcAbility').textContent = t.saveAbility + ' Save';
+    saveDcBox.style.display = '';
+  } else {
+    saveDcBox.style.display = 'none';
+  }
+  const dmgBox = document.getElementById('trDmgBox');
+  if (t.rollDamage && t.damage) {
+    document.getElementById('trDmgDice').textContent = t.damage;
+    dmgBox.style.display = '';
+  } else {
+    dmgBox.style.display = 'none';
+  }
+}
+
+function populateTraitEditForm(i) {
+  const t = state.infoTraits[i];
+  document.getElementById('trEditName').value            = t ? t.name : '';
+  document.getElementById('trEditDamage').value          = t ? (t.damage || '') : '';
+  document.getElementById('trEditRollDamage').checked    = t ? !!t.rollDamage : false;
+  document.getElementById('trEditSaveAbility').value     = t ? (t.saveAbility || '') : '';
+  document.getElementById('trEditSaveDC').value          = t ? (t.saveDC || '') : '';
+  document.getElementById('trEditShowInCombat').checked  = t ? !!t.showInCombat : false;
+  document.getElementById('trEditCombatType').value      = t ? (t.combatActionType || 'action') : 'action';
+  document.getElementById('trEditDescription').value     = t ? (t.description || '') : '';
+}
+
 function openTraitPanel(i, editMode) {
   pushModalHistory();
   const panel = document.getElementById('traitPanel');
   if (editMode) {
     panel.classList.add('edit-mode');
-    const t = state.infoTraits[i];
-    document.getElementById('trEditName').value = t ? t.name : '';
-    document.getElementById('trEditDescription').value = t ? (t.description || '') : '';
+    populateTraitEditForm(i);
     document.getElementById('trEditDeleteBtn').style.display = i >= 0 ? '' : 'none';
     traitPanelEditIdx = i;
   } else {
     panel.classList.remove('edit-mode');
-    const t = state.infoTraits[i];
-    document.getElementById('trNameView').textContent = t ? t.name : '';
-    document.getElementById('trDescView').textContent = t ? (t.description || '') : '';
+    populateTraitViewPanel(i);
     traitPanelEditIdx = i;
   }
   document.getElementById('traitBackdrop').classList.add('show');
@@ -3510,8 +3614,7 @@ function addInfoTrait() {
   pushModalHistory();
   const panel = document.getElementById('traitPanel');
   panel.classList.add('edit-mode');
-  document.getElementById('trEditName').value = '';
-  document.getElementById('trEditDescription').value = '';
+  populateTraitEditForm(-1);
   document.getElementById('trEditDeleteBtn').style.display = 'none';
   document.getElementById('traitBackdrop').classList.add('show');
   panel.classList.add('show');
@@ -3521,16 +3624,34 @@ function addInfoTrait() {
 function saveTraitEdit() {
   const name = document.getElementById('trEditName').value.trim();
   if (!name) { toast('Name required'); return; }
-  const description = document.getElementById('trEditDescription').value.trim();
+  const trait = {
+    name,
+    damage:           document.getElementById('trEditDamage').value.trim(),
+    rollDamage:       document.getElementById('trEditRollDamage').checked,
+    saveAbility:      document.getElementById('trEditSaveAbility').value,
+    saveDC:           parseInt(document.getElementById('trEditSaveDC').value, 10) || 0,
+    showInCombat:     document.getElementById('trEditShowInCombat').checked,
+    combatActionType: document.getElementById('trEditCombatType').value,
+    description:      document.getElementById('trEditDescription').value.trim(),
+  };
   if (traitPanelEditIdx >= 0) {
-    state.infoTraits[traitPanelEditIdx] = {name, description};
+    state.infoTraits[traitPanelEditIdx] = trait;
   } else {
-    state.infoTraits.push({name, description});
+    state.infoTraits.push(trait);
   }
   buildInfoTraits();
+  renderAttacks();
   saveData();
   dismissTraitPanel();
   toast('Trait saved');
+}
+
+function rollTraitDamage() {
+  const t = state.infoTraits[traitPanelEditIdx];
+  if (!t || !t.damage) return;
+  const total = rollDiceExpr(t.damage);
+  if (total === null) { toast('Invalid dice expression'); return; }
+  showRoll(t.name + ' — Damage', t.damage, total, '');
 }
 
 function deleteCurrentTrait() {
@@ -3538,6 +3659,7 @@ function deleteCurrentTrait() {
   if (!confirm(`Remove "${state.infoTraits[traitPanelEditIdx].name}"?`)) return;
   state.infoTraits.splice(traitPanelEditIdx, 1);
   buildInfoTraits();
+  renderAttacks();
   saveData();
   dismissTraitPanel();
 }
@@ -4190,13 +4312,17 @@ function renderAttacks() {
   const combatSpellActions = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'action');
   const combatSpellBonus   = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'bonus');
 
+  const combatTraits = (state.infoTraits || []).filter(t => t.showInCombat);
+  const combatTraitActions = combatTraits.filter(t => (t.combatActionType || 'action') === 'action');
+  const combatTraitBonus   = combatTraits.filter(t => (t.combatActionType || 'action') === 'bonus');
+
   const visActionAtks = state.attacks.filter(a => !a.hidden && (a.actionType || 'action') === 'action');
   const visBonusAtks  = state.attacks.filter(a => !a.hidden && (a.actionType || 'action') === 'bonus');
   const hiddenAtks    = state.attacks.filter(a => !!a.hidden);
 
-  const hasVisActions = visActionAtks.length > 0 || combatSpellActions.length > 0;
-  const hasVisBonus   = visBonusAtks.length > 0  || combatSpellBonus.length > 0;
-  const hasAny        = state.attacks.length > 0  || combatSpells.length > 0;
+  const hasVisActions = visActionAtks.length > 0 || combatSpellActions.length > 0 || combatTraitActions.length > 0;
+  const hasVisBonus   = visBonusAtks.length > 0  || combatSpellBonus.length > 0  || combatTraitBonus.length > 0;
+  const hasAny        = state.attacks.length > 0  || combatSpells.length > 0     || combatTraits.length > 0;
 
   if (!hasAny) {
     list.innerHTML = `<div class="attack-row" style="cursor:default">
@@ -4243,6 +4369,21 @@ function renderAttacks() {
       </div>`;
   }
 
+  function makeTraitRow(t, tIdx) {
+    const saveText = t.saveAbility
+      ? `DC ${(t.saveDC && t.saveDC > 0) ? t.saveDC : (document.getElementById('statSpellDC')?.textContent || '—')} ${t.saveAbility}`
+      : '—';
+    return `
+      <div class="attack-row feat-atk"
+           onclick="openTraitPanel(${tIdx}, false)"
+           oncontextmenu="return false">
+        <span class="attack-name">${escHtml(t.name)}</span>
+        <span class="attack-bonus" style="color:var(--gold)">${escHtml(saveText)}</span>
+        <span class="attack-damage">${escHtml(t.damage || '—')}</span>
+        <div></div>
+      </div>`;
+  }
+
   let html = '';
 
   if (hasVisActions) {
@@ -4252,6 +4393,7 @@ function renderAttacks() {
       html += makeAtkRow(a, i);
     });
     combatSpellActions.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
+    combatTraitActions.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
   }
 
   if (hasVisBonus) {
@@ -4261,6 +4403,7 @@ function renderAttacks() {
       html += makeAtkRow(a, i);
     });
     combatSpellBonus.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
+    combatTraitBonus.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
   }
 
   if (hiddenAtks.length > 0) {
