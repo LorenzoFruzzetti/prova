@@ -846,8 +846,6 @@
   }
   .attack-del:active { opacity: 1; }
 
-  .attack-row.del-ready .attack-del,
-  #attackList.delete-all .attack-del { display: inline-block; }
 
   .attack-edit-btn {
     background: none;
@@ -1592,6 +1590,78 @@
     border-color: var(--gold);
     color: var(--gold-light);
   }
+
+  /* ── Attack section labels ── */
+  .attack-section-label {
+    font-size: 9px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: sans-serif;
+    padding: 6px 0 4px;
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    margin-bottom: 2px;
+  }
+
+  /* Spell rows inside the attack block */
+  .attack-row.spell-atk {
+    box-shadow: inset var(--roll-border) 0 0 0 rgba(91,174,255,0.4);
+    background: rgba(91,174,255,0.02);
+    cursor: pointer;
+  }
+  .attack-row.spell-atk:active { background: rgba(91,174,255,0.10); }
+  .attack-row.spell-atk .attack-name { color: #5baeff; }
+
+  /* Hidden attack rows - hidden by default, shown in manage mode */
+  .attack-row.atk-hidden { display: none; opacity: 0.5; }
+  #attackList.manage-mode .attack-row.atk-hidden { display: grid; }
+
+  /* Hidden section label */
+  .atk-hidden-label { display: none; color: var(--text-muted); margin-top: 8px; }
+  #attackList.manage-mode .atk-hidden-label { display: block; }
+
+  /* Manage-mode buttons */
+  .atk-manage-btn {
+    display: none;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-family: sans-serif;
+    padding: 2px 6px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .atk-manage-btn:active { border-color: var(--gold); color: var(--gold); }
+  #attackList.manage-mode .atk-manage-btn { display: inline-block; }
+  #attackList.manage-mode .attack-del { display: inline-block; }
+
+  /* Attack edit bottom sheet */
+  #attackSheetBackdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 400;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #attackSheetBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #attackEditSheet {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    max-width: 480px; margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--gold);
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 40px;
+    z-index: 401;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
+  }
+  #attackEditSheet.show { transform: translateY(0); }
 </style>
 </head>
 <body>
@@ -2201,6 +2271,19 @@
         </div>
       </div>
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="sp-edit-field">
+        <label>Combat Panel</label>
+        <div class="sp-edit-checkbox-row"><label><input type="checkbox" id="spEditShowInCombat"> Show in Combat</label></div>
+      </div>
+      <div class="sp-edit-field">
+        <label>Action Type</label>
+        <select id="spEditCombatType">
+          <option value="action">Action</option>
+          <option value="bonus">Bonus Action</option>
+        </select>
+      </div>
+    </div>
     <div class="sp-edit-field">
       <label>Description</label>
       <textarea id="spEditDescription" placeholder="Spell description..."></textarea>
@@ -2240,6 +2323,42 @@
   </div>
   <hr class="settings-divider">
   <button class="hp-dlg-btn" onclick="dismissSettings()" style="width:100%">Close</button>
+</div>
+
+<div id="attackSheetBackdrop" onclick="dismissAttackSheet()"></div>
+<div id="attackEditSheet">
+  <div class="hp-dlg-title" id="attackSheetTitle">New Attack</div>
+  <div style="height:10px"></div>
+  <label class="fe-label">Name</label>
+  <input class="fe-input" type="text" id="attackSheetName" placeholder="e.g. Longsword"
+         onkeydown="if(event.key==='Enter') document.getElementById('attackSheetBonus').focus()">
+  <div class="fe-row2">
+    <div>
+      <label class="fe-label">Attack Bonus</label>
+      <input class="fe-input" type="text" id="attackSheetBonus" placeholder="+5"
+             onkeydown="if(event.key==='Enter') document.getElementById('attackSheetDamage').focus()">
+    </div>
+    <div>
+      <label class="fe-label">Damage</label>
+      <input class="fe-input" type="text" id="attackSheetDamage" placeholder="1d8+3"
+             onkeydown="if(event.key==='Enter') saveAttackSheet()">
+    </div>
+  </div>
+  <label class="fe-label">Action Type</label>
+  <select class="fe-input" id="attackSheetActionType" style="margin-bottom:16px">
+    <option value="action">Action</option>
+    <option value="bonus">Bonus Action</option>
+  </select>
+  <div class="hp-dlg-btns">
+    <button class="hp-dlg-btn" onclick="dismissAttackSheet()">Cancel</button>
+    <button class="hp-dlg-btn primary" onclick="saveAttackSheet()">Save</button>
+  </div>
+  <div style="text-align:center;margin-top:10px">
+    <button id="attackSheetDeleteBtn" onclick="deleteAttackFromSheet()"
+            style="background:none;border:none;color:var(--red-light);font-size:13px;font-family:sans-serif;cursor:pointer;padding:8px;display:none">
+      Delete Attack
+    </button>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -2893,6 +3012,7 @@ function buildSpellList() {
           <span class="spell-item-name">${escHtml(sp.name)}</span>
           ${sp.concentration ? '<span class="spell-item-tag sp-tag-conc">C</span>' : ''}
           ${sp.ritual ? '<span class="spell-item-tag sp-tag-ritual">R</span>' : ''}
+          ${sp.showInCombat ? '<span class="spell-item-tag" style="color:#c9a84c;border-color:rgba(201,168,76,0.5);background:rgba(201,168,76,0.12)">⚔</span>' : ''}
           <span class="spell-item-school">${escHtml(sp.school || '')}</span>
         </div>`;
     });
@@ -3013,11 +3133,13 @@ function populateSpellEditForm(i) {
   document.getElementById('spEditComponents').value  = sp ? (sp.components    || '') : '';
   document.getElementById('spEditDuration').value    = sp ? (sp.duration      || '') : '';
   document.getElementById('spEditSaveAbility').value = sp ? (sp.saveAbility   || '') : '';
-  document.getElementById('spEditConc').checked        = sp ? !!sp.concentration : false;
-  document.getElementById('spEditRitual').checked      = sp ? !!sp.ritual        : false;
-  document.getElementById('spEditAttackRoll').checked  = sp ? !!sp.attackRoll    : false;
-  document.getElementById('spEditDamage').value        = sp ? (sp.damage         || '') : '';
-  document.getElementById('spEditDescription').value   = sp ? (sp.description    || '') : '';
+  document.getElementById('spEditConc').checked           = sp ? !!sp.concentration : false;
+  document.getElementById('spEditRitual').checked         = sp ? !!sp.ritual        : false;
+  document.getElementById('spEditAttackRoll').checked     = sp ? !!sp.attackRoll    : false;
+  document.getElementById('spEditDamage').value           = sp ? (sp.damage         || '') : '';
+  document.getElementById('spEditDescription').value      = sp ? (sp.description    || '') : '';
+  document.getElementById('spEditShowInCombat').checked   = sp ? !!sp.showInCombat  : false;
+  document.getElementById('spEditCombatType').value       = sp ? (sp.combatActionType || 'action') : 'action';
 }
 
 function saveSpellEdit() {
@@ -3025,18 +3147,20 @@ function saveSpellEdit() {
   if (!name) { toast('Spell name is required'); document.getElementById('spEditName').focus(); return; }
   const spell = {
     name,
-    level:         parseInt(document.getElementById('spEditLevel').value) || 0,
-    school:        document.getElementById('spEditSchool').value.trim(),
-    castingTime:   document.getElementById('spEditCastTime').value.trim(),
-    range:         document.getElementById('spEditRange').value.trim(),
-    components:    document.getElementById('spEditComponents').value.trim(),
-    duration:      document.getElementById('spEditDuration').value.trim(),
-    saveAbility:   document.getElementById('spEditSaveAbility').value,
-    concentration: document.getElementById('spEditConc').checked,
-    ritual:        document.getElementById('spEditRitual').checked,
-    attackRoll:    document.getElementById('spEditAttackRoll').checked,
-    damage:        document.getElementById('spEditDamage').value.trim(),
-    description:   document.getElementById('spEditDescription').value.trim(),
+    level:            parseInt(document.getElementById('spEditLevel').value) || 0,
+    school:           document.getElementById('spEditSchool').value.trim(),
+    castingTime:      document.getElementById('spEditCastTime').value.trim(),
+    range:            document.getElementById('spEditRange').value.trim(),
+    components:       document.getElementById('spEditComponents').value.trim(),
+    duration:         document.getElementById('spEditDuration').value.trim(),
+    saveAbility:      document.getElementById('spEditSaveAbility').value,
+    concentration:    document.getElementById('spEditConc').checked,
+    ritual:           document.getElementById('spEditRitual').checked,
+    attackRoll:       document.getElementById('spEditAttackRoll').checked,
+    damage:           document.getElementById('spEditDamage').value.trim(),
+    description:      document.getElementById('spEditDescription').value.trim(),
+    showInCombat:     document.getElementById('spEditShowInCombat').checked,
+    combatActionType: document.getElementById('spEditCombatType').value,
   };
   if (spellPanelEditIdx >= 0) {
     state.spells[spellPanelEditIdx] = spell;
@@ -3046,6 +3170,7 @@ function saveSpellEdit() {
     toast('Spell added');
   }
   buildSpellList();
+  renderAttacks();
   saveData();
   dismissSpellPanel();
 }
@@ -3388,73 +3513,221 @@ function resetHPToFull() {
 // ── Attacks ────────────────────────────────────────────────────────────
 let longPressTimer = null;
 let longPressActive = false;
+let attackSheetIdx = -1;
 
 function startLongPress(e, i) {
-  if (e.target.closest('.attack-del')) return;
+  if (e.target.closest('.atk-manage-btn') || e.target.closest('.attack-del')) return;
   longPressActive = false;
   clearTimeout(longPressTimer);
   longPressTimer = setTimeout(() => {
     longPressActive = true;
-    document.querySelectorAll('.attack-row.del-ready').forEach(r => r.classList.remove('del-ready'));
-    const row = document.querySelector(`.attack-row[data-idx="${i}"]`);
-    if (row) row.classList.add('del-ready');
-    document.addEventListener('pointerdown', dismissDelReady, {once: true, capture: true});
+    openAttackSheet(i);
   }, 500);
 }
 
 function cancelLongPress() { clearTimeout(longPressTimer); }
 
-function dismissDelReady(e) {
-  if (!e.target.closest('.attack-del')) {
-    document.querySelectorAll('.attack-row.del-ready').forEach(r => r.classList.remove('del-ready'));
-    longPressActive = false;
-  }
-}
-
 function toggleAttackEdit() {
   const list = document.getElementById('attackList');
   const btn  = document.getElementById('attackEditBtn');
-  const active = list.classList.toggle('delete-all');
-  document.querySelectorAll('.attack-row.del-ready').forEach(r => r.classList.remove('del-ready'));
+  const active = list.classList.toggle('manage-mode');
   longPressActive = false;
   if (btn) { btn.textContent = active ? 'Done' : 'Edit'; btn.classList.toggle('active', active); }
+  renderAttacks();
 }
 
-function addAttack() {
-  const name   = prompt('Attack name (e.g. Longsword):');
-  if (!name) return;
-  const bonus  = prompt('Attack bonus (e.g. +5):', '+5');
-  const damage = prompt('Damage (e.g. 1d8+3):', '1d6');
-  state.attacks.push({name, bonus: bonus||'—', damage: damage||'—'});
-  pushUndo({type: 'addAttack', index: state.attacks.length - 1});
+function addAttack() { openAttackSheet(-1); }
+
+function openAttackSheet(i) {
+  pushModalHistory();
+  attackSheetIdx = i;
+  const isNew = i < 0;
+  document.getElementById('attackSheetTitle').textContent = isNew ? 'New Attack' : 'Edit Attack';
+  const a = isNew ? null : state.attacks[i];
+  document.getElementById('attackSheetName').value = a ? a.name : '';
+  document.getElementById('attackSheetBonus').value = a ? (a.bonus === '—' ? '' : a.bonus) : '';
+  document.getElementById('attackSheetDamage').value = a ? (a.damage === '—' ? '' : a.damage) : '';
+  document.getElementById('attackSheetActionType').value = a ? (a.actionType || 'action') : 'action';
+  document.getElementById('attackSheetDeleteBtn').style.display = isNew ? 'none' : '';
+  document.getElementById('attackSheetBackdrop').classList.add('show');
+  document.getElementById('attackEditSheet').classList.add('show');
+  setTimeout(() => document.getElementById('attackSheetName').focus(), 300);
+}
+
+function saveAttackSheet() {
+  const name = document.getElementById('attackSheetName').value.trim();
+  if (!name) { toast('Attack name is required'); document.getElementById('attackSheetName').focus(); return; }
+  const bonus = document.getElementById('attackSheetBonus').value.trim() || '—';
+  const damage = document.getElementById('attackSheetDamage').value.trim() || '—';
+  const actionType = document.getElementById('attackSheetActionType').value;
+  if (attackSheetIdx < 0) {
+    const atk = {name, bonus, damage, actionType, hidden: false};
+    state.attacks.push(atk);
+    pushUndo({type: 'addAttack', index: state.attacks.length - 1});
+  } else {
+    const existing = state.attacks[attackSheetIdx];
+    state.attacks[attackSheetIdx] = {...existing, name, bonus, damage, actionType};
+  }
+  renderAttacks();
+  saveData();
+  dismissAttackSheet();
+}
+
+function deleteAttackFromSheet() {
+  if (attackSheetIdx < 0) return;
+  pushUndo({type: 'removeAttack', attack: {...state.attacks[attackSheetIdx]}, index: attackSheetIdx});
+  state.attacks.splice(attackSheetIdx, 1);
+  renderAttacks();
+  saveData();
+  dismissAttackSheet();
+  toast('Attack deleted');
+}
+
+function dismissAttackSheet() {
+  popModalHistory();
+  document.getElementById('attackSheetBackdrop').classList.remove('show');
+  document.getElementById('attackEditSheet').classList.remove('show');
+  longPressActive = false;
+}
+
+function hideAttack(i) {
+  state.attacks[i].hidden = true;
   renderAttacks();
   saveData();
 }
 
+function showAttack(i) {
+  state.attacks[i].hidden = false;
+  renderAttacks();
+  saveData();
+}
+
+function getSpellAtkBonus() {
+  const el = document.getElementById('statSpellAtk');
+  return el ? el.textContent : '—';
+}
+
+function rollSpellFromCombat(spellIdx) {
+  if (longPressActive) { longPressActive = false; return; }
+  const sp = state.spells[spellIdx];
+  if (!sp) return;
+  if (!sp.attackRoll) { toast(sp.name); return; }
+  const el = document.getElementById('statSpellAtk');
+  if (!el || el.textContent === '—') { toast('No spellcasting ability set'); return; }
+  const roll = d20();
+  const m = parseInt(el.textContent) || 0;
+  let secondary;
+  if (sp.damage) {
+    const dmg = rollDiceExpr(sp.damage);
+    if (dmg !== null) secondary = `Dmg: ${dmg}`;
+  }
+  showRoll(sp.name, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll), secondary);
+}
+
 function renderAttacks() {
   const list = document.getElementById('attackList');
-  if (!state.attacks.length) {
+  const manageMode = list.classList.contains('manage-mode');
+
+  const combatSpells = state.spells.filter(sp => sp.showInCombat && sp.attackRoll);
+  const combatSpellActions = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'action');
+  const combatSpellBonus   = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'bonus');
+
+  const visActionAtks = state.attacks.filter(a => !a.hidden && (a.actionType || 'action') === 'action');
+  const visBonusAtks  = state.attacks.filter(a => !a.hidden && (a.actionType || 'action') === 'bonus');
+  const hiddenAtks    = state.attacks.filter(a => !!a.hidden);
+
+  const hasVisActions = visActionAtks.length > 0 || combatSpellActions.length > 0;
+  const hasVisBonus   = visBonusAtks.length > 0  || combatSpellBonus.length > 0;
+  const hasAny        = state.attacks.length > 0  || combatSpells.length > 0;
+
+  if (!hasAny) {
     list.innerHTML = `<div class="attack-row" style="cursor:default">
       <span class="attack-name" style="color:var(--text-muted);font-size:12px;font-style:italic">No attacks added</span>
       <span></span><span></span><span></span></div>`;
     return;
   }
-  list.innerHTML = state.attacks.map((a, i) => `
-    <div class="attack-row" data-idx="${i}"
-         onclick="rollAttack(${i})"
-         onpointerdown="startLongPress(event,${i})"
-         onpointerup="cancelLongPress()"
-         onpointercancel="cancelLongPress()"
-         oncontextmenu="return false">
-      <span class="attack-name">${a.name}</span>
-      <span class="attack-bonus">${a.bonus}</span>
-      <span class="attack-damage">${a.damage}</span>
-      <button class="attack-del"
-              onpointerdown="event.stopPropagation()"
-              onclick="event.stopPropagation(); removeAttack(${i})"
-              title="Delete">🗑</button>
-    </div>
-  `).join('');
+
+  function makeAtkRow(a, i) {
+    const isHidden = !!a.hidden;
+    return `
+      <div class="attack-row${isHidden ? ' atk-hidden' : ''}" data-idx="${i}"
+           onclick="rollAttack(${i})"
+           onpointerdown="startLongPress(event,${i})"
+           onpointerup="cancelLongPress()"
+           onpointercancel="cancelLongPress()"
+           oncontextmenu="return false">
+        <span class="attack-name">${escHtml(a.name)}</span>
+        <span class="attack-bonus">${escHtml(a.bonus)}</span>
+        <span class="attack-damage">${escHtml(a.damage)}</span>
+        <div style="display:flex;gap:4px;align-items:center;justify-content:flex-end">
+          ${isHidden
+            ? `<button class="atk-manage-btn" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation();showAttack(${i})">Show</button>`
+            : `<button class="atk-manage-btn" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation();hideAttack(${i})">Hide</button>`
+          }
+          <button class="attack-del"
+                  onpointerdown="event.stopPropagation()"
+                  onclick="event.stopPropagation();removeAttack(${i})"
+                  title="Delete">🗑</button>
+        </div>
+      </div>`;
+  }
+
+  function makeSpellRow(sp, spIdx) {
+    return `
+      <div class="attack-row spell-atk"
+           onclick="rollSpellFromCombat(${spIdx})"
+           oncontextmenu="return false">
+        <span class="attack-name">${escHtml(sp.name)}</span>
+        <span class="attack-bonus" style="color:#5baeff">${escHtml(getSpellAtkBonus())}</span>
+        <span class="attack-damage">${escHtml(sp.damage || '—')}</span>
+        <div></div>
+      </div>`;
+  }
+
+  let html = '';
+
+  if (hasVisActions) {
+    html += `<div class="attack-section-label">Actions</div>`;
+    state.attacks.forEach((a, i) => {
+      if (!!a.hidden || (a.actionType || 'action') !== 'action') return;
+      html += makeAtkRow(a, i);
+    });
+    combatSpellActions.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
+  }
+
+  if (hasVisBonus) {
+    html += `<div class="attack-section-label"${hasVisActions ? ' style="margin-top:8px"' : ''}>Bonus Actions</div>`;
+    state.attacks.forEach((a, i) => {
+      if (!!a.hidden || (a.actionType || 'action') !== 'bonus') return;
+      html += makeAtkRow(a, i);
+    });
+    combatSpellBonus.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
+  }
+
+  if (hiddenAtks.length > 0) {
+    html += `<div class="attack-section-label atk-hidden-label">Hidden</div>`;
+    hiddenAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
+  }
+
+  list.innerHTML = html;
+}
+
+function rollAttack(i) {
+  if (longPressActive) { longPressActive = false; return; }
+  const a = state.attacks[i];
+  if (a.hidden) { openAttackSheet(i); return; }
+  const roll = d20();
+  let breakdown, total;
+  if (a.bonus && a.bonus !== '—') {
+    const bonus = parseInt(a.bonus) || 0;
+    breakdown = `d20(${roll}) ${fmtMod(bonus)}`;
+    total = roll + bonus;
+  } else {
+    breakdown = `d20(${roll})`;
+    total = roll;
+  }
+  const dmg = rollDiceExpr(a.damage);
+  showRoll(a.name, breakdown, total, natMsg(roll), dmg !== null ? `Dmg: ${dmg}` : '');
 }
 
 function removeAttack(i) {
@@ -3545,16 +3818,18 @@ function popModalHistory() {
 window.addEventListener('popstate', () => {
   if (!_modalStatePushed) return;
   _modalStatePushed = false;
-  const rollEl     = document.getElementById('rollResult');
-  const spellEl    = document.getElementById('spellPanel');
-  const stepEl     = document.getElementById('stepMenu');
-  const hpEl       = document.getElementById('hpDialog');
-  const settingsEl = document.getElementById('settingsMenu');
-  if (rollEl?.classList.contains('show'))            dismissRollResult();
-  else if (spellEl?.classList.contains('show'))      dismissSpellPanel();
-  else if (stepEl?.classList.contains('show'))       dismissStepMenu();
-  else if (hpEl?.classList.contains('show'))         dismissHpDialog();
-  else if (settingsEl?.classList.contains('show'))   dismissSettings();
+  const rollEl       = document.getElementById('rollResult');
+  const spellEl      = document.getElementById('spellPanel');
+  const stepEl       = document.getElementById('stepMenu');
+  const hpEl         = document.getElementById('hpDialog');
+  const settingsEl   = document.getElementById('settingsMenu');
+  const attackSheetEl = document.getElementById('attackEditSheet');
+  if (rollEl?.classList.contains('show'))              dismissRollResult();
+  else if (spellEl?.classList.contains('show'))        dismissSpellPanel();
+  else if (stepEl?.classList.contains('show'))         dismissStepMenu();
+  else if (hpEl?.classList.contains('show'))           dismissHpDialog();
+  else if (settingsEl?.classList.contains('show'))     dismissSettings();
+  else if (attackSheetEl?.classList.contains('show'))  dismissAttackSheet();
 });
 
 // ── Settings menu ─────────────────────────────────────────────────────
