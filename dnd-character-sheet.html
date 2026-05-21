@@ -2366,6 +2366,11 @@
       <div class="sp-atk-bonus" id="atkPanelBonus"></div>
       <div class="sp-atk-damage" id="atkPanelDamage"></div>
     </div>
+    <div class="sp-save-dc-box" id="atkPanelSaveDcBox" style="display:none">
+      <div class="sp-save-dc-label">Save DC</div>
+      <div class="sp-save-dc-value" id="atkPanelSaveDcValue">—</div>
+      <div class="sp-save-dc-ability" id="atkPanelSaveAbility"></div>
+    </div>
     <div class="sp-description" id="atkPanelDesc"></div>
     <span class="sp-dismiss-hint">tap to dismiss</span>
   </div>
@@ -2392,6 +2397,24 @@
         <option value="action">Action</option>
         <option value="bonus">Bonus Action</option>
       </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="sp-edit-field">
+        <label>Saving Throw</label>
+        <select id="atkEditSaveAbility">
+          <option value="">— None</option>
+          <option value="STR">Strength</option>
+          <option value="DEX">Dexterity</option>
+          <option value="CON">Constitution</option>
+          <option value="INT">Intelligence</option>
+          <option value="WIS">Wisdom</option>
+          <option value="CHA">Charisma</option>
+        </select>
+      </div>
+      <div class="sp-edit-field">
+        <label>Save DC</label>
+        <input type="number" id="atkEditSaveDC" min="1" max="30" placeholder="e.g. 15">
+      </div>
     </div>
     <div class="sp-edit-field">
       <label>Description</label>
@@ -3572,11 +3595,13 @@ function openAttackPanel(i, editMode) {
   if (editMode) {
     panel.classList.add('edit-mode');
     const a = i >= 0 ? state.attacks[i] : null;
-    document.getElementById('atkEditName').value       = a ? a.name : '';
-    document.getElementById('atkEditBonus').value      = a ? (a.bonus === '—' ? '' : a.bonus) : '';
-    document.getElementById('atkEditDamage').value     = a ? (a.damage === '—' ? '' : a.damage) : '';
-    document.getElementById('atkEditActionType').value = a ? (a.actionType || 'action') : 'action';
-    document.getElementById('atkEditDesc').value       = a ? (a.description || '') : '';
+    document.getElementById('atkEditName').value         = a ? a.name : '';
+    document.getElementById('atkEditBonus').value        = a ? (a.bonus === '—' ? '' : a.bonus) : '';
+    document.getElementById('atkEditDamage').value       = a ? (a.damage === '—' ? '' : a.damage) : '';
+    document.getElementById('atkEditActionType').value   = a ? (a.actionType || 'action') : 'action';
+    document.getElementById('atkEditSaveAbility').value  = a ? (a.saveAbility || '') : '';
+    document.getElementById('atkEditSaveDC').value       = a ? (a.saveDC || '') : '';
+    document.getElementById('atkEditDesc').value         = a ? (a.description || '') : '';
     document.getElementById('atkEditDeleteBtn').style.display = i < 0 ? 'none' : '';
     setTimeout(() => document.getElementById('atkEditName').focus(), 250);
   } else {
@@ -3593,6 +3618,14 @@ function openAttackPanel(i, editMode) {
     } else {
       rollBox.style.display = 'none';
     }
+    const saveDcBox = document.getElementById('atkPanelSaveDcBox');
+    if (a.saveAbility && a.saveDC) {
+      document.getElementById('atkPanelSaveDcValue').textContent = a.saveDC;
+      document.getElementById('atkPanelSaveAbility').textContent = a.saveAbility + ' Save';
+      saveDcBox.style.display = '';
+    } else {
+      saveDcBox.style.display = 'none';
+    }
     const descEl = document.getElementById('atkPanelDesc');
     descEl.textContent = a.description || '';
     descEl.style.display = a.description ? '' : 'none';
@@ -3604,11 +3637,13 @@ function openAttackPanel(i, editMode) {
 function switchToAtkEdit() {
   document.getElementById('attackPanel').classList.add('edit-mode');
   const a = attackPanelIdx >= 0 ? state.attacks[attackPanelIdx] : null;
-  document.getElementById('atkEditName').value       = a ? a.name : '';
-  document.getElementById('atkEditBonus').value      = a ? (a.bonus === '—' ? '' : a.bonus) : '';
-  document.getElementById('atkEditDamage').value     = a ? (a.damage === '—' ? '' : a.damage) : '';
-  document.getElementById('atkEditActionType').value = a ? (a.actionType || 'action') : 'action';
-  document.getElementById('atkEditDesc').value       = a ? (a.description || '') : '';
+  document.getElementById('atkEditName').value         = a ? a.name : '';
+  document.getElementById('atkEditBonus').value        = a ? (a.bonus === '—' ? '' : a.bonus) : '';
+  document.getElementById('atkEditDamage').value       = a ? (a.damage === '—' ? '' : a.damage) : '';
+  document.getElementById('atkEditActionType').value   = a ? (a.actionType || 'action') : 'action';
+  document.getElementById('atkEditSaveAbility').value  = a ? (a.saveAbility || '') : '';
+  document.getElementById('atkEditSaveDC').value       = a ? (a.saveDC || '') : '';
+  document.getElementById('atkEditDesc').value         = a ? (a.description || '') : '';
   document.getElementById('atkEditDeleteBtn').style.display = attackPanelIdx < 0 ? 'none' : '';
   setTimeout(() => document.getElementById('atkEditName').focus(), 100);
 }
@@ -3619,13 +3654,15 @@ function saveAttackPanel() {
   const bonus       = document.getElementById('atkEditBonus').value.trim() || '—';
   const damage      = document.getElementById('atkEditDamage').value.trim() || '—';
   const actionType  = document.getElementById('atkEditActionType').value;
+  const saveAbility = document.getElementById('atkEditSaveAbility').value;
+  const saveDC      = parseInt(document.getElementById('atkEditSaveDC').value) || 0;
   const description = document.getElementById('atkEditDesc').value.trim();
   if (attackPanelIdx < 0) {
-    state.attacks.push({name, bonus, damage, actionType, description, hidden: false});
+    state.attacks.push({name, bonus, damage, actionType, saveAbility, saveDC, description, hidden: false});
     pushUndo({type: 'addAttack', index: state.attacks.length - 1});
     toast('Attack added');
   } else {
-    state.attacks[attackPanelIdx] = {...state.attacks[attackPanelIdx], name, bonus, damage, actionType, description};
+    state.attacks[attackPanelIdx] = {...state.attacks[attackPanelIdx], name, bonus, damage, actionType, saveAbility, saveDC, description};
     toast('Attack updated');
   }
   renderAttacks();
