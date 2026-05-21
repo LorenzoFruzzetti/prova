@@ -20,6 +20,7 @@
     --tab-active: #3d2e1a;
     --radius: 8px;
     --shadow: 0 2px 8px rgba(0,0,0,0.5);
+    --roll-border: 2px;   /* width of the gold border on tappable/rollable elements */
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -219,15 +220,15 @@
   }
 
   .ability-card {
-    background: var(--bg);
-    border: 1px solid var(--border);
+    background: rgba(201,168,76,0.03);
+    border: var(--roll-border) solid rgba(201,168,76,0.4);
     border-radius: var(--radius);
     text-align: center;
     padding: 8px 4px;
     cursor: pointer;
   }
 
-  .ability-card:active { border-color: var(--gold); }
+  .ability-card:active { border-color: var(--gold); background: rgba(201,168,76,0.14); }
 
   .ability-name {
     font-size: 9px;
@@ -388,6 +389,8 @@
     cursor: pointer;
   }
 
+  .check-item:active { background: rgba(201,168,76,0.08); }
+
   .check-item:last-child { border-bottom: none; }
 
   .prof-dots {
@@ -431,6 +434,12 @@
     min-width: 28px;
     text-align: right;
     font-family: sans-serif;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    border-left: var(--roll-border) solid rgba(201,168,76,0.4);
+    padding-left: 8px;
   }
 
   .check-name {
@@ -493,6 +502,46 @@
     gap: 8px;
   }
   .spell-level-row:last-child { border-bottom: none; }
+
+  /* default child order for lefty-swappable rows */
+  .spell-level-row .spell-level-num  { order: 1; }
+  .spell-level-row .spell-slots-dots { order: 2; }
+  .spell-level-row .mini-tracker     { order: 3; }
+  .spell-level-row > input           { order: 4; }
+
+  .feature-track .feature-dots  { order: 1; }
+  .feature-track .mini-tracker  { order: 2; }
+  .feature-track > input        { order: 3; }
+
+  .tracker-row { display: flex; align-items: center; gap: 8px; }
+  .tracker-row .spell-slots-dots { order: 1; }
+  .tracker-row .mini-tracker     { order: 2; }
+  .tracker-row .hit-die-roll     { order: 3; }
+
+  .hit-die-roll {
+    background: rgba(201,168,76,0.03);
+    border: var(--roll-border) solid rgba(201,168,76,0.4);
+    border-radius: var(--radius);
+    padding: 5px 10px;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--gold-light);
+    cursor: pointer;
+    font-family: sans-serif;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .hit-die-roll:active { border-color: var(--gold); background: rgba(201,168,76,0.14); }
+
+  /* lefty mode: swap dots and mini-tracker */
+  body.lefty .spell-level-row .spell-slots-dots { order: 3; }
+  body.lefty .spell-level-row .mini-tracker     { order: 2; }
+  body.lefty .feature-track .feature-dots       { order: 2; }
+  body.lefty .feature-track .mini-tracker       { order: 1; }
+  body.lefty .tracker-row .spell-slots-dots     { order: 2; }
+  body.lefty .tracker-row .mini-tracker         { order: 1; }
 
   .spell-level-num {
     font-size: 11px;
@@ -624,13 +673,17 @@
     grid-template-columns: 1fr auto auto auto;
     gap: 8px;
     align-items: center;
-    padding: 8px 0;
+    padding: 8px 0 8px calc(var(--roll-border) + 6px);
+    margin-bottom: 6px;
     border-bottom: 1px solid rgba(92,74,42,0.3);
     font-size: 13px;
     cursor: pointer;
+    box-shadow: inset var(--roll-border) 0 0 0 rgba(201,168,76,0.4);
+    background: rgba(201,168,76,0.02);
   }
-  .attack-row:last-child { border-bottom: none; }
+  .attack-row:last-child { border-bottom: none; margin-bottom: 0; }
   .attack-row:active .attack-name { color: var(--gold-light); }
+  .attack-row:active { background: rgba(201,168,76,0.12); }
 
   .attack-name { font-weight: bold; }
   .attack-bonus { color: var(--gold-light); font-family: sans-serif; font-size: 12px; text-align: center; }
@@ -669,8 +722,13 @@
   .attack-edit-btn.active { color: var(--gold); border-color: var(--gold); }
 
   /* ── Rollable stat pills ── */
-  .stat-pill.rollable { cursor: pointer; }
-  .stat-pill.rollable:active { border-color: var(--gold); }
+  .stat-pill.rollable {
+    cursor: pointer;
+    border-width: var(--roll-border);
+    border-color: rgba(201,168,76,0.4);
+    background: rgba(201,168,76,0.03);
+  }
+  .stat-pill.rollable:active { border-color: var(--gold); background: rgba(201,168,76,0.14); }
 
   .add-btn {
     width: 100%;
@@ -1123,6 +1181,24 @@
     color: var(--gold-light);
     font-weight: bold;
   }
+
+  .settings-toggle {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: sans-serif;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .settings-toggle.on {
+    background: rgba(201,168,76,0.15);
+    border-color: var(--gold);
+    color: var(--gold-light);
+  }
 </style>
 </head>
 <body>
@@ -1373,7 +1449,7 @@
       </div>
       <div class="stat-pills" style="margin-top:8px">
         <div class="stat-pill">
-          <input type="text" id="statHitDice" value="1d8" oninput="saveData()" style="font-size:16px">
+          <input type="text" id="statHitDice" value="1d8" oninput="saveData(); updateHitDieBadge()" style="font-size:16px">
           <div class="stat-pill-label">Die Type</div>
         </div>
         <div class="stat-pill rollable" onclick="rollSpellAtk()">
@@ -1394,7 +1470,7 @@
       <button class="attack-edit-btn" onclick="restoreHitDice()">↺ Restore</button>
     </div>
     <div class="section-body">
-      <div style="display:flex;align-items:center;gap:8px">
+      <div class="tracker-row">
         <div class="spell-slots-dots" id="hitDiceDots"></div>
         <div class="mini-tracker">
           <button class="mini-btn minus"
@@ -1407,6 +1483,7 @@
                   onpointerup="stopHitDiceHold()"
                   onpointercancel="stopHitDiceHold()">+</button>
         </div>
+        <div class="hit-die-roll" id="hitDiceRollBtn" onclick="rollHitDie()">d8</div>
       </div>
     </div>
   </div>
@@ -1655,6 +1732,13 @@
       <span class="font-ctrl-value" id="fontSizeLabel">100%</span>
       <button class="font-ctrl-btn" onclick="changeFontSize(1)">+</button>
     </div>
+  </div>
+  <div class="settings-row">
+    <div class="settings-row-label">
+      Lefty Mode
+      <small>Move +/− buttons to the left of each tracker</small>
+    </div>
+    <button class="settings-toggle" id="leftyToggle" onclick="toggleLeftyMode()">Off</button>
   </div>
   <hr class="settings-divider">
   <button class="hp-dlg-btn" onclick="dismissSettings()" style="width:100%">Close</button>
@@ -2442,6 +2526,25 @@ function renderHitDice() {
   }
   const val = document.getElementById('hitDiceVal');
   if (val) val.textContent = `${max - used}/${max}`;
+  updateHitDieBadge();
+}
+
+function updateHitDieBadge() {
+  const str = document.getElementById('statHitDice')?.value.trim() || '';
+  const m = str.match(/d\d+/i);
+  const el = document.getElementById('hitDiceRollBtn');
+  if (el) el.textContent = m ? m[0].toLowerCase() : '—';
+}
+
+function rollHitDie() {
+  const str = document.getElementById('statHitDice')?.value.trim() || '';
+  const m = str.match(/d(\d+)/i);
+  if (!m) { toast('Set hit dice type first'); return; }
+  const sides = parseInt(m[1]);
+  const roll = Math.floor(Math.random() * sides) + 1;
+  const conMod = mod(state.abilities.CON);
+  const total = Math.max(1, roll + conMod);
+  showRoll(`Hit Die (d${sides})`, `d${sides}(${roll}) ${fmtMod(conMod)}`, total, '');
 }
 
 function toggleHitDie(j) {
@@ -2746,6 +2849,29 @@ function changeFontSize(dir) {
   localStorage.setItem('dnd5e_fontsize', FONT_SIZES[fontSizeIdx]);
 }
 
+// ── Lefty mode ─────────────────────────────────────────────────────────
+let leftyMode = false;
+
+function loadLeftyMode() {
+  leftyMode = localStorage.getItem('dnd5e_lefty') === '1';
+  applyLeftyMode();
+}
+
+function applyLeftyMode() {
+  document.body.classList.toggle('lefty', leftyMode);
+  const btn = document.getElementById('leftyToggle');
+  if (btn) {
+    btn.textContent = leftyMode ? 'On' : 'Off';
+    btn.classList.toggle('on', leftyMode);
+  }
+}
+
+function toggleLeftyMode() {
+  leftyMode = !leftyMode;
+  applyLeftyMode();
+  localStorage.setItem('dnd5e_lefty', leftyMode ? '1' : '0');
+}
+
 // ── Toast ──────────────────────────────────────────────────────────────
 let toastTimer;
 function toast(msg) {
@@ -2880,6 +3006,7 @@ function setupAutoSave() {
 // ── Boot ───────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   loadFontSize();
+  loadLeftyMode();
   init();
   updateHeader();
   updateHP();
