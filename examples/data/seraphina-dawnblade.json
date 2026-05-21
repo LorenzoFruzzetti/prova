@@ -22,12 +22,11 @@
     "statHitDice":    "8d10",
 
     "spellAbility":   "CHA",
-    "spellsList":     "Cantrips: —\n1st: Bless, Cure Wounds, Protection from Evil and Good, Shield of Faith\n2nd: Aid, Lesser Restoration, Find Steed",
 
     "equipment":      "- Longsword (1d8 slashing, versatile 1d10)\n- Shield (+2 AC)\n- Plate Armor\n- Holy Symbol\n- Healer's Kit\n- Signet Ring of House Dawnblade",
     "proficiencies":  "All armor, shields, simple weapons, martial weapons",
     "languages":      "Common, Celestial, Elvish",
-    "notes":          "Divine Smite: expend spell slot for +2d8 radiant per slot level (up to 5d8). +1d8 vs undead/fiends.",
+    "notes":          "Divine Smite: expend spell slot for +2d8 radiant per slot level (up to 5d8). +1d8 vs undead/fiends.\nCantrips via Magic Initiate feat (Cleric).",
 
     "cp":  "0",
     "sp":  "0",
@@ -71,6 +70,126 @@
       { "level": "7th", "max": 0, "used": 0 },
       { "level": "8th", "max": 0, "used": 0 },
       { "level": "9th", "max": 0, "used": 0 }
+    ],
+
+    "spells": [
+      {
+        "name": "Guidance",
+        "level": 0,
+        "school": "Divination",
+        "castingTime": "1 action",
+        "range": "Touch",
+        "components": "V, S",
+        "duration": "Concentration, up to 1 minute",
+        "saveAbility": "",
+        "concentration": true,
+        "ritual": false,
+        "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice. It can roll the die before or after making the ability check. The spell then ends."
+      },
+      {
+        "name": "Sacred Flame",
+        "level": 0,
+        "school": "Evocation",
+        "castingTime": "1 action",
+        "range": "60 feet",
+        "components": "V, S",
+        "duration": "Instantaneous",
+        "saveAbility": "DEX",
+        "concentration": false,
+        "ritual": false,
+        "description": "Flame-like radiance descends on a creature that you can see within range. The target must succeed on a Dexterity saving throw or take 1d8 radiant damage. The target gains no benefit from cover for this saving throw. The spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8)."
+      },
+      {
+        "name": "Bless",
+        "level": 1,
+        "school": "Enchantment",
+        "castingTime": "1 action",
+        "range": "30 feet",
+        "components": "V, S, M (a sprinkling of holy water)",
+        "duration": "Concentration, up to 1 minute",
+        "saveAbility": "",
+        "concentration": true,
+        "ritual": false,
+        "description": "You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target can roll a d4 and add the number rolled to the attack roll or saving throw. When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st."
+      },
+      {
+        "name": "Command",
+        "level": 1,
+        "school": "Enchantment",
+        "castingTime": "1 action",
+        "range": "60 feet",
+        "components": "V",
+        "duration": "1 round",
+        "saveAbility": "WIS",
+        "concentration": false,
+        "ritual": false,
+        "description": "You speak a one-word command to a creature you can see within range. The target must succeed on a Wisdom saving throw or follow the command on its next turn. The spell has no effect if the target is undead, if it doesn't understand your language, or if your command is directly harmful to it. When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st."
+      },
+      {
+        "name": "Detect Magic",
+        "level": 1,
+        "school": "Divination",
+        "castingTime": "1 action",
+        "range": "Self",
+        "components": "V, S",
+        "duration": "Concentration, up to 10 minutes",
+        "saveAbility": "",
+        "concentration": true,
+        "ritual": true,
+        "description": "For the duration, you sense the presence of magic within 30 feet of you. If you sense magic in this way, you can use your action to see a faint aura around any visible creature or object in the area that bears magic, and you learn its school of magic, if any. The spell can penetrate most barriers, but is blocked by 1 foot of stone, 1 inch of common metal, a thin sheet of lead, or 3 feet of wood or dirt."
+      },
+      {
+        "name": "Aid",
+        "level": 2,
+        "school": "Abjuration",
+        "castingTime": "1 action",
+        "range": "30 feet",
+        "components": "V, S, M (a tiny strip of white cloth)",
+        "duration": "8 hours",
+        "saveAbility": "",
+        "concentration": false,
+        "ritual": false,
+        "description": "Your spell bolsters your allies with toughness and resolve. Choose up to three creatures within range. Each target's hit point maximum and current hit points increase by 5 for the duration. When you cast this spell using a spell slot of 3rd level or higher, a target's hit points increase by an additional 5 for each slot level above 2nd."
+      },
+      {
+        "name": "Hold Person",
+        "level": 2,
+        "school": "Enchantment",
+        "castingTime": "1 action",
+        "range": "60 feet",
+        "components": "V, S, M (a small, straight piece of iron)",
+        "duration": "Concentration, up to 1 minute",
+        "saveAbility": "WIS",
+        "concentration": true,
+        "ritual": false,
+        "description": "Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration. At the end of each of its turns, the target can make another Wisdom saving throw. On a success, the spell ends on the target. When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd."
+      },
+      {
+        "name": "Zone of Truth",
+        "level": 2,
+        "school": "Enchantment",
+        "castingTime": "1 action",
+        "range": "60 feet",
+        "components": "V, S",
+        "duration": "10 minutes",
+        "saveAbility": "CHA",
+        "concentration": false,
+        "ritual": false,
+        "description": "You create a magical zone that guards against deception in a 15-foot-radius sphere centered on a point of your choice within range, for the duration. A creature that enters the spell's area for the first time on a turn or starts its turn there must make a Charisma saving throw. On a failed save, a creature can't speak a deliberate lie while in the radius. You know whether each creature succeeds or fails on its saving throw."
+      },
+      {
+        "name": "Dispel Magic",
+        "level": 3,
+        "school": "Abjuration",
+        "castingTime": "1 action",
+        "range": "120 feet",
+        "components": "V, S",
+        "duration": "Instantaneous",
+        "saveAbility": "",
+        "concentration": false,
+        "ritual": false,
+        "description": "Choose one creature, object, or magical effect within range. Any spell of 3rd level or lower on the target ends. For each spell of 4th level or higher on the target, make an ability check using your spellcasting ability. The DC equals 10 + the spell's level. On a successful check, the spell ends. When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell's level is equal to or less than the level of the spell slot you used."
+      }
     ],
 
     "attacks": [

@@ -45,7 +45,6 @@ Contains every HTML form field value as a **string**, even when the field holds 
   "statHitDice":    "7d8",
 
   "spellAbility":   "INT",
-  "spellsList":     "Cantrips: Mage Hand, Minor Illusion\n1st: Charm Person, Disguise Self",
 
   "equipment":      "- Rapier (1d8 piercing)\n- Hand Crossbow\n- Thieves' Tools\n- Bag of Holding",
   "proficiencies":  "Light armor, simple weapons, hand crossbows, longswords, rapiers, shortswords",
@@ -83,7 +82,6 @@ Contains every HTML form field value as a **string**, even when the field holds 
 | `statSpeed` | string (int) | Any integer (feet) |
 | `statHitDice` | string | Dice notation e.g. `"7d8"` |
 | `spellAbility` | string | `"INT"`, `"WIS"`, `"CHA"`, or `""` |
-| `spellsList` | string | Free text |
 | `equipment` | string | Free text |
 | `proficiencies` | string | Free text |
 | `languages` | string | Free text |
@@ -142,6 +140,48 @@ Contains structured game data that cannot be expressed as plain form inputs.
     { "level": "7th", "max": 0, "used": 0 },
     { "level": "8th", "max": 0, "used": 0 },
     { "level": "9th", "max": 0, "used": 0 }
+  ],
+
+  "spells": [
+    {
+      "name":        "Fire Bolt",
+      "level":       0,
+      "school":      "Evocation",
+      "castingTime": "1 action",
+      "range":       "120 ft",
+      "components":  "V, S",
+      "duration":    "Instantaneous",
+      "saveAbility": "",
+      "concentration": false,
+      "ritual":      false,
+      "description": "You hurl a mote of fire at a creature or object within range."
+    },
+    {
+      "name":        "Shield",
+      "level":       1,
+      "school":      "Abjuration",
+      "castingTime": "1 reaction",
+      "range":       "Self",
+      "components":  "V, S",
+      "duration":    "1 round",
+      "saveAbility": "",
+      "concentration": false,
+      "ritual":      false,
+      "description": "+5 bonus to AC until the start of your next turn."
+    },
+    {
+      "name":        "Hypnotic Pattern",
+      "level":       3,
+      "school":      "Illusion",
+      "castingTime": "1 action",
+      "range":       "120 ft",
+      "components":  "S, M (a glowing stick of incense or a crystal vial filled with phosphorescent material)",
+      "duration":    "1 minute",
+      "saveAbility": "WIS",
+      "concentration": true,
+      "ritual":      false,
+      "description": "Each creature in a 30-foot cube originating from a point you choose makes a WIS save or becomes charmed."
+    }
   ],
 
   "attacks": [
@@ -232,6 +272,40 @@ Each object:
 | `used` | integer | Slots already expended; must be `≤ max` |
 
 Non-casters can set all `max` values to `0`.
+
+#### `spells`
+Array of spell objects stored in the character's spell list. Can be empty (`[]`).
+
+Each object:
+
+| Key | Type | Description |
+|---|---|---|
+| `name` | string | Spell name (required) |
+| `level` | integer | `0` = Cantrip; `1`–`9` = spell level |
+| `school` | string | Magic school, e.g. `"Evocation"`, `"Illusion"` (optional) |
+| `castingTime` | string | e.g. `"1 action"`, `"1 bonus action"`, `"1 minute"` (optional) |
+| `range` | string | e.g. `"120 ft"`, `"Self"`, `"Touch"` (optional) |
+| `components` | string | e.g. `"V, S"`, `"V, S, M (a pinch of sulfur)"` (optional) |
+| `duration` | string | e.g. `"Instantaneous"`, `"1 hour"` (optional) |
+| `saveAbility` | string | Ability for the saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` if the spell has no save |
+| `concentration` | boolean | `true` if the spell requires concentration |
+| `ritual` | boolean | `true` if the spell can be cast as a ritual |
+| `description` | string | Full spell description; newlines are preserved |
+
+When a spell has a `saveAbility` set, the view panel automatically pulls the current **Spell Save DC** (derived from the chosen spellcasting ability) and displays it prominently.
+
+```json
+"spells": [
+  {
+    "name": "Fireball", "level": 3, "school": "Evocation",
+    "castingTime": "1 action", "range": "150 ft",
+    "components": "V, S, M (a tiny ball of bat guano and sulfur)",
+    "duration": "Instantaneous", "saveAbility": "DEX",
+    "concentration": false, "ritual": false,
+    "description": "A bright streak flashes from your pointing finger..."
+  }
+]
+```
 
 #### `attacks`
 Array of attack objects. Can be empty (`[]`).

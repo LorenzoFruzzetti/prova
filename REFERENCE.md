@@ -19,7 +19,7 @@ dnd-character-sheet.html
 │   ├── #panel-abilities   Tab: ability scores + saving throws + passive perception + conditions
 │   ├── #panel-skills      Tab: 18 skills with proficiency/expertise dots
 │   ├── #panel-combat      Tab: HP tracker + combat stats + hit dice tracker + inspiration + death saves + attacks
-│   ├── #panel-spells      Tab: spellcasting ability + spell slots (with ↺ All) + spell list textarea
+│   ├── #panel-spells      Tab: spellcasting ability + spell slots (hidden levels shown as "+ Nth" pills at top; active levels show dot rows) + structured spell list (add/tap/hold)
 │   ├── #panel-features    Tab: limited-use class features with dot trackers and +/− controls
 │   ├── #panel-inventory   Tab: currency + equipment + proficiencies + notes
 │   ├── #panel-rolls       Tab: session roll history log with Clear button
@@ -29,6 +29,8 @@ dnd-character-sheet.html
 │   ├── #stepMenu    Bottom-sheet for adding/editing a class feature (name, max, step, recharge)
 │   ├── #rollBackdrop  Fixed backdrop for roll result overlay
 │   ├── #rollResult  Fixed centered overlay showing the last roll result
+│   ├── #spellBackdrop  Fixed backdrop for spell description / edit panel
+│   ├── #spellPanel  Fixed centered overlay showing spell details (view mode) or editable form (edit mode)
 │   └── #toast       Floating feedback message (non-roll events only)
 └── <script>         All application logic (no external libraries)
 ```
@@ -83,8 +85,16 @@ dnd-character-sheet.html
 | `.stat-pill.rollable` | Adds `cursor:pointer` and gold border on active; tap to roll |
 | `.death-saves` | Side-by-side success/failure dot groups |
 | `.save-dot` | 22 px circle; `.filled` colors it green or red |
-| `.spell-level-row` | One spell-slot level row (label + dots + mini tracker + max input) |
+| `.spell-level-row` | One spell-slot level row (label + dots + mini tracker + max input); only rendered when `max > 0` |
+| `.spell-slots-add-row` | Flex-wrap pill strip at the top of `#spellSlotsBody`; shown only when one or more levels have `max === 0`; contains one `.spell-slot-add-btn` per hidden level |
+| `.spell-slot-add-btn` | Dashed-border pill chip (e.g. `+ 3rd`); clicking calls `expandSpellLevel(i)` to set that level's max to 1 and make it appear |
 | `.slot-dot` | 18 px circle; `.available` = gold left (remaining), `.used` = grey right (expended) |
+| `.spell-level-divider` | Section header dividing spells by level (e.g. "Cantrips", "1st Level") inside `#spellListBody` |
+| `.spell-item` | One spell row in the list; tap to view, hold 500 ms to edit; `.holding` class added during hold |
+| `.spell-item-name` | Bold spell name inside a `.spell-item` |
+| `.spell-item-school` | Italic muted school label (right side) inside a `.spell-item` |
+| `.spell-item-tag` | Small badge chip on a spell row; `.sp-tag-conc` = blue "C" (Concentration); `.sp-tag-ritual` = gold "R" (Ritual) |
+| `.spell-empty-msg` | Italic placeholder shown in `#spellListBody` when no spells have been added |
 | `.mini-tracker` | Flex row grouping `[−][counter][+]` tightly together |
 | `.mini-btn` | 38 px circular button for mini trackers; `.minus` = red, `.plus` = green |
 | `.mini-val` | Small `n/max` counter label inside a mini tracker |
@@ -107,6 +117,25 @@ dnd-character-sheet.html
 | `#toast` | Fixed floating feedback pill (2 s); `.show` fades it in; used for non-roll events |
 | `#rollBackdrop` | Fixed full-screen dim layer behind the roll result; tap to dismiss |
 | `#rollResult` | Fixed centered card showing label, large total, breakdown, damage, nat callout |
+| `#spellBackdrop` | Fixed full-screen dim layer behind the spell panel; tap to dismiss |
+| `#spellPanel` | Fixed centered card (≤500 px, scrollable) showing spell details; gold border in view mode, blue border in edit mode; `.edit-mode` class toggles between `.sp-view-section` and `.sp-edit-section` |
+| `.sp-mode-badge` | Tiny uppercase label ("Spell" / "Editing Spell") at the top of the spell panel; gold in view, blue in edit |
+| `.sp-name` | Large spell name heading inside the spell panel |
+| `.sp-meta` | Italic muted line (level · school · Concentration · Ritual) |
+| `.sp-details-grid` | Two-column label/value grid for Casting Time, Range, Components, Duration |
+| `.sp-detail-label` | Tiny uppercase gold label in the details grid |
+| `.sp-detail-value` | Value text in the details grid |
+| `.sp-save-dc-box` | Gold-tinted box shown only when the spell has a saving throw; displays the current Spell Save DC and ability |
+| `.sp-save-dc-value` | 34 px bold DC number inside `.sp-save-dc-box` |
+| `.sp-description` | Pre-wrapped description text block |
+| `.sp-dismiss-hint` | Tiny uppercase footer "tap to dismiss · hold to edit" |
+| `.sp-view-section` | Wrapper for all view-mode content; hidden when `#spellPanel.edit-mode` |
+| `.sp-edit-section` | Wrapper for all edit-mode content; hidden by default, shown when `#spellPanel.edit-mode` |
+| `.sp-edit-field` | Labeled field wrapper inside the edit form; label in blue uppercase |
+| `.sp-edit-checkbox-row` | Flex row for Concentration and Ritual checkboxes |
+| `.sp-edit-save-btn` | Blue filled Save button in edit mode |
+| `.sp-edit-cancel-btn` | Muted Cancel button in edit mode (dismisses without saving) |
+| `.sp-edit-delete-btn` | Red-tinted Delete button (left-aligned); hidden when adding a new spell |
 | `.rr-label` | Small uppercase label inside roll result (e.g. "Strength Check") |
 | `.rr-total` | 80 px bold total number inside roll result |
 | `.rr-breakdown` | Dice breakdown line (e.g. "d20(14) +4 = 18") |
@@ -148,6 +177,7 @@ SAVES           // [{name, ab}] — 6 saving throw definitions
 SKILLS          // [{name, ab}] — 18 skill definitions
 CONDITIONS      // 15 condition strings
 SPELL_SLOTS_DEFAULT  // [{level, max}] — 9 levels, all max:0 except 1st:2
+LEVEL_LABELS    // ['Cantrip','1st','2nd',...,'9th'] — display labels for spell levels 0–9
 TABS            // ['overview','abilities','skills','combat','spells','features','inventory','rolls']
                 //   Order used by swipe navigation and switchTab()
 FONT_SIZES      // [75, 85, 100, 110, 125, 150] — allowed zoom levels in percent
@@ -163,7 +193,19 @@ let state = {
   skillExpertise:     [],   // skill names (subset of skillProficiencies)
   inspiration:        false,
   hpCurrent:          10,
-  spellSlots:         [ { level, max, used } ],  // 9 entries
+  spellSlots:         [ { level, max, used } ],  // 9 entries; levels with max=0 render as collapsed rows
+  spells:             [ {                        // structured spell list (all fields optional except name and level)
+                          name, level,           //   name: string; level: 0 (cantrip) – 9
+                          school,                //   e.g. "Evocation"
+                          castingTime,           //   e.g. "1 action"
+                          range,                 //   e.g. "120 ft"
+                          components,            //   e.g. "V, S, M (a pinch of sulfur)"
+                          duration,              //   e.g. "Instantaneous"
+                          saveAbility,           //   ability key ("STR"|"DEX"|"CON"|"INT"|"WIS"|"CHA") or ""
+                          concentration,         //   boolean
+                          ritual,                //   boolean
+                          description,           //   free text (newlines preserved)
+                        } ],
   attacks:            [ { name, bonus, damage } ],
   conditions:         [],   // condition name strings
   hitDiceUsed:        0,    // number of hit dice expended; max = charLevel
@@ -177,6 +219,9 @@ undoStack           // array of undo action objects (max 50)
 rollLog             // array of roll history entries (max 50)
 longPressTimer      // setTimeout handle for attack long-press
 longPressActive     // boolean — suppresses roll on release after long-press
+spellPressTimer     // setTimeout handle for spell long-press (500 ms → edit mode)
+spellPressActive    // boolean — true during and after a held spell press
+spellPanelEditIdx   // index into state.spells currently being edited; −1 = new spell
 abilityUndoTimers   // {[ab]: timerId} — debounce timers for ability undo entries
 hpHoldTimer/Interval       // hold-to-repeat timers for HP +/− buttons
 slotHoldTimer/Interval     // hold-to-repeat timers for spell slot +/− buttons
@@ -204,7 +249,8 @@ DOMContentLoaded
        ├─ buildSavingThrows() inject saving throw rows into #savingThrowsList
        ├─ buildSkillsList()   inject skill rows into #skillsList
        ├─ buildConditions()   inject condition chips into #conditionsGrid
-       ├─ buildSpellSlots()   inject spell-slot rows into #spellSlotsBody
+       ├─ buildSpellSlots()   inject pill strip + active rows into #spellSlotsBody; levels with max=0 appear only as pills
+       ├─ buildSpellList()    inject spell rows grouped by level into #spellListBody
        ├─ buildFeatures()     inject class feature rows into #featuresBody
        ├─ renderHitDice()     inject hit dice dots into #hitDiceDots
        ├─ recalcAll()         compute all derived values (modifiers, DC, etc.)
@@ -228,8 +274,10 @@ DOMContentLoaded
 | `buildSavingThrows()` | 6 rows; tap row → roll; tap prof dot → toggle proficiency | `state.saveProficiencies` |
 | `buildSkillsList()` | 18 skill rows; tap row → roll; tap prof dots → cycle prof | `state.skillProficiencies`, `state.skillExpertise` |
 | `buildConditions()` | 15 condition chips | `state.conditions` |
-| `buildSpellSlots()` | 9 spell-level rows, each with dots and a mini +/− tracker | `state.spellSlots` |
+| `buildSpellSlots()` | Renders `#spellSlotsBody`: a pill strip of hidden levels (max=0) at the top, then one row per active level (max>0) with dots and mini +/− tracker | `state.spellSlots` |
+| `expandSpellLevel(i)` | Sets `state.spellSlots[i].max` to 1 and rebuilds spell slots (moves that level from the pill strip into the active rows) | `state.spellSlots[i]` |
 | `renderSlotDots(i)` | Dot row + counter for one spell level (gold left = available, grey right = used); counter shows `(max − used)/max` | `state.spellSlots[i]` |
+| `buildSpellList()` | Groups `state.spells` by level and renders level dividers + spell rows into `#spellListBody`; shows placeholder when empty | `state.spells` |
 | `buildFeatures()` | Class feature rows in #featuresBody, or empty-state placeholder | `state.classFeatures` |
 | `renderFeatureDots(i)` | Dot row + counter for one feature, scaled by `step` | `state.classFeatures[i]` |
 | `renderHitDice()` | Hit dice dots in #hitDiceDots; max = character level | `state.hitDiceUsed`, `charLevel` input |
@@ -281,11 +329,22 @@ DOMContentLoaded
 | `openHpDialog()` | Tap HP display area | Populates and shows the HP bottom sheet; auto-selects the input after transition |
 | `dismissHpDialog()` | Cancel button or backdrop tap | Slides the HP dialog down |
 | `applyHpDialog()` | Set HP button or Enter key | Pushes undo; clamps input value to `[0, max]`; calls `updateHP()`; dismisses dialog |
-| `setSlotMax(i, val)` | Spell slot max input | Updates `state.spellSlots[i].max`; rerenders dots |
+| `expandSpellLevel(i)` | Tap `▸ Add` on collapsed slot row | Sets `state.spellSlots[i].max` to 1; calls `buildSpellSlots()` |
+| `setSlotMax(i, val)` | Spell slot max input | Updates `state.spellSlots[i].max`; rebuilds entire slot list when crossing 0 ↔ non-zero boundary; otherwise rerenders dots only |
 | `toggleSlot(i, j)` | Tap spell slot dot | Gold dot → use from here to end; grey dot → restore that dot |
 | `slotAdjust(i, delta)` | Mini +/− buttons on slot row | Clamps `state.spellSlots[i].used` by ±1; `−` passes `+1` (use), `+` passes `−1` (restore); rerenders dots |
 | `startSlotHold(i, delta)` / `stopSlotHold()` | `pointerdown` / `pointerup` on slot +/− | Hold-to-repeat at 80 ms |
 | `restoreAllSlots()` | ↺ All button in Spell Slots section | Sets all slot `used` to `0`; rerenders all dot rows |
+| `startSpellPress(e, i)` | `pointerdown` on spell row | Starts 500 ms timer; adds `.holding` visual on fire; on fire opens panel in edit mode |
+| `endSpellPress(e, i)` | `pointerup` on spell row | If timer hasn't fired, opens panel in view mode; clears timer |
+| `cancelSpellPress()` | `pointercancel` on spell row | Clears timer and removes `.holding` class |
+| `openSpellPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; shows backdrop + panel |
+| `addSpell()` | Tap + Add button in Spells section | Opens spell panel in edit mode with empty form; sets `spellPanelEditIdx = -1` |
+| `populateSpellViewPanel(i)` | Internal | Fills view-mode elements from `state.spells[i]`; shows save DC box if `saveAbility` is set |
+| `populateSpellEditForm(i)` | Internal | Fills edit form from `state.spells[i]`; blanks all fields when `i = -1` |
+| `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes to `state.spells[idx]` or pushes new entry; calls `buildSpellList()` + `saveData()`; dismisses panel |
+| `deleteCurrentSpell()` | Tap Delete in edit mode | Confirms; splices from `state.spells`; calls `buildSpellList()` + `saveData()`; dismisses panel |
+| `dismissSpellPanel()` | Backdrop tap or Cancel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#spellPanel` |
 | `renderFeatureDots(i)` | Any feature use/restore | Updates dots and `n/max` counter for feature `i` |
 | `toggleFeatureDot(i, j)` | Tap feature dot | Gold → use dots from here right; grey → restore that dot (respects `step`) |
 | `featureAdjust(i, delta)` | Feature mini +/− buttons | Changes `f.used` by `±step`; rerenders dots |
