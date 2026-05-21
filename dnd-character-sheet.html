@@ -744,6 +744,14 @@
   .spell-item-tag.sp-tag-conc { color: #7ec8ff; border-color: rgba(126,200,255,0.4); background: rgba(126,200,255,0.08); }
   .spell-item-tag.sp-tag-ritual { color: var(--gold); }
 
+  .spell-lvl-pip {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: var(--gold); color: #1a1410;
+    font-size: 9px; font-weight: bold; font-family: sans-serif;
+    flex-shrink: 0;
+  }
+
   .spell-item-school {
     font-size: 10px;
     color: var(--text-muted);
@@ -3776,7 +3784,7 @@ function renderAttacks() {
       <div class="attack-row spell-atk"
            onclick="openSpellPanel(${spIdx}, false)"
            oncontextmenu="return false">
-        <span class="attack-name">${escHtml(sp.name)}</span>
+        <span class="attack-name" style="display:flex;align-items:center;gap:5px">${escHtml(sp.name)}${sp.level > 0 ? `<span class="spell-lvl-pip">${sp.level}</span>` : ''}</span>
         <span class="attack-bonus" style="color:#5baeff">${escHtml(bonus)}</span>
         <span class="attack-damage">${escHtml(sp.damage || '—')}</span>
         <div></div>
