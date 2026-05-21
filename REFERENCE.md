@@ -52,6 +52,7 @@ dnd-character-sheet.html
 | `--text` | `#e8d9b8` | Body text |
 | `--text-muted` | `#9a8a6a` | Labels, secondary info |
 | `--radius` | `8px` | Shared border-radius |
+| `--roll-border` | `2px` | Border width on all tappable/rollable elements (ability cards, stat pills, skill/save rows, attack rows); increase to make affordance more prominent |
 
 ### Key component classes
 
