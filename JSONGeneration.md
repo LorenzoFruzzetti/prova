@@ -154,7 +154,11 @@ Contains structured game data that cannot be expressed as plain form inputs.
       "saveAbility": "",
       "concentration": false,
       "ritual":      false,
-      "description": "You hurl a mote of fire at a creature or object within range."
+      "attackRoll":  true,
+      "damage":      "2d10 fire",
+      "description": "You hurl a mote of fire at a creature or object within range.",
+      "showInCombat": true,
+      "combatActionType": "action"
     },
     {
       "name":        "Shield",
@@ -167,7 +171,11 @@ Contains structured game data that cannot be expressed as plain form inputs.
       "saveAbility": "",
       "concentration": false,
       "ritual":      false,
-      "description": "+5 bonus to AC until the start of your next turn."
+      "attackRoll":  false,
+      "damage":      "",
+      "description": "+5 bonus to AC until the start of your next turn.",
+      "showInCombat": false,
+      "combatActionType": "action"
     },
     {
       "name":        "Hypnotic Pattern",
@@ -180,14 +188,19 @@ Contains structured game data that cannot be expressed as plain form inputs.
       "saveAbility": "WIS",
       "concentration": true,
       "ritual":      false,
-      "description": "Each creature in a 30-foot cube originating from a point you choose makes a WIS save or becomes charmed."
+      "attackRoll":  false,
+      "damage":      "",
+      "description": "Each creature in a 30-foot cube originating from a point you choose makes a WIS save or becomes charmed.",
+      "showInCombat": true,
+      "combatActionType": "action"
     }
   ],
 
   "attacks": [
-    { "name": "Rapier",        "bonus": "+7", "damage": "1d8+4" },
-    { "name": "Hand Crossbow", "bonus": "+7", "damage": "1d6+4" },
-    { "name": "Sneak Attack",  "bonus": "—",  "damage": "4d6"   }
+    { "name": "Rapier",        "bonus": "+7", "damage": "1d8+4", "actionType": "action" },
+    { "name": "Hand Crossbow", "bonus": "+7", "damage": "1d6+4", "actionType": "action" },
+    { "name": "Sneak Attack",  "bonus": "—",  "damage": "4d6",   "actionType": "action",
+      "description": "Once per turn when you have advantage or an ally is adjacent to target." }
   ],
 
   "conditions": ["Poisoned"],
@@ -293,8 +306,12 @@ Each object:
 | `attackRoll` | boolean | `true` if the spell requires a ranged/melee spell attack roll (shows a tappable roll button in the view panel) |
 | `damage` | string | Damage expression displayed under the attack roll button, e.g. `"4d6 radiant"` (optional, only meaningful when `attackRoll` is `true`) |
 | `description` | string | Full spell description; newlines are preserved |
+| `showInCombat` | boolean | `true` to show the spell as a row in the combat attack block (regardless of whether it has an attack roll) |
+| `combatActionType` | string | `"action"` (default) or `"bonus"` — which sub-section of the combat block the spell appears in when `showInCombat` is `true` |
 
 When a spell has a `saveAbility` set, the view panel automatically pulls the current **Spell Save DC** (derived from the chosen spellcasting ability) and displays it prominently. When `attackRoll` is `true`, the view panel shows a tappable attack-roll card; tapping it rolls d20 + the current spell attack bonus and optionally rolls the `damage` expression as a secondary result.
+
+Spells with `showInCombat: true` appear in the combat attack block under "Actions" or "Bonus Actions" depending on `combatActionType`. Tapping a combat spell row opens the full spell panel (view mode). The spell level is shown as a gold circle badge (level 1–9); cantrips (level 0) show no badge. Spells without an `attackRoll` still display their description when tapped.
 
 ```json
 "spells": [
@@ -305,7 +322,8 @@ When a spell has a `saveAbility` set, the view panel automatically pulls the cur
     "duration": "Instantaneous", "saveAbility": "DEX",
     "concentration": false, "ritual": false,
     "attackRoll": false, "damage": "",
-    "description": "A bright streak flashes from your pointing finger..."
+    "description": "A bright streak flashes from your pointing finger...",
+    "showInCombat": true, "combatActionType": "action"
   },
   {
     "name": "Guiding Bolt", "level": 1, "school": "Evocation",
@@ -313,7 +331,17 @@ When a spell has a `saveAbility` set, the view panel automatically pulls the cur
     "components": "V, S", "duration": "1 round",
     "saveAbility": "", "concentration": false, "ritual": false,
     "attackRoll": true, "damage": "4d6 radiant",
-    "description": "A flash of light streaks toward a creature..."
+    "description": "A flash of light streaks toward a creature...",
+    "showInCombat": true, "combatActionType": "action"
+  },
+  {
+    "name": "Healing Word", "level": 1, "school": "Evocation",
+    "castingTime": "1 bonus action", "range": "60 ft",
+    "components": "V", "duration": "Instantaneous",
+    "saveAbility": "", "concentration": false, "ritual": false,
+    "attackRoll": false, "damage": "1d4+3",
+    "description": "A creature of your choice regains HP equal to 1d4 + your spellcasting modifier.",
+    "showInCombat": true, "combatActionType": "bonus"
   }
 ]
 ```
@@ -325,9 +353,26 @@ Each object:
 
 | Key | Type | Description |
 |---|---|---|
-| `name` | string | Weapon or ability name |
+| `name` | string | Weapon or ability name (required) |
 | `bonus` | string | Attack roll modifier, e.g. `"+7"` or `"—"` |
-| `damage` | string | Damage expression, e.g. `"1d8+4"` |
+| `damage` | string | Damage expression, e.g. `"1d8+4"` or `"—"` |
+| `actionType` | string | `"action"` (default) or `"bonus"` — which combat sub-section to show in |
+| `hidden` | boolean | `true` to hide the row from normal view; visible only in manage mode (default `false`) |
+| `saveAbility` | string | Ability key for a saving throw option: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` for none |
+| `saveDC` | integer | Save DC value (e.g. `15`); `0` or omitted means no save DC displayed |
+| `description` | string | Free text shown in the attack view panel — weapon masteries, special effects, etc. (optional) |
+
+All fields except `name` are optional and default gracefully when absent (`actionType` defaults to `"action"`, `hidden` defaults to `false`, etc.).
+
+```json
+"attacks": [
+  { "name": "Longsword",    "bonus": "+6", "damage": "1d8+4",  "actionType": "action" },
+  { "name": "Hand Crossbow","bonus": "+6", "damage": "1d6+4",  "actionType": "action" },
+  { "name": "Shove",        "bonus": "—",  "damage": "—",      "actionType": "action",
+    "saveAbility": "STR", "saveDC": 14, "description": "Contested Strength (Athletics) check." },
+  { "name": "Offhand Dagger","bonus": "+6", "damage": "1d4+2", "actionType": "bonus" }
+]
+```
 
 #### `classFeatures`
 Array of limited-use class feature objects. Can be empty (`[]`).
@@ -447,9 +492,32 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
       { "level": "8th", "max": 0, "used": 0 },
       { "level": "9th", "max": 0, "used": 0 }
     ],
+    "spells": [
+      {
+        "name": "Bless", "level": 1, "school": "Enchantment",
+        "castingTime": "1 action", "range": "30 ft",
+        "components": "V, S, M (a sprinkling of holy water)",
+        "duration": "1 minute", "saveAbility": "",
+        "concentration": true, "ritual": false,
+        "attackRoll": false, "damage": "",
+        "description": "Up to three creatures of your choice within range add 1d4 to attack rolls and saving throws.",
+        "showInCombat": true, "combatActionType": "action"
+      },
+      {
+        "name": "Cure Wounds", "level": 1, "school": "Evocation",
+        "castingTime": "1 action", "range": "Touch",
+        "components": "V, S", "duration": "Instantaneous",
+        "saveAbility": "", "concentration": false, "ritual": false,
+        "attackRoll": false, "damage": "1d8+3",
+        "description": "A creature you touch regains 1d8 + spellcasting modifier HP.",
+        "showInCombat": false, "combatActionType": "action"
+      }
+    ],
     "attacks": [
-      { "name": "Longsword",    "bonus": "+6", "damage": "1d8+4"  },
-      { "name": "Divine Smite", "bonus": "—",  "damage": "2d8"    }
+      { "name": "Longsword",    "bonus": "+6", "damage": "1d8+4", "actionType": "action",
+        "description": "Versatile (1d10 two-handed). Dueling fighting style adds +2 to damage." },
+      { "name": "Divine Smite", "bonus": "—",  "damage": "2d8",   "actionType": "action",
+        "description": "Extra 2d8 radiant damage on hit; expend a spell slot to upcast." }
     ],
     "conditions": [],
     "hitDiceUsed": 0,
@@ -472,3 +540,6 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
 | `spellSlots` with fewer than 9 entries | Missing levels default to `{max:0, used:0}` — harmless but may shift level labels | Always supply all 9 |
 | `used > max` on a spell slot | Dots render correctly (capped to max) but the value is misleading | Keep `used ≤ max` |
 | Misspelled skill or condition name | Entry is silently ignored | Use exact names from the lists above |
+| `attacks[].actionType` set to `"Action"` (capital A) | Attack appears under "Actions" only if the check is case-insensitive, but may silently fall through | Use lowercase `"action"` or `"bonus"` |
+| Spell in `state.spells` with `showInCombat: true` but no `spellAbility` set in `form` | Spell attack bonus shows as `+0`; roll still works | Set `form.spellAbility` to the correct ability key |
+| `attacks[].saveDC` as a string (`"15"`) | DC displays correctly but numeric comparison may fail in future | Use an integer: `15` not `"15"` |
