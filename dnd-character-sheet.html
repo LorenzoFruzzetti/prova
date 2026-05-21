@@ -220,7 +220,7 @@
   }
 
   .ability-card {
-    background: rgba(201,168,76,0.06);
+    background: rgba(201,168,76,0.03);
     border: var(--roll-border) solid rgba(201,168,76,0.4);
     border-radius: var(--radius);
     text-align: center;
@@ -387,11 +387,9 @@
     padding: 7px 0;
     border-bottom: 1px solid rgba(92,74,42,0.3);
     cursor: pointer;
-    box-shadow: inset var(--roll-border) 0 0 0 rgba(201,168,76,0.4);
-    background: rgba(201,168,76,0.04);
   }
 
-  .check-item:active { background: rgba(201,168,76,0.12); }
+  .check-item:active { background: rgba(201,168,76,0.08); }
 
   .check-item:last-child { border-bottom: none; }
 
@@ -436,6 +434,12 @@
     min-width: 28px;
     text-align: right;
     font-family: sans-serif;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    border-left: var(--roll-border) solid rgba(201,168,76,0.4);
+    padding-left: 8px;
   }
 
   .check-name {
@@ -512,6 +516,24 @@
   .tracker-row { display: flex; align-items: center; gap: 8px; }
   .tracker-row .spell-slots-dots { order: 1; }
   .tracker-row .mini-tracker     { order: 2; }
+  .tracker-row .hit-die-roll     { order: 3; }
+
+  .hit-die-roll {
+    background: rgba(201,168,76,0.03);
+    border: var(--roll-border) solid rgba(201,168,76,0.4);
+    border-radius: var(--radius);
+    padding: 5px 10px;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--gold-light);
+    cursor: pointer;
+    font-family: sans-serif;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .hit-die-roll:active { border-color: var(--gold); background: rgba(201,168,76,0.14); }
 
   /* lefty mode: swap dots and mini-tracker */
   body.lefty .spell-level-row .spell-slots-dots { order: 3; }
@@ -656,7 +678,7 @@
     font-size: 13px;
     cursor: pointer;
     box-shadow: inset var(--roll-border) 0 0 0 rgba(201,168,76,0.4);
-    background: rgba(201,168,76,0.04);
+    background: rgba(201,168,76,0.02);
   }
   .attack-row:last-child { border-bottom: none; }
   .attack-row:active .attack-name { color: var(--gold-light); }
@@ -703,7 +725,7 @@
     cursor: pointer;
     border-width: var(--roll-border);
     border-color: rgba(201,168,76,0.4);
-    background: rgba(201,168,76,0.06);
+    background: rgba(201,168,76,0.03);
   }
   .stat-pill.rollable:active { border-color: var(--gold); background: rgba(201,168,76,0.14); }
 
@@ -1426,7 +1448,7 @@
       </div>
       <div class="stat-pills" style="margin-top:8px">
         <div class="stat-pill">
-          <input type="text" id="statHitDice" value="1d8" oninput="saveData()" style="font-size:16px">
+          <input type="text" id="statHitDice" value="1d8" oninput="saveData(); updateHitDieBadge()" style="font-size:16px">
           <div class="stat-pill-label">Die Type</div>
         </div>
         <div class="stat-pill rollable" onclick="rollSpellAtk()">
@@ -1460,6 +1482,7 @@
                   onpointerup="stopHitDiceHold()"
                   onpointercancel="stopHitDiceHold()">+</button>
         </div>
+        <div class="hit-die-roll" id="hitDiceRollBtn" onclick="rollHitDie()">d8</div>
       </div>
     </div>
   </div>
@@ -2502,6 +2525,25 @@ function renderHitDice() {
   }
   const val = document.getElementById('hitDiceVal');
   if (val) val.textContent = `${max - used}/${max}`;
+  updateHitDieBadge();
+}
+
+function updateHitDieBadge() {
+  const str = document.getElementById('statHitDice')?.value.trim() || '';
+  const m = str.match(/d\d+/i);
+  const el = document.getElementById('hitDiceRollBtn');
+  if (el) el.textContent = m ? m[0].toLowerCase() : '—';
+}
+
+function rollHitDie() {
+  const str = document.getElementById('statHitDice')?.value.trim() || '';
+  const m = str.match(/d(\d+)/i);
+  if (!m) { toast('Set hit dice type first'); return; }
+  const sides = parseInt(m[1]);
+  const roll = Math.floor(Math.random() * sides) + 1;
+  const conMod = mod(state.abilities.CON);
+  const total = Math.max(1, roll + conMod);
+  showRoll(`Hit Die (d${sides})`, `d${sides}(${roll}) ${fmtMod(conMod)}`, total, '');
 }
 
 function toggleHitDie(j) {
