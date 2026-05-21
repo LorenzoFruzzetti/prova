@@ -648,12 +648,16 @@
   /* ── Death Saves ── */
   .death-saves {
     display: flex;
-    gap: 12px;
     align-items: flex-start;
   }
 
   .save-group {
     flex: 1;
+    padding: 0 12px;
+  }
+
+  .save-group + .save-group {
+    border-left: 1px solid var(--border);
   }
 
   .save-group-label {
