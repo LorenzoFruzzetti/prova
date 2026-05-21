@@ -706,9 +706,8 @@
   .spell-level-row .mini-tracker     { order: 3; }
   .spell-level-row > input           { order: 4; }
 
-  .feature-track .feature-dots  { order: 1; }
-  .feature-track .mini-tracker  { order: 2; }
-  .feature-track > input        { order: 3; }
+  .feature-controls .feature-max-stack { order: 1; }
+  .feature-controls .mini-tracker      { order: 2; }
 
   .tracker-row { display: flex; align-items: center; gap: 8px; }
   .tracker-row .spell-slots-dots { order: 1; }
@@ -965,13 +964,27 @@
   /* ── Class Features ── */
   .feature-row {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
     padding: 4px 0;
     border-bottom: 1px solid rgba(var(--border-rgb),0.25);
     margin-bottom: 2px;
   }
   .feature-row:last-child { border-bottom: none; margin-bottom: 0; }
+
+  .feature-top {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+  }
+
+  .feature-dots-col {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px 8px;
+    justify-content: center;
+    flex-shrink: 0;
+  }
 
   .feature-name-area {
     flex: 1;
@@ -985,6 +998,9 @@
     touch-action: manipulation;
     transition: background 0.12s;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
   .feature-name-area:active { background: rgba(var(--accent-rgb),0.13); }
   .feature-name-area.holding { background: rgba(var(--accent-rgb),0.18); }
@@ -1003,16 +1019,12 @@
     font-style: italic;
   }
 
-  .feature-track {
+  .feature-controls {
     display: flex;
     align-items: center;
     gap: 6px;
-  }
-
-  .feature-dots {
-    display: flex;
+    padding: 6px 4px 2px;
     flex-wrap: wrap;
-    gap: 5px;
   }
 
   .feature-max-stack {
@@ -2678,10 +2690,33 @@
         </select>
       </div>
     </div>
-    <div class="sp-edit-field">
-      <label>Features Panel</label>
-      <div class="sp-edit-checkbox-row"><label><input type="checkbox" id="spEditShowInFeatures"> Show in Features</label></div>
-    </div>
+      <div class="sp-edit-field">
+        <label>Features Panel</label>
+        <div class="sp-edit-checkbox-row"><label><input type="checkbox" id="spEditShowInFeatures" onchange="toggleSpFeaturesTrack(this.checked)"> Show in Features</label></div>
+        <div id="spEditFeaturesTrack" style="display:none;margin-top:8px;display:none">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+            <div style="flex:1">
+              <div class="sp-edit-field" style="margin:0">
+                <label>Max Uses</label>
+                <input type="number" id="spEditFeatureMax" min="0" max="999" value="1"
+                  style="width:100%;padding:5px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:sans-serif">
+              </div>
+            </div>
+            <div style="flex:1">
+              <div class="sp-edit-field" style="margin:0">
+                <label>Step</label>
+                <input type="number" id="spEditFeatureStep" min="1" max="100" value="1"
+                  style="width:100%;padding:5px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:sans-serif">
+              </div>
+            </div>
+          </div>
+          <div class="sp-edit-field" style="margin:0">
+            <label>Recharge</label>
+            <input type="text" id="spEditFeatureRecharge" placeholder="e.g. Long Rest"
+              style="width:100%;padding:5px;font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:sans-serif;box-sizing:border-box">
+          </div>
+        </div>
+      </div>
     <div class="sp-edit-field">
       <label>Description</label>
       <textarea id="spEditDescription" placeholder="Spell description..."></textarea>
@@ -3933,7 +3968,16 @@ function populateSpellEditForm(i) {
   document.getElementById('spEditDescription').value      = sp ? (sp.description    || '') : '';
   document.getElementById('spEditShowInCombat').checked   = sp ? !!sp.showInCombat    : false;
   document.getElementById('spEditCombatType').value       = sp ? (sp.combatActionType || 'action') : 'action';
-  document.getElementById('spEditShowInFeatures').checked = sp ? !!sp.showInFeatures : false;
+  const showFeat = sp ? !!sp.showInFeatures : false;
+  document.getElementById('spEditShowInFeatures').checked = showFeat;
+  document.getElementById('spEditFeatureMax').value       = sp ? (sp.featureMax  ?? 1) : 1;
+  document.getElementById('spEditFeatureStep').value      = sp ? (sp.featureStep ?? 1) : 1;
+  document.getElementById('spEditFeatureRecharge').value  = sp ? (sp.featureRecharge || '') : '';
+  toggleSpFeaturesTrack(showFeat);
+}
+
+function toggleSpFeaturesTrack(show) {
+  document.getElementById('spEditFeaturesTrack').style.display = show ? '' : 'none';
 }
 
 function saveSpellEdit() {
@@ -3954,9 +3998,13 @@ function saveSpellEdit() {
     rollDamage:       document.getElementById('spEditRollDamage').checked,
     damage:           document.getElementById('spEditDamage').value.trim(),
     description:      document.getElementById('spEditDescription').value.trim(),
-    showInCombat:     document.getElementById('spEditShowInCombat').checked,
-    combatActionType: document.getElementById('spEditCombatType').value,
-    showInFeatures:   document.getElementById('spEditShowInFeatures').checked,
+    showInCombat:       document.getElementById('spEditShowInCombat').checked,
+    combatActionType:   document.getElementById('spEditCombatType').value,
+    showInFeatures:     document.getElementById('spEditShowInFeatures').checked,
+    featureMax:         parseInt(document.getElementById('spEditFeatureMax').value)  || 0,
+    featureStep:        parseInt(document.getElementById('spEditFeatureStep').value) || 1,
+    featureRecharge:    document.getElementById('spEditFeatureRecharge').value.trim(),
+    featureUsed:        spellPanelEditIdx >= 0 ? (state.spells[spellPanelEditIdx].featureUsed || 0) : 0,
   };
   if (spellPanelEditIdx >= 0) {
     state.spells[spellPanelEditIdx] = spell;
@@ -4197,19 +4245,118 @@ function buildFeaturedSpells() {
   if (!featured.length) return;
   body.innerHTML = featured.map(sp => {
     const i = state.spells.indexOf(sp);
+    const step    = sp.featureStep || 1;
+    const stepHint = step > 1 ? `<span class="feature-step-hint">${step} pts/dot</span>` : '';
     const levelStr = sp.level === 0 ? 'Cantrip' : LEVEL_LABELS[sp.level] + '-level';
     return `
-      <div class="spell-item" data-spell-idx="${i}"
-           onpointerdown="startSpellPress(event, ${i})"
-           onclick="clickSpellItem(event, ${i})"
-           onpointercancel="cancelSpellPress()"
-           oncontextmenu="return false">
-        <span class="spell-item-name">${escHtml(sp.name)}</span>
-        ${sp.concentration ? '<span class="spell-item-tag sp-tag-conc">C</span>' : ''}
-        ${sp.ritual ? '<span class="spell-item-tag sp-tag-ritual">R</span>' : ''}
-        <span class="spell-item-school">${escHtml(levelStr)}</span>
+      <div class="feature-row">
+        <div class="feature-top">
+          <div class="feature-dots-col" id="feat-spell-dots-${i}"></div>
+          <div class="feature-name-area"
+               onpointerdown="startSpellPress(event, ${i})"
+               onclick="clickSpellItem(event, ${i})"
+               onpointercancel="cancelSpellPress()"
+               oncontextmenu="return false">
+            <span class="feature-name">${escHtml(sp.name)}</span>
+            <span class="feature-recharge" style="font-size:10px;opacity:0.7">${escHtml(levelStr)}</span>
+          </div>
+        </div>
+        <div class="feature-controls">
+          <div class="feature-max-stack">
+            <input type="number" min="0" max="999" value="${sp.featureMax || 0}"
+              style="width:40px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
+                     border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:sans-serif"
+              oninput="setFeatSpellMax(${i}, this.value)" title="Max">
+            ${stepHint}
+          </div>
+          <div class="mini-tracker">
+            <button class="mini-btn minus"
+                    onpointerdown="startFeatSpellHold(${i},1)"
+                    onpointerup="stopFeatSpellHold()"
+                    onpointercancel="stopFeatSpellHold()">−</button>
+            <span class="mini-val" id="feat-spell-val-${i}"></span>
+            <button class="mini-btn plus"
+                    onpointerdown="startFeatSpellHold(${i},-1)"
+                    onpointerup="stopFeatSpellHold()"
+                    onpointercancel="stopFeatSpellHold()">+</button>
+          </div>
+          <button class="attack-edit-btn" onclick="restoreFeatSpell(${i})" style="flex-shrink:0">↺</button>
+          ${sp.featureRecharge ? `<span class="feature-recharge" style="margin-left:auto">${escHtml(sp.featureRecharge)}</span>` : ''}
+        </div>
       </div>`;
   }).join('');
+  featured.forEach(sp => renderFeatSpellDots(state.spells.indexOf(sp)));
+}
+
+function renderFeatSpellDots(spellIdx) {
+  const sp = state.spells[spellIdx];
+  if (!sp) return;
+  const max     = sp.featureMax  || 0;
+  const step    = sp.featureStep || 1;
+  const used    = sp.featureUsed || 0;
+  const numDots = Math.ceil(max / step);
+  const split   = numDots - Math.ceil(used / step);
+  const el  = document.getElementById(`feat-spell-dots-${spellIdx}`);
+  const val = document.getElementById(`feat-spell-val-${spellIdx}`);
+  if (el) {
+    el.innerHTML = Array.from({length: numDots}, (_, j) => `
+      <div class="slot-dot ${j < split ? 'available' : 'used'}"
+           onclick="toggleFeatSpellDot(${spellIdx},${j})"></div>
+    `).join('');
+  }
+  if (val) val.textContent = `${max - used}/${max}`;
+}
+
+function toggleFeatSpellDot(spellIdx, j) {
+  const sp = state.spells[spellIdx];
+  if (!sp) return;
+  const step    = sp.featureStep || 1;
+  const numDots = Math.ceil((sp.featureMax || 0) / step);
+  const split   = numDots - Math.ceil((sp.featureUsed || 0) / step);
+  sp.featureUsed = j < split
+    ? Math.min(sp.featureMax, (numDots - j) * step)
+    : (numDots - j - 1) * step;
+  renderFeatSpellDots(spellIdx);
+  saveData();
+}
+
+function setFeatSpellMax(spellIdx, val) {
+  const sp = state.spells[spellIdx];
+  if (!sp) return;
+  sp.featureMax = Math.max(0, parseInt(val) || 0);
+  sp.featureUsed = Math.min(sp.featureUsed || 0, sp.featureMax);
+  renderFeatSpellDots(spellIdx);
+  saveData();
+}
+
+function featSpellAdjust(spellIdx, delta) {
+  const sp = state.spells[spellIdx];
+  if (!sp) return;
+  const step = sp.featureStep || 1;
+  sp.featureUsed = Math.max(0, Math.min(sp.featureMax || 0, (sp.featureUsed || 0) + delta * step));
+  renderFeatSpellDots(spellIdx);
+  saveData();
+}
+
+function restoreFeatSpell(spellIdx) {
+  const sp = state.spells[spellIdx];
+  if (!sp) return;
+  sp.featureUsed = 0;
+  renderFeatSpellDots(spellIdx);
+  saveData();
+  toast('Uses restored');
+}
+
+let featSpellHoldTimer = null, featSpellHoldInterval = null;
+function startFeatSpellHold(spellIdx, delta) {
+  featSpellAdjust(spellIdx, delta);
+  featSpellHoldTimer = setTimeout(() => {
+    featSpellHoldInterval = setInterval(() => featSpellAdjust(spellIdx, delta), 80);
+  }, 400);
+}
+function stopFeatSpellHold() {
+  clearTimeout(featSpellHoldTimer);
+  clearInterval(featSpellHoldInterval);
 }
 
 function escHtml(s) {
@@ -4440,8 +4587,9 @@ function fullLongRest() {
   renderHitDice();
   state.spellSlots.forEach((_, i) => { state.spellSlots[i].used = 0; renderSlotDots(i); });
   state.classFeatures.forEach((f, i) => { f.used = 0; renderFeatureDots(i); });
+  state.spells.forEach((sp, i) => { if (sp.showInFeatures && sp.featureMax) { sp.featureUsed = 0; renderFeatSpellDots(i); } });
   saveData();
-  toast('🌙 Long rest — fully restored!');
+  toast('Long rest — fully restored!');
 }
 
 // ── HP hold-to-repeat ──────────────────────────────────────────────────
