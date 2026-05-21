@@ -617,6 +617,105 @@
     text-align: right;
   }
 
+  /* ── Collapsed spell level row ── */
+  .spell-level-row.collapsed .spell-slots-dots,
+  .spell-level-row.collapsed .mini-tracker,
+  .spell-level-row.collapsed > input { display: none; }
+
+  .spell-uncollapse-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: sans-serif;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+  .spell-uncollapse-btn:active { border-color: var(--gold); color: var(--gold); }
+
+  .spell-level-no-slots {
+    flex: 1;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    font-style: italic;
+  }
+
+  /* ── Spell list ── */
+  .spell-level-divider {
+    font-size: 10px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: sans-serif;
+    padding: 8px 0 4px;
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .spell-level-divider:first-child { padding-top: 2px; }
+
+  .spell-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0 8px calc(var(--roll-border) + 6px);
+    border-bottom: 1px solid rgba(92,74,42,0.25);
+    cursor: pointer;
+    box-shadow: inset var(--roll-border) 0 0 0 rgba(201,168,76,0.3);
+    background: rgba(201,168,76,0.02);
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 0.12s;
+  }
+  .spell-item:last-of-type { border-bottom: none; }
+  .spell-item:active { background: rgba(201,168,76,0.10); }
+  .spell-item.holding { background: rgba(90,174,255,0.08); box-shadow: inset var(--roll-border) 0 0 0 rgba(90,174,255,0.5); }
+
+  .spell-item-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: sans-serif;
+  }
+
+  .spell-item-tag {
+    font-size: 9px;
+    font-family: sans-serif;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    background: rgba(201,168,76,0.15);
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 3px;
+    padding: 1px 4px;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+  .spell-item-tag.sp-tag-conc { color: #7ec8ff; border-color: rgba(126,200,255,0.4); background: rgba(126,200,255,0.08); }
+  .spell-item-tag.sp-tag-ritual { color: var(--gold); }
+
+  .spell-item-school {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    font-style: italic;
+    flex-shrink: 0;
+  }
+
+  .spell-empty-msg {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-style: italic;
+    font-family: sans-serif;
+    padding: 8px 0;
+  }
+
   /* ── Class Features ── */
   .feature-row {
     padding: 10px 0;
@@ -839,6 +938,228 @@
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
   }
   #rollResult.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+
+  /* ── Spell Description Panel ── */
+  #spellBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #spellBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #spellPanel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.88);
+    background: linear-gradient(160deg, #2a1e0e, #1a1206);
+    border: 2px solid var(--gold);
+    border-radius: 20px;
+    padding: 22px 24px 20px;
+    z-index: 301;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s, border-color 0.25s;
+    pointer-events: none;
+    width: min(92vw, 500px);
+    max-height: 82vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  }
+  #spellPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  #spellPanel.edit-mode { border-color: #5baeff; }
+
+  .sp-mode-badge {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    font-family: sans-serif;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  #spellPanel.edit-mode .sp-mode-badge { color: #5baeff; }
+
+  .sp-name {
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--text);
+    margin-bottom: 3px;
+    line-height: 1.2;
+  }
+
+  .sp-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    font-style: italic;
+    margin-bottom: 12px;
+  }
+
+  .sp-details-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 5px 10px;
+    font-family: sans-serif;
+    font-size: 12px;
+    margin-bottom: 14px;
+    align-items: start;
+  }
+  .sp-detail-label {
+    color: var(--gold);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    padding-top: 2px;
+  }
+  .sp-detail-value { color: var(--text); }
+
+  .sp-save-dc-box {
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.35);
+    border-radius: 10px;
+    padding: 10px 14px;
+    text-align: center;
+    margin-bottom: 14px;
+    font-family: sans-serif;
+  }
+  .sp-save-dc-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .sp-save-dc-value {
+    font-size: 34px;
+    font-weight: bold;
+    color: var(--gold-light);
+    line-height: 1.1;
+  }
+  .sp-save-dc-ability { font-size: 11px; color: var(--text-muted); }
+
+  .sp-description {
+    font-size: 13px;
+    color: var(--text);
+    font-family: sans-serif;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin-bottom: 14px;
+  }
+
+  .sp-dismiss-hint {
+    display: block;
+    font-size: 9px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: 6px;
+  }
+
+  /* Edit mode visibility toggling */
+  .sp-edit-section { display: none; }
+  #spellPanel.edit-mode .sp-view-section { display: none; }
+  #spellPanel.edit-mode .sp-edit-section { display: block; }
+
+  .sp-edit-field { margin-bottom: 10px; }
+  .sp-edit-field label {
+    display: block;
+    font-size: 9px;
+    color: #5baeff;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-family: sans-serif;
+    margin-bottom: 4px;
+  }
+  .sp-edit-field input,
+  .sp-edit-field select,
+  .sp-edit-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(91,174,255,0.06);
+    border: 1px solid rgba(91,174,255,0.4);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: sans-serif;
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .sp-edit-field input:focus,
+  .sp-edit-field select:focus,
+  .sp-edit-field textarea:focus { border-color: #5baeff; }
+  .sp-edit-field textarea { min-height: 110px; resize: vertical; line-height: 1.5; }
+  .sp-edit-field select option { background: #1a1206; }
+
+  .sp-edit-checkbox-row {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 6px 0;
+  }
+  .sp-edit-checkbox-row label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--text);
+    text-transform: none;
+    letter-spacing: 0;
+    cursor: pointer;
+    font-family: sans-serif;
+    margin-bottom: 0;
+  }
+
+  .sp-edit-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 14px;
+  }
+  .sp-edit-save-btn {
+    background: #5baeff;
+    color: #0a0e14;
+    border: none;
+    border-radius: 6px;
+    padding: 9px 20px;
+    font-size: 13px;
+    font-weight: bold;
+    font-family: sans-serif;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .sp-edit-save-btn:active { background: #3d8fe0; }
+  .sp-edit-cancel-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    padding: 9px 16px;
+    font-size: 13px;
+    font-family: sans-serif;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .sp-edit-cancel-btn:active { border-color: var(--gold); color: var(--gold); }
+  .sp-edit-delete-btn {
+    background: none;
+    border: 1px solid #5a2020;
+    border-radius: 6px;
+    color: var(--red-light);
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: sans-serif;
+    cursor: pointer;
+    margin-right: auto;
+    transition: border-color 0.15s;
+  }
+  .sp-edit-delete-btn:active { border-color: var(--red-light); }
 
   .rr-label {
     font-size: 10px;
@@ -1577,9 +1898,12 @@
   </div>
 
   <div class="section">
-    <div class="section-title">Spells Known / Prepared</div>
-    <div class="section-body">
-      <textarea id="spellsList" style="min-height:200px" placeholder="List your spells here...&#10;&#10;Cantrips: Fire Bolt, Mage Hand&#10;1st: Magic Missile, Shield&#10;2nd: Misty Step&#10;..."></textarea>
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+      Spells Known / Prepared
+      <button class="attack-edit-btn" onclick="addSpell()">+ Add</button>
+    </div>
+    <div class="section-body" id="spellListBody">
+      <!-- Generated by JS -->
     </div>
   </div>
 
@@ -1715,6 +2039,104 @@
   <span class="rr-dismiss">tap to dismiss</span>
 </div>
 
+<!-- ── Spell Description / Edit Panel ── -->
+<div id="spellBackdrop" onclick="dismissSpellPanel()"></div>
+<div id="spellPanel">
+  <!-- View mode -->
+  <div class="sp-view-section">
+    <div class="sp-mode-badge" id="spModeBadge">Spell</div>
+    <div class="sp-name" id="spNameView"></div>
+    <div class="sp-meta" id="spMetaView"></div>
+    <div class="sp-details-grid" id="spDetailsView"></div>
+    <div class="sp-save-dc-box" id="spSaveDcBox" style="display:none">
+      <div class="sp-save-dc-label">Spell Save DC</div>
+      <div class="sp-save-dc-value" id="spSaveDcValue">—</div>
+      <div class="sp-save-dc-ability" id="spSaveDcAbility"></div>
+    </div>
+    <div class="sp-description" id="spDescView"></div>
+    <span class="sp-dismiss-hint">tap to dismiss · hold to edit</span>
+  </div>
+  <!-- Edit mode -->
+  <div class="sp-edit-section">
+    <div class="sp-mode-badge">Editing Spell</div>
+    <div class="sp-edit-field">
+      <label>Name</label>
+      <input type="text" id="spEditName" placeholder="Spell name">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="sp-edit-field">
+        <label>Level</label>
+        <select id="spEditLevel">
+          <option value="0">Cantrip</option>
+          <option value="1">1st</option>
+          <option value="2">2nd</option>
+          <option value="3">3rd</option>
+          <option value="4">4th</option>
+          <option value="5">5th</option>
+          <option value="6">6th</option>
+          <option value="7">7th</option>
+          <option value="8">8th</option>
+          <option value="9">9th</option>
+        </select>
+      </div>
+      <div class="sp-edit-field">
+        <label>School</label>
+        <input type="text" id="spEditSchool" placeholder="Evocation">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="sp-edit-field">
+        <label>Casting Time</label>
+        <input type="text" id="spEditCastTime" placeholder="1 action">
+      </div>
+      <div class="sp-edit-field">
+        <label>Range</label>
+        <input type="text" id="spEditRange" placeholder="120 ft">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="sp-edit-field">
+        <label>Components</label>
+        <input type="text" id="spEditComponents" placeholder="V, S">
+      </div>
+      <div class="sp-edit-field">
+        <label>Duration</label>
+        <input type="text" id="spEditDuration" placeholder="Instantaneous">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="sp-edit-field">
+        <label>Saving Throw</label>
+        <select id="spEditSaveAbility">
+          <option value="">— No save</option>
+          <option value="STR">Strength</option>
+          <option value="DEX">Dexterity</option>
+          <option value="CON">Constitution</option>
+          <option value="INT">Intelligence</option>
+          <option value="WIS">Wisdom</option>
+          <option value="CHA">Charisma</option>
+        </select>
+      </div>
+      <div class="sp-edit-field">
+        <label>&nbsp;</label>
+        <div class="sp-edit-checkbox-row">
+          <label><input type="checkbox" id="spEditConc"> Conc.</label>
+          <label><input type="checkbox" id="spEditRitual"> Ritual</label>
+        </div>
+      </div>
+    </div>
+    <div class="sp-edit-field">
+      <label>Description</label>
+      <textarea id="spEditDescription" placeholder="Spell description..."></textarea>
+    </div>
+    <div class="sp-edit-actions">
+      <button class="sp-edit-delete-btn" id="spEditDeleteBtn" onclick="deleteCurrentSpell()">Delete</button>
+      <button class="sp-edit-cancel-btn" onclick="dismissSpellPanel()">Cancel</button>
+      <button class="sp-edit-save-btn" onclick="saveSpellEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
 <div id="settingsBackdrop" onclick="dismissSettings()"></div>
 <div id="settingsMenu">
   <div class="hp-dlg-title">Settings</div>
@@ -1791,6 +2213,8 @@ const SPELL_SLOTS_DEFAULT = [
   {level:'7th', max:0}, {level:'8th', max:0}, {level:'9th', max:0},
 ];
 
+const LEVEL_LABELS = ['Cantrip', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
+
 let state = {
   abilities: {STR:10, DEX:10, CON:10, INT:10, WIS:10, CHA:10},
   saveProficiencies: [],
@@ -1799,6 +2223,7 @@ let state = {
   inspiration: false,
   hpCurrent: 10,
   spellSlots: SPELL_SLOTS_DEFAULT.map(s => ({...s, used:0})),
+  spells: [],
   attacks: [],
   conditions: [],
   classFeatures: [],
@@ -1813,6 +2238,7 @@ function init() {
   buildSkillsList();
   buildConditions();
   buildSpellSlots();
+  buildSpellList();
   buildFeatures();
   renderHitDice();
   recalcAll();
@@ -1940,28 +2366,43 @@ function buildConditions() {
 
 function buildSpellSlots() {
   const body = document.getElementById('spellSlotsBody');
-  body.innerHTML = state.spellSlots.map((s, i) => `
-    <div class="spell-level-row">
-      <span class="spell-level-num">${s.level}</span>
-      <div class="spell-slots-dots" id="slots-dots-${i}"></div>
-      <div class="mini-tracker">
-        <button class="mini-btn minus"
-                onpointerdown="startSlotHold(${i},1)"
-                onpointerup="stopSlotHold()"
-                onpointercancel="stopSlotHold()">−</button>
-        <span class="mini-val" id="slot-val-${i}"></span>
-        <button class="mini-btn plus"
-                onpointerdown="startSlotHold(${i},-1)"
-                onpointerup="stopSlotHold()"
-                onpointercancel="stopSlotHold()">+</button>
-      </div>
-      <input type="number" min="0" max="9" value="${s.max}"
-        style="width:34px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
-               border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:sans-serif"
-        oninput="setSlotMax(${i}, this.value)" title="Max slots">
-    </div>
-  `).join('');
-  state.spellSlots.forEach((_, i) => renderSlotDots(i));
+  body.innerHTML = state.spellSlots.map((s, i) => {
+    if (s.max === 0) {
+      return `
+        <div class="spell-level-row collapsed">
+          <span class="spell-level-num">${s.level}</span>
+          <span class="spell-level-no-slots">No slots</span>
+          <button class="spell-uncollapse-btn" onclick="expandSpellLevel(${i})">▸ Add</button>
+        </div>`;
+    }
+    return `
+      <div class="spell-level-row">
+        <span class="spell-level-num">${s.level}</span>
+        <div class="spell-slots-dots" id="slots-dots-${i}"></div>
+        <div class="mini-tracker">
+          <button class="mini-btn minus"
+                  onpointerdown="startSlotHold(${i},1)"
+                  onpointerup="stopSlotHold()"
+                  onpointercancel="stopSlotHold()">−</button>
+          <span class="mini-val" id="slot-val-${i}"></span>
+          <button class="mini-btn plus"
+                  onpointerdown="startSlotHold(${i},-1)"
+                  onpointerup="stopSlotHold()"
+                  onpointercancel="stopSlotHold()">+</button>
+        </div>
+        <input type="number" min="0" max="9" value="${s.max}"
+          style="width:34px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
+                 border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:sans-serif"
+          oninput="setSlotMax(${i}, this.value)" title="Max slots (set to 0 to collapse)">
+      </div>`;
+  }).join('');
+  state.spellSlots.forEach((s, i) => { if (s.max > 0) renderSlotDots(i); });
+}
+
+function expandSpellLevel(i) {
+  state.spellSlots[i].max = 1;
+  buildSpellSlots();
+  saveData();
 }
 
 function renderSlotDots(i) {
@@ -2287,9 +2728,14 @@ function applyHpDialog() {
 
 // ── Spell slots ────────────────────────────────────────────────────────
 function setSlotMax(i, val) {
+  const prev = state.spellSlots[i].max;
   state.spellSlots[i].max = parseInt(val) || 0;
   state.spellSlots[i].used = Math.min(state.spellSlots[i].used, state.spellSlots[i].max);
-  renderSlotDots(i);
+  if ((prev === 0) !== (state.spellSlots[i].max === 0)) {
+    buildSpellSlots();
+  } else {
+    renderSlotDots(i);
+  }
   saveData();
 }
 
@@ -2322,6 +2768,196 @@ function stopSlotHold() {
   clearInterval(slotHoldInterval);
   slotHoldTimer = null;
   slotHoldInterval = null;
+}
+
+// ── Spell list ─────────────────────────────────────────────────────────
+function buildSpellList() {
+  const body = document.getElementById('spellListBody');
+  if (!body) return;
+  if (!state.spells.length) {
+    body.innerHTML = '<div class="spell-empty-msg">No spells added yet. Tap + Add to begin.</div>';
+    return;
+  }
+  const groups = {};
+  state.spells.forEach((sp, i) => {
+    const l = sp.level ?? 0;
+    if (!groups[l]) groups[l] = [];
+    groups[l].push(i);
+  });
+  const levels = Object.keys(groups).map(Number).sort((a, b) => a - b);
+  let html = '';
+  levels.forEach(lvl => {
+    const label = lvl === 0 ? 'Cantrips' : LEVEL_LABELS[lvl] + ' Level';
+    html += `<div class="spell-level-divider"><span>${escHtml(label)}</span></div>`;
+    groups[lvl].forEach(i => {
+      const sp = state.spells[i];
+      html += `
+        <div class="spell-item" data-spell-idx="${i}"
+             onpointerdown="startSpellPress(event, ${i})"
+             onpointerup="endSpellPress(event, ${i})"
+             onpointercancel="cancelSpellPress()"
+             oncontextmenu="return false">
+          <span class="spell-item-name">${escHtml(sp.name)}</span>
+          ${sp.concentration ? '<span class="spell-item-tag sp-tag-conc">C</span>' : ''}
+          ${sp.ritual ? '<span class="spell-item-tag sp-tag-ritual">R</span>' : ''}
+          <span class="spell-item-school">${escHtml(sp.school || '')}</span>
+        </div>`;
+    });
+  });
+  body.innerHTML = html;
+}
+
+// ── Spell press (tap = view, hold = edit) ──────────────────────────────
+let spellPressTimer = null;
+let spellPressActive = false;
+
+function startSpellPress(e, i) {
+  spellPressActive = false;
+  clearTimeout(spellPressTimer);
+  const el = e.currentTarget;
+  spellPressTimer = setTimeout(() => {
+    spellPressActive = true;
+    if (el) el.classList.add('holding');
+    openSpellPanel(i, true);
+  }, 500);
+}
+
+function endSpellPress(e, i) {
+  clearTimeout(spellPressTimer);
+  const el = e.currentTarget;
+  if (el) el.classList.remove('holding');
+  if (!spellPressActive) openSpellPanel(i, false);
+  spellPressActive = false;
+}
+
+function cancelSpellPress() {
+  clearTimeout(spellPressTimer);
+  spellPressActive = false;
+  document.querySelectorAll('.spell-item.holding').forEach(el => el.classList.remove('holding'));
+}
+
+// ── Spell panel ────────────────────────────────────────────────────────
+let spellPanelEditIdx = -1;
+
+function openSpellPanel(i, editMode) {
+  pushModalHistory();
+  const panel = document.getElementById('spellPanel');
+  if (editMode) {
+    panel.classList.add('edit-mode');
+    populateSpellEditForm(i);
+    spellPanelEditIdx = i;
+    document.getElementById('spEditDeleteBtn').style.display = i >= 0 ? '' : 'none';
+  } else {
+    panel.classList.remove('edit-mode');
+    populateSpellViewPanel(i);
+  }
+  document.getElementById('spellBackdrop').classList.add('show');
+  panel.classList.add('show');
+}
+
+function addSpell() {
+  spellPanelEditIdx = -1;
+  pushModalHistory();
+  const panel = document.getElementById('spellPanel');
+  panel.classList.add('edit-mode');
+  populateSpellEditForm(-1);
+  document.getElementById('spEditDeleteBtn').style.display = 'none';
+  document.getElementById('spellBackdrop').classList.add('show');
+  panel.classList.add('show');
+  setTimeout(() => document.getElementById('spEditName').focus(), 250);
+}
+
+function populateSpellViewPanel(i) {
+  const sp = state.spells[i];
+  if (!sp) return;
+  document.getElementById('spModeBadge').textContent = 'Spell';
+  document.getElementById('spNameView').textContent = sp.name;
+  const lvlStr = sp.level === 0 ? 'Cantrip' : LEVEL_LABELS[sp.level] + '-level';
+  const extras = [];
+  if (sp.concentration) extras.push('Concentration');
+  if (sp.ritual) extras.push('Ritual');
+  const schoolParts = [sp.school || '', ...extras].filter(Boolean).join(', ');
+  document.getElementById('spMetaView').textContent = lvlStr + (schoolParts ? ' · ' + schoolParts : '');
+  const details = [];
+  if (sp.castingTime) details.push(['Casting Time', sp.castingTime]);
+  if (sp.range)       details.push(['Range', sp.range]);
+  if (sp.components)  details.push(['Components', sp.components]);
+  if (sp.duration)    details.push(['Duration', sp.duration]);
+  document.getElementById('spDetailsView').innerHTML = details.map(([lbl, val]) =>
+    `<span class="sp-detail-label">${escHtml(lbl)}</span><span class="sp-detail-value">${escHtml(val)}</span>`
+  ).join('');
+  const saveDcBox = document.getElementById('spSaveDcBox');
+  if (sp.saveAbility) {
+    const dcEl = document.getElementById('statSpellDC');
+    const dc = dcEl ? dcEl.textContent : '—';
+    document.getElementById('spSaveDcValue').textContent = dc;
+    document.getElementById('spSaveDcAbility').textContent = sp.saveAbility + ' Save';
+    saveDcBox.style.display = '';
+  } else {
+    saveDcBox.style.display = 'none';
+  }
+  document.getElementById('spDescView').textContent = sp.description || '';
+}
+
+function populateSpellEditForm(i) {
+  const sp = i >= 0 ? state.spells[i] : null;
+  document.getElementById('spEditName').value        = sp ? sp.name            : '';
+  document.getElementById('spEditLevel').value       = sp ? String(sp.level ?? 0) : '0';
+  document.getElementById('spEditSchool').value      = sp ? (sp.school        || '') : '';
+  document.getElementById('spEditCastTime').value    = sp ? (sp.castingTime   || '') : '';
+  document.getElementById('spEditRange').value       = sp ? (sp.range         || '') : '';
+  document.getElementById('spEditComponents').value  = sp ? (sp.components    || '') : '';
+  document.getElementById('spEditDuration').value    = sp ? (sp.duration      || '') : '';
+  document.getElementById('spEditSaveAbility').value = sp ? (sp.saveAbility   || '') : '';
+  document.getElementById('spEditConc').checked      = sp ? !!sp.concentration : false;
+  document.getElementById('spEditRitual').checked    = sp ? !!sp.ritual        : false;
+  document.getElementById('spEditDescription').value = sp ? (sp.description   || '') : '';
+}
+
+function saveSpellEdit() {
+  const name = document.getElementById('spEditName').value.trim();
+  if (!name) { toast('Spell name is required'); document.getElementById('spEditName').focus(); return; }
+  const spell = {
+    name,
+    level:         parseInt(document.getElementById('spEditLevel').value) || 0,
+    school:        document.getElementById('spEditSchool').value.trim(),
+    castingTime:   document.getElementById('spEditCastTime').value.trim(),
+    range:         document.getElementById('spEditRange').value.trim(),
+    components:    document.getElementById('spEditComponents').value.trim(),
+    duration:      document.getElementById('spEditDuration').value.trim(),
+    saveAbility:   document.getElementById('spEditSaveAbility').value,
+    concentration: document.getElementById('spEditConc').checked,
+    ritual:        document.getElementById('spEditRitual').checked,
+    description:   document.getElementById('spEditDescription').value.trim(),
+  };
+  if (spellPanelEditIdx >= 0) {
+    state.spells[spellPanelEditIdx] = spell;
+    toast('Spell updated');
+  } else {
+    state.spells.push(spell);
+    toast('Spell added');
+  }
+  buildSpellList();
+  saveData();
+  dismissSpellPanel();
+}
+
+function deleteCurrentSpell() {
+  if (spellPanelEditIdx < 0) return;
+  const sp = state.spells[spellPanelEditIdx];
+  if (!confirm(`Delete "${sp.name}"?`)) return;
+  state.spells.splice(spellPanelEditIdx, 1);
+  buildSpellList();
+  saveData();
+  dismissSpellPanel();
+  toast('Spell deleted');
+}
+
+function dismissSpellPanel() {
+  popModalHistory();
+  document.getElementById('spellPanel').classList.remove('show', 'edit-mode');
+  document.getElementById('spellBackdrop').classList.remove('show');
+  cancelSpellPress();
 }
 
 // ── Class Features ─────────────────────────────────────────────────────
@@ -2778,6 +3414,7 @@ function setupSwipe() {
     const dy = e.changedTouches[0].clientY - y0;
     x0 = null;
     if (document.getElementById('rollResult').classList.contains('show')) return;
+    if (document.getElementById('spellPanel')?.classList.contains('show')) return;
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
     const cur = TABS.indexOf(document.querySelector('.tab-btn.active')?.dataset.tab ?? TABS[0]);
     const next = Math.max(0, Math.min(TABS.length - 1, cur + (dx < 0 ? 1 : -1)));
@@ -2800,11 +3437,13 @@ function popModalHistory() {
 window.addEventListener('popstate', () => {
   if (!_modalStatePushed) return;
   _modalStatePushed = false;
-  const rollEl = document.getElementById('rollResult');
-  const stepEl = document.getElementById('stepMenu');
-  const hpEl   = document.getElementById('hpDialog');
+  const rollEl     = document.getElementById('rollResult');
+  const spellEl    = document.getElementById('spellPanel');
+  const stepEl     = document.getElementById('stepMenu');
+  const hpEl       = document.getElementById('hpDialog');
   const settingsEl = document.getElementById('settingsMenu');
   if (rollEl?.classList.contains('show'))            dismissRollResult();
+  else if (spellEl?.classList.contains('show'))      dismissSpellPanel();
   else if (stepEl?.classList.contains('show'))       dismissStepMenu();
   else if (hpEl?.classList.contains('show'))         dismissHpDialog();
   else if (settingsEl?.classList.contains('show'))   dismissSettings();
@@ -2886,7 +3525,7 @@ function toast(msg) {
 function collectFormData() {
   const ids = ['charName','charClass','charSubclass','charRace','charLevel','charBackground',
     'charAlignment','charXP','personality','ideals','bonds','flaws','features',
-    'hpMax','hpTemp','statAC','statSpeed','statHitDice','spellsList','equipment',
+    'hpMax','hpTemp','statAC','statSpeed','statHitDice','equipment',
     'proficiencies','languages','notes','spellAbility','cp','sp','ep','gp','pp'];
   const data = {};
   ids.forEach(id => { const el = document.getElementById(id); if (el) data[id] = el.value; });
@@ -2904,6 +3543,7 @@ function buildPayload() {
       inspiration: state.inspiration,
       hpCurrent: state.hpCurrent,
       spellSlots: state.spellSlots,
+      spells: state.spells,
       attacks: state.attacks,
       conditions: state.conditions,
       classFeatures: state.classFeatures,
@@ -2932,6 +3572,7 @@ function loadData() {
         state.spellSlots = SPELL_SLOTS_DEFAULT.map((def, i) => state.spellSlots[i] || {...def});
       }
       if (!Array.isArray(state.classFeatures)) state.classFeatures = [];
+      if (!Array.isArray(state.spells)) state.spells = [];
       if (typeof state.hitDiceUsed !== 'number') state.hitDiceUsed = 0;
     }
   } catch(e) {}
@@ -2980,6 +3621,7 @@ function applyPayload(payload) {
       state.spellSlots = SPELL_SLOTS_DEFAULT.map((def, i) => state.spellSlots[i] || {...def});
     }
     if (!Array.isArray(state.classFeatures)) state.classFeatures = [];
+    if (!Array.isArray(state.spells)) state.spells = [];
     if (typeof state.hitDiceUsed !== 'number') state.hitDiceUsed = 0;
   }
   buildAbilityGrid();
@@ -2987,6 +3629,7 @@ function applyPayload(payload) {
   buildSkillsList();
   buildConditions();
   buildSpellSlots();
+  buildSpellList();
   buildFeatures();
   renderHitDice();
   renderAttacks();
