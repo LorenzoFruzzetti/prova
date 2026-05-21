@@ -5053,7 +5053,7 @@ function buildDiceRoller() {
         <div class="feature-left-col">
           <div class="feature-name-area" onclick="rollDieType(${i})">
             <span class="dice-die-name">d${d.sides}</span>
-            ${d.count > 1 ? `<span class="dice-die-hint">tap name to roll ${d.count}d${d.sides}</span>` : ''}
+            <span class="dice-die-hint">tap to roll ${d.count}d${d.sides}</span>
           </div>
           <div class="feature-dots" style="margin-top:6px">${dotsHtml}</div>
         </div>
