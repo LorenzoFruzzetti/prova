@@ -1662,6 +1662,31 @@
     transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
   }
   #attackEditSheet.show { transform: translateY(0); }
+
+  /* ── Attack panel (view + edit, mirrors spellPanel) ── */
+  #attackPanelBackdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 300;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  #attackPanelBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #attackPanel {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.88);
+    background: linear-gradient(160deg, #2a1e0e, #1a1206);
+    border: 2px solid var(--gold); border-radius: 20px;
+    padding: 22px 24px 20px; z-index: 301;
+    opacity: 0; transition: opacity 0.2s, transform 0.2s, border-color 0.25s;
+    pointer-events: none; width: min(92vw, 500px);
+    max-height: 82vh; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  }
+  #attackPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  #attackPanel.edit-mode { border-color: #5baeff; }
+
+  .atk-edit-section { display: none; }
+  #attackPanel.edit-mode .atk-view-section { display: none; }
+  #attackPanel.edit-mode .atk-edit-section { display: block; }
 </style>
 </head>
 <body>
@@ -2325,39 +2350,58 @@
   <button class="hp-dlg-btn" onclick="dismissSettings()" style="width:100%">Close</button>
 </div>
 
-<div id="attackSheetBackdrop" onclick="dismissAttackSheet()"></div>
-<div id="attackEditSheet">
-  <div class="hp-dlg-title" id="attackSheetTitle">New Attack</div>
-  <div style="height:10px"></div>
-  <label class="fe-label">Name</label>
-  <input class="fe-input" type="text" id="attackSheetName" placeholder="e.g. Longsword"
-         onkeydown="if(event.key==='Enter') document.getElementById('attackSheetBonus').focus()">
-  <div class="fe-row2">
-    <div>
-      <label class="fe-label">Attack Bonus</label>
-      <input class="fe-input" type="text" id="attackSheetBonus" placeholder="+5"
-             onkeydown="if(event.key==='Enter') document.getElementById('attackSheetDamage').focus()">
+<!-- ── Attack View / Edit Panel ── -->
+<div id="attackPanelBackdrop" onclick="dismissAttackPanel()"></div>
+<div id="attackPanel">
+  <!-- View mode -->
+  <div class="atk-view-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="sp-mode-badge">Attack</div>
+      <button class="attack-edit-btn" onclick="event.stopPropagation();switchToAtkEdit()">Edit</button>
     </div>
-    <div>
-      <label class="fe-label">Damage</label>
-      <input class="fe-input" type="text" id="attackSheetDamage" placeholder="1d8+3"
-             onkeydown="if(event.key==='Enter') saveAttackSheet()">
+    <div class="sp-name" id="atkPanelName"></div>
+    <div class="sp-meta" id="atkPanelMeta"></div>
+    <div class="sp-atk-box" id="atkPanelRollBox" onclick="event.stopPropagation();rollFromAttackPanel()">
+      <div class="sp-atk-label">Attack Roll — tap to roll</div>
+      <div class="sp-atk-bonus" id="atkPanelBonus"></div>
+      <div class="sp-atk-damage" id="atkPanelDamage"></div>
     </div>
+    <div class="sp-description" id="atkPanelDesc"></div>
+    <span class="sp-dismiss-hint">tap to dismiss</span>
   </div>
-  <label class="fe-label">Action Type</label>
-  <select class="fe-input" id="attackSheetActionType" style="margin-bottom:16px">
-    <option value="action">Action</option>
-    <option value="bonus">Bonus Action</option>
-  </select>
-  <div class="hp-dlg-btns">
-    <button class="hp-dlg-btn" onclick="dismissAttackSheet()">Cancel</button>
-    <button class="hp-dlg-btn primary" onclick="saveAttackSheet()">Save</button>
-  </div>
-  <div style="text-align:center;margin-top:10px">
-    <button id="attackSheetDeleteBtn" onclick="deleteAttackFromSheet()"
-            style="background:none;border:none;color:var(--red-light);font-size:13px;font-family:sans-serif;cursor:pointer;padding:8px;display:none">
-      Delete Attack
-    </button>
+  <!-- Edit mode -->
+  <div class="atk-edit-section">
+    <div class="sp-mode-badge" style="color:#5baeff">Editing Attack</div>
+    <div class="sp-edit-field">
+      <label>Name</label>
+      <input type="text" id="atkEditName" placeholder="e.g. Longsword">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="sp-edit-field">
+        <label>Attack Bonus</label>
+        <input type="text" id="atkEditBonus" placeholder="+5">
+      </div>
+      <div class="sp-edit-field">
+        <label>Damage</label>
+        <input type="text" id="atkEditDamage" placeholder="1d8+3">
+      </div>
+    </div>
+    <div class="sp-edit-field">
+      <label>Action Type</label>
+      <select id="atkEditActionType">
+        <option value="action">Action</option>
+        <option value="bonus">Bonus Action</option>
+      </select>
+    </div>
+    <div class="sp-edit-field">
+      <label>Description</label>
+      <textarea id="atkEditDesc" placeholder="Weapon mastery, special effects, etc."></textarea>
+    </div>
+    <div class="sp-edit-actions">
+      <button class="sp-edit-delete-btn" id="atkEditDeleteBtn" onclick="deleteFromAttackPanel()">Delete</button>
+      <button class="sp-edit-cancel-btn" onclick="dismissAttackPanel()">Cancel</button>
+      <button class="sp-edit-save-btn" onclick="saveAttackPanel()">Save</button>
+    </div>
   </div>
 </div>
 
@@ -3496,7 +3540,7 @@ function resetHPToFull() {
 // ── Attacks ────────────────────────────────────────────────────────────
 let longPressTimer = null;
 let longPressActive = false;
-let attackSheetIdx = -1;
+let attackPanelIdx = -1;
 
 function startLongPress(e, i) {
   if (e.target.closest('.atk-manage-btn') || e.target.closest('.attack-del')) return;
@@ -3504,7 +3548,7 @@ function startLongPress(e, i) {
   clearTimeout(longPressTimer);
   longPressTimer = setTimeout(() => {
     longPressActive = true;
-    openAttackSheet(i);
+    openAttackPanel(i, true);
   }, 500);
 }
 
@@ -3519,58 +3563,108 @@ function toggleAttackEdit() {
   renderAttacks();
 }
 
-function addAttack() { openAttackSheet(-1); }
+function addAttack() { openAttackPanel(-1, true); }
 
-function openAttackSheet(i) {
+function openAttackPanel(i, editMode) {
   pushModalHistory();
-  attackSheetIdx = i;
-  const isNew = i < 0;
-  document.getElementById('attackSheetTitle').textContent = isNew ? 'New Attack' : 'Edit Attack';
-  const a = isNew ? null : state.attacks[i];
-  document.getElementById('attackSheetName').value = a ? a.name : '';
-  document.getElementById('attackSheetBonus').value = a ? (a.bonus === '—' ? '' : a.bonus) : '';
-  document.getElementById('attackSheetDamage').value = a ? (a.damage === '—' ? '' : a.damage) : '';
-  document.getElementById('attackSheetActionType').value = a ? (a.actionType || 'action') : 'action';
-  document.getElementById('attackSheetDeleteBtn').style.display = isNew ? 'none' : '';
-  document.getElementById('attackSheetBackdrop').classList.add('show');
-  document.getElementById('attackEditSheet').classList.add('show');
-  setTimeout(() => document.getElementById('attackSheetName').focus(), 300);
+  attackPanelIdx = i;
+  const panel = document.getElementById('attackPanel');
+  if (editMode) {
+    panel.classList.add('edit-mode');
+    const a = i >= 0 ? state.attacks[i] : null;
+    document.getElementById('atkEditName').value       = a ? a.name : '';
+    document.getElementById('atkEditBonus').value      = a ? (a.bonus === '—' ? '' : a.bonus) : '';
+    document.getElementById('atkEditDamage').value     = a ? (a.damage === '—' ? '' : a.damage) : '';
+    document.getElementById('atkEditActionType').value = a ? (a.actionType || 'action') : 'action';
+    document.getElementById('atkEditDesc').value       = a ? (a.description || '') : '';
+    document.getElementById('atkEditDeleteBtn').style.display = i < 0 ? 'none' : '';
+    setTimeout(() => document.getElementById('atkEditName').focus(), 250);
+  } else {
+    panel.classList.remove('edit-mode');
+    const a = state.attacks[i];
+    document.getElementById('atkPanelName').textContent = a.name;
+    document.getElementById('atkPanelMeta').textContent =
+      (a.actionType || 'action') === 'bonus' ? 'Bonus Action' : 'Action';
+    const rollBox = document.getElementById('atkPanelRollBox');
+    if (a.bonus && a.bonus !== '—') {
+      rollBox.style.display = '';
+      document.getElementById('atkPanelBonus').textContent = a.bonus;
+      document.getElementById('atkPanelDamage').textContent = a.damage !== '—' ? a.damage : '';
+    } else {
+      rollBox.style.display = 'none';
+    }
+    const descEl = document.getElementById('atkPanelDesc');
+    descEl.textContent = a.description || '';
+    descEl.style.display = a.description ? '' : 'none';
+  }
+  document.getElementById('attackPanelBackdrop').classList.add('show');
+  panel.classList.add('show');
 }
 
-function saveAttackSheet() {
-  const name = document.getElementById('attackSheetName').value.trim();
-  if (!name) { toast('Attack name is required'); document.getElementById('attackSheetName').focus(); return; }
-  const bonus = document.getElementById('attackSheetBonus').value.trim() || '—';
-  const damage = document.getElementById('attackSheetDamage').value.trim() || '—';
-  const actionType = document.getElementById('attackSheetActionType').value;
-  if (attackSheetIdx < 0) {
-    const atk = {name, bonus, damage, actionType, hidden: false};
-    state.attacks.push(atk);
+function switchToAtkEdit() {
+  document.getElementById('attackPanel').classList.add('edit-mode');
+  const a = attackPanelIdx >= 0 ? state.attacks[attackPanelIdx] : null;
+  document.getElementById('atkEditName').value       = a ? a.name : '';
+  document.getElementById('atkEditBonus').value      = a ? (a.bonus === '—' ? '' : a.bonus) : '';
+  document.getElementById('atkEditDamage').value     = a ? (a.damage === '—' ? '' : a.damage) : '';
+  document.getElementById('atkEditActionType').value = a ? (a.actionType || 'action') : 'action';
+  document.getElementById('atkEditDesc').value       = a ? (a.description || '') : '';
+  document.getElementById('atkEditDeleteBtn').style.display = attackPanelIdx < 0 ? 'none' : '';
+  setTimeout(() => document.getElementById('atkEditName').focus(), 100);
+}
+
+function saveAttackPanel() {
+  const name = document.getElementById('atkEditName').value.trim();
+  if (!name) { toast('Attack name is required'); document.getElementById('atkEditName').focus(); return; }
+  const bonus       = document.getElementById('atkEditBonus').value.trim() || '—';
+  const damage      = document.getElementById('atkEditDamage').value.trim() || '—';
+  const actionType  = document.getElementById('atkEditActionType').value;
+  const description = document.getElementById('atkEditDesc').value.trim();
+  if (attackPanelIdx < 0) {
+    state.attacks.push({name, bonus, damage, actionType, description, hidden: false});
     pushUndo({type: 'addAttack', index: state.attacks.length - 1});
+    toast('Attack added');
   } else {
-    const existing = state.attacks[attackSheetIdx];
-    state.attacks[attackSheetIdx] = {...existing, name, bonus, damage, actionType};
+    state.attacks[attackPanelIdx] = {...state.attacks[attackPanelIdx], name, bonus, damage, actionType, description};
+    toast('Attack updated');
   }
   renderAttacks();
   saveData();
-  dismissAttackSheet();
+  dismissAttackPanel();
 }
 
-function deleteAttackFromSheet() {
-  if (attackSheetIdx < 0) return;
-  pushUndo({type: 'removeAttack', attack: {...state.attacks[attackSheetIdx]}, index: attackSheetIdx});
-  state.attacks.splice(attackSheetIdx, 1);
+function deleteFromAttackPanel() {
+  if (attackPanelIdx < 0) return;
+  pushUndo({type: 'removeAttack', attack: {...state.attacks[attackPanelIdx]}, index: attackPanelIdx});
+  state.attacks.splice(attackPanelIdx, 1);
   renderAttacks();
   saveData();
-  dismissAttackSheet();
+  dismissAttackPanel();
   toast('Attack deleted');
 }
 
-function dismissAttackSheet() {
+function dismissAttackPanel() {
   popModalHistory();
-  document.getElementById('attackSheetBackdrop').classList.remove('show');
-  document.getElementById('attackEditSheet').classList.remove('show');
+  document.getElementById('attackPanelBackdrop').classList.remove('show');
+  document.getElementById('attackPanel').classList.remove('show', 'edit-mode');
   longPressActive = false;
+}
+
+function rollFromAttackPanel() {
+  if (attackPanelIdx < 0) return;
+  const a = state.attacks[attackPanelIdx];
+  const roll = d20();
+  let breakdown, total;
+  if (a.bonus && a.bonus !== '—') {
+    const bonus = parseInt(a.bonus) || 0;
+    breakdown = `d20(${roll}) ${fmtMod(bonus)}`;
+    total = roll + bonus;
+  } else {
+    breakdown = `d20(${roll})`;
+    total = roll;
+  }
+  const dmg = rollDiceExpr(a.damage);
+  showRoll(a.name, breakdown, total, natMsg(roll), dmg !== null ? `Dmg: ${dmg}` : '');
 }
 
 function hideAttack(i) {
@@ -3590,28 +3684,12 @@ function getSpellAtkBonus() {
   return el ? el.textContent : '—';
 }
 
-function rollSpellFromCombat(spellIdx) {
-  if (longPressActive) { longPressActive = false; return; }
-  const sp = state.spells[spellIdx];
-  if (!sp) return;
-  if (!sp.attackRoll) { toast(sp.name); return; }
-  const el = document.getElementById('statSpellAtk');
-  if (!el || el.textContent === '—') { toast('No spellcasting ability set'); return; }
-  const roll = d20();
-  const m = parseInt(el.textContent) || 0;
-  let secondary;
-  if (sp.damage) {
-    const dmg = rollDiceExpr(sp.damage);
-    if (dmg !== null) secondary = `Dmg: ${dmg}`;
-  }
-  showRoll(sp.name, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll), secondary);
-}
 
 function renderAttacks() {
   const list = document.getElementById('attackList');
   const manageMode = list.classList.contains('manage-mode');
 
-  const combatSpells = state.spells.filter(sp => sp.showInCombat && sp.attackRoll);
+  const combatSpells = state.spells.filter(sp => sp.showInCombat);
   const combatSpellActions = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'action');
   const combatSpellBonus   = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'bonus');
 
@@ -3656,12 +3734,13 @@ function renderAttacks() {
   }
 
   function makeSpellRow(sp, spIdx) {
+    const bonus = sp.attackRoll ? getSpellAtkBonus() : '—';
     return `
       <div class="attack-row spell-atk"
-           onclick="rollSpellFromCombat(${spIdx})"
+           onclick="openSpellPanel(${spIdx}, false)"
            oncontextmenu="return false">
         <span class="attack-name">${escHtml(sp.name)}</span>
-        <span class="attack-bonus" style="color:#5baeff">${escHtml(getSpellAtkBonus())}</span>
+        <span class="attack-bonus" style="color:#5baeff">${escHtml(bonus)}</span>
         <span class="attack-damage">${escHtml(sp.damage || '—')}</span>
         <div></div>
       </div>`;
@@ -3698,19 +3777,7 @@ function renderAttacks() {
 function rollAttack(i) {
   if (longPressActive) { longPressActive = false; return; }
   const a = state.attacks[i];
-  if (a.hidden) { openAttackSheet(i); return; }
-  const roll = d20();
-  let breakdown, total;
-  if (a.bonus && a.bonus !== '—') {
-    const bonus = parseInt(a.bonus) || 0;
-    breakdown = `d20(${roll}) ${fmtMod(bonus)}`;
-    total = roll + bonus;
-  } else {
-    breakdown = `d20(${roll})`;
-    total = roll;
-  }
-  const dmg = rollDiceExpr(a.damage);
-  showRoll(a.name, breakdown, total, natMsg(roll), dmg !== null ? `Dmg: ${dmg}` : '');
+  openAttackPanel(i, a.hidden ? true : false);
 }
 
 function removeAttack(i) {
@@ -3779,6 +3846,7 @@ function setupSwipe() {
     x0 = null;
     if (document.getElementById('rollResult').classList.contains('show')) return;
     if (document.getElementById('spellPanel')?.classList.contains('show')) return;
+    if (document.getElementById('attackPanel')?.classList.contains('show')) return;
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
     const cur = TABS.indexOf(document.querySelector('.tab-btn.active')?.dataset.tab ?? TABS[0]);
     const next = Math.max(0, Math.min(TABS.length - 1, cur + (dx < 0 ? 1 : -1)));
@@ -3806,13 +3874,13 @@ window.addEventListener('popstate', () => {
   const stepEl       = document.getElementById('stepMenu');
   const hpEl         = document.getElementById('hpDialog');
   const settingsEl   = document.getElementById('settingsMenu');
-  const attackSheetEl = document.getElementById('attackEditSheet');
-  if (rollEl?.classList.contains('show'))              dismissRollResult();
-  else if (spellEl?.classList.contains('show'))        dismissSpellPanel();
-  else if (stepEl?.classList.contains('show'))         dismissStepMenu();
-  else if (hpEl?.classList.contains('show'))           dismissHpDialog();
-  else if (settingsEl?.classList.contains('show'))     dismissSettings();
-  else if (attackSheetEl?.classList.contains('show'))  dismissAttackSheet();
+  const attackPanelEl = document.getElementById('attackPanel');
+  if (rollEl?.classList.contains('show'))               dismissRollResult();
+  else if (spellEl?.classList.contains('show'))         dismissSpellPanel();
+  else if (stepEl?.classList.contains('show'))          dismissStepMenu();
+  else if (hpEl?.classList.contains('show'))            dismissHpDialog();
+  else if (settingsEl?.classList.contains('show'))      dismissSettings();
+  else if (attackPanelEl?.classList.contains('show'))   dismissAttackPanel();
 });
 
 // ── Settings menu ─────────────────────────────────────────────────────
