@@ -708,16 +708,18 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 0 8px calc(var(--roll-border) + 6px);
+    padding: 11px 0 11px calc(var(--roll-border) + 6px);
     border-bottom: 1px solid rgba(92,74,42,0.25);
+    margin-bottom: 2px;
     cursor: pointer;
     box-shadow: inset var(--roll-border) 0 0 0 rgba(201,168,76,0.3);
     background: rgba(201,168,76,0.02);
     user-select: none;
     -webkit-user-select: none;
+    touch-action: manipulation;
     transition: background 0.12s;
   }
-  .spell-item:last-of-type { border-bottom: none; }
+  .spell-item:last-of-type { border-bottom: none; margin-bottom: 0; }
   .spell-item:active { background: rgba(201,168,76,0.10); }
   .spell-item.holding { background: rgba(90,174,255,0.08); box-shadow: inset var(--roll-border) 0 0 0 rgba(90,174,255,0.5); }
 
@@ -3064,7 +3066,7 @@ function buildSpellList() {
       html += `
         <div class="spell-item" data-spell-idx="${i}"
              onpointerdown="startSpellPress(event, ${i})"
-             onpointerup="endSpellPress(event, ${i})"
+             onclick="clickSpellItem(event, ${i})"
              onpointercancel="cancelSpellPress()"
              oncontextmenu="return false">
           <span class="spell-item-name">${escHtml(sp.name)}</span>
@@ -3093,12 +3095,11 @@ function startSpellPress(e, i) {
   }, 500);
 }
 
-function endSpellPress(e, i) {
+function clickSpellItem(e, i) {
   clearTimeout(spellPressTimer);
-  const el = e.currentTarget;
-  if (el) el.classList.remove('holding');
-  if (!spellPressActive) openSpellPanel(i, false);
-  spellPressActive = false;
+  document.querySelectorAll('.spell-item.holding').forEach(el => el.classList.remove('holding'));
+  if (spellPressActive) { spellPressActive = false; return; }
+  openSpellPanel(i, false);
 }
 
 function cancelSpellPress() {
