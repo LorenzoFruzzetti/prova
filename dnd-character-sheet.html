@@ -319,6 +319,65 @@
   .col-2 { grid-template-columns: 1fr 1fr; }
   .col-3 { grid-template-columns: 1fr 1fr 1fr; }
 
+  /* ── Portrait ── */
+  .portrait-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0 8px;
+    width: 100%;
+  }
+  .portrait-box {
+    width: 120px;
+    height: 120px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--surface2);
+    transition: border-color 0.2s;
+    flex-shrink: 0;
+  }
+  .portrait-box:active { border-color: var(--gold); }
+  .portrait-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  .portrait-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: sans-serif;
+    text-align: center;
+    padding: 8px;
+    box-sizing: border-box;
+  }
+  .portrait-placeholder-icon { font-size: 38px; line-height: 1; }
+  .portrait-actions { display: flex; gap: 8px; }
+  .portrait-btn {
+    background: rgba(var(--accent-rgb),0.08);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    padding: 5px 14px;
+    font-size: 12px;
+    font-family: sans-serif;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .portrait-btn:active { border-color: var(--gold); color: var(--gold); background: rgba(var(--accent-rgb),0.15); }
+  .portrait-remove-btn { color: var(--red-light); border-color: rgba(192,57,43,0.35); }
+  .portrait-remove-btn:active { border-color: var(--red); color: var(--red); background: rgba(192,57,43,0.1); }
+
   /* ── Ability Scores ── */
   .ability-grid {
     display: grid;
@@ -2177,6 +2236,7 @@
   </div>
 </div>
 <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="importFromJSON(this)">
+<input type="file" id="portraitInput" accept="image/*" style="display:none" onchange="handlePortraitUpload(this)">
 
 <div class="tab-bar">
   <button class="tab-btn active" data-tab="overview"  onclick="switchTab('overview')">Info</button>
@@ -2195,6 +2255,19 @@
   <div class="section">
     <div class="section-title">Character Info</div>
     <div class="section-body">
+      <div class="portrait-section">
+        <div class="portrait-box" onclick="document.getElementById('portraitInput').click()" title="Tap to set portrait">
+          <img id="portraitImg" class="portrait-img" src="" alt="Character portrait">
+          <div id="portraitPlaceholder" class="portrait-placeholder">
+            <div class="portrait-placeholder-icon">&#128100;</div>
+            <span>Tap to add portrait</span>
+          </div>
+        </div>
+        <div class="portrait-actions">
+          <button class="portrait-btn" onclick="document.getElementById('portraitInput').click()">Upload Image</button>
+          <button class="portrait-btn portrait-remove-btn" id="portraitRemoveBtn" style="display:none" onclick="removePortrait()">Remove</button>
+        </div>
+      </div>
       <div class="field-row">
         <div>
           <label>Character Name</label>
@@ -3202,6 +3275,7 @@ let state = {
   infoTraits: [],
   hitDiceUsed: 0,
   diceRoller: null,
+  portrait: null,
 };
 
 // ── Init ───────────────────────────────────────────────────────────────
@@ -3218,6 +3292,7 @@ function init() {
   buildDiceRoller();
   renderHitDice();
   recalcAll();
+  applyPortrait();
   setupAutoSave();
   setupSwipe();
 }
@@ -3279,6 +3354,9 @@ function applyUndo(a) {
       state.inspiration = a.previous;
       document.getElementById('inspirationBtn')?.classList.toggle('active', a.previous);
       saveData(); toast('↩ Inspiration'); break;
+    case 'portrait':
+      state.portrait = a.previous;
+      applyPortrait(); saveData(); toast('↩ Portrait'); break;
   }
 }
 
@@ -5328,6 +5406,49 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
 }
 
+// ── Portrait ───────────────────────────────────────────────────────────
+function applyPortrait() {
+  const img = document.getElementById('portraitImg');
+  const placeholder = document.getElementById('portraitPlaceholder');
+  const removeBtn = document.getElementById('portraitRemoveBtn');
+  if (state.portrait) {
+    img.src = state.portrait;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+    removeBtn.style.display = '';
+  } else {
+    img.src = '';
+    img.style.display = 'none';
+    placeholder.style.display = '';
+    removeBtn.style.display = 'none';
+  }
+}
+
+function handlePortraitUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const previous = state.portrait;
+  const reader = new FileReader();
+  reader.onload = e => {
+    pushUndo({type: 'portrait', previous});
+    state.portrait = e.target.result;
+    applyPortrait();
+    saveData();
+    toast('Portrait updated');
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function removePortrait() {
+  if (!state.portrait) return;
+  pushUndo({type: 'portrait', previous: state.portrait});
+  state.portrait = null;
+  applyPortrait();
+  saveData();
+  toast('Portrait removed');
+}
+
 // ── Persistence ────────────────────────────────────────────────────────
 function collectFormData() {
   const ids = ['charName','charClass','charSubclass','charRace','charLevel','charBackground',
@@ -5357,6 +5478,7 @@ function buildPayload() {
       infoTraits: state.infoTraits,
       hitDiceUsed: state.hitDiceUsed,
       diceRoller: state.diceRoller,
+      portrait: state.portrait,
     }
   };
 }
@@ -5385,6 +5507,7 @@ function loadData() {
       if (!Array.isArray(state.spells)) state.spells = [];
       if (typeof state.hitDiceUsed !== 'number') state.hitDiceUsed = 0;
       if (!Array.isArray(state.diceRoller)) state.diceRoller = null;
+      if (typeof state.portrait !== 'string') state.portrait = null;
     }
   } catch(e) {}
 }

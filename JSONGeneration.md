@@ -214,7 +214,9 @@ Contains structured game data that cannot be expressed as plain form inputs.
     { "name": "Sneak Attack", "description": "Once per turn, deal extra 4d6 damage when you have advantage or an ally is adjacent to the target." },
     { "name": "Cunning Action", "description": "As a bonus action, Dash, Disengage, or Hide." },
     { "name": "Uncanny Dodge", "description": "When an attacker you can see hits you, use your reaction to halve the attack's damage." }
-  ]
+  ],
+
+  "portrait": null
 }
 ```
 
@@ -452,6 +454,15 @@ Integer. Number of hit dice already expended. Max is equal to the character's le
 ```
 
 Omitting this key defaults to `0` (all hit dice available). A Long Rest resets this to `0`.
+
+#### `portrait`
+String or `null`. A base64-encoded data URL for the character portrait image (e.g. `"data:image/png;base64,..."`). Omitting this key or setting it to `null` leaves the portrait empty.
+
+```json
+"portrait": null
+```
+
+The user sets this by tapping the portrait box or the Upload Image button at the top of the Info tab. The image is stored inline in the save file; large images will increase file size. Supported formats are whatever the browser accepts for `<img>` elements (JPEG, PNG, WebP, GIF, etc.).
 
 #### `conditions`
 Array of active condition name strings.
