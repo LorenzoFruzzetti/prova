@@ -224,6 +224,13 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.theme-swatch` | 30 px circular swatch button; `.active` adds a white ring and 1.15× scale; `data-theme` attribute matches a key in `THEMES` |
 | `.tracker-row` | Flex row wrapping hit-dice dots + mini-tracker (replaces inline flex style) |
 | `body.lefty` | Applied when lefty mode is on; swaps CSS `order` of `.feature-left-col` and `.feature-right-col` in feature rows, and of dots and mini-tracker in spell-slot and hit-dice tracker rows |
+| `.portrait-section` | Centered column widget at the top of the Character Info section; wraps portrait box + action buttons |
+| `.portrait-box` | 120×120 px bordered container for the character portrait; tapping it triggers the hidden file input |
+| `.portrait-img` | `<img>` element inside `.portrait-box`; `object-fit:cover`; hidden when no portrait is set |
+| `.portrait-placeholder` | Centered column shown inside `.portrait-box` when no portrait exists; person icon + hint text |
+| `.portrait-actions` | Flex row holding the Upload and Remove buttons below `.portrait-box` |
+| `.portrait-btn` | Muted bordered button used for portrait upload/remove actions |
+| `.portrait-remove-btn` | Modifier on `.portrait-btn`; red tint; hidden until a portrait is set |
 
 ---
 
@@ -301,6 +308,7 @@ let state = {
                           showInCombat,          //   boolean — show as row in the combat block
                           combatActionType,      //   'action' | 'bonus' (default: 'action')
                         } ],
+  portrait:           null, // base64 data URL string (e.g. "data:image/png;base64,...") or null
 }
 ```
 
@@ -551,12 +559,15 @@ Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled
 | Function | Description |
 |---|---|
 | `collectFormData()` | Reads all 28 form input values by element ID into a plain object |
-| `buildPayload()` | Returns `{ form, state }` — the canonical serialisation format; `state` includes `spellSlots`, `attacks`, `conditions`, `classFeatures`, `infoTraits`, `hitDiceUsed`, and all ability/proficiency data |
+| `buildPayload()` | Returns `{ form, state }` — the canonical serialisation format; `state` includes `spellSlots`, `attacks`, `conditions`, `classFeatures`, `infoTraits`, `hitDiceUsed`, `portrait`, and all ability/proficiency data |
 | `saveData()` | Writes `buildPayload()` to `localStorage` key `dnd5e_sheet` |
 | `loadData()` | Reads from `localStorage`, populates form fields and `state` (no UI rebuild) |
 | `exportToJSON()` | Downloads `buildPayload()` as `<charname>.json` via a temporary `<a>` element |
 | `importFromJSON(input)` | Reads a `.json` file with `FileReader`, calls `applyPayload()` + `saveData()` |
 | `applyPayload(payload)` | Applies a payload object: restores form fields, updates `state`, rebuilds all dynamic UI |
+| `applyPortrait()` | Shows or hides `#portraitImg` / `#portraitPlaceholder` / `#portraitRemoveBtn` based on `state.portrait` |
+| `handlePortraitUpload(input)` | `FileReader` callback; pushes undo, stores base64 data URL in `state.portrait`, calls `applyPortrait()` + `saveData()` |
+| `removePortrait()` | Pushes undo, clears `state.portrait`, calls `applyPortrait()` + `saveData()` |
 
 ---
 
