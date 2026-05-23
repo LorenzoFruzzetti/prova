@@ -7,35 +7,120 @@ A self-contained single-file application. No build step, no dependencies. Open d
 
 ## Shared terminology
 
-This section defines the names used in conversations, issues, and pull requests so that the user and any AI assistant share a common vocabulary. When the user asks about one of these terms, treat this section as the authoritative definition.
+This section is the authoritative vocabulary for conversations, issues, and pull requests. When a user or AI assistant refers to any term below, the definition here takes precedence over any other interpretation.
 
-**Info panel (user-facing term)** — When the user says "info panel" or "information panel", they mean any of the floating modal cards that slide in when you hold or tap a spell, feature, trait, or attack row. In the codebase these are implemented as four separate dedicated panels (`#spellPanel`, `#featurePanel`, `#traitPanel`, `#attackPanel`) plus the generic unified panel (`#infoPanel`). If a request mentions "the info panel for spells / features", it refers to the dedicated panels, not the generic one.
+---
 
-**Generic info panel (`#infoPanel`)** — The single, reusable floating card used for items that have no dedicated panel: skills, ability scores, saving throws, combat stat pills (AC, Speed, Initiative, Spell Atk, Spell DC), hit die, death saves, and conditions. Opened via `openInfoPanel(cfg)`. It accepts a badge, title, optional meta line, optional 3-zone roll button, optional simple roll button, a description block, and an optional action button (e.g. "Apply Condition"). It is **not** used for spells, traits, or features — those use their own panels.
+### Application structure
 
-**Dedicated view/edit panels** — `#spellPanel`, `#traitPanel`, `#featurePanel`, and `#attackPanel` are dedicated floating cards for their respective item types. Each panel has two modes controlled by toggling the `.edit-mode` CSS class on the panel element:
-- *View mode* — read-only display of the item's details (name, description, roll boxes) with a Delete / Cancel / Save button row at the bottom.
-- *Edit mode* — editable form with labeled fields and a Delete / Cancel / Save button row.
+**Single-file app** — The entire application lives in `dnd-character-sheet.html`. There is no build step, no bundler, no external CSS or JS files, and no server. Open the file directly in a browser. Every HTML structure, every CSS rule, and every JavaScript function is in that one file.
 
-**View mode Edit button** — A small `attack-edit-btn` button in the top-right of each dedicated panel's view section header (badge left, Edit button right). Tapping it switches the panel to edit mode. The panel footer shows a "tap to dismiss" hint; tapping the backdrop also dismisses.
+**Tab** — One of the eight top-level navigation buttons in the sticky tab bar. Each tab button carries a `data-tab` attribute identifying the panel it activates. The currently active tab has the `.active` CSS class on its button.
 
-**Edit mode button row** — The same `.sp-edit-actions` footer in each panel's edit section. Delete deletes permanently, Cancel discards unsaved edits and dismisses, Save persists changes and dismisses.
+**Panel** — The content area shown when a tab is selected. Each panel is a `<div class="panel">` whose `id` matches the tab's `data-tab` value prefixed with `panel-`. Panels are hidden by default; the active one gets the `.active` class.
 
-**Info tab** — The first tab, whose button label reads "Info" and whose panel id is `#panel-overview`. Contains Character Info (portrait + form fields), Features & Traits (`infoTraits` list), Personality, and Long Rest.
+**Section** — A card-like visual grouping inside a panel. Implemented as `<div class="section">`, which contains a `.section-title` strip at the top and a `.section-body` below. Multiple sections stack vertically within a panel.
 
-**Features tab** — The tab labelled "Features" (`#panel-features`). Shows class features with limited-use dot trackers and +/− counters (`classFeatures`). Distinct from the Info tab's "Features & Traits" section.
+**Header** — The sticky top bar (`<div class="header">`). Contains the app title on the left, action buttons (Undo, Import, Settings) on the right, and character name + meta on a second line. Always visible regardless of which tab is active.
 
-**Info traits vs class features** — Two separate data arrays with different purposes:
-- `state.infoTraits` — descriptive traits and racial/background features stored in the Info tab's "Features & Traits" section. No slot tracking; optional damage roll and saving throw display.
-- `state.classFeatures` — limited-use class abilities in the Features tab, each with `max`, `used`, `step`, and `recharge` fields and a visual dot tracker.
+---
 
-**Combat block** — The attacks list rendered inside `#panel-combat` (`#attackList`). Collects weapon attacks (`state.attacks`), spells with `showInCombat: true` (`state.spells`), info traits with `showInCombat: true` (`state.infoTraits`), and class features with `showInCombat: true` (`state.classFeatures`), all grouped into "Actions", "Bonus Actions", and "Other" sub-sections.
+### The eight tabs
 
-**Roll result overlay** — The `#rollResult` centered card shown after any dice roll. Displays the roll label, large total, dice breakdown, optional secondary line (e.g. damage), and a nat-20 / nat-1 callout.
+| Button label | `data-tab` | Panel ID | What it contains |
+|---|---|---|---|
+| Info | `overview` | `#panel-overview` | Character Info (portrait + form fields), Features & Traits, Personality, Long Rest |
+| Stats | `abilities` | `#panel-abilities` | Ability Scores & Saving Throws, Skills, Passive Perception |
+| Combat | `combat` | `#panel-combat` | Hit Points, Combat Stats, Hit Dice, Inspiration & Death Saves, Turn block, Conditions |
+| Spells | `spells` | `#panel-spells` | Spellcasting ability, Spell Slots, Spell List |
+| Features | `features` | `#panel-features` | Class Features (dot trackers), Featured Spells |
+| Gear | `inventory` | `#panel-inventory` | Currency, Equipment, Proficiencies & Languages, Notes |
+| Dice | `dice` | `#panel-dice` | Free-form Dice Roller |
+| Logs | `rolls` | `#panel-rolls` | Roll Log (session history) |
 
-**Backdrop** — The semi-transparent dark `<div>` behind any open modal or panel. Clicking/tapping the backdrop calls the panel's dismiss function.
+> The `TABS` constant defines swipe order: `['overview','abilities','combat','spells','features','inventory','dice','rolls']`.
 
-**Roster / Character grid** — The character-selection overlay (`#charGridOverlay`) opened by the 🎭 header button. Shows one card per saved character; supports switching, creating, and deleting characters.
+---
+
+### Data model
+
+**State object (`state`)** — The JavaScript object that holds all structured, typed character data: ability scores, proficiencies, HP, spell slots, spells, attacks, conditions, class features, traits, hit dice, portrait, and stat mods. Lives in memory; serialised to `localStorage` by `saveData()`.
+
+**Form inputs** — Flat string values stored directly in HTML `<input>` / `<textarea>` / `<select>` elements (character name, HP max, AC, equipment text, etc.). Read by `collectFormData()` and written back by `applyPayload()`. Never duplicated in `state`.
+
+**Payload** — The canonical save format: `{ form, state }`. `form` is the flat object from `collectFormData()`; `state` is the structured object. Written to `localStorage` by `saveData()` and exported as JSON by `exportToJSON()`.
+
+**Roster** — The collection of all saved characters, stored in `localStorage` under `dnd5e_roster` as `{ chars: { [id]: { name, payload } }, activeId }`. The 🎭 header button opens the Character Grid to browse and switch between roster entries.
+
+---
+
+### Key data distinctions
+
+**Info traits vs class features** — Two separate arrays with different purposes:
+- `state.infoTraits` — descriptive traits and features shown in the Info tab's "Features & Traits" section. No slot tracking. Optional damage roll, saving throw display, and combat-block visibility. Edited via the Trait panel (`#traitPanel`).
+- `state.classFeatures` — limited-use class abilities in the Features tab, each with `max`, `used`, `step`, and `recharge` fields and a visual dot tracker. Edited via the Feature panel (`#featurePanel`).
+
+**Stats tab vs Skills tab** — There is no separate Skills tab. The tab labelled **Stats** (`#panel-abilities`) contains three sections: Ability Scores & Saving Throws, Skills, and Passive Perception — all on the same panel.
+
+**Logs tab vs panel ID** — The tab button is labelled **Logs** but its `data-tab` is `rolls` and the panel is `#panel-rolls`. This is a historical naming inconsistency; the code identifier is `rolls`.
+
+---
+
+### Combat tab concepts
+
+**Turn block** — The section titled "Turn" inside `#panel-combat`. Renders `state.attacks` alongside spells, info traits, and class features that have `showInCombat: true`, grouped into three always-visible sub-sections: **Actions**, **Bonus Actions**, and **Reactions**. An **Other** sub-section appears only when items use `actionType: 'other'`. The section title is holdable (500 ms) and opens an info panel explaining the anatomy of a D&D turn. Previously called "Attacks" / "combat block" in older documentation; "Turn block" is now the correct term.
+
+**Default Actions** — A collapsible list inside the Turn block (collapsed by default), showing the standard D&D 5e actions available to any character (Dash, Dodge, Disengage, Grapple, etc.). Tapping any row opens a generic info panel with a description. Populated from the `DEFAULT_ACTIONS` constant.
+
+**Combat stat pills** — The six tiles in the Combat Stats section of the Combat tab: AC, Speed, Initiative, Hit Die, Spell Atk, Spell DC. Each is a `.stat-pill` element. Rollable pills (Initiative, Spell Atk) respond to short-tap with a roll; all pills respond to hold (500 ms) with a generic info panel. Hit Die is a separate element (`.hit-die-roll`) that rolls on tap and opens an info panel on hold.
+
+**Dot tracker** — The row of circular `.slot-dot` elements used to track limited-use resources. Gold dots = available, grey dots = used. Appears for spell slots, class features, and hit dice. Tapping a dot uses or restores from that point.
+
+**Featured Spells** — Spells with `showInFeatures: true` that appear in the Features tab alongside class features, using the same dot-tracker layout. Set per spell in the spell edit panel.
+
+---
+
+### Panels and overlays
+
+**Info panel** — User-facing term for any floating card that slides in to show item details. Depending on context this may mean the generic panel or a dedicated panel — see the two definitions below.
+
+**Generic info panel (`#infoPanel`)** — The single reusable floating card for items that have no dedicated panel: skills, ability scores, saving throws, combat stat pills, hit die, death saves, conditions, and the Turn title hold. Opened via `openInfoPanel(cfg)`. Accepts: badge label, title, optional meta line, optional 3-zone roll button, optional simple roll button, description text, and an optional action button (e.g. "Apply Condition"). Does **not** handle spells, traits, attacks, or class features — those use dedicated panels.
+
+**Dedicated view/edit panels** — Four item-specific panels: `#spellPanel`, `#traitPanel`, `#featurePanel`, and `#attackPanel`. Each has two modes toggled by the `.edit-mode` CSS class:
+- *View mode* — read-only display of the item (name, description, roll boxes); Edit button top-right switches to edit mode; "tap to dismiss" hint at the bottom.
+- *Edit mode* — editable form with labeled fields; Delete / Cancel / Save button row at the bottom.
+
+**Edit mode button row** — The `.sp-edit-actions` footer inside the edit section of each dedicated panel. **Delete** removes the item permanently. **Cancel** discards unsaved edits and dismisses. **Save** validates, writes to `state`, rebuilds the relevant list, and dismisses.
+
+**Roll result overlay (`#rollResult`)** — The centered card shown after any dice roll. Displays roll label, large total, dice breakdown line, optional secondary line (damage), and a nat-20 / nat-1 callout. Dismissed by tapping the backdrop or anywhere on the overlay.
+
+**Backdrop** — The semi-transparent dark `<div>` placed behind an open panel or dialog. Each panel/dialog has its own named backdrop element (e.g. `#attackPanelBackdrop`). Tapping the backdrop calls the panel's dismiss function.
+
+**HP dialog (`#hpDialog`)** — Bottom-sheet for typing an exact HP value. Opened by tapping the HP display area. Dismissed via Cancel, by pressing Enter, or by tapping the backdrop.
+
+**Stat modifier dialog (`#statModDialog`)** — Bottom-sheet for entering a custom numeric bonus for one combat stat (AC, Speed, Initiative, Spell Atk, or Spell DC). Opened via the Edit button inside the stat pill's info panel. The bonus is stored in `state.statMods[key]` and displayed as a `.stat-pill-mod` badge inside the pill.
+
+**Settings sheet (`#settingsMenu`)** — Bottom-sheet opened by the ⚙ header button. Contains Save to file, Load from file, font size control, lefty mode toggle, and theme swatches.
+
+**AI / SRD Import panel (`#aiImportPanel`)** — Modal opened by the ⇓ Import header button. Two modes: **AI mode** generates a copy-ready LLM prompt and accepts paste-back JSON; **SRD mode** searches the live D&D 5e SRD API (`dnd5eapi.co`) and imports selected spells, features, or traits.
+
+**Character Grid (`#charGridOverlay`)** — Full-screen overlay opened by the 🎭 header button. Displays one card per saved character; supports switching, creating, and deleting characters.
+
+**Toast (`#toast`)** — A small floating pill that appears for 2 seconds to confirm non-roll actions (e.g. "Saved", "Attack deleted", proficiency changes). Not used for roll results — those go to the roll result overlay.
+
+---
+
+### Interaction model
+
+**Tap** — A short pointer-down + pointer-up on an interactive element (no hold). On rollable elements, tap triggers a dice roll immediately. On non-rollable elements, tap opens the relevant info panel or performs the element's primary action (toggle, adjust, etc.).
+
+**Hold (long press)** — Keeping a finger or cursor pressed on an element for 500 ms before releasing. Hold always opens the info or view panel for the element. Implemented with a `setTimeout` started on `pointerdown` and cleared on `pointerup` / `pointercancel`. The `.holding` CSS class is applied to the element during the hold to give visual press feedback.
+
+**Hold hint** — A small visual indicator on elements that support hold. Currently implemented as a `"hold"` badge (`.turn-hold-hint`) on the Turn section title. Other holdable elements (spell rows, skill rows, ability cards, etc.) use the `.holding` class for press feedback but have no persistent pre-hold badge.
+
+**3-zone roll button (`.roll-tri`)** — A d20 roll widget split into three tap zones: centre-top for normal roll, bottom-left for disadvantage, bottom-right for advantage. Used inside `#infoPanel` and the dedicated spell and attack panels.
+
+**Hold-to-repeat** — Used on HP +/−, spell slot +/−, hit dice +/−, and class feature +/− buttons. On `pointerdown`, the action fires once immediately, then repeats every 80 ms after a 500 ms delay. Stopped on `pointerup` / `pointercancel`.
 
 ---
 
