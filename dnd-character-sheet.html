@@ -1403,6 +1403,40 @@
   #spellPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
   #spellPanel.edit-mode { border-color: var(--spell); }
 
+  /* ── Skill Description Panel ── */
+  #skillBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #skillBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #skillPanel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.88);
+    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
+    border: 2px solid var(--gold);
+    border-radius: 20px;
+    padding: 22px 24px 20px;
+    z-index: 301;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    width: min(92vw, 500px);
+    max-height: 82vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  }
+  #skillPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+
+  .check-item.holding { background: rgba(var(--accent-rgb),0.08); box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb),0.4); border-radius: var(--radius); }
+
   .sp-mode-badge {
     font-size: 9px;
     letter-spacing: 2.5px;
@@ -3211,6 +3245,20 @@
   </div>
 </div>
 
+<!-- ── Skill Description Panel ── -->
+<div id="skillBackdrop" onclick="dismissSkillPanel()"></div>
+<div id="skillPanel" onclick="dismissSkillPanel()">
+  <div class="sp-mode-badge">Skill</div>
+  <div class="sp-name" id="skPanelName"></div>
+  <div class="sp-meta" id="skPanelMeta"></div>
+  <div class="sp-description" id="skPanelDesc"></div>
+  <div class="sp-atk-box" id="skPanelRollBox" onclick="event.stopPropagation(); rollSkillFromPanel()">
+    <div class="sp-atk-label">Skill Check — tap to roll</div>
+    <div class="sp-atk-bonus" id="skPanelBonus">+0</div>
+  </div>
+  <span class="sp-dismiss-hint">tap to dismiss</span>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -3228,24 +3276,24 @@ const SAVES = [
 ];
 
 const SKILLS = [
-  {name:'Acrobatics',      ab:'DEX'},
-  {name:'Animal Handling', ab:'WIS'},
-  {name:'Arcana',          ab:'INT'},
-  {name:'Athletics',       ab:'STR'},
-  {name:'Deception',       ab:'CHA'},
-  {name:'History',         ab:'INT'},
-  {name:'Insight',         ab:'WIS'},
-  {name:'Intimidation',    ab:'CHA'},
-  {name:'Investigation',   ab:'INT'},
-  {name:'Medicine',        ab:'WIS'},
-  {name:'Nature',          ab:'INT'},
-  {name:'Perception',      ab:'WIS'},
-  {name:'Performance',     ab:'CHA'},
-  {name:'Persuasion',      ab:'CHA'},
-  {name:'Religion',        ab:'INT'},
-  {name:'Sleight of Hand', ab:'DEX'},
-  {name:'Stealth',         ab:'DEX'},
-  {name:'Survival',        ab:'WIS'},
+  {name:'Acrobatics',      ab:'DEX', desc:'Stay on your feet in tricky situations, tumble through tight spaces, perform acrobatic stunts, or escape from grapples and restraints. Also used when you attempt to keep your balance on unstable or slippery surfaces.'},
+  {name:'Animal Handling', ab:'WIS', desc:'Calm a spooked animal, intuit an animal\'s intentions, keep a mount from bolting, or control a beast in combat. Also used to train animals or communicate basic commands to them.'},
+  {name:'Arcana',          ab:'INT', desc:'Recall lore about spells, magic items, eldritch symbols, magical traditions, the planes of existence, and the inhabitants of those planes. Identify magical phenomena and assess the nature of enchantments.'},
+  {name:'Athletics',       ab:'STR', desc:'Climb sheer surfaces, jump across wide gaps, swim through rough currents, or break free from physical restraints. Also covers feats of raw strength such as lifting heavy objects or forcing doors open.'},
+  {name:'Deception',       ab:'CHA', desc:'Convincingly hide the truth through lies, misleading half-truths, disguise, or misdirection. Used when fast-talking guards, maintaining a false identity, gambling, or passing off forgeries as genuine.'},
+  {name:'History',         ab:'INT', desc:'Recall information about historical events, legendary people, ancient kingdoms, past disputes, recent wars, and lost civilizations. Useful when identifying ruins, deciphering old texts, or placing an artifact in context.'},
+  {name:'Insight',         ab:'WIS', desc:'Determine the true intentions of a creature — whether it is lying, frightened, or hiding something. Read body language, sense emotions, and pick up on subtle cues in conversation that reveal hidden motives.'},
+  {name:'Intimidation',    ab:'CHA', desc:'Influence others through overt threats, hostile body language, or fear-inducing displays of power. Used to extract information, cow someone into compliance, or warn off a group of bandits.'},
+  {name:'Investigation',   ab:'INT', desc:'Deduce conclusions from clues, search for hidden objects, and examine areas or items for telling details. More methodical than Perception — it involves reasoning about what you observe rather than simply noticing it.'},
+  {name:'Medicine',        ab:'WIS', desc:'Stabilize a dying creature, diagnose illnesses and poisons, recall knowledge about anatomy, and determine the cause of death. Useful for triage on the battlefield or understanding what afflicts a sick NPC.'},
+  {name:'Nature',          ab:'INT', desc:'Recall lore about terrain, plants, animals, weather patterns, natural cycles, and the dangers of the wilderness. Identify plants and creatures, predict weather, and understand how natural environments work.'},
+  {name:'Perception',      ab:'WIS', desc:'Spot, hear, smell, or otherwise detect the presence of something using your senses. The most commonly called check — used to notice hidden creatures, detect ambushes, find secret doors, and keep watch.'},
+  {name:'Performance',     ab:'CHA', desc:'Entertain an audience with music, dance, acting, storytelling, comedy, or another art form. The quality of your performance determines whether you earn goodwill, coin, or a crowd\'s admiration.'},
+  {name:'Persuasion',      ab:'CHA', desc:'Influence others through tact, social grace, good-natured arguments, or sincere appeals to logic or emotion. Used when negotiating prices, rallying allies, petitioning nobles, or smoothing over social tension.'},
+  {name:'Religion',        ab:'INT', desc:'Recall lore about deities, rites, prayers, religious hierarchies, holy symbols, and the practices of secret cults. Identify undead, divine magic, or religious iconography, and understand the beliefs of various faiths.'},
+  {name:'Sleight of Hand', ab:'DEX', desc:'Perform feats of manual dexterity without being noticed — pickpocketing, planting objects on others, palming items, or concealing something on your person. Also covers tasks like picking locks and disabling traps when fine motor control is key.'},
+  {name:'Stealth',         ab:'DEX', desc:'Conceal yourself from enemies, slip past guards, move silently through shadows, or hide and wait in ambush. Opposed by a creature\'s passive Perception; used whenever you try to move or act without being detected.'},
+  {name:'Survival',        ab:'WIS', desc:'Follow tracks, hunt wild game, navigate the wilderness, predict weather, identify signs of nearby creatures, and avoid natural hazards. Essential for overland travel, foraging for food, and tracking quarry through difficult terrain.'},
 ];
 
 const CONDITIONS = ['Blinded','Charmed','Deafened','Exhausted','Frightened',
@@ -3394,7 +3442,10 @@ function buildSkillsList() {
     const exp  = state.skillExpertise.includes(s.name);
     return `
     <li class="check-item ${exp ? 'expert' : prof ? 'proficient' : ''}"
-        onclick="rollSkill('${s.name}')">
+        onpointerdown="startSkillPress(event, '${s.name}')"
+        onclick="clickSkillItem(event, '${s.name}')"
+        onpointercancel="cancelSkillPress()"
+        oncontextmenu="return false">
       <div class="prof-dots" onclick="event.stopPropagation(); cycleSkillProf('${s.name}', this.closest('li'))">
         <div class="prof-dot"></div><div class="prof-dot"></div>
       </div>
@@ -3898,6 +3949,63 @@ function cancelSpellPress() {
   clearTimeout(spellPressTimer);
   spellPressActive = false;
   document.querySelectorAll('.spell-item.holding').forEach(el => el.classList.remove('holding'));
+}
+
+// ── Skill press (tap = roll, hold = description panel) ─────────────────
+let skillPressTimer = null;
+let skillPressActive = false;
+let skillPanelCurrentName = null;
+
+function startSkillPress(e, name) {
+  skillPressActive = false;
+  clearTimeout(skillPressTimer);
+  const el = e.currentTarget;
+  skillPressTimer = setTimeout(() => {
+    skillPressActive = true;
+    if (el) el.classList.add('holding');
+    openSkillPanel(name);
+  }, 500);
+}
+
+function clickSkillItem(e, name) {
+  clearTimeout(skillPressTimer);
+  document.querySelectorAll('.check-item.holding').forEach(el => el.classList.remove('holding'));
+  if (skillPressActive) { skillPressActive = false; return; }
+  rollSkill(name);
+}
+
+function cancelSkillPress() {
+  clearTimeout(skillPressTimer);
+  skillPressActive = false;
+  document.querySelectorAll('.check-item.holding').forEach(el => el.classList.remove('holding'));
+}
+
+function openSkillPanel(name) {
+  const sk = SKILLS.find(s => s.name === name);
+  if (!sk) return;
+  skillPanelCurrentName = name;
+  pushModalHistory();
+  document.getElementById('skPanelName').textContent = name;
+  document.getElementById('skPanelMeta').textContent = sk.ab + ' · Skill Check';
+  document.getElementById('skPanelDesc').textContent = sk.desc;
+  const modEl = document.getElementById(`skill-mod-${name.replace(/\s/g, '_')}`);
+  document.getElementById('skPanelBonus').textContent = modEl ? modEl.textContent : '+0';
+  document.getElementById('skillBackdrop').classList.add('show');
+  document.getElementById('skillPanel').classList.add('show');
+}
+
+function dismissSkillPanel() {
+  popModalHistory();
+  document.getElementById('skillPanel').classList.remove('show');
+  document.getElementById('skillBackdrop').classList.remove('show');
+  skillPanelCurrentName = null;
+  cancelSkillPress();
+}
+
+function rollSkillFromPanel() {
+  if (!skillPanelCurrentName) return;
+  dismissSkillPanel();
+  rollSkill(skillPanelCurrentName);
 }
 
 // ── Info Traits (Features & Traits in Info tab) ────────────────────────
@@ -5301,6 +5409,7 @@ window.addEventListener('popstate', () => {
   const hpEl           = document.getElementById('hpDialog');
   const settingsEl     = document.getElementById('settingsMenu');
   const attackPanelEl  = document.getElementById('attackPanel');
+  const skillPanelEl   = document.getElementById('skillPanel');
   if (rollEl?.classList.contains('show'))               dismissRollResult();
   else if (spellEl?.classList.contains('show'))         dismissSpellPanel();
   else if (traitEl?.classList.contains('show'))         dismissTraitPanel();
@@ -5309,6 +5418,7 @@ window.addEventListener('popstate', () => {
   else if (hpEl?.classList.contains('show'))            dismissHpDialog();
   else if (settingsEl?.classList.contains('show'))      dismissSettings();
   else if (attackPanelEl?.classList.contains('show'))   dismissAttackPanel();
+  else if (skillPanelEl?.classList.contains('show'))    dismissSkillPanel();
 });
 
 // ── Settings menu ─────────────────────────────────────────────────────
