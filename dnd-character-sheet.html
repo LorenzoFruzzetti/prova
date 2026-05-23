@@ -1418,14 +1418,40 @@
   }
   .attack-edit-btn.active { color: var(--gold); border-color: var(--gold); }
 
-  /* ── Rollable stat pills ── */
-  .stat-pill.rollable {
+  /* ── Rollable / interactive stat pills ── */
+  .stat-pill.rollable,
+  .stat-pill.interactive {
     cursor: pointer;
     border-width: var(--roll-border);
     border-color: rgba(var(--accent-rgb),0.4);
     background: rgba(var(--accent-rgb),0.03);
   }
-  .stat-pill.rollable:active { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
+  .stat-pill.rollable:active,
+  .stat-pill.interactive:active { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
+
+  /* Mod badge shown inside a stat pill when a custom modifier is active */
+  .stat-pill-mod {
+    font-size: 8px;
+    color: var(--gold);
+    font-family: sans-serif;
+    letter-spacing: 0.3px;
+    margin-top: 1px;
+  }
+
+  /* ── Stat Modifier dialog (same structure as HP dialog) ── */
+  #statModBackdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 250;
+  }
+  #statModBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #statModDialog {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
+    width: 100%; max-width: 480px; background: var(--surface);
+    border-top: 2px solid var(--gold); border-radius: 16px 16px 0 0;
+    padding: 24px 20px 32px; z-index: 260; transition: transform 0.25s;
+  }
+  #statModDialog.show { transform: translateX(-50%) translateY(0); }
 
   .add-btn {
     width: 100%;
@@ -2921,49 +2947,57 @@
     <div class="section-title">Combat Stats</div>
     <div class="section-body">
       <div class="stat-pills">
-        <div class="stat-pill">
-          <input type="number" id="statAC" value="10" oninput="saveData()">
-          <div class="stat-pill-label"
-               onpointerdown="startStatPillPress(event,'ac')"
-               onpointerup="endStatPillPress(event,'ac')"
-               onpointercancel="cancelStatPillPress()">Armor Class</div>
+        <div class="stat-pill"
+             onpointerdown="startStatPillPress(event,'ac')"
+             onpointerup="endStatPillPress(event,'ac')"
+             onpointercancel="cancelStatPillPress()">
+          <input type="number" id="statAC" value="10" oninput="saveData()"
+                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()">
+          <div class="stat-pill-mod" id="statMod-ac" style="display:none"></div>
+          <div class="stat-pill-label">Armor Class</div>
         </div>
         <div class="stat-pill rollable"
              onpointerdown="startStatPillPress(event,'initiative')"
              onpointerup="endStatPillPress(event,'initiative')"
              onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statInit">+0</div>
+          <div class="stat-pill-mod" id="statMod-initiative" style="display:none"></div>
           <div class="stat-pill-label">Initiative</div>
         </div>
-        <div class="stat-pill">
-          <input type="number" id="statSpeed" value="30" oninput="saveData()">
-          <div class="stat-pill-label"
-               onpointerdown="startStatPillPress(event,'speed')"
-               onpointerup="endStatPillPress(event,'speed')"
-               onpointercancel="cancelStatPillPress()">Speed (ft)</div>
+        <div class="stat-pill"
+             onpointerdown="startStatPillPress(event,'speed')"
+             onpointerup="endStatPillPress(event,'speed')"
+             onpointercancel="cancelStatPillPress()">
+          <input type="number" id="statSpeed" value="30" oninput="saveData()"
+                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()">
+          <div class="stat-pill-mod" id="statMod-speed" style="display:none"></div>
+          <div class="stat-pill-label">Speed (ft)</div>
         </div>
       </div>
       <div class="stat-pills" style="margin-top:8px">
-        <div class="stat-pill">
-          <input type="text" id="statHitDice" value="1d8" oninput="saveData(); updateHitDieBadge()" style="font-size:16px">
-          <div class="stat-pill-label"
-               onpointerdown="startStatPillPress(event,'dietype')"
-               onpointerup="endStatPillPress(event,'dietype')"
-               onpointercancel="cancelStatPillPress()">Die Type</div>
+        <div class="stat-pill"
+             onpointerdown="startStatPillPress(event,'dietype')"
+             onpointerup="endStatPillPress(event,'dietype')"
+             onpointercancel="cancelStatPillPress()">
+          <input type="text" id="statHitDice" value="1d8" oninput="saveData(); updateHitDieBadge()" style="font-size:16px"
+                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()">
+          <div class="stat-pill-label">Die Type</div>
         </div>
         <div class="stat-pill rollable"
              onpointerdown="startStatPillPress(event,'spellatk')"
              onpointerup="endStatPillPress(event,'spellatk')"
              onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statSpellAtk">+2</div>
+          <div class="stat-pill-mod" id="statMod-spellatk" style="display:none"></div>
           <div class="stat-pill-label">Spell Atk</div>
         </div>
-        <div class="stat-pill">
+        <div class="stat-pill interactive"
+             onpointerdown="startStatPillPress(event,'spelldc')"
+             onpointerup="endStatPillPress(event,'spelldc')"
+             onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statSpellDC">12</div>
-          <div class="stat-pill-label"
-               onpointerdown="startStatPillPress(event,'spelldc')"
-               onpointerup="endStatPillPress(event,'spelldc')"
-               onpointercancel="cancelStatPillPress()">Spell DC</div>
+          <div class="stat-pill-mod" id="statMod-spelldc" style="display:none"></div>
+          <div class="stat-pill-label">Spell DC</div>
         </div>
       </div>
     </div>
@@ -3000,7 +3034,10 @@
     <div class="section-body inspiration-death-row">
       <div class="inspiration-block">
         <div class="insp-block-title">Inspiration</div>
-        <button class="inspiration-btn" id="inspirationBtn" onclick="toggleInspiration()">★</button>
+        <button class="inspiration-btn" id="inspirationBtn"
+                onpointerdown="startInspirationPress(event)"
+                onpointerup="endInspirationPress(event)"
+                onpointercancel="cancelInspirationPress()">★</button>
       </div>
       <div class="death-block">
         <div style="display:flex;justify-content:space-between;align-items:center">
@@ -3208,6 +3245,18 @@
   <div class="hp-dlg-btns">
     <button class="hp-dlg-btn" onclick="dismissHpDialog()">Cancel</button>
     <button class="hp-dlg-btn primary" onclick="applyHpDialog()">Set HP</button>
+  </div>
+</div>
+
+<div id="statModBackdrop" onclick="dismissStatModDialog()"></div>
+<div id="statModDialog">
+  <div class="hp-dlg-title" id="statModTitle">Edit Modifier</div>
+  <div class="hp-dlg-sub" id="statModSub">Current modifier: +0</div>
+  <input class="hp-dlg-input" type="number" id="statModInput"
+         onkeydown="if(event.key==='Enter') applyStatModDialog()">
+  <div class="hp-dlg-btns">
+    <button class="hp-dlg-btn" onclick="dismissStatModDialog()">Cancel</button>
+    <button class="hp-dlg-btn primary" onclick="applyStatModDialog()">Set Modifier</button>
   </div>
 </div>
 
@@ -4002,6 +4051,7 @@ let state = {
   hitDiceUsed: 0,
   diceRoller: null,
   portrait: null,
+  statMods: { ac: 0, speed: 0, initiative: 0, spellatk: 0, spelldc: 0 },
 };
 
 // ── Init ───────────────────────────────────────────────────────────────
@@ -4087,6 +4137,10 @@ function applyUndo(a) {
     case 'portrait':
       state.portrait = a.previous;
       applyPortrait(); saveData(); toast('↩ Portrait'); break;
+    case 'statMod':
+      if (!state.statMods) state.statMods = {};
+      state.statMods[a.key] = a.previous;
+      recalcAll(); toast('↩ Stat modifier'); break;
   }
 }
 
@@ -4673,20 +4727,23 @@ function recalcAll() {
   const ppEl = document.getElementById('passivePerception');
   if (ppEl) ppEl.textContent = 10 + percBonus;
 
-  // Initiative
+  // Initiative (+ custom mod)
   const initEl = document.getElementById('statInit');
-  if (initEl) initEl.textContent = fmtMod(mod(state.abilities['DEX']));
+  const initMod = state.statMods?.initiative || 0;
+  if (initEl) initEl.textContent = fmtMod(mod(state.abilities['DEX']) + initMod);
 
-  // Spell save DC & attack
+  // Spell save DC & attack (+ custom mods)
   const spellAbEl = document.getElementById('spellAbility');
   const spellAb   = spellAbEl ? spellAbEl.value : '';
   const spellDCEl = document.getElementById('statSpellDC');
   const spellAtkEl = document.getElementById('statSpellAtk');
   const spellBadge = document.getElementById('spellDCBadge');
+  const atkMod = state.statMods?.spellatk || 0;
+  const dcMod  = state.statMods?.spelldc  || 0;
   if (spellAb && state.abilities[spellAb] !== undefined) {
     const sm = mod(state.abilities[spellAb]);
-    const dc  = 8 + prof + sm;
-    const atk = prof + sm;
+    const dc  = 8 + prof + sm + dcMod;
+    const atk = prof + sm + atkMod;
     if (spellDCEl)  spellDCEl.textContent  = dc;
     if (spellAtkEl) spellAtkEl.textContent = fmtMod(atk);
     if (spellBadge) spellBadge.textContent  = dc;
@@ -4695,6 +4752,9 @@ function recalcAll() {
     if (spellAtkEl) spellAtkEl.textContent = '—';
     if (spellBadge) spellBadge.textContent  = '—';
   }
+
+  // Update stat mod badges
+  ['ac','speed','initiative','spellatk','spelldc'].forEach(k => _updateStatModBadge(k));
 
   saveData();
 }
@@ -6023,6 +6083,7 @@ const STAT_PILL_INFO = {
     title: 'Armor Class',
     meta: 'Defense Rating',
     desc: 'Armor Class represents how difficult you are to hit. Attack rolls must equal or exceed your AC to hit. Base AC is 10 + DEX modifier; armor, shields, and class features change this.',
+    editFn: () => openStatModDialog('ac'),
   },
   initiative: {
     title: 'Initiative',
@@ -6032,11 +6093,13 @@ const STAT_PILL_INFO = {
     rollLabel: 'Initiative',
     rollFn: mode => rollInitiative(mode),
     bonusId: 'statInit',
+    editFn: () => openStatModDialog('initiative'),
   },
   speed: {
     title: 'Speed',
     meta: 'Movement (feet per turn)',
     desc: 'Speed is how many feet you can move on your turn. Difficult terrain costs double movement. Some conditions reduce speed to 0.',
+    editFn: () => openStatModDialog('speed'),
   },
   dietype: {
     title: 'Hit Die',
@@ -6053,11 +6116,13 @@ const STAT_PILL_INFO = {
     rollLabel: 'Spell Attack',
     rollFn: mode => rollSpellAtk(mode),
     bonusId: 'statSpellAtk',
+    editFn: () => openStatModDialog('spellatk'),
   },
   spelldc: {
     title: 'Spell Save DC',
     meta: '8 + Proficiency + Spellcasting Ability',
     desc: 'Creatures saving against your spells must roll equal to or higher than this DC. Formula: 8 + Proficiency Bonus + Spellcasting Ability Modifier.',
+    editFn: () => openStatModDialog('spelldc'),
   },
 };
 
@@ -6097,16 +6162,105 @@ function openStatPillPanel(key) {
   const info = STAT_PILL_INFO[key];
   if (!info) return;
   const bonus = info.bonusId ? (document.getElementById(info.bonusId)?.textContent || '') : '';
+  const curMod = state.statMods?.[key] || 0;
+  const metaSuffix = curMod !== 0 ? ` · Bonus: ${fmtMod(curMod)}` : '';
   openInfoPanel({
     badge: 'Combat Stat',
     title: info.title,
-    meta: info.meta,
+    meta: info.meta + metaSuffix,
     description: info.desc,
     rollLabel: info.rollLabel,
     rollBonus: bonus,
     rollFn: info.rollable ? info.rollFn : null,
     simpleRollLabel: info.simpleRollLabel,
     simpleRollFn: info.simpleRollFn || null,
+    editFn: info.editFn || null,
+  });
+}
+
+// ── Stat modifier badge ───────────────────────────────────────────────
+function _updateStatModBadge(key) {
+  const el = document.getElementById('statMod-' + key);
+  if (!el) return;
+  const m = state.statMods?.[key] || 0;
+  if (m !== 0) {
+    el.textContent = (m > 0 ? '+' : '') + m + ' bonus';
+    el.style.display = '';
+  } else {
+    el.textContent = '';
+    el.style.display = 'none';
+  }
+}
+
+// ── Stat modifier dialog ──────────────────────────────────────────────
+let statModDialogKey = null;
+
+function openStatModDialog(key) {
+  statModDialogKey = key;
+  const info = STAT_PILL_INFO[key];
+  const cur = state.statMods?.[key] || 0;
+  document.getElementById('statModTitle').textContent = (info?.title || key) + ' — Custom Bonus';
+  document.getElementById('statModSub').textContent = 'Current bonus: ' + fmtMod(cur) + '  (0 = no bonus)';
+  const input = document.getElementById('statModInput');
+  input.value = cur;
+  pushModalHistory();
+  document.getElementById('statModBackdrop').classList.add('show');
+  document.getElementById('statModDialog').classList.add('show');
+  setTimeout(() => { input.focus(); input.select(); }, 80);
+}
+
+function dismissStatModDialog() {
+  popModalHistory();
+  document.getElementById('statModDialog').classList.remove('show');
+  document.getElementById('statModBackdrop').classList.remove('show');
+  statModDialogKey = null;
+}
+
+function applyStatModDialog() {
+  const key = statModDialogKey;
+  if (!key) return;
+  const val = parseInt(document.getElementById('statModInput').value) || 0;
+  if (!state.statMods) state.statMods = {};
+  pushUndo({ type: 'statMod', key, previous: state.statMods[key] || 0 });
+  state.statMods[key] = val;
+  recalcAll();
+  dismissStatModDialog();
+}
+
+// ── Inspiration press (tap = toggle, hold = info panel) ───────────────
+let inspirationPressTimer = null;
+let inspirationPressActive = false;
+
+function startInspirationPress(e) {
+  inspirationPressActive = false;
+  clearTimeout(inspirationPressTimer);
+  inspirationPressTimer = setTimeout(() => {
+    inspirationPressActive = true;
+    openInspirationPanel();
+  }, 500);
+}
+
+function endInspirationPress(e) {
+  const wasLong = inspirationPressActive;
+  clearTimeout(inspirationPressTimer);
+  inspirationPressActive = false;
+  if (!wasLong) toggleInspiration();
+}
+
+function cancelInspirationPress() {
+  clearTimeout(inspirationPressTimer);
+  inspirationPressActive = false;
+}
+
+function openInspirationPanel() {
+  openInfoPanel({
+    badge: 'Combat',
+    title: 'Inspiration',
+    meta: state.inspiration ? 'Active ★' : 'Inactive',
+    description: 'Inspiration is awarded by the DM for roleplaying in keeping with your personality traits, ideals, bonds, and flaws. Spend it to gain advantage on one attack roll, saving throw, or ability check. You either have inspiration or you don\'t — it doesn\'t stack.',
+    actionLabel: state.inspiration ? 'Remove Inspiration' : 'Gain Inspiration',
+    actionClass: state.inspiration ? 'remove' : '',
+    actionFn: () => toggleInspiration(),
   });
 }
 
@@ -6828,6 +6982,7 @@ window.addEventListener('popstate', () => {
   const featurePanelEl = document.getElementById('featurePanel');
   const stepEl         = document.getElementById('stepMenu');
   const hpEl           = document.getElementById('hpDialog');
+  const statModEl      = document.getElementById('statModDialog');
   const settingsEl     = document.getElementById('settingsMenu');
   const attackPanelEl  = document.getElementById('attackPanel');
   const infoPanelEl    = document.getElementById('infoPanel');
@@ -6837,6 +6992,7 @@ window.addEventListener('popstate', () => {
   else if (featurePanelEl?.classList.contains('show'))  dismissFeaturePanel();
   else if (stepEl?.classList.contains('show'))          dismissStepMenu();
   else if (hpEl?.classList.contains('show'))            dismissHpDialog();
+  else if (statModEl?.classList.contains('show'))       dismissStatModDialog();
   else if (settingsEl?.classList.contains('show'))      dismissSettings();
   else if (attackPanelEl?.classList.contains('show'))   dismissAttackPanel();
   else if (infoPanelEl?.classList.contains('show'))     dismissInfoPanel();
@@ -7010,6 +7166,7 @@ function buildPayload() {
       hitDiceUsed: state.hitDiceUsed,
       diceRoller: state.diceRoller,
       portrait: state.portrait,
+      statMods: state.statMods,
     }
   };
 }
@@ -7064,7 +7221,8 @@ function clearSheet() {
     inspiration: false, hpCurrent: 10,
     spellSlots: SPELL_SLOTS_DEFAULT.map(s => ({...s, used:0})),
     spells: [], attacks: [], conditions: [], classFeatures: [],
-    infoTraits: [], hitDiceUsed: 0, diceRoller: null, portrait: null
+    infoTraits: [], hitDiceUsed: 0, diceRoller: null, portrait: null,
+    statMods: { ac: 0, speed: 0, initiative: 0, spellatk: 0, spelldc: 0 },
   });
 }
 
@@ -7305,6 +7463,9 @@ function _applyPayloadData(payload) {
       if (f.showInCombat === undefined) f.showInCombat = false;
       if (f.combatActionType === undefined) f.combatActionType = 'action';
     });
+    if (!state.statMods || typeof state.statMods !== 'object') {
+      state.statMods = { ac: 0, speed: 0, initiative: 0, spellatk: 0, spelldc: 0 };
+    }
   }
 }
 

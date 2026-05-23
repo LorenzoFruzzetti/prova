@@ -494,6 +494,29 @@ String or `null`. A base64-encoded data URL for the character portrait image (e.
 
 The user sets this by tapping the portrait box or the Upload Image button at the top of the Info tab. The image is stored inline in the save file; large images will increase file size. Supported formats are whatever the browser accepts for `<img>` elements (JPEG, PNG, WebP, GIF, etc.).
 
+#### `statMods`
+Object of custom numeric bonuses applied on top of each combat stat. All keys are optional and default to `0`. Omitting the entire object is safe — the app initialises it to all-zeros.
+
+```json
+"statMods": {
+  "ac": 0,
+  "speed": 0,
+  "initiative": 0,
+  "spellatk": 0,
+  "spelldc": 0
+}
+```
+
+| Key | Effect |
+|---|---|
+| `ac` | Displayed as a badge in the AC pill; does not change the raw `statAC` form input |
+| `speed` | Displayed as a badge in the Speed pill; does not change the raw `statSpeed` form input |
+| `initiative` | Added to `DEX modifier` before displaying `statInit` and before rolling initiative |
+| `spellatk` | Added to `prof + spellcasting mod` before displaying `statSpellAtk` and before rolling Spell Attack |
+| `spelldc` | Added to `8 + prof + spellcasting mod` before displaying `statSpellDC` |
+
+Set via hold → Edit on any combat stat pill. Undoable via the Undo button.
+
 #### `conditions`
 Array of active condition name strings.
 
@@ -607,6 +630,7 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
     ],
     "conditions": [],
     "hitDiceUsed": 0,
+    "statMods": { "ac": 0, "speed": 0, "initiative": 0, "spellatk": 0, "spelldc": 0 },
     "classFeatures": [
       { "name": "Channel Divinity", "max": 1,  "used": 0, "recharge": "Short Rest", "step": 1 },
       { "name": "Lay on Hands",     "max": 25, "used": 0, "recharge": "Long Rest",  "step": 5 }
