@@ -2483,6 +2483,90 @@
   /* Hidden attacks shown faded */
   .attack-row.atk-hidden { opacity: 0.4; }
 
+  /* Turn section title */
+  .turn-section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    transition: background 0.15s;
+  }
+  .turn-section-title.holding { background: rgba(var(--accent-rgb),0.18); }
+  .turn-hold-hint {
+    font-size: 8px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    font-family: sans-serif;
+    padding: 2px 5px;
+    border: 1px solid rgba(var(--accent-rgb),0.3);
+    border-radius: 4px;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  /* Default actions collapsible */
+  .turn-defaults-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    margin-top: 10px;
+    border-top: 1px solid rgba(var(--border-rgb),0.4);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-family: sans-serif;
+    color: var(--text-muted);
+    touch-action: manipulation;
+  }
+  .turn-defaults-header:active { color: var(--gold); }
+  .turn-chevron {
+    font-size: 9px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+    display: inline-block;
+  }
+  .turn-chevron.open { transform: rotate(90deg); }
+
+  /* Default action rows */
+  .turn-defaults-body { padding-bottom: 2px; }
+  .default-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 4px 9px 6px;
+    border-bottom: 1px solid rgba(var(--border-rgb),0.25);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    border-radius: 4px;
+  }
+  .default-action-row:last-child { border-bottom: none; }
+  .default-action-row:active { background: rgba(var(--accent-rgb),0.08); }
+  .default-action-row.holding { background: rgba(var(--accent-rgb),0.14); }
+  .default-action-name { font-size: 12px; color: var(--text); }
+  .default-action-type {
+    font-size: 8px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: sans-serif;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--text-muted);
+    background: rgba(var(--border-rgb),0.4);
+    white-space: nowrap;
+  }
+  .default-action-type.bonus { color: var(--spell); background: rgba(var(--spell-rgb),0.12); }
+  .default-action-type.reaction { color: var(--red-light); background: rgba(192,57,43,0.12); }
+  .default-action-type.free { color: var(--gold); background: rgba(var(--accent-rgb),0.08); }
+
   /* Attack edit bottom sheet */
   #attackSheetBackdrop {
     position: fixed; inset: 0;
@@ -3074,14 +3158,40 @@
   </div>
 
   <div class="section">
-    <div class="section-title">Attacks</div>
+    <div class="section-title turn-section-title"
+         id="turnSectionTitle"
+         onpointerdown="startTurnTitlePress(event)"
+         onpointerup="endTurnTitlePress(event)"
+         onpointercancel="cancelTurnTitlePress()"
+         oncontextmenu="return false">
+      Turn
+      <span class="turn-hold-hint">hold</span>
+    </div>
     <div class="section-body">
       <div id="attackList">
-        <div class="attack-row">
-          <span class="attack-name" style="color:var(--text-muted);font-size:12px;font-style:italic">No attacks added</span>
+        <div class="attack-section-label">Actions</div>
+        <div class="attack-row" style="cursor:default">
+          <span class="attack-name" style="color:var(--text-muted);font-size:12px;font-style:italic">No actions</span>
+          <span></span><span></span>
+        </div>
+        <div style="margin-top:8px"></div>
+        <div class="attack-section-label">Bonus Actions</div>
+        <div class="attack-row" style="cursor:default">
+          <span class="attack-name" style="color:var(--text-muted);font-size:12px;font-style:italic">No bonus actions</span>
+          <span></span><span></span>
+        </div>
+        <div style="margin-top:8px"></div>
+        <div class="attack-section-label">Reactions</div>
+        <div class="attack-row" style="cursor:default">
+          <span class="attack-name" style="color:var(--text-muted);font-size:12px;font-style:italic">No reactions</span>
           <span></span><span></span>
         </div>
       </div>
+      <div class="turn-defaults-header" onclick="toggleDefaultActions()">
+        <span>Default Actions</span>
+        <span class="turn-chevron" id="defaultActionsChevron">▶</span>
+      </div>
+      <div id="defaultActionsList" class="turn-defaults-body" style="display:none"></div>
       <button class="add-btn" onclick="addAttack()">+ Add Attack</button>
     </div>
   </div>
@@ -4022,6 +4132,24 @@ const SPELL_SLOTS_DEFAULT = [
 ];
 
 const LEVEL_LABELS = ['Cantrip', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
+
+const DEFAULT_ACTIONS = [
+  { key:'attack',    name:'Attack',             type:'action',   description:'Make one melee or ranged attack. Some class features (Extra Attack) grant additional attacks. Choose an equipped weapon and make an attack roll against the target\'s AC.' },
+  { key:'cast',      name:'Cast a Spell',        type:'action',   description:'Cast a spell with a casting time of 1 action. Spells with longer casting times require multiple turns. Some spells use a bonus action or reaction instead.' },
+  { key:'dash',      name:'Dash',                type:'action',   description:'Gain extra movement equal to your speed for this turn. With a speed of 30 ft, you can move up to 60 ft on a Dash turn. Classes like Rogue can use Dash as a bonus action.' },
+  { key:'disengage', name:'Disengage',           type:'action',   description:'Your movement doesn\'t provoke opportunity attacks for the rest of the turn. Useful for escaping melee without getting struck as you leave.' },
+  { key:'dodge',     name:'Dodge',               type:'action',   description:'Focus on avoiding attacks. Until your next turn, any attack roll against you has disadvantage (if you can see the attacker), and you make DEX saving throws with advantage. Lost if incapacitated or your speed drops to 0.' },
+  { key:'help',      name:'Help',                type:'action',   description:'Aid an ally. Either give one creature advantage on the next ability check it makes before your next turn, or help an ally attack a creature within 5 ft of you — giving advantage on the next attack roll against that creature.' },
+  { key:'hide',      name:'Hide',                type:'action',   description:'Make a Dexterity (Stealth) check to become hidden. You must be out of clear sight and sound. If you succeed, attacks against creatures that can\'t see you have advantage, and they have disadvantage on attacks against you.' },
+  { key:'ready',     name:'Ready',               type:'action',   description:'Prepare an action for a trigger. Choose an action and a trigger (e.g. "when an enemy enters the doorway, I attack"). On the trigger, use your reaction. Readied concentration spells end if you don\'t use the reaction.' },
+  { key:'search',    name:'Search',              type:'action',   description:'Devote your attention to finding something. Make a Wisdom (Perception) or Intelligence (Investigation) check to locate a hidden creature, object, or clue.' },
+  { key:'useobj',    name:'Use an Object',       type:'action',   description:'Interact with a second object this turn. Normally you interact with one object for free. A second interaction — drawing a second potion, for example — requires this action.' },
+  { key:'grapple',   name:'Grapple',             type:'action',   description:'Attempt to seize a creature. Make a STR (Athletics) check contested by the target\'s STR (Athletics) or DEX (Acrobatics). On success, the target is grappled (speed 0). Requires a free hand; uses one of your attacks.' },
+  { key:'shove',     name:'Shove',               type:'action',   description:'Push a creature prone or 5 ft away. Make a STR (Athletics) check contested by the target\'s STR (Athletics) or DEX (Acrobatics). Target must be no more than one size larger than you and within reach. Replaces one of your attacks.' },
+  { key:'twf',       name:'Two-Weapon Fighting', type:'bonus',    description:'When you take the Attack action with a light melee weapon, you can use a bonus action to attack with a different light melee weapon in your other hand. You don\'t add your ability modifier to the damage unless it\'s negative.' },
+  { key:'oppatk',    name:'Opportunity Attack',  type:'reaction', description:'When a hostile creature you can see voluntarily moves out of your reach, use your reaction to make one melee attack against it. Disengage, teleportation, and forced movement don\'t trigger this.' },
+  { key:'interact',  name:'Object Interaction',  type:'free',     description:'Once per turn, interact with one object or feature for free — draw a sword, open a door, pick up an item. A second interaction costs the Use an Object action.' },
+];
 
 const ROLL_TYPES = [
   {value:'slashing',    label:'Slashing'},
@@ -6447,6 +6575,116 @@ function resetHPToFull() {
   toast('↺ HP restored to full');
 }
 
+// ── Turn section title press (hold = turn anatomy info) ───────────────
+let turnTitlePressTimer = null;
+let turnTitlePressActive = false;
+
+function startTurnTitlePress(e) {
+  turnTitlePressActive = false;
+  clearTimeout(turnTitlePressTimer);
+  const el = document.getElementById('turnSectionTitle');
+  if (el) el.classList.add('holding');
+  turnTitlePressTimer = setTimeout(() => {
+    turnTitlePressActive = true;
+    openTurnInfoPanel();
+  }, 500);
+}
+
+function endTurnTitlePress(e) {
+  clearTimeout(turnTitlePressTimer);
+  turnTitlePressActive = false;
+  const el = document.getElementById('turnSectionTitle');
+  if (el) el.classList.remove('holding');
+}
+
+function cancelTurnTitlePress() {
+  clearTimeout(turnTitlePressTimer);
+  turnTitlePressActive = false;
+  const el = document.getElementById('turnSectionTitle');
+  if (el) el.classList.remove('holding');
+}
+
+function openTurnInfoPanel() {
+  openInfoPanel({
+    badge: 'Combat',
+    title: 'Your Turn',
+    description: 'Each turn in combat has these parts:\n\nMOVEMENT — Move up to your speed. You can split movement before and after actions.\n\nACTION — The main thing you do: attack, cast a spell, dash, dodge, and more.\n\nBONUS ACTION — An extra action granted by a class feature, spell, or special ability. You can use only one bonus action per turn.\n\nREACTION — A response to a trigger (opportunity attack, counterspell, etc.). You get one per round; it resets at the start of your turn.\n\nFREE INTERACTION — Interact with one object for free (draw a weapon, open a door). A second object interaction requires the Use an Object action.',
+  });
+}
+
+function toggleDefaultActions() {
+  const body = document.getElementById('defaultActionsList');
+  const chevron = document.getElementById('defaultActionsChevron');
+  if (!body || !chevron) return;
+  const isOpen = body.style.display !== 'none';
+  if (isOpen) {
+    body.style.display = 'none';
+    chevron.classList.remove('open');
+  } else {
+    buildDefaultActions();
+    body.style.display = '';
+    chevron.classList.add('open');
+  }
+}
+
+function buildDefaultActions() {
+  const container = document.getElementById('defaultActionsList');
+  if (!container) return;
+  const typeLabels = { action: 'Action', bonus: 'Bonus', reaction: 'Reaction', free: 'Free' };
+  let html = '';
+  DEFAULT_ACTIONS.forEach(da => {
+    const typeClass = da.type === 'action' ? '' : da.type;
+    html += `<div class="default-action-row"
+      onpointerdown="startDefaultActionPress(event,'${da.key}')"
+      onpointerup="endDefaultActionPress(event,'${da.key}')"
+      onpointercancel="cancelDefaultActionPress()"
+      oncontextmenu="return false">
+      <span class="default-action-name">${escHtml(da.name)}</span>
+      <span class="default-action-type ${typeClass}">${typeLabels[da.type]}</span>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+let defaultActionPressTimer = null;
+let defaultActionPressActive = false;
+
+function startDefaultActionPress(e, key) {
+  defaultActionPressActive = false;
+  clearTimeout(defaultActionPressTimer);
+  defaultActionPressTimer = setTimeout(() => {
+    defaultActionPressActive = true;
+    const el = e.target.closest('.default-action-row');
+    if (el) el.classList.add('holding');
+    openDefaultActionPanel(key);
+  }, 500);
+}
+
+function endDefaultActionPress(e, key) {
+  const wasLong = defaultActionPressActive;
+  clearTimeout(defaultActionPressTimer);
+  defaultActionPressActive = false;
+  document.querySelectorAll('.default-action-row.holding').forEach(el => el.classList.remove('holding'));
+  if (!wasLong) openDefaultActionPanel(key);
+}
+
+function cancelDefaultActionPress() {
+  clearTimeout(defaultActionPressTimer);
+  defaultActionPressActive = false;
+  document.querySelectorAll('.default-action-row.holding').forEach(el => el.classList.remove('holding'));
+}
+
+function openDefaultActionPanel(key) {
+  const da = DEFAULT_ACTIONS.find(d => d.key === key);
+  if (!da) return;
+  const typeLabels = { action: 'Action', bonus: 'Bonus Action', reaction: 'Reaction', free: 'Free Action' };
+  openInfoPanel({
+    badge: typeLabels[da.type] || 'Action',
+    title: da.name,
+    description: da.description,
+  });
+}
+
 // ── Attacks ────────────────────────────────────────────────────────────
 let longPressTimer = null;
 let longPressActive = false;
@@ -6634,13 +6872,9 @@ function renderAttacks() {
   const hasVisActions = actionAtks.length > 0 || combatSpellActions.length > 0 || combatTraitActions.length > 0 || combatFeatActions.length > 0;
   const hasVisBonus   = bonusAtks.length > 0  || combatSpellBonus.length > 0   || combatTraitBonus.length > 0  || combatFeatBonus.length > 0;
   const hasVisOther   = otherAtks.length > 0  || combatSpellOther.length > 0   || combatTraitOther.length > 0  || combatFeatOther.length > 0;
-  const hasAny        = state.attacks.length > 0 || combatSpells.length > 0    || combatTraits.length > 0      || combatFeatures.length > 0;
 
-  if (!hasAny) {
-    list.innerHTML = `<div class="attack-row" style="cursor:default">
-      <span class="attack-name" style="color:var(--text-muted);font-size:12px;font-style:italic">No attacks added</span>
-      <span></span><span></span></div>`;
-    return;
+  function makeEmptyRow(msg) {
+    return `<div class="attack-row" style="cursor:default"><span class="attack-name" style="color:var(--text-muted);font-size:12px;font-style:italic">${msg}</span><span></span><span></span></div>`;
   }
 
   function makeAtkRow(a, i) {
@@ -6709,29 +6943,38 @@ function renderAttacks() {
   }
 
   let html = '';
-  let sectionCount = 0;
 
+  // Actions — always rendered
+  html += `<div class="attack-section-label">Actions</div>`;
   if (hasVisActions) {
-    html += `<div class="attack-section-label">Actions</div>`;
     actionAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
     combatSpellActions.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
     combatTraitActions.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
     combatFeatActions.forEach(f  => { html += makeFeatureRow(f, state.classFeatures.indexOf(f)); });
-    sectionCount++;
+  } else {
+    html += makeEmptyRow('No actions');
   }
 
+  // Bonus Actions — always rendered
+  html += '<div style="margin-top:8px"></div>';
+  html += `<div class="attack-section-label">Bonus Actions</div>`;
   if (hasVisBonus) {
-    if (sectionCount > 0) html += '<div style="margin-top:8px"></div>';
-    html += `<div class="attack-section-label">Bonus Actions</div>`;
     bonusAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
     combatSpellBonus.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
     combatTraitBonus.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
     combatFeatBonus.forEach(f  => { html += makeFeatureRow(f, state.classFeatures.indexOf(f)); });
-    sectionCount++;
+  } else {
+    html += makeEmptyRow('No bonus actions');
   }
 
+  // Reactions — always rendered (no reaction attack type yet, always shows placeholder)
+  html += '<div style="margin-top:8px"></div>';
+  html += `<div class="attack-section-label">Reactions</div>`;
+  html += makeEmptyRow('No reactions');
+
+  // Other — only when there are items
   if (hasVisOther) {
-    if (sectionCount > 0) html += '<div style="margin-top:8px"></div>';
+    html += '<div style="margin-top:8px"></div>';
     html += `<div class="attack-section-label">Other</div>`;
     otherAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
     combatSpellOther.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
