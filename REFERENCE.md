@@ -17,7 +17,7 @@ This section defines the names used in conversations, issues, and pull requests 
 - *View mode* — read-only display of the item's details (name, description, roll boxes) with a Delete / Cancel / Save button row at the bottom.
 - *Edit mode* — editable form with labeled fields and a Delete / Cancel / Save button row.
 
-**View mode button row** — The `<div class="sp-edit-actions">` footer in each dedicated panel's view section. Contains three buttons: Delete (red, left-aligned, deletes the item immediately with a confirm dialog), Cancel (neutral, dismisses the panel), and Edit (green, opens edit mode for the item). This row replaced the old "Edit" button in the panel header and the "tap to dismiss" hint.
+**View mode Edit button** — A small `attack-edit-btn` button in the top-right of each dedicated panel's view section header (badge left, Edit button right). Tapping it switches the panel to edit mode. The panel footer shows a "tap to dismiss" hint; tapping the backdrop also dismisses.
 
 **Edit mode button row** — The same `.sp-edit-actions` footer in each panel's edit section. Delete deletes permanently, Cancel discards unsaved edits and dismisses, Save persists changes and dismisses.
 
@@ -198,7 +198,7 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.attack-row.spell-atk` | Spell variant of `.attack-row`; blue left-border tint; tap rolls the spell directly (same logic as spell list rows); hold 500 ms opens info panel |
 | `.attack-row.atk-hidden` | Hidden attack row shown faded (`opacity: 0.4`); always visible in the list |
 | `.attack-section-label` | Gold uppercase section divider inside `#attackList` (e.g. "Actions", "Bonus Actions") |
-| `.attack-edit-btn` | Small pill button style; used for the "Edit" button (`#ipEditBtn`) inside `#infoPanel` and for inline add/edit buttons (e.g. "+ Add" in section headers); formerly also used in spell/trait/feature/attack view panel headers but replaced there by the view-mode button row |
+| `.attack-edit-btn` | Small muted bordered pill button; used for the "Edit" button in the top-right header of each dedicated view panel, for the `#ipEditBtn` inside `#infoPanel`, and for "+ Add" buttons in section headers |
 | `.spell-lvl-pip` | Gold circle badge (15 px) showing spell level (1–9) next to a spell name in the combat block; not rendered for cantrips |
 | `#attackPanelBackdrop` | Fixed full-screen dim layer behind the attack panel; tap to dismiss |
 | `#attackPanel` | Fixed centered card (≤500 px, scrollable) showing attack details (view mode) or editable form (edit mode); gold border in view mode, blue border in edit mode; `.edit-mode` class toggles `.atk-view-section` / `.atk-edit-section` |
@@ -241,7 +241,7 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.rtz-dis` | Left half of `.rtz-bottom`; red tint; tap triggers disadvantage roll |
 | `.rtz-adv` | Right half of `.rtz-bottom`; green tint; tap triggers advantage roll |
 | `.sp-description` | Pre-wrapped description text block |
-| `.sp-dismiss-hint` | Tiny uppercase footer "tap to dismiss" shown at the bottom of `#infoPanel`; the dedicated spell/trait/feature/attack view panels use the `.sp-edit-actions` button row instead |
+| `.sp-dismiss-hint` | Tiny uppercase footer "tap to dismiss" shown at the bottom of all view panels (`#infoPanel` and the four dedicated panels) |
 | `.sp-view-section` | Wrapper for all view-mode content; hidden when `#spellPanel.edit-mode` |
 | `.sp-edit-section` | Wrapper for all edit-mode content; hidden by default, shown when `#spellPanel.edit-mode` |
 | `.sp-edit-field` | Labeled field wrapper inside the edit form; label in blue uppercase |
@@ -717,23 +717,23 @@ Death Save Roll button
 
 Weapon attack row
   Tap                → rollAttack(i)               — rolls d20 + bonus + optional damage; opens info panel if no bonus; edit mode if attack is hidden
-  Hold (500 ms)      → openAttackPanel(i, false)   — opens attack info panel (view mode); panel footer: Delete / Cancel / Save
-  Tap Save (view)    → switchToAtkEdit()            — switches same modal to edit mode
+  Hold (500 ms)      → openAttackPanel(i, false)   — opens attack info panel (view mode)
+  Tap Edit (top-right) → switchToAtkEdit()          — switches same modal to edit mode
 
 Spell row (spell list, combat list, featured spells)
   Tap                → clickSpellItem(e, i)         — rolls spell attack if attackRoll; rolls damage if rollDamage only; opens info panel if no roll configured
-  Hold (500 ms)      → openSpellPanel(i, false)     — opens spell info panel (view mode); panel footer: Delete / Cancel / Save
-  Tap Save (view)    → switchToSpellEdit()          — switches same modal to edit mode
+  Hold (500 ms)      → openSpellPanel(i, false)     — opens spell info panel (view mode)
+  Tap Edit (top-right) → switchToSpellEdit()        — switches same modal to edit mode
 
 Trait row (Info tab and combat list)
   Tap                → clickTraitItem(e, i)         — rolls damage if rollDamage; opens info panel otherwise
-  Hold (500 ms)      → openTraitPanel(i, false)     — opens trait info panel (view mode); panel footer: Delete / Cancel / Save
-  Tap Save (view)    → switchToTraitEdit()          — switches same modal to edit mode
+  Hold (500 ms)      → openTraitPanel(i, false)     — opens trait info panel (view mode)
+  Tap Edit (top-right) → switchToTraitEdit()        — switches same modal to edit mode
 
 Feature name area
   Tap                → clickFeatureName(e, i)       — rolls damage if rollDamage; opens info panel otherwise
-  Hold (500 ms)      → openFeaturePanel(i, false)   — opens feature info panel (view mode); panel footer: Delete / Cancel / Save
-  Tap Save (view)    → switchToFeatureEdit()        — switches same modal to edit mode
+  Hold (500 ms)      → openFeaturePanel(i, false)   — opens feature info panel (view mode)
+  Tap Edit (top-right) → switchToFeatureEdit()      — switches same modal to edit mode
 
 Condition chip
   Tap                → toggleCondition(name, el)    — instantly toggles the condition on/off (conditions are checkboxes, not rolls)
@@ -744,10 +744,10 @@ Condition chip
 Attack panel states:
 ```
 View mode  (default) — shows name, action type, attack roll card (tappable), save DC box, rolls-only box, description,
-                       then Delete / Cancel / Save button row at the bottom
+                       "tap to dismiss" hint; Edit button top-right switches to edit mode
 Edit mode            — shows editable form for all fields (name, attack roll selector with proficiency/flat bonus or manual
                        entry, rolls rows, action type, hidden checkbox, saving throw, description),
-                       then Delete / Cancel / Save button row at the bottom
+                       Delete / Cancel / Save button row at the bottom
 ```
 
 ---
