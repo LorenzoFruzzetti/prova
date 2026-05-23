@@ -720,12 +720,14 @@
   }
 
   .stat-pill {
-    background: var(--bg);
-    border: 1px solid var(--border);
+    background: rgba(var(--accent-rgb),0.05);
+    border: 1px solid rgba(var(--accent-rgb),0.35);
     border-radius: var(--radius);
     padding: 8px 4px;
     text-align: center;
+    cursor: pointer;
   }
+  .stat-pill:active { background: rgba(var(--accent-rgb),0.11); }
 
   .stat-pill-value {
     font-size: 22px;
@@ -742,18 +744,25 @@
     margin-top: 2px;
   }
 
+  /* Editable number input — visible box signals it can be typed into */
   .stat-pill input {
-    width: 100%;
+    width: calc(100% - 8px);
+    margin: 0 4px;
     text-align: center;
-    background: none;
-    border: none;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 2px;
+    box-sizing: border-box;
     font-size: 22px;
     font-weight: bold;
     color: var(--gold-light);
-    padding: 0;
     font-family: 'Georgia', serif;
     outline: none;
     -webkit-appearance: none;
+  }
+  .stat-pill input:focus {
+    border-color: rgba(var(--accent-rgb),0.7);
   }
 
   /* ── Saving Throws & Skills ── */
@@ -1418,13 +1427,11 @@
   }
   .attack-edit-btn.active { color: var(--gold); border-color: var(--gold); }
 
-  /* ── Rollable / interactive stat pills ── */
+  /* ── Rollable / interactive stat pills — thicker gold border on top of base pill ── */
   .stat-pill.rollable,
   .stat-pill.interactive {
-    cursor: pointer;
     border-width: var(--roll-border);
-    border-color: rgba(var(--accent-rgb),0.4);
-    background: rgba(var(--accent-rgb),0.03);
+    border-color: rgba(var(--accent-rgb),0.5);
   }
   .stat-pill.rollable:active,
   .stat-pill.interactive:active { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
