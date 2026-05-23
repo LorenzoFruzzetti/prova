@@ -201,7 +201,15 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.attack-row` | 3-column grid: name / bonus / damage; `cursor:pointer`; tap to view/roll |
 | `.attack-row.spell-atk` | Spell variant of `.attack-row`; blue left-border tint; tap rolls the spell directly (same logic as spell list rows); hold 500 ms opens info panel |
 | `.attack-row.atk-hidden` | Hidden attack row shown faded (`opacity: 0.4`); always visible in the list |
-| `.attack-section-label` | Gold uppercase section divider inside `#attackList` (e.g. "Actions", "Bonus Actions") |
+| `.attack-section-label` | Gold uppercase section divider inside `#attackList` (e.g. "Actions", "Bonus Actions", "Reactions") |
+| `.turn-section-title` | Extends `.section-title`; flex layout with `cursor:pointer`; adds `.holding` class on pointer-down for visual feedback |
+| `.turn-hold-hint` | Small muted badge ("hold") on the right side of the Turn section title indicating the element is holdable |
+| `.turn-defaults-header` | Collapsible header row below `#attackList`; uppercase muted text + chevron; tap to toggle default actions list |
+| `.turn-chevron` | Right-side chevron in `.turn-defaults-header`; `transform: rotate(90deg)` when `.open` class is added |
+| `.turn-defaults-body` | Container for default action rows; hidden by default; filled by `buildDefaultActions()` |
+| `.default-action-row` | Flex row for a single default action item (name + type badge); tap opens info panel |
+| `.default-action-name` | Name text in a `.default-action-row` |
+| `.default-action-type` | Type badge in `.default-action-row`; variants `.bonus` (blue), `.reaction` (red), `.free` (gold); no modifier = action (muted) |
 | `.attack-edit-btn` | Small muted bordered pill button; used for the "Edit" button in the top-right header of each dedicated view panel, for the `#ipEditBtn` inside `#infoPanel`, and for "+ Add" buttons in section headers |
 | `.spell-lvl-pip` | Gold circle badge (15 px) showing spell level (1–9) next to a spell name in the combat block; not rendered for cantrips |
 | `#attackPanelBackdrop` | Fixed full-screen dim layer behind the attack panel; tap to dismiss |
@@ -338,6 +346,7 @@ CONDITIONS      // array of {name, desc} objects — 15 conditions with descript
 STAT_PILL_INFO  // {ac, initiative, speed, dietype, spellatk, spelldc} — metadata for each combat stat pill; each entry has title, meta, desc; rollable entries add rollLabel/rollFn; simpleRollFn for hit die
 SPELL_SLOTS_DEFAULT  // [{level, max}] — 9 levels, all max:0 except 1st:2
 LEVEL_LABELS    // ['Cantrip','1st','2nd',...,'9th'] — display labels for spell levels 0–9
+DEFAULT_ACTIONS // [{key, name, type, description}] — standard D&D 5e actions; type ∈ 'action'|'bonus'|'reaction'|'free'
 TABS            // ['overview','abilities','skills','combat','spells','features','inventory','rolls']
                 //   Order used by swipe navigation and switchTab()
 FONT_SIZES      // [75, 85, 100, 110, 125, 150] — allowed zoom levels in percent
@@ -518,7 +527,13 @@ DOMContentLoaded
 | `buildInfoTraits()` | Features & Traits rows in `#infoTraitsBody`, or empty-state placeholder | `state.infoTraits` |
 | `renderFeatureDots(i)` | Dot row + counter for one feature, scaled by `step` | `state.classFeatures[i]` |
 | `renderHitDice()` | Hit dice dots in `#hitDiceDots`; max = character level | `state.hitDiceUsed`, `charLevel` input |
-| `renderAttacks()` | Attack rows split into "Actions", "Bonus Actions", and "Other" sub-sections; combat spells, combat traits, and combat features (`showInCombat`) injected into each section; hidden attacks always shown but faded (`atk-hidden` class) | `state.attacks`, `state.spells`, `state.infoTraits`, `state.classFeatures` |
+| `renderAttacks()` | Renders the Turn block: "Actions", "Bonus Actions", and "Reactions" sub-sections always rendered (with empty-state placeholders when empty); "Other" section rendered only when items exist; combat spells/traits/features (`showInCombat`) injected per section; hidden attacks faded (`atk-hidden`) | `state.attacks`, `state.spells`, `state.infoTraits`, `state.classFeatures` |
+| `startTurnTitlePress(e)` | `pointerdown` on the "Turn" section title | Adds `.holding` class; starts 500 ms timer; on fire calls `openTurnInfoPanel()` |
+| `endTurnTitlePress(e)` / `cancelTurnTitlePress()` | `pointerup` / `pointercancel` on "Turn" title | Clears timer; removes `.holding` class |
+| `openTurnInfoPanel()` | Called on hold of "Turn" title | Opens info panel describing the parts of a turn (movement, action, bonus action, reaction, free interaction) |
+| `toggleDefaultActions()` | Tap "Default Actions" collapsible header | Toggles `#defaultActionsList` visibility; rotates chevron; calls `buildDefaultActions()` on first open |
+| `buildDefaultActions()` | Fills `#defaultActionsList` with rows from `DEFAULT_ACTIONS` | `DEFAULT_ACTIONS` constant |
+| `openDefaultActionPanel(key)` | Tap on a default action row | Opens info panel with name, type badge, and description for the selected default action |
 | `startFeatureCombatPress(e, i)` | `pointerdown` on a feature row in the combat block | Starts 500 ms timer; on fire opens feature panel (view mode) |
 | `clickFeatureCombatItem(e, i)` | `click` on a feature row in the combat block | Rolls attack (opens panel) or rolls damage if only rolls are set; opens panel if neither |
 | `cancelFeatureCombatPress()` | `pointercancel` on a feature row in the combat block | Clears timer |
