@@ -504,8 +504,8 @@ DOMContentLoaded
 | `restoreHitDice()` | ↺ Restore button in Hit Dice section | Sets `state.hitDiceUsed = 0`; rerenders |
 | `fullLongRest()` | ⟳ Long Rest button in Overview panel | Restores HP to max, resets hit dice, all spell slots, and all class features; saves |
 | `removeAttack(i)` | Tap bin button (🗑) on attack row (manage mode) | Pushes undo; splices `state.attacks`; rerenders |
-| `clickConditionItem(e, name, el)` | Tap condition chip | Opens the condition info panel (same as hold); no-ops if long-press already fired |
-| `toggleCondition(name, el)` | Called from `toggleConditionFromPanel()` | Pushes undo; toggles name in `state.conditions`; rebuilds condition chips |
+| `clickConditionItem(e, name, el)` | Tap condition chip | Calls `toggleCondition()` directly (instant on/off); no-ops if long-press already fired |
+| `toggleCondition(name, el)` | Short tap on condition chip, or Apply/Remove button inside condition panel | Pushes undo; toggles name in `state.conditions`; rebuilds condition chips |
 | `toggleInspiration()` | Tap inspiration button | Pushes undo; flips `state.inspiration` boolean |
 | `toggleDeathSave(dot, type)` | Tap death save dot | Toggles `.filled` class on the dot element (not tracked by undo) |
 
@@ -549,7 +549,8 @@ Feature name area
   Tap Edit (in panel)→ switchToFeatureEdit()        — switches same modal to edit mode
 
 Condition chip
-  Tap or hold        → openConditionPanel(name)     — opens condition info panel; Apply/Remove button is inside the panel
+  Tap                → toggleCondition(name, el)    — instantly toggles the condition on/off (conditions are checkboxes, not rolls)
+  Hold (500 ms)      → openConditionPanel(name)     — opens condition info panel with description and Apply/Remove button
 
 Manage mode (attacks section — separate from the above pattern)
   Tap Edit button    → toggleAttackEdit()           — activates manage mode; shows hidden rows, Show and bin buttons

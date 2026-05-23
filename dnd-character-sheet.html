@@ -4213,11 +4213,12 @@ function dismissSkillPanel() {
 
 function rollSkillFromPanel() {
   if (!skillPanelCurrentName) return;
+  const name = skillPanelCurrentName;
   dismissSkillPanel();
-  rollSkill(skillPanelCurrentName);
+  rollSkill(name);
 }
 
-// ── Condition press (tap = info panel, hold = info panel) ──────────────
+// ── Condition press (tap = toggle, hold = info panel) ──────────────────
 let conditionPressTimer = null;
 let conditionPressActive = false;
 let conditionPanelCurrentName = null;
@@ -4237,7 +4238,7 @@ function clickConditionItem(e, name, el) {
   clearTimeout(conditionPressTimer);
   document.querySelectorAll('.condition-tag.holding').forEach(t => t.classList.remove('holding'));
   if (conditionPressActive) { conditionPressActive = false; return; }
-  openConditionPanel(name);
+  toggleCondition(name, el);
 }
 
 function cancelConditionPress() {
