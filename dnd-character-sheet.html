@@ -3270,10 +3270,7 @@
 <div id="spellPanel">
   <!-- View mode -->
   <div class="sp-view-section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div class="sp-mode-badge" id="spModeBadge">Spell</div>
-      <button class="attack-edit-btn" onclick="event.stopPropagation();switchToSpellEdit()">Edit</button>
-    </div>
+    <div class="sp-mode-badge" id="spModeBadge">Spell</div>
     <div class="sp-name" id="spNameView"></div>
     <div class="sp-meta" id="spMetaView"></div>
     <div class="sp-details-grid" id="spDetailsView"></div>
@@ -3298,7 +3295,11 @@
       <div class="sp-atk-bonus" id="spDmgDice"></div>
     </div>
     <div class="sp-description" id="spDescView"></div>
-    <span class="sp-dismiss-hint">tap to dismiss</span>
+    <div class="sp-edit-actions">
+      <button class="sp-edit-delete-btn" onclick="event.stopPropagation();deleteCurrentSpell()">Delete</button>
+      <button class="sp-edit-cancel-btn" onclick="event.stopPropagation();dismissSpellPanel()">Cancel</button>
+      <button class="sp-edit-save-btn" onclick="event.stopPropagation();switchToSpellEdit()">Save</button>
+    </div>
   </div>
   <!-- Edit mode -->
   <div class="sp-edit-section">
@@ -3440,10 +3441,7 @@
 <div id="traitPanel">
   <!-- View mode -->
   <div class="tr-view-section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div class="tr-mode-badge">Feature / Trait</div>
-      <button class="attack-edit-btn" onclick="event.stopPropagation();switchToTraitEdit()">Edit</button>
-    </div>
+    <div class="tr-mode-badge">Feature / Trait</div>
     <div class="tr-name" id="trNameView"></div>
     <div class="sp-save-dc-box" id="trSaveDcBox" style="display:none">
       <div class="sp-save-dc-label">Saving Throw DC</div>
@@ -3455,7 +3453,11 @@
       <div class="sp-atk-bonus" id="trDmgDice"></div>
     </div>
     <div class="tr-description" id="trDescView"></div>
-    <span class="sp-dismiss-hint">tap to dismiss</span>
+    <div class="sp-edit-actions">
+      <button class="sp-edit-delete-btn" onclick="event.stopPropagation();deleteCurrentTrait()">Delete</button>
+      <button class="sp-edit-cancel-btn" onclick="event.stopPropagation();dismissTraitPanel()">Cancel</button>
+      <button class="sp-edit-save-btn" onclick="event.stopPropagation();switchToTraitEdit()">Save</button>
+    </div>
   </div>
   <!-- Edit mode -->
   <div class="tr-edit-section">
@@ -3526,10 +3528,7 @@
 <div id="featurePanel">
   <!-- View mode -->
   <div class="fp-view-section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div class="fp-mode-badge">Class Feature</div>
-      <button class="attack-edit-btn" onclick="event.stopPropagation();switchToFeatureEdit()">Edit</button>
-    </div>
+    <div class="fp-mode-badge">Class Feature</div>
     <div class="fp-name" id="fpNameView"></div>
     <div class="fp-recharge" id="fpRechargeView"></div>
     <div class="sp-save-dc-box" id="fpSaveDcBox" style="display:none">
@@ -3552,7 +3551,11 @@
       <div class="sp-atk-bonus" id="fpDmgDice"></div>
     </div>
     <div class="fp-description" id="fpDescView"></div>
-    <span class="sp-dismiss-hint">tap to dismiss</span>
+    <div class="sp-edit-actions">
+      <button class="sp-edit-delete-btn" onclick="event.stopPropagation();deleteFeatureFromPanel()">Delete</button>
+      <button class="sp-edit-cancel-btn" onclick="event.stopPropagation();dismissFeaturePanel()">Cancel</button>
+      <button class="sp-edit-save-btn" onclick="event.stopPropagation();switchToFeatureEdit()">Save</button>
+    </div>
   </div>
   <!-- Edit mode -->
   <div class="fp-edit-section">
@@ -3692,10 +3695,7 @@
 <div id="attackPanel">
   <!-- View mode -->
   <div class="atk-view-section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div class="sp-mode-badge">Attack</div>
-      <button class="attack-edit-btn" onclick="event.stopPropagation();switchToAtkEdit()">Edit</button>
-    </div>
+    <div class="sp-mode-badge">Attack</div>
     <div class="sp-name" id="atkPanelName"></div>
     <div class="sp-meta" id="atkPanelMeta"></div>
     <div class="roll-tri" id="atkPanelRollBox">
@@ -3719,7 +3719,11 @@
       <div class="sp-atk-bonus" id="atkPanelRollsSummary"></div>
     </div>
     <div class="sp-description" id="atkPanelDesc"></div>
-    <span class="sp-dismiss-hint">tap to dismiss</span>
+    <div class="sp-edit-actions">
+      <button class="sp-edit-delete-btn" onclick="event.stopPropagation();deleteFromAttackPanel()">Delete</button>
+      <button class="sp-edit-cancel-btn" onclick="event.stopPropagation();dismissAttackPanel()">Cancel</button>
+      <button class="sp-edit-save-btn" onclick="event.stopPropagation();switchToAtkEdit()">Save</button>
+    </div>
   </div>
   <!-- Edit mode -->
   <div class="atk-edit-section">

@@ -77,6 +77,12 @@ Eight tabs in order (used by swipe navigation and `switchTab()`):
 | `REFERENCE.md` | CSS tokens, component classes, JS constants, state shape, all function signatures | Any HTML structure, CSS class, JS function, state key, or data-flow change |
 | `JSONGeneration.md` | JSON field names, types, valid values, examples, common mistakes | Any change to `collectFormData()`, `buildPayload()`, or the `state` object shape |
 
+**Every feature addition or change must include the corresponding documentation update in the same commit.** Do not leave REFERENCE.md or JSONGeneration.md lagging behind the code.
+
+### Conflict resolution: code wins
+
+When `REFERENCE.md` or `JSONGeneration.md` describes something that contradicts what the actual code in `dnd-character-sheet.html` does, **the code is the source of truth**. Update the documentation to match the code — never change the code just to match a stale doc entry. If you notice a conflict while working on a task, fix the doc entry as part of that task even if the doc change was not explicitly requested.
+
 ### Pre-commit checklist for `dnd-character-sheet.html` changes
 
 1. **New form field** (new `id` + added to `collectFormData()`):

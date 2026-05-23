@@ -5,6 +5,40 @@ A self-contained single-file application. No build step, no dependencies. Open d
 
 ---
 
+## Shared terminology
+
+This section defines the names used in conversations, issues, and pull requests so that the user and any AI assistant share a common vocabulary. When the user asks about one of these terms, treat this section as the authoritative definition.
+
+**Info panel (user-facing term)** — When the user says "info panel" or "information panel", they mean any of the floating modal cards that slide in when you hold or tap a spell, feature, trait, or attack row. In the codebase these are implemented as four separate dedicated panels (`#spellPanel`, `#featurePanel`, `#traitPanel`, `#attackPanel`) plus the generic unified panel (`#infoPanel`). If a request mentions "the info panel for spells / features", it refers to the dedicated panels, not the generic one.
+
+**Generic info panel (`#infoPanel`)** — The single, reusable floating card used for items that have no dedicated panel: skills, ability scores, saving throws, combat stat pills (AC, Speed, Initiative, Spell Atk, Spell DC), hit die, death saves, and conditions. Opened via `openInfoPanel(cfg)`. It accepts a badge, title, optional meta line, optional 3-zone roll button, optional simple roll button, a description block, and an optional action button (e.g. "Apply Condition"). It is **not** used for spells, traits, or features — those use their own panels.
+
+**Dedicated view/edit panels** — `#spellPanel`, `#traitPanel`, `#featurePanel`, and `#attackPanel` are dedicated floating cards for their respective item types. Each panel has two modes controlled by toggling the `.edit-mode` CSS class on the panel element:
+- *View mode* — read-only display of the item's details (name, description, roll boxes) with a Delete / Cancel / Save button row at the bottom.
+- *Edit mode* — editable form with labeled fields and a Delete / Cancel / Save button row.
+
+**View mode button row** — The `<div class="sp-edit-actions">` footer added to each dedicated panel's view section. Contains three buttons: Delete (red, left-aligned, deletes the item immediately with a confirm dialog), Cancel (neutral, dismisses the panel), and Save (blue, opens edit mode for the item). This row replaced the old "Edit" button in the panel header and the "tap to dismiss" hint.
+
+**Edit mode button row** — The same `.sp-edit-actions` footer in each panel's edit section. Delete deletes permanently, Cancel discards unsaved edits and dismisses, Save persists changes and dismisses.
+
+**Info tab** — The first tab, whose button label reads "Info" and whose panel id is `#panel-overview`. Contains Character Info (portrait + form fields), Features & Traits (`infoTraits` list), Personality, and Long Rest.
+
+**Features tab** — The tab labelled "Features" (`#panel-features`). Shows class features with limited-use dot trackers and +/− counters (`classFeatures`). Distinct from the Info tab's "Features & Traits" section.
+
+**Info traits vs class features** — Two separate data arrays with different purposes:
+- `state.infoTraits` — descriptive traits and racial/background features stored in the Info tab's "Features & Traits" section. No slot tracking; optional damage roll and saving throw display.
+- `state.classFeatures` — limited-use class abilities in the Features tab, each with `max`, `used`, `step`, and `recharge` fields and a visual dot tracker.
+
+**Combat block** — The attacks list rendered inside `#panel-combat` (`#attackList`). Collects weapon attacks (`state.attacks`), spells with `showInCombat: true` (`state.spells`), info traits with `showInCombat: true` (`state.infoTraits`), and class features with `showInCombat: true` (`state.classFeatures`), all grouped into "Actions", "Bonus Actions", and "Other" sub-sections.
+
+**Roll result overlay** — The `#rollResult` centered card shown after any dice roll. Displays the roll label, large total, dice breakdown, optional secondary line (e.g. damage), and a nat-20 / nat-1 callout.
+
+**Backdrop** — The semi-transparent dark `<div>` behind any open modal or panel. Clicking/tapping the backdrop calls the panel's dismiss function.
+
+**Roster / Character grid** — The character-selection overlay (`#charGridOverlay`) opened by the 🎭 header button. Shows one card per saved character; supports switching, creating, and deleting characters.
+
+---
+
 ## Top-level layout
 
 ```
@@ -39,7 +73,7 @@ dnd-character-sheet.html
 │   ├── #aiImportPanel  Fixed centered modal for importing spells, features, and traits; two modes — ✨ AI (prompt-copy + paste-back) and 📖 SRD (live search against dnd5eapi.co); three type tabs: Spells / Features / Traits
 │   ├── #charGridOverlay  Fixed full-screen overlay for the character roster grid panel; open via the 🎭 header button; tap backdrop to dismiss
 │   ├── #infoPanelBackdrop  Fixed full-screen dim layer behind the unified info panel; tap to dismiss
-│   ├── #infoPanel  Fixed centered card (≤500 px, scrollable) — the single unified info panel used for skills, abilities, saving throws, combat stats, hit die, death saves, conditions, attacks, spells, class features, and traits; badge + title + optional meta + optional 3-zone roll button + optional simple roll button + description + optional action button; `.show` reveals it
+│   ├── #infoPanel  Fixed centered card (≤500 px, scrollable) — the generic unified info panel used for skills, abilities, saving throws, combat stats, hit die, death saves, and conditions (NOT for spells, traits, attacks, or class features — those have their own dedicated panels); badge + title + optional meta + optional 3-zone roll button + optional simple roll button + description + optional action button + "tap to dismiss" hint; `.show` reveals it
 │   └── #toast       Floating feedback message (non-roll events only)
 └── <script>         All application logic (no external libraries)
 ```
@@ -128,12 +162,12 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.spell-slot-add-btn` | Dashed-border pill chip (e.g. `+ 3rd`); clicking calls `expandSpellLevel(i)` to set that level's max to 1 and make it appear |
 | `.slot-dot` | 18 px circle; `.available` = gold left (remaining), `.used` = grey right (expended) |
 | `.spell-level-divider` | Section header dividing spells by level (e.g. "Cantrips", "1st Level") inside `#spellListBody` |
-| `.spell-item` | One spell row in the list; tap rolls the spell directly (attack or damage) if rollable, otherwise opens info panel; hold 500 ms opens info panel with Edit button; `.holding` class added during hold |
+| `.spell-item` | One spell row in the list; tap rolls the spell directly (attack or damage) if rollable, otherwise opens spell view panel; hold 500 ms opens spell view panel (with Delete/Cancel/Save footer); `.holding` class added during hold |
 | `.spell-item-name` | Bold spell name inside a `.spell-item` |
 | `.spell-item-school` | Italic muted school label (right side) inside a `.spell-item` |
 | `.spell-item-tag` | Small badge chip on a spell row; `.sp-tag-conc` = blue "C" (Concentration); `.sp-tag-ritual` = gold "R" (Ritual) |
 | `.spell-empty-msg` | Italic placeholder shown in `#spellListBody` when no spells have been added |
-| `.trait-item` | One Features & Traits row in the Info tab; tap rolls damage directly if `rollDamage` is set, otherwise opens info panel; hold 500 ms opens info panel with Edit button; `.holding` class added during hold |
+| `.trait-item` | One Features & Traits row in the Info tab; tap rolls damage directly if `rollDamage` is set, otherwise opens trait view panel; hold 500 ms opens trait view panel (with Delete/Cancel/Save footer); `.holding` class added during hold |
 | `.trait-item-name` | Bold feature/trait name inside a `.trait-item` |
 | `.trait-item-preview` | Truncated first line of the description (muted, small text, `text-overflow:ellipsis`) |
 | `#traitBackdrop` | Fixed full-screen dim layer behind the trait panel; tap to dismiss |
@@ -148,7 +182,7 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.mini-val` | Small `n/max` counter label inside a mini tracker |
 | `.feature-row` | One class feature row: horizontal two-column layout — left column (name + dots) and right column (controls) |
 | `.feature-left-col` | Left flex column inside `.feature-row`; `flex:1`; holds `.feature-name-area` above and `.feature-dots` below |
-| `.feature-name-area` | Clickable area inside `.feature-left-col`; gold left-border tint; tap rolls damage directly if `rollDamage` is set, otherwise opens info panel; hold 500 ms opens info panel with Edit button; `.holding` class added during hold; shows feature name, tags, and (when `step > 1`) the pts/dot hint |
+| `.feature-name-area` | Clickable area inside `.feature-left-col`; gold left-border tint; tap rolls damage directly if `rollDamage` is set, otherwise opens feature view panel; hold 500 ms opens feature view panel (with Delete/Cancel/Save footer); `.holding` class added during hold; shows feature name, tags, and (when `step > 1`) the pts/dot hint |
 | `.feature-dots` | Wrapping flex row of `.slot-dot`s inside `.feature-left-col`, below `.feature-name-area` and outside the clickable zone — dots can be tapped independently |
 | `.feature-step-hint` | Tiny italic label inside `.feature-name-area` below the feature name (e.g. "5 pts/dot"); shown only when `step > 1` |
 | `.feature-right-col` | Right controls column inside `.feature-row`; stacks `.feature-ctrl-top`, `.mini-tracker`, and (for featured spells) recharge info vertically; separated from the left column by a subtle border |
@@ -164,7 +198,7 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.attack-row.spell-atk` | Spell variant of `.attack-row`; blue left-border tint; tap rolls the spell directly (same logic as spell list rows); hold 500 ms opens info panel |
 | `.attack-row.atk-hidden` | Hidden attack row shown faded (`opacity: 0.4`); always visible in the list |
 | `.attack-section-label` | Gold uppercase section divider inside `#attackList` (e.g. "Actions", "Bonus Actions") |
-| `.attack-edit-btn` | Small "Edit" button in the top-right of spell/trait/feature/attack view panels to switch to edit mode within the same modal |
+| `.attack-edit-btn` | Small pill button style; used for the "Edit" button (`#ipEditBtn`) inside `#infoPanel` and for inline add/edit buttons (e.g. "+ Add" in section headers); formerly also used in spell/trait/feature/attack view panel headers but replaced there by the view-mode button row |
 | `.spell-lvl-pip` | Gold circle badge (15 px) showing spell level (1–9) next to a spell name in the combat block; not rendered for cantrips |
 | `#attackPanelBackdrop` | Fixed full-screen dim layer behind the attack panel; tap to dismiss |
 | `#attackPanel` | Fixed centered card (≤500 px, scrollable) showing attack details (view mode) or editable form (edit mode); gold border in view mode, blue border in edit mode; `.edit-mode` class toggles `.atk-view-section` / `.atk-edit-section` |
@@ -207,14 +241,14 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.rtz-dis` | Left half of `.rtz-bottom`; red tint; tap triggers disadvantage roll |
 | `.rtz-adv` | Right half of `.rtz-bottom`; green tint; tap triggers advantage roll |
 | `.sp-description` | Pre-wrapped description text block |
-| `.sp-dismiss-hint` | Tiny uppercase footer "tap to dismiss" shown at the bottom of view panels |
+| `.sp-dismiss-hint` | Tiny uppercase footer "tap to dismiss" shown at the bottom of `#infoPanel`; the dedicated spell/trait/feature/attack view panels use the `.sp-edit-actions` button row instead |
 | `.sp-view-section` | Wrapper for all view-mode content; hidden when `#spellPanel.edit-mode` |
 | `.sp-edit-section` | Wrapper for all edit-mode content; hidden by default, shown when `#spellPanel.edit-mode` |
 | `.sp-edit-field` | Labeled field wrapper inside the edit form; label in blue uppercase |
 | `.sp-edit-checkbox-row` | Flex row for Concentration and Ritual checkboxes |
-| `.sp-edit-save-btn` | Blue filled Save button in edit mode |
-| `.sp-edit-cancel-btn` | Muted Cancel button in edit mode (dismisses without saving) |
-| `.sp-edit-delete-btn` | Red-tinted Delete button (left-aligned); hidden when adding a new spell |
+| `.sp-edit-save-btn` | Blue filled button; in view mode opens the edit form; in edit mode saves changes and dismisses |
+| `.sp-edit-cancel-btn` | Muted button; dismisses the panel without saving (both view and edit mode) |
+| `.sp-edit-delete-btn` | Red-tinted button (left-aligned via `margin-right:auto`); in view mode deletes the item immediately with a confirm dialog; in edit mode same; hidden when `i = -1` (new item, edit mode only) |
 | `.rr-label` | Small uppercase label inside roll result (e.g. "Strength Check") |
 | `.rr-total` | 80 px bold total number inside roll result |
 | `.rr-breakdown` | Dice breakdown line (e.g. "d20(14) +4 = 18") |
@@ -549,9 +583,9 @@ DOMContentLoaded
 | `startLongPress(e, i)` | `pointerdown` on weapon attack row | Starts 500 ms timer; on fire calls `openAttackPanel(i, false)` to open info/view mode |
 | `cancelLongPress()` | `pointerup` / `pointercancel` on attack row | Clears the long-press timer |
 | `openAttackPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `attackPanelIdx = i`; shows `#attackPanelBackdrop` and `#attackPanel`; `i = -1` means new attack |
-| `switchToAtkEdit()` | Tap Edit button inside attack panel view | Switches `#attackPanel` to edit mode by adding `.edit-mode`; populates edit form fields |
+| `switchToAtkEdit()` | Tap Save button in attack panel view mode (bottom button row) | Switches `#attackPanel` to edit mode by adding `.edit-mode`; populates edit form fields |
 | `saveAttackPanel()` | Tap Save in attack panel edit mode | Validates name; creates or updates `state.attacks[attackPanelIdx]`; calls `renderAttacks()` + `saveData()`; dismisses panel |
-| `deleteFromAttackPanel()` | Tap Delete in attack panel edit mode | Splices `state.attacks[attackPanelIdx]`; calls `renderAttacks()` + `saveData()`; dismisses panel |
+| `deleteFromAttackPanel()` | Tap Delete in attack panel (view or edit mode) | Splices `state.attacks[attackPanelIdx]`; calls `renderAttacks()` + `saveData()`; dismisses panel |
 | `dismissAttackPanel()` | Backdrop tap or Cancel in panel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#attackPanel` |
 | `rollFromAttackPanel(mode='normal')` | Tap zone in `.roll-tri` inside attack panel view | Rolls d20 + attack bonus with given mode; rolls damage as secondary; calls `showRoll()` |
 | `addAttack()` | "+ Add Attack" button | Opens attack panel in edit mode with empty form (`attackPanelIdx = -1`) |
@@ -571,22 +605,22 @@ DOMContentLoaded
 | `startSpellPress(e, i)` | `pointerdown` on spell row (spell list, featured spells, or combat list) | Starts 500 ms timer; adds `.holding` visual on fire; on fire opens spell info panel (view mode) |
 | `clickSpellItem(e, i)` | `click` on spell row | If timer hasn't fired: rolls spell attack if `attackRoll` is true; rolls damage if `rollDamage && !attackRoll`; opens info panel if no roll is configured; clears timer |
 | `cancelSpellPress()` | `pointercancel` on spell row | Clears timer and removes `.holding` class |
-| `switchToSpellEdit()` | Tap Edit button inside spell view panel | Adds `.edit-mode` to `#spellPanel`; populates edit form; focuses the name field |
+| `switchToSpellEdit()` | Tap Save button in spell view mode (bottom button row) | Adds `.edit-mode` to `#spellPanel`; populates edit form; focuses the name field |
 | `startTraitPress(e, i)` | `pointerdown` on a trait row (Info tab or combat list) | Starts 500 ms timer; adds `.holding` visual on fire; opens trait info panel (view mode) |
 | `clickTraitItem(e, i)` | `click` on a trait row | If timer hasn't fired: rolls damage if `rollDamage && damage`; opens info panel otherwise; clears timer |
 | `cancelTraitPress()` | `pointercancel` on a trait row | Clears timer and removes `.holding` class |
-| `switchToTraitEdit()` | Tap Edit button inside trait view panel | Adds `.edit-mode` to `#traitPanel`; populates edit form; focuses the name field |
+| `switchToTraitEdit()` | Tap Save button in trait view mode (bottom button row) | Adds `.edit-mode` to `#traitPanel`; populates edit form; focuses the name field |
 | `openTraitPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `traitPanelEditIdx = i`; shows `#traitBackdrop` and `#traitPanel`; `i = -1` means new trait |
 | `addInfoTrait()` | Tap + Add in Features & Traits section header | Opens trait panel in edit mode with empty form; sets `traitPanelEditIdx = -1` |
 | `saveTraitEdit()` | Tap Save in trait panel edit mode | Validates name; writes to `state.infoTraits[idx]` or pushes new entry; calls `buildInfoTraits()` + `saveData()`; dismisses panel |
-| `deleteCurrentTrait()` | Tap Delete in trait panel edit mode | `confirm()` dialog → splices `state.infoTraits`; calls `buildInfoTraits()` + `saveData()`; dismisses panel |
+| `deleteCurrentTrait()` | Tap Delete in trait panel (view or edit mode) | `confirm()` dialog → splices `state.infoTraits`; calls `buildInfoTraits()` + `saveData()`; dismisses panel |
 | `dismissTraitPanel()` | Backdrop tap or Cancel in panel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#traitPanel` |
 | `openSpellPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `spellPanelEditIdx = i` in both modes; shows backdrop + panel |
 | `addSpell()` | Tap + Add button in Spells section | Opens spell panel in edit mode with empty form; sets `spellPanelEditIdx = -1` |
 | `populateSpellViewPanel(i)` | Internal | Fills view-mode elements from `state.spells[i]`; shows save DC box if `saveAbility` is set (uses per-spell `saveDC` override when > 0, otherwise character's spell DC); shows attack roll card if `attackRoll` is `true`; shows rolls box if `rolls` is non-empty and `attackRoll` is false |
 | `populateSpellEditForm(i)` | Internal | Fills edit form from `state.spells[i]` including `saveAbility`, `saveDC`, `attackRoll`, `rolls` (rendered via `renderRollRows`), `showInCombat`, `combatActionType`, and `showInFeatures`; blanks all fields when `i = -1` |
 | `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes all fields including `saveAbility`, `saveDC`, `showInCombat`, `combatActionType`, `showInFeatures`; calls `buildSpellList()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
-| `deleteCurrentSpell()` | Tap Delete in edit mode | Confirms; splices from `state.spells`; calls `buildSpellList()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
+| `deleteCurrentSpell()` | Tap Delete in spell panel (view or edit mode) | Confirms; splices from `state.spells`; calls `buildSpellList()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
 | `dismissSpellPanel()` | Backdrop tap or Cancel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#spellPanel` |
 | `renderFeatureDots(i)` | Any feature use/restore | Updates dots and `n/max` counter for feature `i` |
 | `toggleFeatureDot(i, j)` | Tap feature dot | Gold → use dots from here right; grey → restore that dot (respects `step`) |
@@ -599,7 +633,7 @@ DOMContentLoaded
 | `startFeatureNamePress(e, i)` | `pointerdown` on `.feature-name-area` | Starts 500 ms timer; adds `.holding` visual on fire; on fire opens feature info panel (view mode) |
 | `clickFeatureName(e, i)` | `click` on `.feature-name-area` | If timer hasn't fired: rolls damage if `rollDamage && damage`; opens info panel otherwise; clears timer |
 | `cancelFeatureNamePress()` | `pointercancel` on `.feature-name-area` | Clears timer and removes `.holding` class |
-| `switchToFeatureEdit()` | Tap Edit button inside feature view panel | Adds `.edit-mode` to `#featurePanel`; populates edit form; focuses the name field |
+| `switchToFeatureEdit()` | Tap Save button in feature view mode (bottom button row) | Adds `.edit-mode` to `#featurePanel`; populates edit form; focuses the name field |
 | `openFeaturePanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `featurePanelIdx = i`; shows `#featurePanelBackdrop` and `#featurePanel`; `i = -1` means new feature |
 | `addFeature()` | + Add button | Calls `openFeaturePanel(-1, true)` (new feature mode) |
 | `populateFeatureViewPanel(i)` | Internal | Fills view-mode elements from `state.classFeatures[i]`; shows attack roll card if `attackRoll` and `attackMod` are set; shows rolls box if `rolls` is non-empty; shows save DC box if `saveAbility` is set |
@@ -607,7 +641,7 @@ DOMContentLoaded
 | `saveFeaturePanel()` | Tap Save in feature panel edit mode | Validates name; writes all fields including `attackRoll`, `attackMod`, `attackBonus`, `attackProficient`, `rolls` to `state.classFeatures[idx]` or pushes new entry; calls `buildFeatures()` + `saveData()`; dismisses panel |
 | `rollFeatureDamage()` | Tap rolls box in feature panel view mode | Calls `showRollsOnly()` with feature's `rolls` array |
 | `rollFromFeaturePanel(mode)` | Tap attack roll card in feature panel view mode | Rolls d20 + computed feature attack bonus; shows all roll results in secondary |
-| `deleteFeatureFromPanel()` | Tap Delete in feature panel edit mode | `confirm()` dialog → splices `state.classFeatures`; calls `buildFeatures()` + `saveData()`; dismisses panel |
+| `deleteFeatureFromPanel()` | Tap Delete in feature panel (view or edit mode) | `confirm()` dialog → splices `state.classFeatures`; calls `buildFeatures()` + `saveData()`; dismisses panel |
 | `dismissFeaturePanel()` | Backdrop tap or Cancel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#featurePanel` |
 | `renderHitDice()` | Any hit dice change or level change | Updates dots in #hitDiceDots; counter shows `(max − used)/max` |
 | `toggleHitDie(j)` | Tap hit dice dot | Gold → use from here right; grey → restore that die |
@@ -683,23 +717,23 @@ Death Save Roll button
 
 Weapon attack row
   Tap                → rollAttack(i)               — rolls d20 + bonus + optional damage; opens info panel if no bonus; edit mode if attack is hidden
-  Hold (500 ms)      → openAttackPanel(i, false)   — opens attack info panel (view mode)
-  Tap Edit (in panel)→ switchToAtkEdit()            — switches same modal to edit mode
+  Hold (500 ms)      → openAttackPanel(i, false)   — opens attack info panel (view mode); panel footer: Delete / Cancel / Save
+  Tap Save (view)    → switchToAtkEdit()            — switches same modal to edit mode
 
 Spell row (spell list, combat list, featured spells)
   Tap                → clickSpellItem(e, i)         — rolls spell attack if attackRoll; rolls damage if rollDamage only; opens info panel if no roll configured
-  Hold (500 ms)      → openSpellPanel(i, false)     — opens spell info panel (view mode)
-  Tap Edit (in panel)→ switchToSpellEdit()          — switches same modal to edit mode
+  Hold (500 ms)      → openSpellPanel(i, false)     — opens spell info panel (view mode); panel footer: Delete / Cancel / Save
+  Tap Save (view)    → switchToSpellEdit()          — switches same modal to edit mode
 
 Trait row (Info tab and combat list)
   Tap                → clickTraitItem(e, i)         — rolls damage if rollDamage; opens info panel otherwise
-  Hold (500 ms)      → openTraitPanel(i, false)     — opens trait info panel (view mode)
-  Tap Edit (in panel)→ switchToTraitEdit()          — switches same modal to edit mode
+  Hold (500 ms)      → openTraitPanel(i, false)     — opens trait info panel (view mode); panel footer: Delete / Cancel / Save
+  Tap Save (view)    → switchToTraitEdit()          — switches same modal to edit mode
 
 Feature name area
   Tap                → clickFeatureName(e, i)       — rolls damage if rollDamage; opens info panel otherwise
-  Hold (500 ms)      → openFeaturePanel(i, false)   — opens feature info panel (view mode)
-  Tap Edit (in panel)→ switchToFeatureEdit()        — switches same modal to edit mode
+  Hold (500 ms)      → openFeaturePanel(i, false)   — opens feature info panel (view mode); panel footer: Delete / Cancel / Save
+  Tap Save (view)    → switchToFeatureEdit()        — switches same modal to edit mode
 
 Condition chip
   Tap                → toggleCondition(name, el)    — instantly toggles the condition on/off (conditions are checkboxes, not rolls)
@@ -709,8 +743,11 @@ Condition chip
 
 Attack panel states:
 ```
-View mode  (default) — shows name, action type, attack roll card (tappable), save DC box, rolls-only box, description, Edit button (top-right)
-Edit mode            — shows editable form for all fields (name, attack roll selector with proficiency/flat bonus or manual entry, rolls rows, action type, hidden checkbox, saving throw, description)
+View mode  (default) — shows name, action type, attack roll card (tappable), save DC box, rolls-only box, description,
+                       then Delete / Cancel / Save button row at the bottom
+Edit mode            — shows editable form for all fields (name, attack roll selector with proficiency/flat bonus or manual
+                       entry, rolls rows, action type, hidden checkbox, saving throw, description),
+                       then Delete / Cancel / Save button row at the bottom
 ```
 
 ---
