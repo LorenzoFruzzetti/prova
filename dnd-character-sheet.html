@@ -675,6 +675,10 @@
     padding: 7px 0;
     border-bottom: 1px solid rgba(var(--border-rgb),0.3);
     cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
   }
 
   .check-item:active { background: rgba(var(--accent-rgb),0.08); }
@@ -1257,6 +1261,7 @@
     max-height: 82vh;
     overflow-y: auto;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+    -webkit-touch-callout: none;
   }
   #featurePanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
   #featurePanel.edit-mode { border-color: var(--spell); }
@@ -1291,6 +1296,10 @@
     cursor: pointer;
     box-shadow: inset var(--roll-border) 0 0 0 rgba(var(--accent-rgb),0.4);
     background: rgba(var(--accent-rgb),0.02);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
   }
   .attack-row:last-child { border-bottom: none; margin-bottom: 0; }
   .attack-row:active .attack-name { color: var(--gold-light); }
@@ -1478,6 +1487,7 @@
     max-height: 82vh;
     overflow-y: auto;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+    -webkit-touch-callout: none;
   }
   #spellPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
   #spellPanel.edit-mode { border-color: var(--spell); }
@@ -1511,6 +1521,9 @@
     max-height: 82vh;
     overflow-y: auto;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
   }
   #skillPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
 
@@ -1762,6 +1775,7 @@
     max-height: 82vh;
     overflow-y: auto;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+    -webkit-touch-callout: none;
   }
   #traitPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
   #traitPanel.edit-mode { border-color: var(--spell); }
@@ -2089,6 +2103,10 @@
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
     color: var(--text-muted);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
   }
 
   .condition-tag.active {
@@ -2130,6 +2148,9 @@
     max-height: 82vh;
     overflow-y: auto;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
   }
   #conditionPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
 
@@ -2383,6 +2404,7 @@
     pointer-events: none; width: min(92vw, 500px);
     max-height: 82vh; overflow-y: auto;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+    -webkit-touch-callout: none;
   }
   #attackPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
   #attackPanel.edit-mode { border-color: var(--spell); }
