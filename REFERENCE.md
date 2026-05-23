@@ -35,6 +35,8 @@ dnd-character-sheet.html
 │   ├── #attackPanel  Fixed centered overlay showing attack details (view mode) or editable form (edit mode)
 │   ├── #traitBackdrop  Fixed backdrop for the trait view/edit panel
 │   ├── #traitPanel  Fixed centered overlay showing a feature/trait (view mode) or editable form (edit mode)
+│   ├── #aiImportBackdrop  Fixed backdrop for the AI/SRD import modal
+│   ├── #aiImportPanel  Fixed centered modal for importing spells, features, and traits; two modes — ✨ AI (prompt-copy + paste-back) and 📖 SRD (live search against dnd5eapi.co); three type tabs: Spells / Features / Traits
 │   └── #toast       Floating feedback message (non-roll events only)
 └── <script>         All application logic (no external libraries)
 ```
@@ -231,6 +233,22 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.portrait-actions` | Flex row holding the Upload and Remove buttons below `.portrait-box` |
 | `.portrait-btn` | Muted bordered button used for portrait upload/remove actions |
 | `.portrait-remove-btn` | Modifier on `.portrait-btn`; red tint; hidden until a portrait is set |
+| `.ai-mode-row` | Flex row containing the AI / SRD mode toggle buttons at the top of `#aiImportPanel` |
+| `.ai-mode-btn` | One of the two mode-toggle pill buttons (✨ AI or 📖 SRD); `.active` styles it gold |
+| `.ai-type-toggle` | Flex row containing the three type-tab buttons (Spells / Features / Traits) inside `#aiImportPanel` |
+| `.ai-type-btn` | One type-tab button; `.active` styles it in spell blue |
+| `.ai-step` | Labeled step block (step label + input) in the AI mode content area |
+| `.ai-step-label` | Tiny gold uppercase label above each step (e.g. "Step 1 — Describe what to add") |
+| `.ai-prompt-box` | Shared text area / input style used in `#aiImportPanel` for both the "what to add" field and the paste-back area; focus turns border spell-blue |
+| `.ai-copy-notice` | Small feedback line below the "Copy" or "Add Selected" button; spell-light colour |
+| `.ai-select` | Full-width `<select>` styled to match the panel's dark palette; used for race / class pickers in SRD mode |
+| `.srd-level-row` | Flex row containing the "Level min – max" number inputs in the class-features SRD control block |
+| `.srd-lv-input` | Small 44 px number input for level bounds in the SRD class-features selector |
+| `.srd-results-box` | Scrollable (max 200 px) container for the SRD search results / trait / feature list |
+| `.srd-result-item` | One checkable row in `#srdResults`; flex row with a checkbox and a name span |
+| `.srd-lv-group` | Level-group header row in the class-features results (e.g. "Level 3"); gold uppercase, subtle background |
+| `.srd-hint` | Centred muted placeholder text shown when `#srdResults` is idle or has no matches |
+| `.srd-loading` | Same style as `.srd-hint`; used while an SRD fetch is in progress |
 
 ---
 
@@ -336,6 +354,8 @@ featurePanelEditIdx        // index into state.classFeatures currently being edi
 fontSizeIdx         // index into FONT_SIZES; persisted separately in localStorage as 'dnd5e_fontsize'
 leftyMode           // boolean; persisted separately in localStorage as 'dnd5e_lefty'
 currentTheme        // string — active theme key; persisted in localStorage as 'dnd5e_theme'
+srdModalMode        // 'ai' | 'srd' — which tab is active in #aiImportPanel
+srdSelected         // Set<string> — SRD item indices checked in the current SRD results list
 ```
 
 All other values (character name, HP max, AC, etc.) live in HTML form inputs and are read directly via `document.getElementById`.
@@ -628,6 +648,47 @@ Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled
 | `loadTheme()` | Reads `dnd5e_theme` from `localStorage` (defaults to `'gold'`); calls `applyTheme()` |
 | `applyTheme(theme)` | Sets `data-theme` attribute on `<html>`; marks the matching `.theme-swatch` as `.active` |
 | `setTheme(theme)` | Calls `applyTheme()`; persists choice to `localStorage` key `dnd5e_theme` |
+
+---
+
+### AI / SRD Import functions
+
+The **⇓ Import** button in the sticky header bar (between Undo and ⚙ Settings) opens `#aiImportPanel`. The modal has two modes selected by the top toggle.
+
+#### AI mode
+Generates a copy-ready LLM prompt containing the exact JSON schema and the names of items already on the sheet; the user pastes the LLM's JSON array response into Step 2 and clicks Import.
+
+| Function | Description |
+|---|---|
+| `openAIImport(type)` | Opens `#aiImportPanel` in AI mode, pre-selects the given type tab (`'spells'`, `'features'`, or `'traits'`), resets both text areas and the SRD selection set |
+| `dismissAIImport()` | Hides `#aiImportPanel` and its backdrop |
+| `setModalMode(mode)` | Switches between `'ai'` and `'srd'` content areas; calls `_srdInitForType()` when switching to SRD |
+| `setAIImportType(type)` | Updates active state on type-tab buttons; calls `_srdInitForType()` if currently in SRD mode |
+| `generateAndCopyAIPrompt()` | Builds the prompt for the active type via `_buildSpellPrompt`, `_buildFeaturePrompt`, or `_buildTraitPrompt`; writes to clipboard via `navigator.clipboard` with `execCommand` fallback |
+| `_buildSpellPrompt(what)` | Returns a prompt string with the spell JSON schema and the list of already-present spell names |
+| `_buildFeaturePrompt(what)` | Returns a prompt string with the classFeature JSON schema and existing feature names |
+| `_buildTraitPrompt(what)` | Returns a prompt string with the infoTrait JSON schema and existing trait names |
+| `importAIResponse()` | Parses the pasted text (strips markdown fences); merges into `state.spells`, `state.classFeatures`, or `state.infoTraits` depending on active type; deduplicates by lowercase name; rebuilds the relevant list |
+
+#### SRD mode (requires internet)
+Live search against the [D&D 5e SRD API](https://www.dnd5eapi.co) (2014 SRD, CC-BY). Results are cached in `localStorage` under keys prefixed `srd_v1_`. Each fetch goes to `https://www.dnd5eapi.co/api/<path>`.
+
+| Function | Description |
+|---|---|
+| `_srdGet(path)` | `fetch()` wrapper with `localStorage` caching; throws on non-2xx responses |
+| `_srdShowCtrls(type)` | Shows the correct control block (spell search / race select / class select) for the active type; clears `srdSelected` |
+| `_srdInitForType(type)` | Async; shows the right control, pre-fetches or populates dropdown, sets idle hint text |
+| `_srdSpellSearch()` | Filters the cached `/spells` index by the search input value; renders up to 40 matches via `_srdRenderList()` |
+| `_srdLoadRace()` | Fetches `/races/{index}`; renders the `race.traits` array via `_srdRenderList()` |
+| `_srdLoadClass()` | Fetches `/classes/{index}/levels`; filters by level range; renders features grouped by level with `.srd-lv-group` headers |
+| `_srdRenderList(items)` | Renders an array of `{index, name}` objects as checkable `.srd-result-item` rows into `#srdResults`; binds change listeners via `_srdBindCbs()` |
+| `_srdBindCbs()` | Attaches `change` listeners to all `.srd-cb` checkboxes; adds/removes indices from `srdSelected` |
+| `addSelectedSRD()` | Async; iterates `srdSelected`, fetches full data per item, maps to sheet format, deduplicates, merges into the correct state array, rebuilds UI; shows progress counter on the button |
+| `_mapSrdSpell(sp)` | Maps a `dnd5eapi.co` spell object to the sheet's spell schema; infers `combatActionType` from `casting_time`; truncates descriptions longer than 600 characters |
+| `_mapSrdTrait(tr)` | Maps a trait object (from `/traits/{index}`) to the `infoTraits` schema; defaults `showInCombat: false` |
+| `_mapSrdFeature(feat)` | Maps a feature object (from `/features/{index}`) to the `classFeatures` schema; defaults `max: 1`, `recharge: 'Long Rest'` — edit after import if different |
+
+> **2024 SRD note:** `dnd5eapi.co` covers the 2014 SRD. For 2024 SRD content (released under CC-BY 4.0 as SRD 5.2), use the AI Import workflow: the prompt templates are edition-agnostic and work with any LLM that knows the 2024 rules.
 
 ---
 

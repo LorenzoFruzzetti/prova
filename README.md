@@ -14,7 +14,9 @@ xdg-open dnd-character-sheet.html   # Linux
 start dnd-character-sheet.html       # Windows
 ```
 
-Or drag `dnd-character-sheet.html` into any browser window. Everything runs locally; no internet connection is needed.
+Or drag `dnd-character-sheet.html` into any browser window. Everything runs locally; no internet connection is needed for core functionality.
+
+> **SRD Browse** (the 📖 SRD tab in the Import modal) fetches live data from [dnd5eapi.co](https://www.dnd5eapi.co) and requires an internet connection. Results are cached in `localStorage` after the first fetch so subsequent searches work offline.
 
 **From a local server (optional, e.g. for mobile testing on the same network)**
 
@@ -35,6 +37,7 @@ python3 -m http.server 8080
 | **Combat** | HP tracker (tap to edit, hold +/− to fast-change), AC, Speed, Initiative, spell attack, death saves, hit dice |
 | **Spells** | Spell slot tracking (1st–9th), full spell library with Concentration / Ritual / attack roll support |
 | **Features** | Class features with dot trackers, recharge types, and custom step sizes |
+| **Import** | ⇓ Import button in the header bar — two modes: ✨ AI (generate a prompt, paste back the JSON) and 📖 SRD (search spells, racial traits, and class features directly from the 2014 SRD via [dnd5eapi.co](https://www.dnd5eapi.co); internet required, results cached locally) |
 | **Gear** | Currency (CP/SP/EP/GP/PP), equipment, proficiencies, languages, notes |
 | **Rolls** | Session roll history; swipe left/right to change tabs |
 | **Long Rest** | Restores HP, spell slots, hit dice, and all feature uses in one tap |
@@ -45,7 +48,7 @@ python3 -m http.server 8080
 
 | Setting | Description |
 |---|---|
-| **Save / Load** | Export character as a JSON file or import one |
+| **Save / Load** | Export character as a JSON file or import one; the AI Import modal also accepts a JSON array of spells, features, or traits pasted directly |
 | **Font Size** | 6 zoom levels (75 % – 150 %) |
 | **Lefty Mode** | Moves +/− tracker buttons to the left side |
 | **Theme** | 5 colour themes — Gold (default), Dark, Red, Forest, Ocean |
