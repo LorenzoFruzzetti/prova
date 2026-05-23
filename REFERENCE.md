@@ -37,6 +37,7 @@ dnd-character-sheet.html
 │   ├── #traitPanel  Fixed centered overlay showing a feature/trait (view mode) or editable form (edit mode)
 │   ├── #aiImportBackdrop  Fixed backdrop for the AI/SRD import modal
 │   ├── #aiImportPanel  Fixed centered modal for importing spells, features, and traits; two modes — ✨ AI (prompt-copy + paste-back) and 📖 SRD (live search against dnd5eapi.co); three type tabs: Spells / Features / Traits
+│   ├── #charGridOverlay  Fixed full-screen overlay for the character roster grid panel; open via the 🎭 header button; tap backdrop to dismiss
 │   └── #toast       Floating feedback message (non-roll events only)
 └── <script>         All application logic (no external libraries)
 ```
@@ -226,6 +227,22 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.theme-swatch` | 30 px circular swatch button; `.active` adds a white ring and 1.15× scale; `data-theme` attribute matches a key in `THEMES` |
 | `.tracker-row` | Flex row wrapping hit-dice dots + mini-tracker (replaces inline flex style) |
 | `body.lefty` | Applied when lefty mode is on; swaps CSS `order` of `.feature-left-col` and `.feature-right-col` in feature rows, and of dots and mini-tracker in spell-slot and hit-dice tracker rows |
+| `.char-grid-overlay` | Fixed full-screen overlay (dark + blur backdrop) for the character roster panel; `.open` switches `display` to `flex` and centers `.char-grid-panel` |
+| `.char-grid-panel` | Centered modal card inside `.char-grid-overlay`; max 560 px wide, max 88 vh tall; flex column: header / scrollable grid / footer |
+| `.char-grid-header` | Title row at the top of `.char-grid-panel`; contains `.char-grid-title` and `.char-grid-close` |
+| `.char-grid-title` | Gold uppercase "Characters" label inside `.char-grid-header` |
+| `.char-grid-close` | ✕ dismiss button in `.char-grid-header`; calls `closeCharMenu()` |
+| `.char-grid-scroll` | Scrollable flex-growing area inside `.char-grid-panel`; wraps `.char-grid` |
+| `.char-grid` | CSS grid (`auto-fill`, min 130 px per column) containing `.char-card` elements |
+| `.char-card` | One character card: circular portrait, name, race·class meta; clicking calls `switchCharacter(id)` |
+| `.char-card.active` | Active character variant: gold border, subtle glow, gold name text |
+| `.char-card-portrait` | 72 × 72 px circular image area; shows portrait `<img>` or 👤 placeholder emoji |
+| `.char-card-info` | Text block below portrait inside `.char-card`; contains `.char-card-name` and `.char-card-meta` |
+| `.char-card-name` | Bold character name (truncated with ellipsis); gold when `.active` |
+| `.char-card-meta` | Small muted line below name: race · class (e.g. "Elf · Wizard"), or "—" when both are blank |
+| `.char-card-del` | Absolute-positioned ✕ delete button (top-right of card); hidden until the card is hovered |
+| `.char-grid-footer` | Bottom strip of `.char-grid-panel`; holds the "+ New Character" button |
+| `.char-menu-new-btn` | Full-width dashed "+ New Character" button in `.char-grid-footer`; calls `newCharacter()` |
 | `.portrait-section` | Centered column widget at the top of the Character Info section; wraps portrait box + action buttons |
 | `.portrait-box` | 120×120 px bordered container for the character portrait; tapping it triggers the hidden file input |
 | `.portrait-img` | `<img>` element inside `.portrait-box`; `object-fit:cover`; hidden when no portrait is set |
@@ -332,6 +349,8 @@ let state = {
 
 Session-only (not persisted to localStorage):
 ```js
+rosterActiveId      // string — id of the currently loaded character (written to roster.activeId on save)
+charMenuOpen        // boolean — true while the character grid overlay is visible
 undoStack           // array of undo action objects (max 50)
 rollLog             // array of roll history entries (max 50)
 longPressTimer      // setTimeout handle for attack long-press
@@ -616,14 +635,38 @@ Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled
 |---|---|
 | `collectFormData()` | Reads all 28 form input values by element ID into a plain object |
 | `buildPayload()` | Returns `{ form, state }` — the canonical serialisation format; `state` includes `spellSlots`, `attacks`, `conditions`, `classFeatures`, `infoTraits`, `hitDiceUsed`, `portrait`, and all ability/proficiency data |
-| `saveData()` | Writes `buildPayload()` to `localStorage` key `dnd5e_sheet` |
-| `loadData()` | Reads from `localStorage`, populates form fields and `state` (no UI rebuild) |
+| `saveData()` | Serialises the active character via `buildPayload()` and writes it into the roster entry in `localStorage` (`dnd5e_roster`) |
+| `loadData()` | Reads the roster from `localStorage`; migrates a legacy `dnd5e_sheet` entry if no roster exists; restores form fields and `state` for the active character (no UI rebuild) |
 | `exportToJSON()` | Downloads `buildPayload()` as `<charname>.json` via a temporary `<a>` element |
 | `importFromJSON(input)` | Reads a `.json` file with `FileReader`, calls `applyPayload()` + `saveData()` |
 | `applyPayload(payload)` | Applies a payload object: restores form fields, updates `state`, rebuilds all dynamic UI |
 | `applyPortrait()` | Shows or hides `#portraitImg` / `#portraitPlaceholder` / `#portraitRemoveBtn` based on `state.portrait` |
 | `handlePortraitUpload(input)` | `FileReader` callback; pushes undo, stores base64 data URL in `state.portrait`, calls `applyPortrait()` + `saveData()` |
 | `removePortrait()` | Pushes undo, clears `state.portrait`, calls `applyPortrait()` + `saveData()` |
+
+---
+
+### Character roster functions
+
+The roster is stored in `localStorage` under the key `dnd5e_roster` as `{ chars: { [id]: { name, payload } }, activeId }`. `payload` is the full `buildPayload()` result, which includes `state.portrait`, `form.charRace`, and `form.charClass` — the three fields displayed in character grid cards.
+
+The session variable `rosterActiveId` (string) holds the currently loaded character's id.
+
+| Function | Description |
+|---|---|
+| `genCharId()` | Returns a short unique id (`Date.now().toString(36)` + random suffix) |
+| `loadRosterData()` | Parses and returns the roster from `localStorage`; returns `null` on missing or invalid data |
+| `persistRoster(roster)` | JSON-serialises and writes the roster object to `localStorage` |
+| `migrateOldSheet()` | One-time migration: if `dnd5e_roster` is absent but `dnd5e_sheet` exists, wraps the old payload into a new single-character roster |
+| `clearSheet()` | Resets all form inputs and `state` to default values; clears the undo stack |
+| `_rebuildAll()` | Calls every build/render function and `recalcAll()` + `updateHeader()` + `updateHP()`; used after switching or creating a character |
+| `switchCharacter(id)` | Saves current character, loads the target roster entry, calls `_rebuildAll()`; no-op if `id` is already active |
+| `newCharacter()` | Saves current character, creates a blank roster entry, activates it, calls `_rebuildAll()` |
+| `deleteCharacter(id)` | Removes the entry from the roster; if it was active, switches to the first remaining character; refuses if only one character exists |
+| `toggleCharMenu()` | Opens or closes the character grid overlay (`#charGridOverlay`) and calls `renderCharMenu()` on open |
+| `closeCharMenu()` | Removes `.open` from `#charGridOverlay` |
+| `handleCharGridOverlayClick(e)` | Closes the overlay when the user clicks the dark backdrop (i.e. the overlay element itself, not the panel) |
+| `renderCharMenu()` | Clears and rebuilds `#charMenuList` (the `.char-grid` inside the overlay) with one `.char-card` per roster entry; reads `payload.state.portrait`, `payload.form.charRace`, and `payload.form.charClass` from each stored payload to populate the card |
 
 ---
 

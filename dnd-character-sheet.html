@@ -218,77 +218,168 @@
   /* ── Character roster menu ── */
   .char-roster-wrap { position: relative; }
 
-  .char-menu-dropdown {
+  /* ── Character Grid Panel (full-screen modal) ── */
+  .char-grid-overlay {
     display: none;
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    min-width: 210px;
-    background: var(--surface);
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  .char-grid-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+
+  .char-grid-panel {
+    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
     border: 1px solid var(--border);
-    border-radius: 8px;
-    z-index: 300;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+    width: min(96vw, 560px);
+    max-height: 88vh;
+    margin-top: 5vh;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
   }
-  .char-menu-dropdown.open { display: block; }
 
-  .char-menu-list { max-height: 220px; overflow-y: auto; }
-
-  .char-menu-item {
+  .char-grid-header {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 9px 10px;
+    justify-content: space-between;
+    padding: 14px 16px 10px;
     border-bottom: 1px solid rgba(var(--border-rgb),0.4);
-    transition: background 0.1s;
+    flex-shrink: 0;
   }
-  .char-menu-item:last-child { border-bottom: none; }
-  .char-menu-item:hover { background: rgba(var(--accent-rgb),0.08); }
-  .char-menu-item.active { background: rgba(var(--accent-rgb),0.13); }
-  .char-menu-item.active .char-menu-name { color: var(--gold); font-weight: bold; }
-
-  .char-menu-name {
-    flex: 1;
-    font-size: 13px;
-    color: var(--text);
-    cursor: pointer;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
+  .char-grid-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--gold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
-
-  .char-menu-del {
+  .char-grid-close {
     background: none;
     border: none;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 18px;
     cursor: pointer;
-    padding: 2px 5px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    line-height: 1;
+    transition: color 0.15s, background 0.15s;
+  }
+  .char-grid-close:hover { color: var(--text); background: rgba(255,255,255,0.07); }
+
+  .char-grid-scroll {
+    overflow-y: auto;
+    flex: 1;
+    padding: 14px;
+  }
+
+  .char-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+  }
+
+  .char-card {
+    position: relative;
+    background: rgba(var(--accent-rgb),0.06);
+    border: 1.5px solid rgba(var(--border-rgb),0.5);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 8px 10px;
+    gap: 8px;
+  }
+  .char-card:hover { background: rgba(var(--accent-rgb),0.12); border-color: rgba(var(--accent-rgb),0.6); }
+  .char-card.active {
+    border-color: var(--gold);
+    background: rgba(var(--accent-rgb),0.16);
+    box-shadow: 0 0 12px rgba(var(--accent-rgb),0.25);
+  }
+
+  .char-card-portrait {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 2px solid rgba(var(--border-rgb),0.5);
+    overflow: hidden;
+    flex-shrink: 0;
+    background: rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+  }
+  .char-card.active .char-card-portrait { border-color: var(--gold); }
+  .char-card-portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .char-card-info {
+    text-align: center;
+    width: 100%;
+    min-width: 0;
+  }
+  .char-card-name {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 2px;
+  }
+  .char-card.active .char-card-name { color: var(--gold); }
+  .char-card-meta {
+    font-size: 10px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .char-card-del {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px 4px;
     border-radius: 4px;
     line-height: 1;
-    flex-shrink: 0;
-    opacity: 0.5;
+    opacity: 0;
     transition: color 0.15s, opacity 0.15s, background 0.15s;
   }
-  .char-menu-del:hover { color: var(--red-light); opacity: 1; background: rgba(200,60,60,0.12); }
+  .char-card:hover .char-card-del { opacity: 0.6; }
+  .char-card-del:hover { color: var(--red-light) !important; opacity: 1 !important; background: rgba(200,60,60,0.15); }
 
-  .char-menu-footer {
-    padding: 8px 10px;
-    background: rgba(var(--accent-rgb),0.04);
+  .char-grid-footer {
+    padding: 10px 14px;
     border-top: 1px solid rgba(var(--border-rgb),0.4);
+    flex-shrink: 0;
   }
-
   .char-menu-new-btn {
     width: 100%;
     background: rgba(var(--accent-rgb),0.08);
     border: 1px dashed rgba(var(--accent-rgb),0.4);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--text-muted);
-    font-size: 11px;
+    font-size: 12px;
     font-family: sans-serif;
-    padding: 6px 8px;
+    padding: 8px;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
   }
@@ -2525,12 +2616,6 @@
     <div class="header-actions">
       <div class="char-roster-wrap">
         <button class="header-btn" onclick="toggleCharMenu()">🎭 ▾</button>
-        <div class="char-menu-dropdown" id="charMenuDropdown">
-          <div class="char-menu-list" id="charMenuList"></div>
-          <div class="char-menu-footer">
-            <button class="char-menu-new-btn" onclick="newCharacter()">+ New Character</button>
-          </div>
-        </div>
       </div>
       <button class="header-btn" id="undoBtn" onclick="undo()" disabled>↩ Undo</button>
       <button class="header-btn" onclick="openAIImport('spells')">&#8659; Import</button>
@@ -5899,7 +5984,7 @@ function updateHeader() {
   document.getElementById('metaClass').textContent  = cls   || '—';
   document.getElementById('metaRace').textContent   = race  || '—';
   document.getElementById('metaLevel').textContent  = `Lv ${lvl}`;
-  const activeLabel = document.querySelector('#charMenuList .char-menu-item.active .char-menu-name');
+  const activeLabel = document.querySelector('#charMenuList .char-card.active .char-card-name');
   if (activeLabel) activeLabel.textContent = name;
 }
 
@@ -6265,37 +6350,69 @@ let charMenuOpen = false;
 
 function toggleCharMenu() {
   charMenuOpen = !charMenuOpen;
-  const drop = document.getElementById('charMenuDropdown');
-  if (drop) drop.classList.toggle('open', charMenuOpen);
+  const overlay = document.getElementById('charGridOverlay');
+  if (overlay) overlay.classList.toggle('open', charMenuOpen);
   if (charMenuOpen) renderCharMenu();
 }
 
 function closeCharMenu() {
   charMenuOpen = false;
-  document.getElementById('charMenuDropdown')?.classList.remove('open');
+  document.getElementById('charGridOverlay')?.classList.remove('open');
+}
+
+function handleCharGridOverlayClick(e) {
+  if (e.target === document.getElementById('charGridOverlay')) closeCharMenu();
 }
 
 function renderCharMenu() {
   const roster = loadRosterData();
-  const list = document.getElementById('charMenuList');
-  if (!list || !roster) return;
-  list.innerHTML = '';
+  const grid = document.getElementById('charMenuList');
+  if (!grid || !roster) return;
+  grid.innerHTML = '';
   Object.entries(roster.chars).forEach(([id, char]) => {
     const isActive = id === rosterActiveId;
-    const item = document.createElement('div');
-    item.className = 'char-menu-item' + (isActive ? ' active' : '');
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'char-menu-name';
-    nameSpan.textContent = char.name || 'Unnamed';
-    nameSpan.onclick = () => switchCharacter(id);
+    const payload = char.payload;
+    const portrait = payload?.state?.portrait || null;
+    const race = payload?.form?.charRace?.trim() || '';
+    const cls = payload?.form?.charClass?.trim() || '';
+    const metaParts = [race, cls].filter(Boolean);
+
+    const card = document.createElement('div');
+    card.className = 'char-card' + (isActive ? ' active' : '');
+    card.onclick = () => switchCharacter(id);
+
+    const portraitEl = document.createElement('div');
+    portraitEl.className = 'char-card-portrait';
+    if (portrait) {
+      const img = document.createElement('img');
+      img.src = portrait;
+      img.alt = char.name || 'Character';
+      portraitEl.appendChild(img);
+    } else {
+      portraitEl.textContent = '👤';
+    }
+
+    const info = document.createElement('div');
+    info.className = 'char-card-info';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'char-card-name';
+    nameEl.textContent = char.name || 'Unnamed';
+    const metaEl = document.createElement('div');
+    metaEl.className = 'char-card-meta';
+    metaEl.textContent = metaParts.join(' · ') || '—';
+    info.appendChild(nameEl);
+    info.appendChild(metaEl);
+
     const delBtn = document.createElement('button');
-    delBtn.className = 'char-menu-del';
+    delBtn.className = 'char-card-del';
     delBtn.textContent = '✕';
     delBtn.title = 'Delete';
     delBtn.onclick = e => { e.stopPropagation(); deleteCharacter(id); };
-    item.appendChild(nameSpan);
-    item.appendChild(delBtn);
-    list.appendChild(item);
+
+    card.appendChild(portraitEl);
+    card.appendChild(info);
+    card.appendChild(delBtn);
+    grid.appendChild(card);
   });
 }
 
@@ -6833,10 +6950,23 @@ window.addEventListener('DOMContentLoaded', () => {
   renderAttacks();
   document.getElementById('inspirationBtn').classList.toggle('active', state.inspiration);
   renderCharMenu();
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.char-roster-wrap')) closeCharMenu();
-  });
 });
 </script>
+
+<!-- ════════ CHARACTER GRID PANEL ════════ -->
+<div class="char-grid-overlay" id="charGridOverlay" onclick="handleCharGridOverlayClick(event)">
+  <div class="char-grid-panel">
+    <div class="char-grid-header">
+      <span class="char-grid-title">Characters</span>
+      <button class="char-grid-close" onclick="closeCharMenu()">✕</button>
+    </div>
+    <div class="char-grid-scroll">
+      <div class="char-grid" id="charMenuList"></div>
+    </div>
+    <div class="char-grid-footer">
+      <button class="char-menu-new-btn" onclick="newCharacter()">+ New Character</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
