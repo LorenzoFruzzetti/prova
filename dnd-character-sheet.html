@@ -1975,6 +1975,11 @@
   }
   .dice-dot:active { transform: scale(0.82); background: var(--gold-light); }
 
+  #diceRollerBody .feature-row {
+    padding: 10px 0;
+    margin-bottom: 4px;
+  }
+
   /* ── Misc ── */
   .flex-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 
@@ -5249,10 +5254,14 @@ function buildDiceRoller() {
           </div>
           <div class="mini-tracker">
             <button class="mini-btn minus"
-                    onclick="adjustDiceCount(${i}, -1)">−</button>
+                    onpointerdown="startDiceHold(${i}, -1)"
+                    onpointerup="stopDiceHold()"
+                    onpointercancel="stopDiceHold()">−</button>
             <span class="mini-val" id="dice-val-${i}">${d.count}</span>
             <button class="mini-btn plus"
-                    onclick="adjustDiceCount(${i}, 1)">+</button>
+                    onpointerdown="startDiceHold(${i}, 1)"
+                    onpointerup="stopDiceHold()"
+                    onpointercancel="stopDiceHold()">+</button>
           </div>
         </div>
       </div>
@@ -5285,6 +5294,23 @@ function adjustDiceCount(i, delta) {
   dice[i].count = Math.max(1, Math.min(10, dice[i].count + delta));
   buildDiceRoller();
   saveData();
+}
+
+let diceHoldTimer = null;
+let diceHoldInterval = null;
+
+function startDiceHold(i, delta) {
+  adjustDiceCount(i, delta);
+  diceHoldTimer = setTimeout(() => {
+    diceHoldInterval = setInterval(() => adjustDiceCount(i, delta), 80);
+  }, 400);
+}
+
+function stopDiceHold() {
+  clearTimeout(diceHoldTimer);
+  clearInterval(diceHoldInterval);
+  diceHoldTimer = null;
+  diceHoldInterval = null;
 }
 
 function removeCustomDie(i) {
