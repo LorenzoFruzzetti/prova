@@ -653,7 +653,7 @@ Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled
 
 ### AI / SRD Import functions
 
-The ✨ AI button in the Spells, Features, and Traits section headers opens `#aiImportPanel`. The modal has two modes selected by the top toggle.
+The **⇓ Import** button in the sticky header bar (between Undo and ⚙ Settings) opens `#aiImportPanel`. The modal has two modes selected by the top toggle.
 
 #### AI mode
 Generates a copy-ready LLM prompt containing the exact JSON schema and the names of items already on the sheet; the user pastes the LLM's JSON array response into Step 2 and clicks Import.
