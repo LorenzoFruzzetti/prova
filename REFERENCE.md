@@ -70,7 +70,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **Turn block** — The section titled "Turn" inside `#panel-combat`. Renders `state.attacks` alongside spells, info traits, and class features that have `showInCombat: true`, grouped into three always-visible sub-sections: **Actions**, **Bonus Actions**, and **Reactions**. An **Other** sub-section appears only when items use `actionType: 'other'`. The section title is holdable (500 ms) and opens an info panel explaining the anatomy of a D&D turn. Previously called "Attacks" / "combat block" in older documentation; "Turn block" is now the correct term.
 
-**Default Actions** — A collapsible list inside the Turn block (collapsed by default), showing the standard D&D 5e actions available to any character (Dash, Dodge, Disengage, Grapple, etc.). Tapping any row opens a generic info panel with a description. Populated from the `DEFAULT_ACTIONS` constant.
+**Default Actions** — A collapsible list inside the Turn block (collapsed by default), showing the standard D&D 5e actions available to any character (Dash, Dodge, Disengage, Grapple, etc.). Each row follows the standard tap/hold model: tap opens a generic info panel immediately; hold (500 ms) shows `.holding` feedback then opens the same panel. Populated from the `DEFAULT_ACTIONS` constant.
 
 **Combat stat pills** — The six tiles in the Combat Stats section of the Combat tab: AC, Speed, Initiative, Hit Die, Spell Atk, Spell DC. Each is a `.stat-pill` element. Rollable pills (Initiative, Spell Atk) respond to short-tap with a roll; all pills respond to hold (500 ms) with a generic info panel. Hit Die is a separate element (`.hit-die-roll`) that rolls on tap and opens an info panel on hold.
 
@@ -834,7 +834,10 @@ DOMContentLoaded
 | `openTurnInfoPanel()` | Called on hold of "Turn" title | Opens info panel describing the parts of a turn (movement, action, bonus action, reaction, free interaction) |
 | `toggleDefaultActions()` | Tap "Default Actions" collapsible header | Toggles `#defaultActionsList` visibility; rotates chevron; calls `buildDefaultActions()` on first open |
 | `buildDefaultActions()` | Fills `#defaultActionsList` with rows from `DEFAULT_ACTIONS` | `DEFAULT_ACTIONS` constant |
-| `openDefaultActionPanel(key)` | Tap on a default action row | Opens info panel with name, type badge, and description for the selected default action |
+| `startDefaultActionPress(e, key)` | `pointerdown` on a default action row | Starts 500 ms timer; on fire adds `.holding` to row and calls `openDefaultActionPanel(key)` |
+| `endDefaultActionPress(e, key)` | `pointerup` on a default action row | If timer hadn't fired: calls `openDefaultActionPanel(key)`; always clears timer and removes `.holding` |
+| `cancelDefaultActionPress()` | `pointercancel` on a default action row | Clears timer; removes `.holding` |
+| `openDefaultActionPanel(key)` | Tap or hold on a default action row | Opens info panel with name, type badge, and description for the selected default action |
 | `startFeatureCombatPress(e, i)` | `pointerdown` on a feature row in the combat block | Starts 500 ms timer; on fire opens feature panel (view mode) |
 | `clickFeatureCombatItem(e, i)` | `click` on a feature row in the combat block | Rolls attack (opens panel) or rolls damage if only rolls are set; opens panel if neither |
 | `cancelFeatureCombatPress()` | `pointercancel` on a feature row in the combat block | Clears timer |

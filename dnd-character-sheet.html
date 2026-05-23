@@ -2550,6 +2550,7 @@
   }
   .default-action-row:last-child { border-bottom: none; }
   .default-action-row:active { background: rgba(var(--accent-rgb),0.08); }
+  .default-action-row.holding { background: rgba(var(--accent-rgb),0.14); }
   .default-action-name { font-size: 12px; color: var(--text); }
   .default-action-type {
     font-size: 8px;
@@ -6633,12 +6634,44 @@ function buildDefaultActions() {
   let html = '';
   DEFAULT_ACTIONS.forEach(da => {
     const typeClass = da.type === 'action' ? '' : da.type;
-    html += `<div class="default-action-row" onclick="openDefaultActionPanel('${da.key}')" oncontextmenu="return false">
+    html += `<div class="default-action-row"
+      onpointerdown="startDefaultActionPress(event,'${da.key}')"
+      onpointerup="endDefaultActionPress(event,'${da.key}')"
+      onpointercancel="cancelDefaultActionPress()"
+      oncontextmenu="return false">
       <span class="default-action-name">${escHtml(da.name)}</span>
       <span class="default-action-type ${typeClass}">${typeLabels[da.type]}</span>
     </div>`;
   });
   container.innerHTML = html;
+}
+
+let defaultActionPressTimer = null;
+let defaultActionPressActive = false;
+
+function startDefaultActionPress(e, key) {
+  defaultActionPressActive = false;
+  clearTimeout(defaultActionPressTimer);
+  defaultActionPressTimer = setTimeout(() => {
+    defaultActionPressActive = true;
+    const el = e.target.closest('.default-action-row');
+    if (el) el.classList.add('holding');
+    openDefaultActionPanel(key);
+  }, 500);
+}
+
+function endDefaultActionPress(e, key) {
+  const wasLong = defaultActionPressActive;
+  clearTimeout(defaultActionPressTimer);
+  defaultActionPressActive = false;
+  document.querySelectorAll('.default-action-row.holding').forEach(el => el.classList.remove('holding'));
+  if (!wasLong) openDefaultActionPanel(key);
+}
+
+function cancelDefaultActionPress() {
+  clearTimeout(defaultActionPressTimer);
+  defaultActionPressActive = false;
+  document.querySelectorAll('.default-action-row.holding').forEach(el => el.classList.remove('holding'));
 }
 
 function openDefaultActionPanel(key) {
