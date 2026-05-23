@@ -17,7 +17,7 @@ This section defines the names used in conversations, issues, and pull requests 
 - *View mode* — read-only display of the item's details (name, description, roll boxes) with a Delete / Cancel / Save button row at the bottom.
 - *Edit mode* — editable form with labeled fields and a Delete / Cancel / Save button row.
 
-**View mode button row** — The `<div class="sp-edit-actions">` footer added to each dedicated panel's view section. Contains three buttons: Delete (red, left-aligned, deletes the item immediately with a confirm dialog), Cancel (neutral, dismisses the panel), and Save (blue, opens edit mode for the item). This row replaced the old "Edit" button in the panel header and the "tap to dismiss" hint.
+**View mode button row** — The `<div class="sp-edit-actions">` footer in each dedicated panel's view section. Contains three buttons: Delete (red, left-aligned, deletes the item immediately with a confirm dialog), Cancel (neutral, dismisses the panel), and Edit (green, opens edit mode for the item). This row replaced the old "Edit" button in the panel header and the "tap to dismiss" hint.
 
 **Edit mode button row** — The same `.sp-edit-actions` footer in each panel's edit section. Delete deletes permanently, Cancel discards unsaved edits and dismisses, Save persists changes and dismisses.
 
@@ -105,7 +105,7 @@ dnd-character-sheet.html
 | `--tabbar-bg` | `#120d08` | Tab bar background |
 | `--panel-bg-1` | `#2a1e0e` | Modal panel gradient start (roll result, spell panel, attack panel) |
 | `--panel-bg-2` | `#1a1206` | Modal panel gradient end |
-| `--spell` | `#5baeff` | Spell accent colour (concentration badges, spell panel borders, spell attack bonus) |
+| `--spell` | `#5baeff` (gold theme) | Spell accent colour (concentration badges, spell panel borders, spell attack bonus); each non-gold theme overrides this with its own spell colour |
 | `--spell-light` | `#7ec8ff` | Lighter spell accent (concentration badge chip) |
 | `--spell-rgb` | `91,174,255` | Spell colour as `r,g,b` channels |
 | `--spell-dark` | `#3d8fe0` | Pressed/active state of spell-coloured buttons |
@@ -246,7 +246,7 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.sp-edit-section` | Wrapper for all edit-mode content; hidden by default, shown when `#spellPanel.edit-mode` |
 | `.sp-edit-field` | Labeled field wrapper inside the edit form; label in blue uppercase |
 | `.sp-edit-checkbox-row` | Flex row for Concentration and Ritual checkboxes |
-| `.sp-edit-save-btn` | Blue filled button; in view mode opens the edit form; in edit mode saves changes and dismisses |
+| `.sp-edit-save-btn` | Green filled button (`var(--green)`, theme-invariant); in view mode labeled "Edit" and opens the edit form; in edit mode labeled "Save" and persists changes then dismisses |
 | `.sp-edit-cancel-btn` | Muted button; dismisses the panel without saving (both view and edit mode) |
 | `.sp-edit-delete-btn` | Red-tinted button (left-aligned via `margin-right:auto`); in view mode deletes the item immediately with a confirm dialog; in edit mode same; hidden when `i = -1` (new item, edit mode only) |
 | `.rr-label` | Small uppercase label inside roll result (e.g. "Strength Check") |

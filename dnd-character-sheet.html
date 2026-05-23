@@ -25,10 +25,10 @@
     --tabbar-bg: #120d08;
     --panel-bg-1: #2a1e0e;
     --panel-bg-2: #1a1206;
-    --spell: var(--spell);
-    --spell-light: var(--spell-light);
+    --spell: #5baeff;
+    --spell-light: #7ec8ff;
     --spell-rgb: 91,174,255;
-    --spell-dark: var(--spell-dark);
+    --spell-dark: #3d8fe0;
     --radius: 8px;
     --shadow: 0 2px 8px rgba(0,0,0,0.5);
     --roll-border: 2px;   /* width of the gold border on tappable/rollable elements */
@@ -1789,8 +1789,8 @@
     margin-top: 14px;
   }
   .sp-edit-save-btn {
-    background: var(--spell);
-    color: var(--bg);
+    background: var(--green);
+    color: #fff;
     border: none;
     border-radius: 6px;
     padding: 9px 20px;
@@ -1800,7 +1800,7 @@
     cursor: pointer;
     transition: background 0.15s;
   }
-  .sp-edit-save-btn:active { background: var(--spell-dark); }
+  .sp-edit-save-btn:active { background: #1e9051; }
   .sp-edit-cancel-btn {
     background: none;
     border: 1px solid var(--border);
@@ -3298,7 +3298,7 @@
     <div class="sp-edit-actions">
       <button class="sp-edit-delete-btn" onclick="event.stopPropagation();deleteCurrentSpell()">Delete</button>
       <button class="sp-edit-cancel-btn" onclick="event.stopPropagation();dismissSpellPanel()">Cancel</button>
-      <button class="sp-edit-save-btn" onclick="event.stopPropagation();switchToSpellEdit()">Save</button>
+      <button class="sp-edit-save-btn" onclick="event.stopPropagation();switchToSpellEdit()">Edit</button>
     </div>
   </div>
   <!-- Edit mode -->
@@ -3456,7 +3456,7 @@
     <div class="sp-edit-actions">
       <button class="sp-edit-delete-btn" onclick="event.stopPropagation();deleteCurrentTrait()">Delete</button>
       <button class="sp-edit-cancel-btn" onclick="event.stopPropagation();dismissTraitPanel()">Cancel</button>
-      <button class="sp-edit-save-btn" onclick="event.stopPropagation();switchToTraitEdit()">Save</button>
+      <button class="sp-edit-save-btn" onclick="event.stopPropagation();switchToTraitEdit()">Edit</button>
     </div>
   </div>
   <!-- Edit mode -->
@@ -3554,7 +3554,7 @@
     <div class="sp-edit-actions">
       <button class="sp-edit-delete-btn" onclick="event.stopPropagation();deleteFeatureFromPanel()">Delete</button>
       <button class="sp-edit-cancel-btn" onclick="event.stopPropagation();dismissFeaturePanel()">Cancel</button>
-      <button class="sp-edit-save-btn" onclick="event.stopPropagation();switchToFeatureEdit()">Save</button>
+      <button class="sp-edit-save-btn" onclick="event.stopPropagation();switchToFeatureEdit()">Edit</button>
     </div>
   </div>
   <!-- Edit mode -->
@@ -3722,7 +3722,7 @@
     <div class="sp-edit-actions">
       <button class="sp-edit-delete-btn" onclick="event.stopPropagation();deleteFromAttackPanel()">Delete</button>
       <button class="sp-edit-cancel-btn" onclick="event.stopPropagation();dismissAttackPanel()">Cancel</button>
-      <button class="sp-edit-save-btn" onclick="event.stopPropagation();switchToAtkEdit()">Save</button>
+      <button class="sp-edit-save-btn" onclick="event.stopPropagation();switchToAtkEdit()">Edit</button>
     </div>
   </div>
   <!-- Edit mode -->
