@@ -15,11 +15,11 @@ dnd-character-sheet.html
 │   ├── input#jsonFileInput   Hidden file picker for JSON import
 │   ├── .tab-bar     Eight sticky tab buttons (Info / Stats / Skills / Combat / Spells / Features / Gear / Rolls)
 │   │                Each button carries data-tab="<id>" for programmatic activation
-│   ├── #panel-overview    Tab: character info + features & traits (structured list, tap/hold) + personality + Long Rest button
+│   ├── #panel-overview    Tab: character info + features & traits (structured list, tap = roll or info panel, hold = info panel) + personality + Long Rest button
 │   ├── #panel-abilities   Tab: ability scores + saving throws + passive perception + conditions
 │   ├── #panel-skills      Tab: 18 skills with proficiency/expertise dots
 │   ├── #panel-combat      Tab: HP tracker + combat stats + hit dice tracker + inspiration + death saves + attacks
-│   ├── #panel-spells      Tab: spellcasting ability + spell slots (hidden levels shown as "+ Nth" pills at top; active levels show dot rows) + structured spell list (add/tap/hold)
+│   ├── #panel-spells      Tab: spellcasting ability + spell slots (hidden levels shown as "+ Nth" pills at top; active levels show dot rows) + structured spell list (add; tap = roll or info panel; hold = info panel)
 │   ├── #panel-features    Tab: limited-use class features with dot trackers and +/− controls
 │   ├── #panel-inventory   Tab: currency + equipment + proficiencies + notes
 │   ├── #panel-rolls       Tab: session roll history log with Clear button
@@ -123,12 +123,12 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.spell-slot-add-btn` | Dashed-border pill chip (e.g. `+ 3rd`); clicking calls `expandSpellLevel(i)` to set that level's max to 1 and make it appear |
 | `.slot-dot` | 18 px circle; `.available` = gold left (remaining), `.used` = grey right (expended) |
 | `.spell-level-divider` | Section header dividing spells by level (e.g. "Cantrips", "1st Level") inside `#spellListBody` |
-| `.spell-item` | One spell row in the list; tap to view, hold 500 ms to edit; `.holding` class added during hold |
+| `.spell-item` | One spell row in the list; tap rolls the spell directly (attack or damage) if rollable, otherwise opens info panel; hold 500 ms opens info panel with Edit button; `.holding` class added during hold |
 | `.spell-item-name` | Bold spell name inside a `.spell-item` |
 | `.spell-item-school` | Italic muted school label (right side) inside a `.spell-item` |
 | `.spell-item-tag` | Small badge chip on a spell row; `.sp-tag-conc` = blue "C" (Concentration); `.sp-tag-ritual` = gold "R" (Ritual) |
 | `.spell-empty-msg` | Italic placeholder shown in `#spellListBody` when no spells have been added |
-| `.trait-item` | One Features & Traits row in the Info tab; tap to view, hold 500 ms to edit; `.holding` class added during hold |
+| `.trait-item` | One Features & Traits row in the Info tab; tap rolls damage directly if `rollDamage` is set, otherwise opens info panel; hold 500 ms opens info panel with Edit button; `.holding` class added during hold |
 | `.trait-item-name` | Bold feature/trait name inside a `.trait-item` |
 | `.trait-item-preview` | Truncated first line of the description (muted, small text, `text-overflow:ellipsis`) |
 | `#traitBackdrop` | Fixed full-screen dim layer behind the trait panel; tap to dismiss |
@@ -143,7 +143,7 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.mini-val` | Small `n/max` counter label inside a mini tracker |
 | `.feature-row` | One class feature row: horizontal two-column layout — left column (name + dots) and right column (controls) |
 | `.feature-left-col` | Left flex column inside `.feature-row`; `flex:1`; holds `.feature-name-area` above and `.feature-dots` below |
-| `.feature-name-area` | Clickable area inside `.feature-left-col`; gold left-border tint; tap to view, hold 500 ms to edit; `.holding` class added during hold; shows feature name, tags, and (when `step > 1`) the pts/dot hint |
+| `.feature-name-area` | Clickable area inside `.feature-left-col`; gold left-border tint; tap rolls damage directly if `rollDamage` is set, otherwise opens info panel; hold 500 ms opens info panel with Edit button; `.holding` class added during hold; shows feature name, tags, and (when `step > 1`) the pts/dot hint |
 | `.feature-dots` | Wrapping flex row of `.slot-dot`s inside `.feature-left-col`, below `.feature-name-area` and outside the clickable zone — dots can be tapped independently |
 | `.feature-step-hint` | Tiny italic label inside `.feature-name-area` below the feature name (e.g. "5 pts/dot"); shown only when `step > 1` |
 | `.feature-right-col` | Right controls column inside `.feature-row`; stacks `.feature-ctrl-top`, `.mini-tracker`, and (for featured spells) recharge info vertically; separated from the left column by a subtle border |
@@ -156,13 +156,13 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `#featuredSpellsSection` | Block in the Features tab showing spells with `showInFeatures: true`; hidden when empty |
 | `#featuredSpellsBody` | Container for spell rows inside `#featuredSpellsSection` |
 | `.attack-row` | 4-column grid: name / bonus / damage / manage button; `cursor:pointer`; tap to view/roll |
-| `.attack-row.spell-atk` | Spell variant of `.attack-row`; blue left-border tint; tap opens the spell panel instead of rolling |
+| `.attack-row.spell-atk` | Spell variant of `.attack-row`; blue left-border tint; tap rolls the spell directly (same logic as spell list rows); hold 500 ms opens info panel |
 | `.attack-row.atk-hidden` | Hidden attack row; `display:none` normally; revealed when `#attackList.manage-mode` is active |
 | `.attack-section-label` | Gold uppercase section divider inside `#attackList` (e.g. "Actions", "Bonus Actions") |
 | `.attack-del` | 🗑 bin button; hidden by default; shown when `#attackList.manage-mode` is active |
 | `.atk-manage-btn` | Per-row "Show" action button (un-hides a hidden attack); hidden by default; shown in manage mode |
 | `.atk-hidden-label` | "Hidden" section label inside `#attackList`; block only when manage mode is active |
-| `.attack-edit-btn` | Edit/Done toggle button in the Attacks section title; activates/deactivates manage mode |
+| `.attack-edit-btn` | Small "Edit" or "Done" button used in two contexts: (1) in the Attacks section title to toggle manage mode; (2) in the top-right of spell/trait/feature/attack view panels to switch to edit mode within the same modal |
 | `.spell-lvl-pip` | Gold circle badge (15 px) showing spell level (1–9) next to a spell name in the combat block; not rendered for cantrips |
 | `#attackPanelBackdrop` | Fixed full-screen dim layer behind the attack panel; tap to dismiss |
 | `#attackPanel` | Fixed centered card (≤500 px, scrollable) showing attack details (view mode) or editable form (edit mode); gold border in view mode, blue border in edit mode; `.edit-mode` class toggles `.atk-view-section` / `.atk-edit-section` |
@@ -187,7 +187,7 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.sp-atk-bonus` | 34 px bold attack bonus in blue inside `.sp-atk-box` |
 | `.sp-atk-damage` | Small damage expression line inside `.sp-atk-box` |
 | `.sp-description` | Pre-wrapped description text block |
-| `.sp-dismiss-hint` | Tiny uppercase footer "tap to dismiss · hold to edit" |
+| `.sp-dismiss-hint` | Tiny uppercase footer "tap to dismiss" shown at the bottom of view panels |
 | `.sp-view-section` | Wrapper for all view-mode content; hidden when `#spellPanel.edit-mode` |
 | `.sp-edit-section` | Wrapper for all edit-mode content; hidden by default, shown when `#spellPanel.edit-mode` |
 | `.sp-edit-field` | Labeled field wrapper inside the edit form; label in blue uppercase |
@@ -431,8 +431,8 @@ DOMContentLoaded
 | `rollInitiative()` | Tap Initiative stat pill | Rolls d20 + DEX modifier; calls `showRoll()` |
 | `rollSpellAtk()` | Tap Spell Atk stat pill | Rolls d20 + spell attack bonus; calls `showRoll()` (shows toast if no spell ability set) |
 | `rollSpellFromPanel()` | Tap attack card in spell view panel | Reads current spell from `spellPanelEditIdx`; rolls d20 + spell attack bonus; rolls `sp.damage` as secondary if set; calls `showRoll()` |
-| `rollAttack(i)` | Tap weapon attack row | If the attack is hidden, opens the panel in edit mode; otherwise opens it in view mode; no-ops if `longPressActive` |
-| `startLongPress(e, i)` | `pointerdown` on weapon attack row | Starts 500 ms timer; on fire calls `openAttackPanel(i, true)` to open edit mode directly |
+| `rollAttack(i)` | Tap weapon attack row | If the attack is hidden, opens the panel in edit mode; if the attack has a bonus, rolls d20 + bonus and optionally rolls damage; otherwise opens info panel; no-ops if `longPressActive` |
+| `startLongPress(e, i)` | `pointerdown` on weapon attack row | Starts 500 ms timer; on fire calls `openAttackPanel(i, false)` to open info/view mode |
 | `cancelLongPress()` | `pointerup` / `pointercancel` on attack row | Clears the long-press timer |
 | `openAttackPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `attackPanelIdx = i`; shows `#attackPanelBackdrop` and `#attackPanel`; `i = -1` means new attack |
 | `switchToAtkEdit()` | Tap Edit button inside attack panel view | Switches `#attackPanel` to edit mode by adding `.edit-mode`; populates edit form fields |
@@ -457,12 +457,14 @@ DOMContentLoaded
 | `slotAdjust(i, delta)` | Mini +/− buttons on slot row | Clamps `state.spellSlots[i].used` by ±1; `−` passes `+1` (use), `+` passes `−1` (restore); rerenders dots |
 | `startSlotHold(i, delta)` / `stopSlotHold()` | `pointerdown` / `pointerup` on slot +/− | Hold-to-repeat at 80 ms |
 | `restoreAllSlots()` | ↺ All button in Spell Slots section | Sets all slot `used` to `0`; rerenders all dot rows |
-| `startSpellPress(e, i)` | `pointerdown` on spell row | Starts 500 ms timer; adds `.holding` visual on fire; on fire opens panel in edit mode |
-| `endSpellPress(e, i)` | `pointerup` on spell row | If timer hasn't fired, opens panel in view mode; clears timer |
+| `startSpellPress(e, i)` | `pointerdown` on spell row (spell list, featured spells, or combat list) | Starts 500 ms timer; adds `.holding` visual on fire; on fire opens spell info panel (view mode) |
+| `clickSpellItem(e, i)` | `click` on spell row | If timer hasn't fired: rolls spell attack if `attackRoll` is true; rolls damage if `rollDamage && !attackRoll`; opens info panel if no roll is configured; clears timer |
 | `cancelSpellPress()` | `pointercancel` on spell row | Clears timer and removes `.holding` class |
-| `startTraitPress(e, i)` | `pointerdown` on a trait row | Starts 500 ms timer; adds `.holding` visual on fire; opens trait panel in edit mode |
-| `clickTraitItem(e, i)` | `click` on a trait row | If timer hasn't fired, opens trait panel in view mode; clears timer |
+| `switchToSpellEdit()` | Tap Edit button inside spell view panel | Adds `.edit-mode` to `#spellPanel`; populates edit form; focuses the name field |
+| `startTraitPress(e, i)` | `pointerdown` on a trait row (Info tab or combat list) | Starts 500 ms timer; adds `.holding` visual on fire; opens trait info panel (view mode) |
+| `clickTraitItem(e, i)` | `click` on a trait row | If timer hasn't fired: rolls damage if `rollDamage && damage`; opens info panel otherwise; clears timer |
 | `cancelTraitPress()` | `pointercancel` on a trait row | Clears timer and removes `.holding` class |
+| `switchToTraitEdit()` | Tap Edit button inside trait view panel | Adds `.edit-mode` to `#traitPanel`; populates edit form; focuses the name field |
 | `openTraitPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `traitPanelEditIdx = i`; shows `#traitBackdrop` and `#traitPanel`; `i = -1` means new trait |
 | `addInfoTrait()` | Tap + Add in Features & Traits section header | Opens trait panel in edit mode with empty form; sets `traitPanelEditIdx = -1` |
 | `saveTraitEdit()` | Tap Save in trait panel edit mode | Validates name; writes to `state.infoTraits[idx]` or pushes new entry; calls `buildInfoTraits()` + `saveData()`; dismisses panel |
@@ -483,10 +485,11 @@ DOMContentLoaded
 | `editFeature(i)` | EDIT button on a feature row | Calls `openFeaturePanel(i, true)` to open the feature in edit mode |
 | `restoreFeature(i)` | ⏻ button on a feature row | Sets `f.used = 0`; rerenders dots; shows toast |
 | `restoreAllFeatures()` | ↺ All button in Features section | Sets all feature `used` to `0`; rerenders all dot rows |
-| `startFeatureNamePress(e, i)` | `pointerdown` on `.feature-name-area` | Starts 500 ms timer; adds `.holding` visual on fire; on fire opens feature panel in edit mode |
-| `clickFeatureName(e, i)` | `click` on `.feature-name-area` | If timer hasn't fired, opens feature panel in view mode; clears timer |
+| `startFeatureNamePress(e, i)` | `pointerdown` on `.feature-name-area` | Starts 500 ms timer; adds `.holding` visual on fire; on fire opens feature info panel (view mode) |
+| `clickFeatureName(e, i)` | `click` on `.feature-name-area` | If timer hasn't fired: rolls damage if `rollDamage && damage`; opens info panel otherwise; clears timer |
 | `cancelFeatureNamePress()` | `pointercancel` on `.feature-name-area` | Clears timer and removes `.holding` class |
-| `openFeaturePanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `featurePanelEditIdx = i`; shows `#featurePanelBackdrop` and `#featurePanel`; `i = -1` means new feature |
+| `switchToFeatureEdit()` | Tap Edit button inside feature view panel | Adds `.edit-mode` to `#featurePanel`; populates edit form; focuses the name field |
+| `openFeaturePanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `featurePanelIdx = i`; shows `#featurePanelBackdrop` and `#featurePanel`; `i = -1` means new feature |
 | `addFeature()` | + Add button | Calls `openFeaturePanel(-1, true)` (new feature mode) |
 | `populateFeatureViewPanel(i)` | Internal | Fills view-mode elements from `state.classFeatures[i]`; shows damage roll card if `rollDamage` is true; shows save DC box if `saveAbility` is set |
 | `populateFeatureEditForm(i)` | Internal | Fills edit form from `state.classFeatures[i]`; blanks all fields when `i = -1` |
@@ -501,7 +504,8 @@ DOMContentLoaded
 | `restoreHitDice()` | ↺ Restore button in Hit Dice section | Sets `state.hitDiceUsed = 0`; rerenders |
 | `fullLongRest()` | ⟳ Long Rest button in Overview panel | Restores HP to max, resets hit dice, all spell slots, and all class features; saves |
 | `removeAttack(i)` | Tap bin button (🗑) on attack row (manage mode) | Pushes undo; splices `state.attacks`; rerenders |
-| `toggleCondition(name, el)` | Tap condition chip | Pushes undo; toggles name in `state.conditions` |
+| `clickConditionItem(e, name, el)` | Tap condition chip | Opens the condition info panel (same as hold); no-ops if long-press already fired |
+| `toggleCondition(name, el)` | Called from `toggleConditionFromPanel()` | Pushes undo; toggles name in `state.conditions`; rebuilds condition chips |
 | `toggleInspiration()` | Tap inspiration button | Pushes undo; flips `state.inspiration` boolean |
 | `toggleDeathSave(dot, type)` | Tap death save dot | Toggles `.filled` class on the dot element (not tracked by undo) |
 
@@ -512,20 +516,51 @@ tap dots 2: Proficient → Expert      (add to skillExpertise; keep in skillProf
 tap dots 3: Expert     → None        (remove from BOTH skillExpertise and skillProficiencies)
 ```
 
-#### Attack row interaction model
+#### Unified tap/hold interaction model
+
+All interactive items follow a single consistent rule:
+
 ```
-Tap weapon row     → rollAttack(i)            — opens attack panel in view mode (or edit mode if the attack is hidden)
-Long press row     → openAttackPanel(i, true) — opens attack panel directly in edit mode (500 ms threshold)
-Tap spell row      → openSpellPanel(idx, false) — opens the full spell panel in view mode
-Tap Edit button    → toggleAttackEdit()       — activates manage mode; shows hidden rows with Show buttons and bin buttons
-  Tap Show button  → showAttack(i)            — un-hides that attack row; exits manage mode if needed
-  Tap bin button   → removeAttack(i)          — deletes with undo support; no confirm dialog
-Tap Done button    → toggleAttackEdit()       — deactivates manage mode; hidden rows disappear again
+Tap   → roll directly if the item is rollable; open info panel otherwise
+Hold  → always open the info/view panel (500 ms threshold)
+```
+
+Specific behaviours per item type:
+
+```
+Weapon attack row
+  Tap                → rollAttack(i)               — rolls d20 + bonus + optional damage; opens info panel if no bonus; edit mode if attack is hidden
+  Hold (500 ms)      → openAttackPanel(i, false)   — opens attack info panel (view mode)
+  Tap Edit (in panel)→ switchToAtkEdit()            — switches same modal to edit mode
+
+Spell row (spell list, combat list, featured spells)
+  Tap                → clickSpellItem(e, i)         — rolls spell attack if attackRoll; rolls damage if rollDamage only; opens info panel if no roll configured
+  Hold (500 ms)      → openSpellPanel(i, false)     — opens spell info panel (view mode)
+  Tap Edit (in panel)→ switchToSpellEdit()          — switches same modal to edit mode
+
+Trait row (Info tab and combat list)
+  Tap                → clickTraitItem(e, i)         — rolls damage if rollDamage; opens info panel otherwise
+  Hold (500 ms)      → openTraitPanel(i, false)     — opens trait info panel (view mode)
+  Tap Edit (in panel)→ switchToTraitEdit()          — switches same modal to edit mode
+
+Feature name area
+  Tap                → clickFeatureName(e, i)       — rolls damage if rollDamage; opens info panel otherwise
+  Hold (500 ms)      → openFeaturePanel(i, false)   — opens feature info panel (view mode)
+  Tap Edit (in panel)→ switchToFeatureEdit()        — switches same modal to edit mode
+
+Condition chip
+  Tap or hold        → openConditionPanel(name)     — opens condition info panel; Apply/Remove button is inside the panel
+
+Manage mode (attacks section — separate from the above pattern)
+  Tap Edit button    → toggleAttackEdit()           — activates manage mode; shows hidden rows, Show and bin buttons
+  Tap Show button    → showAttack(i)                — un-hides that attack row
+  Tap bin button     → removeAttack(i)              — deletes with undo support; no confirm dialog
+  Tap Done button    → toggleAttackEdit()           — deactivates manage mode
 ```
 
 Attack panel states:
 ```
-View mode  (default) — shows name, action type, attack roll card (tappable), save DC box, description
+View mode  (default) — shows name, action type, attack roll card (tappable), save DC box, description, Edit button (top-right)
 Edit mode            — shows editable form for all fields (name, bonus, damage, action type, saving throw, description)
 ```
 

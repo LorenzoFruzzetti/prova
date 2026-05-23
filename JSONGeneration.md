@@ -317,9 +317,11 @@ Each object:
 | `combatActionType` | string | `"action"` (default) or `"bonus"` — which sub-section of the combat block the spell appears in when `showInCombat` is `true` |
 | `showInFeatures` | boolean | `true` to show the spell in the "Featured Spells" block inside the Features tab — useful for spells that function like limited-use class features |
 
-When a spell has a `saveAbility` set, the view panel automatically pulls the current **Spell Save DC** (derived from the chosen spellcasting ability) and displays it prominently. When `attackRoll` is `true`, the view panel shows a tappable attack-roll card; tapping it rolls d20 + the current spell attack bonus and optionally rolls the `damage` expression as a secondary result.
+When a spell has a `saveAbility` set, the view panel automatically pulls the current **Spell Save DC** (derived from the chosen spellcasting ability) and displays it prominently. The view panel also contains a tappable attack-roll card (when `attackRoll` is `true`) and a tappable damage card (when `rollDamage && !attackRoll`).
 
-Spells with `showInCombat: true` appear in the combat attack block under "Actions" or "Bonus Actions" depending on `combatActionType`. Tapping a combat spell row opens the full spell panel (view mode). The spell level is shown as a gold circle badge (level 1–9); cantrips (level 0) show no badge. **Do not duplicate a spell in `state.attacks[]` — set `showInCombat: true` on the spell object instead.**
+**Tap/hold behaviour on spell rows:** tapping a spell row rolls directly — d20 + spell attack bonus if `attackRoll` is `true`; damage expression if `rollDamage` is `true` and `attackRoll` is `false`; opens the info panel when neither is set. Holding (500 ms) always opens the info panel. An **Edit** button in the top-right of the info panel switches to edit mode within the same modal.
+
+Spells with `showInCombat: true` appear in the combat attack block under "Actions" or "Bonus Actions" depending on `combatActionType`. The same tap/hold rules apply there. The spell level is shown as a gold circle badge (level 1–9); cantrips (level 0) show no badge. **Do not duplicate a spell in `state.attacks[]` — set `showInCombat: true` on the spell object instead.**
 
 ```json
 "spells": [
@@ -400,7 +402,7 @@ Each object:
 | `saveAbility` | string | Ability key for a saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` |
 | `saveDC` | integer | Override DC; if `0` or omitted, the sheet's current Spell Save DC is used |
 
-Tap the feature name area to open a view panel (description + optional damage roll card). Hold (500 ms) on the name area, or tap the **EDIT** button on the right side of the row, to open the edit panel. The `max` value can only be changed through the edit panel — there is no inline max input on the row.
+**Tap/hold behaviour on feature rows:** tapping the feature name area rolls the damage expression directly if `rollDamage` is `true`; otherwise it opens the info panel. Holding (500 ms) always opens the info panel. An **Edit** button in the top-right of the info panel switches to edit mode within the same modal. Alternatively, the **EDIT** button on the right side of the row opens the edit panel directly without going through the info panel. The `max` value can only be changed through the edit panel — there is no inline max input on the row.
 
 ```json
 "classFeatures": [
@@ -434,7 +436,7 @@ Each object:
 | `showInCombat` | boolean | `true` to show this trait as a row in the combat attack block |
 | `combatActionType` | string | `"action"` (default) or `"bonus"` — which sub-section of the combat block it appears in |
 
-Tap a row to view the full description in a panel (with optional damage roll button and save DC display). Hold (500 ms) to edit.
+**Tap/hold behaviour on trait rows:** tapping rolls the damage expression directly if `rollDamage` is `true`; otherwise it opens the info panel (description + optional damage roll card + save DC display). Holding (500 ms) always opens the info panel. An **Edit** button in the top-right of the info panel switches to edit mode within the same modal. The same rules apply when a trait appears in the combat attack block via `showInCombat`.
 
 ```json
 "infoTraits": [
