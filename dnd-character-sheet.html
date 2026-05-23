@@ -2002,10 +2002,10 @@
   }
 
   .condition-tag {
-    padding: 4px 10px;
-    border-radius: 12px;
+    padding: 7px 14px;
+    border-radius: 14px;
     border: 1px solid var(--border);
-    font-size: 11px;
+    font-size: 13px;
     font-family: sans-serif;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
@@ -2645,7 +2645,10 @@
   </div>
 
   <div class="section">
-    <div class="section-title">Conditions</div>
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+      Conditions
+      <button onclick="clearAllConditions()" style="font-size:10px;font-family:sans-serif;padding:3px 9px;border-radius:8px;border:1px solid rgba(192,57,43,0.5);background:rgba(192,57,43,0.1);color:var(--red-light);cursor:pointer;letter-spacing:0.3px">Clear all</button>
+    </div>
     <div class="section-body">
       <div class="conditions-grid" id="conditionsGrid"></div>
     </div>
@@ -3478,6 +3481,10 @@ function applyUndo(a) {
       const inp = document.getElementById(`score-${a.ab}`);
       if (inp) inp.value = a.previous;
       recalcAll(); toast('↩ Ability score'); break;
+    }
+    case 'clearConditions': {
+      state.conditions = [...a.previous];
+      buildConditions(); saveData(); toast('↩ Conditions restored'); break;
     }
     case 'condition': {
       const ci = state.conditions.indexOf(a.name);
@@ -5495,6 +5502,14 @@ function confirmAddDie() {
 }
 
 // ── Conditions ────────────────────────────────────────────────────────
+function clearAllConditions() {
+  if (!state.conditions.length) return;
+  pushUndo({type: 'clearConditions', previous: [...state.conditions]});
+  state.conditions = [];
+  buildConditions();
+  saveData();
+}
+
 function toggleCondition(name, el) {
   pushUndo({type: 'condition', name, wasActive: state.conditions.includes(name)});
   const idx = state.conditions.indexOf(name);
