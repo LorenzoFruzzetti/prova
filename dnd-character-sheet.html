@@ -2467,6 +2467,54 @@
   .ai-type-btn.active {
     background: rgba(var(--spell-rgb),0.18); border-color: var(--spell); color: var(--spell-light);
   }
+  /* ── mode toggle (AI / SRD) ── */
+  .ai-mode-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .ai-mode-btn {
+    flex: 1; padding: 5px 0; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+    border: 1.5px solid rgba(255,255,255,0.18); background: transparent;
+    color: var(--text); cursor: pointer; transition: background 0.15s, border-color 0.15s;
+  }
+  .ai-mode-btn.active {
+    background: rgba(var(--accent-rgb),0.18); border-color: var(--gold); color: var(--gold);
+  }
+  /* ── SRD browse section ── */
+  .ai-select {
+    width: 100%; box-sizing: border-box; font-size: 0.82rem;
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; color: var(--text); padding: 8px 12px;
+    font-family: inherit; appearance: none; -webkit-appearance: none;
+  }
+  .ai-select:focus { outline: none; border-color: var(--spell); }
+  .srd-level-row {
+    display: flex; align-items: center; gap: 6px; margin-top: 8px;
+    font-size: 0.8rem; color: var(--text-muted);
+  }
+  .srd-lv-input {
+    width: 44px; text-align: center; padding: 4px 6px;
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px; color: var(--text); font-family: inherit; font-size: 0.82rem;
+  }
+  .srd-results-box {
+    max-height: 200px; overflow-y: auto; margin-top: 10px;
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+    background: rgba(0,0,0,0.2);
+  }
+  .srd-result-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    cursor: pointer; font-size: 0.83rem;
+  }
+  .srd-result-item:last-child { border-bottom: none; }
+  .srd-result-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--spell); flex-shrink: 0; }
+  .srd-lv-group {
+    padding: 5px 12px 3px; font-size: 0.68rem; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--gold);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(0,0,0,0.15);
+  }
+  .srd-hint, .srd-loading {
+    padding: 14px; text-align: center; color: var(--text-muted); font-size: 0.8rem;
+  }
 </style>
 </head>
 <body>
@@ -3516,34 +3564,71 @@
   <span class="sp-dismiss-hint">tap to dismiss</span>
 </div>
 
-<!-- ── AI Import Modal ── -->
+<!-- ── AI / SRD Import Modal ── -->
 <div id="aiImportBackdrop" onclick="dismissAIImport()"></div>
 <div id="aiImportPanel">
-  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px">&#10024; AI Import</div>
+  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px">Import</div>
 
+  <!-- Mode toggle -->
+  <div class="ai-mode-row">
+    <button class="ai-mode-btn active" id="aiModeAI"  onclick="setModalMode('ai')">&#10024; AI</button>
+    <button class="ai-mode-btn"        id="aiModeSrd" onclick="setModalMode('srd')">&#128218; SRD</button>
+  </div>
+
+  <!-- Type tabs (shared by both modes) -->
   <div class="ai-type-toggle">
     <button class="ai-type-btn active" id="aiTypeSpells"   onclick="setAIImportType('spells')">Spells</button>
     <button class="ai-type-btn"        id="aiTypeFeatures" onclick="setAIImportType('features')">Features</button>
     <button class="ai-type-btn"        id="aiTypeTraits"   onclick="setAIImportType('traits')">Traits</button>
   </div>
 
-  <!-- Step 1 -->
-  <div class="ai-step">
-    <div class="ai-step-label">Step 1 — Describe what to add</div>
-    <textarea class="ai-prompt-box" id="aiWhatInput"
-      placeholder="e.g. Fireball, Counterspell, Shield&#10;or: Action Surge (1 use, Short Rest)"></textarea>
+  <!-- ── AI mode ── -->
+  <div id="aiModeContent">
+    <div class="ai-step">
+      <div class="ai-step-label">Step 1 — Describe what to add</div>
+      <textarea class="ai-prompt-box" id="aiWhatInput"
+        placeholder="e.g. Fireball, Counterspell, Shield&#10;or: Action Surge (1 use, Short Rest)"></textarea>
+    </div>
+    <button class="settings-full-btn" style="margin-bottom:14px" onclick="generateAndCopyAIPrompt()">Copy prompt to clipboard</button>
+    <div class="ai-copy-notice" id="aiCopyNotice"></div>
+    <div class="ai-step" style="margin-top:16px">
+      <div class="ai-step-label">Step 2 — Paste the AI's JSON response</div>
+      <textarea class="ai-prompt-box" id="aiResponsePaste"
+        placeholder="Paste the JSON array here…"></textarea>
+    </div>
+    <button class="settings-full-btn" onclick="importAIResponse()" style="margin-bottom:8px">Import</button>
   </div>
-  <button class="settings-full-btn" style="margin-bottom:14px" onclick="generateAndCopyAIPrompt()">Copy prompt to clipboard</button>
-  <div class="ai-copy-notice" id="aiCopyNotice"></div>
 
-  <!-- Step 2 -->
-  <div class="ai-step" style="margin-top:16px">
-    <div class="ai-step-label">Step 2 — Paste the AI's JSON response</div>
-    <textarea class="ai-prompt-box" id="aiResponsePaste"
-      placeholder="Paste the JSON array here…"></textarea>
+  <!-- ── SRD mode ── -->
+  <div id="srdModeContent" style="display:none">
+    <!-- Spell search (type = spells) -->
+    <div id="srdSpellCtrl">
+      <input class="ai-prompt-box" id="srdSpellSearch" style="min-height:unset;padding:8px 12px;resize:none"
+        placeholder="Search spells by name…" oninput="_srdSpellSearch()">
+    </div>
+    <!-- Race selector (type = traits) -->
+    <div id="srdTraitCtrl" style="display:none">
+      <select class="ai-select" id="srdRaceSelect"><option value="">— Select a race —</option></select>
+      <button class="attack-edit-btn" style="margin-top:6px;width:100%;padding:6px 0" onclick="_srdLoadRace()">Load Traits</button>
+    </div>
+    <!-- Class selector (type = features) -->
+    <div id="srdFeatureCtrl" style="display:none">
+      <select class="ai-select" id="srdClassSelect"><option value="">— Select a class —</option></select>
+      <div class="srd-level-row">
+        Level <input type="number" id="srdLvMin" class="srd-lv-input" min="1" max="20" value="1">
+        –     <input type="number" id="srdLvMax" class="srd-lv-input" min="1" max="20" value="20">
+      </div>
+      <button class="attack-edit-btn" style="margin-top:6px;width:100%;padding:6px 0" onclick="_srdLoadClass()">Load Features</button>
+    </div>
+    <!-- Shared results list -->
+    <div id="srdResults" class="srd-results-box">
+      <div class="srd-hint">Select a type above to start.</div>
+    </div>
+    <div class="ai-copy-notice" id="srdStatus" style="margin-top:6px"></div>
+    <button id="srdAddBtn" class="settings-full-btn" style="margin-top:10px" onclick="addSelectedSRD()">Add Selected</button>
   </div>
-  <button class="settings-full-btn" onclick="importAIResponse()" style="margin-bottom:8px">Import</button>
-  <button class="hp-dlg-btn" onclick="dismissAIImport()" style="width:100%">Cancel</button>
+
+  <button class="hp-dlg-btn" onclick="dismissAIImport()" style="width:100%;margin-top:8px">Cancel</button>
 </div>
 
 <div id="toast"></div>
@@ -6314,13 +6399,16 @@ function setupAutoSave() {
 
 // ── AI Import ──────────────────────────────────────────────────────────
 let aiImportType = 'spells';
+let srdModalMode  = 'ai';
 
 function openAIImport(type) {
   aiImportType = type || 'spells';
   document.getElementById('aiWhatInput').value = '';
   document.getElementById('aiResponsePaste').value = '';
   document.getElementById('aiCopyNotice').textContent = '';
+  srdSelected.clear();
   setAIImportType(aiImportType);
+  setModalMode('ai');
   document.getElementById('aiImportBackdrop').classList.add('show');
   document.getElementById('aiImportPanel').classList.add('show');
   setTimeout(() => document.getElementById('aiWhatInput').focus(), 250);
@@ -6331,11 +6419,21 @@ function dismissAIImport() {
   document.getElementById('aiImportPanel').classList.remove('show');
 }
 
+function setModalMode(mode) {
+  srdModalMode = mode;
+  document.getElementById('aiModeAI').classList.toggle('active',  mode === 'ai');
+  document.getElementById('aiModeSrd').classList.toggle('active', mode === 'srd');
+  document.getElementById('aiModeContent').style.display  = mode === 'ai'  ? '' : 'none';
+  document.getElementById('srdModeContent').style.display = mode === 'srd' ? '' : 'none';
+  if (mode === 'srd') _srdInitForType(aiImportType);
+}
+
 function setAIImportType(type) {
   aiImportType = type;
-  document.getElementById('aiTypeSpells').classList.toggle('active', type === 'spells');
+  document.getElementById('aiTypeSpells').classList.toggle('active',   type === 'spells');
   document.getElementById('aiTypeFeatures').classList.toggle('active', type === 'features');
-  document.getElementById('aiTypeTraits').classList.toggle('active', type === 'traits');
+  document.getElementById('aiTypeTraits').classList.toggle('active',   type === 'traits');
+  if (srdModalMode === 'srd') _srdInitForType(type);
 }
 
 function generateAndCopyAIPrompt() {
@@ -6482,6 +6580,252 @@ function importAIResponse() {
     toast(`${newItems.length} feature${newItems.length > 1 ? 's' : ''} added`);
   }
   dismissAIImport();
+}
+
+// ── SRD Browse (dnd5eapi.co) ───────────────────────────────────────────
+const SRD_API = 'https://www.dnd5eapi.co/api';
+let srdSelected = new Set();
+
+async function _srdGet(path) {
+  const key = 'srd_v1_' + path;
+  const hit = localStorage.getItem(key);
+  if (hit) return JSON.parse(hit);
+  const res = await fetch(SRD_API + path);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+  return data;
+}
+
+function _srdShowCtrls(type) {
+  document.getElementById('srdSpellCtrl').style.display   = type === 'spells'   ? '' : 'none';
+  document.getElementById('srdTraitCtrl').style.display   = type === 'traits'   ? '' : 'none';
+  document.getElementById('srdFeatureCtrl').style.display = type === 'features' ? '' : 'none';
+  document.getElementById('srdStatus').textContent = '';
+  srdSelected.clear();
+}
+
+async function _srdInitForType(type) {
+  _srdShowCtrls(type);
+  const box = document.getElementById('srdResults');
+  if (type === 'spells') {
+    document.getElementById('srdSpellSearch').value = '';
+    box.innerHTML = '<div class="srd-hint">Type at least 2 characters to search.</div>';
+    _srdGet('/spells').catch(() => {});  // pre-warm cache silently
+  } else if (type === 'traits') {
+    box.innerHTML = '<div class="srd-loading">Loading races…</div>';
+    try {
+      const data = await _srdGet('/races');
+      const sel  = document.getElementById('srdRaceSelect');
+      sel.innerHTML = '<option value="">— Select a race —</option>' +
+        data.results.map(r => `<option value="${r.index}">${escHtml(r.name)}</option>`).join('');
+      box.innerHTML = '<div class="srd-hint">Select a race and tap Load Traits.</div>';
+    } catch(e) {
+      box.innerHTML = '<div class="srd-hint">Could not reach SRD API — check your connection.</div>';
+    }
+  } else {
+    box.innerHTML = '<div class="srd-loading">Loading classes…</div>';
+    try {
+      const data = await _srdGet('/classes');
+      const sel  = document.getElementById('srdClassSelect');
+      sel.innerHTML = '<option value="">— Select a class —</option>' +
+        data.results.map(c => `<option value="${c.index}">${escHtml(c.name)}</option>`).join('');
+      box.innerHTML = '<div class="srd-hint">Select a class and tap Load Features.</div>';
+    } catch(e) {
+      box.innerHTML = '<div class="srd-hint">Could not reach SRD API — check your connection.</div>';
+    }
+  }
+}
+
+async function _srdSpellSearch() {
+  const q   = document.getElementById('srdSpellSearch').value.toLowerCase().trim();
+  const box = document.getElementById('srdResults');
+  if (q.length < 2) { box.innerHTML = '<div class="srd-hint">Type at least 2 characters.</div>'; return; }
+  box.innerHTML = '<div class="srd-loading">Searching…</div>';
+  try {
+    const data    = await _srdGet('/spells');
+    const matches = data.results.filter(s => s.name.toLowerCase().includes(q)).slice(0, 40);
+    _srdRenderList(matches);
+  } catch(e) {
+    box.innerHTML = '<div class="srd-hint">Could not reach SRD API — check your connection.</div>';
+  }
+}
+
+async function _srdLoadRace() {
+  const idx = document.getElementById('srdRaceSelect').value;
+  if (!idx) { toast('Select a race first'); return; }
+  const box = document.getElementById('srdResults');
+  box.innerHTML = '<div class="srd-loading">Loading…</div>';
+  srdSelected.clear();
+  try {
+    const race = await _srdGet('/races/' + idx);
+    _srdRenderList(race.traits || []);
+    if (!(race.traits || []).length)
+      box.innerHTML = '<div class="srd-hint">No traits found for this race.</div>';
+  } catch(e) {
+    box.innerHTML = '<div class="srd-hint">Error loading race data.</div>';
+  }
+}
+
+async function _srdLoadClass() {
+  const idx   = document.getElementById('srdClassSelect').value;
+  if (!idx) { toast('Select a class first'); return; }
+  const lvMin = parseInt(document.getElementById('srdLvMin').value) || 1;
+  const lvMax = parseInt(document.getElementById('srdLvMax').value) || 20;
+  const box   = document.getElementById('srdResults');
+  box.innerHTML = '<div class="srd-loading">Loading…</div>';
+  srdSelected.clear();
+  try {
+    const levels = await _srdGet('/classes/' + idx + '/levels');
+    const byLv   = {};
+    levels.forEach(lv => {
+      if (lv.level < lvMin || lv.level > lvMax) return;
+      (lv.features || []).forEach(f => {
+        (byLv[lv.level] = byLv[lv.level] || []).push(f);
+      });
+    });
+    if (!Object.keys(byLv).length) {
+      box.innerHTML = '<div class="srd-hint">No features in that level range.</div>'; return;
+    }
+    let html = '';
+    Object.keys(byLv).sort((a, b) => a - b).forEach(lv => {
+      html += `<div class="srd-lv-group">Level ${lv}</div>`;
+      html += byLv[lv].map(f => `
+        <label class="srd-result-item">
+          <input type="checkbox" class="srd-cb" value="${f.index}" ${srdSelected.has(f.index) ? 'checked' : ''}>
+          <span>${escHtml(f.name)}</span>
+        </label>`).join('');
+    });
+    box.innerHTML = html;
+    _srdBindCbs();
+  } catch(e) {
+    box.innerHTML = '<div class="srd-hint">Error loading class data.</div>';
+  }
+}
+
+function _srdRenderList(items) {
+  const box = document.getElementById('srdResults');
+  if (!items.length) { box.innerHTML = '<div class="srd-hint">No results.</div>'; return; }
+  box.innerHTML = items.map(it => `
+    <label class="srd-result-item">
+      <input type="checkbox" class="srd-cb" value="${it.index}" ${srdSelected.has(it.index) ? 'checked' : ''}>
+      <span>${escHtml(it.name)}</span>
+    </label>`).join('');
+  _srdBindCbs();
+}
+
+function _srdBindCbs() {
+  document.querySelectorAll('#srdResults .srd-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) srdSelected.add(cb.value);
+      else srdSelected.delete(cb.value);
+    });
+  });
+}
+
+async function addSelectedSRD() {
+  if (!srdSelected.size) { toast('Select at least one item'); return; }
+  const btn  = document.getElementById('srdAddBtn');
+  const orig = btn.textContent;
+  btn.disabled = true;
+  try {
+    const indices = [...srdSelected];
+    if (aiImportType === 'spells') {
+      const existing = new Set((state.spells || []).map(s => s.name.toLowerCase()));
+      const toAdd = [];
+      for (let i = 0; i < indices.length; i++) {
+        btn.textContent = `Fetching ${i + 1}/${indices.length}…`;
+        const sp = await _srdGet('/spells/' + indices[i]);
+        const m  = _mapSrdSpell(sp);
+        if (!existing.has(m.name.toLowerCase())) toAdd.push(m);
+      }
+      if (!toAdd.length) { toast('All selected spells already exist'); return; }
+      state.spells = (state.spells || []).concat(toAdd);
+      buildSpellList(); saveData();
+      toast(`${toAdd.length} spell${toAdd.length > 1 ? 's' : ''} added`);
+    } else if (aiImportType === 'traits') {
+      const existing = new Set((state.infoTraits || []).map(t => t.name.toLowerCase()));
+      const toAdd = [];
+      for (let i = 0; i < indices.length; i++) {
+        btn.textContent = `Fetching ${i + 1}/${indices.length}…`;
+        const tr = await _srdGet('/traits/' + indices[i]);
+        const m  = _mapSrdTrait(tr);
+        if (!existing.has(m.name.toLowerCase())) toAdd.push(m);
+      }
+      if (!toAdd.length) { toast('All selected traits already exist'); return; }
+      state.infoTraits = (state.infoTraits || []).concat(toAdd);
+      buildInfoTraits(); saveData();
+      toast(`${toAdd.length} trait${toAdd.length > 1 ? 's' : ''} added`);
+    } else {
+      const existing = new Set((state.classFeatures || []).map(f => f.name.toLowerCase()));
+      const toAdd = [];
+      for (let i = 0; i < indices.length; i++) {
+        btn.textContent = `Fetching ${i + 1}/${indices.length}…`;
+        const feat = await _srdGet('/features/' + indices[i]);
+        const m    = _mapSrdFeature(feat);
+        if (!existing.has(m.name.toLowerCase())) toAdd.push(m);
+      }
+      if (!toAdd.length) { toast('All selected features already exist'); return; }
+      state.classFeatures = (state.classFeatures || []).concat(toAdd);
+      buildFeatures(); saveData();
+      toast(`${toAdd.length} feature${toAdd.length > 1 ? 's' : ''} added`);
+    }
+    srdSelected.clear();
+    dismissAIImport();
+  } catch(e) {
+    toast('SRD error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+function _mapSrdSpell(sp) {
+  const comps  = Array.isArray(sp.components) ? sp.components.join(', ') : (sp.components || '');
+  const mat    = sp.material ? ` (${sp.material})` : '';
+  const toBool = v => v === true || v === 'yes';
+  const ct     = (sp.casting_time || '').toLowerCase();
+  const desc   = (Array.isArray(sp.desc) ? sp.desc : [sp.desc || '']).join('\n\n');
+  return {
+    name:            sp.name,
+    level:           typeof sp.level === 'number' ? sp.level : 0,
+    school:          sp.school?.name || (typeof sp.school === 'string' ? sp.school : ''),
+    castingTime:     sp.casting_time || '',
+    range:           sp.range || '',
+    components:      comps + mat,
+    duration:        sp.duration || '',
+    saveAbility:     sp.dc?.dc_type?.name || '',
+    concentration:   toBool(sp.concentration),
+    ritual:          toBool(sp.ritual),
+    attackRoll:      !!(sp.attack_type),
+    damage:          sp.damage?.damage_at_slot_level?.[sp.level]
+                  || sp.damage?.damage_at_character_level?.['1'] || '',
+    description:     desc.length > 600 ? desc.slice(0, 597) + '…' : desc,
+    showInCombat:    true,
+    combatActionType: ct.includes('bonus') ? 'bonus' : ct.includes('reaction') ? 'reaction' : 'action',
+  };
+}
+
+function _mapSrdTrait(tr) {
+  const desc = (Array.isArray(tr.desc) ? tr.desc : [tr.desc || '']).join('\n\n');
+  return {
+    name:            tr.name,
+    description:     desc.length > 600 ? desc.slice(0, 597) + '…' : desc,
+    damage:          '', rollDamage:      false,
+    saveAbility:     '', saveDC:          0,
+    showInCombat:    false, combatActionType: 'action',
+  };
+}
+
+function _mapSrdFeature(feat) {
+  const desc = (Array.isArray(feat.desc) ? feat.desc : [feat.desc || '']).join('\n\n');
+  return {
+    name:        feat.name,
+    max:         1, used: 0, recharge: 'Long Rest', step: 1,
+    damage:      '', rollDamage: false,
+    saveAbility: '', saveDC:     0,
+    description: desc.length > 600 ? desc.slice(0, 597) + '…' : desc,
+  };
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────
