@@ -307,20 +307,21 @@ Each object:
 | `components` | string | e.g. `"V, S"`, `"V, S, M (a pinch of sulfur)"` (optional) |
 | `duration` | string | e.g. `"Instantaneous"`, `"1 hour"` (optional) |
 | `saveAbility` | string | Ability for the saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` if the spell has no save |
+| `saveDC` | integer | Override save DC for this spell (e.g. from a magic item); `0` or omitted means use the character's current Spell Save DC |
 | `concentration` | boolean | `true` if the spell requires concentration |
 | `ritual` | boolean | `true` if the spell can be cast as a ritual |
 | `attackRoll` | boolean | `true` if the spell requires a ranged/melee spell attack roll (shows a tappable d20 roll card in the view panel) |
 | `rolls` | array | Array of roll objects `[{dice, type, label?, mod?}]`. Each entry: `dice` = expression (`"4d6"`); `type` = damage type key or `"not_damage"` or `"other"`; `label` = custom label when `type="other"`; `mod` = ability key to add (`"STR"`/`"DEX"`/…/`"SPELL"` or `""`). |
 | `description` | string | Full spell description; newlines are preserved |
 | `showInCombat` | boolean | `true` to show the spell as a row in the combat attack block. Use this instead of duplicating the spell in `state.attacks[]` |
-| `combatActionType` | string | `"action"` (default) or `"bonus"` — which sub-section of the combat block the spell appears in when `showInCombat` is `true` |
+| `combatActionType` | string | `"action"` (default), `"bonus"`, or `"other"` — which sub-section of the combat block the spell appears in when `showInCombat` is `true` |
 | `showInFeatures` | boolean | `true` to show the spell in the "Featured Spells" block inside the Features tab — useful for spells that function like limited-use class features |
 
 When a spell has a `saveAbility` set, the view panel shows the current **Spell Save DC** prominently. The view panel contains a tappable attack-roll card (when `attackRoll` is `true`) and a tappable rolls card (when `rolls` is non-empty and `attackRoll` is `false`).
 
 **Tap/hold behaviour on spell rows:** tapping a spell row rolls directly — d20 + spell attack bonus if `attackRoll` is `true` (rolls are shown in secondary); all `rolls` dice if `rolls` is non-empty and `attackRoll` is `false`; opens the info panel when neither is set. Holding (500 ms) always opens the info panel.
 
-Spells with `showInCombat: true` appear in the combat attack block under "Actions" or "Bonus Actions" depending on `combatActionType`. The same tap/hold rules apply there. The spell level is shown as a gold circle badge (level 1–9); cantrips (level 0) show no badge. **Do not duplicate a spell in `state.attacks[]` — set `showInCombat: true` on the spell object instead.**
+Spells with `showInCombat: true` appear in the combat attack block under "Actions", "Bonus Actions", or "Other" depending on `combatActionType`. The same tap/hold rules apply there. The spell level is shown as a gold circle badge (level 1–9); cantrips (level 0) show no badge. **Do not duplicate a spell in `state.attacks[]` — set `showInCombat: true` on the spell object instead.**
 
 ```json
 "spells": [
@@ -381,7 +382,7 @@ Each object:
 | `flatBonus` | integer | Additional flat modifier added to the computed roll (default `0`) |
 | `bonus` | string | Manual attack roll modifier string, e.g. `"+7"` — only used when `abilityMod: "manual"` |
 | `rolls` | array | Roll objects `[{dice, type, label?, mod?}]` — same structure as `spells.rolls` |
-| `actionType` | string | `"action"` (default) or `"bonus"` — which combat sub-section to show in |
+| `actionType` | string | `"action"` (default), `"bonus"`, or `"other"` — which combat sub-section to show in |
 | `hidden` | boolean | `true` to show the row faded in the combat list; toggled via "Hide from combat list" in the edit panel (default `false`) |
 | `saveAbility` | string | Ability key for a saving throw option: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` for none |
 | `saveDC` | integer | Save DC value (e.g. `15`); `0` or omitted means no save DC displayed |
@@ -423,6 +424,8 @@ Each object:
 | `rolls` | array | Roll objects `[{dice, type, label?, mod?}]` — same structure as `spells.rolls` |
 | `saveAbility` | string | Ability key for a saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` |
 | `saveDC` | integer | Override DC; if `0` or omitted, the sheet's current Spell Save DC is used |
+| `showInCombat` | boolean | `true` to show the feature as a row in the combat attack block (default `false`) |
+| `combatActionType` | string | `"action"` (default), `"bonus"`, or `"other"` — sub-section in the combat block when `showInCombat` is `true` |
 
 **Tap/hold behaviour on feature rows:** tapping the feature name area runs rolls directly if `rolls` is non-empty (opens panel first if `attackRoll` is also `true`); otherwise opens the info panel. Holding (500 ms) always opens the info panel.
 

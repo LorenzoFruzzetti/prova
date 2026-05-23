@@ -334,8 +334,10 @@ let state = {
                                                  //     label: string — custom label when type='other'
                                                  //     mod:   ability key to add to roll result ('STR'|…|'SPELL'|'')
                           description,           //   free text (newlines preserved)
+                          saveAbility,           //   ability key for saving throw or ''
+                          saveDC,                //   integer override DC; 0 = use character's spell save DC
                           showInCombat,          //   boolean — true if spell appears in the combat attack block
-                          combatActionType,      //   'action' | 'bonus' — sub-section in the combat block (default: 'action')
+                          combatActionType,      //   'action' | 'bonus' | 'other' — sub-section in the combat block (default: 'action')
                           showInFeatures,        //   boolean — true if spell appears in the Featured Spells block in the Features tab
                         } ],
   attacks:            [ {
@@ -346,7 +348,7 @@ let state = {
                           flatBonus,             //   integer — additional flat modifier added to computed roll
                           bonus,                 //   string — manual attack roll modifier (only used when abilityMod='manual')
                           rolls,                 //   array of roll objects: [{dice, type, label?, mod?}] — same shape as spells.rolls
-                          actionType,            //   'action' | 'bonus' (default: 'action')
+                          actionType,            //   'action' | 'bonus' | 'other' (default: 'action')
                           hidden,                //   boolean — shows row faded in the combat list; toggled via the edit panel checkbox
                           saveAbility,           //   ability key for a saving throw option, or ''
                           saveDC,                //   integer save DC, or 0
@@ -364,13 +366,15 @@ let state = {
                           rolls,                 //   array of roll objects: [{dice, type, label?, mod?}] — same shape as spells.rolls
                           saveAbility,           //   ability key or ""
                           saveDC,                //   integer, 0 = use current Spell Save DC
+                          showInCombat,          //   boolean — true if feature appears in the combat attack block
+                          combatActionType,      //   'action' | 'bonus' | 'other' — sub-section in the combat block (default: 'action')
                         } ],
   infoTraits:         [ {   // Features & Traits shown in the Info tab
                           name, description,
                           damage, rollDamage,    //   optional damage roll support
                           saveAbility, saveDC,   //   optional saving throw display
                           showInCombat,          //   boolean — show as row in the combat block
-                          combatActionType,      //   'action' | 'bonus' (default: 'action')
+                          combatActionType,      //   'action' | 'bonus' | 'other' (default: 'action')
                         } ],
   portrait:           null, // base64 data URL string (e.g. "data:image/png;base64,...") or null
 }
@@ -466,7 +470,10 @@ DOMContentLoaded
 | `buildInfoTraits()` | Features & Traits rows in `#infoTraitsBody`, or empty-state placeholder | `state.infoTraits` |
 | `renderFeatureDots(i)` | Dot row + counter for one feature, scaled by `step` | `state.classFeatures[i]` |
 | `renderHitDice()` | Hit dice dots in `#hitDiceDots`; max = character level | `state.hitDiceUsed`, `charLevel` input |
-| `renderAttacks()` | Attack rows split into "Actions" and "Bonus Actions" sub-sections; combat spells (`showInCombat`) and combat traits (`showInCombat`) injected into each section; hidden attacks always shown but faded (`atk-hidden` class) | `state.attacks`, `state.spells`, `state.infoTraits` |
+| `renderAttacks()` | Attack rows split into "Actions", "Bonus Actions", and "Other" sub-sections; combat spells, combat traits, and combat features (`showInCombat`) injected into each section; hidden attacks always shown but faded (`atk-hidden` class) | `state.attacks`, `state.spells`, `state.infoTraits`, `state.classFeatures` |
+| `startFeatureCombatPress(e, i)` | `pointerdown` on a feature row in the combat block | Starts 500 ms timer; on fire opens feature panel (view mode) |
+| `clickFeatureCombatItem(e, i)` | `click` on a feature row in the combat block | Rolls attack (opens panel) or rolls damage if only rolls are set; opens panel if neither |
+| `cancelFeatureCombatPress()` | `pointercancel` on a feature row in the combat block | Clears timer |
 | `makeSpellRow(sp, spIdx)` | Returns HTML string for one spell row in the combat block; shows gold level pip for level > 0 | `state.spells[spIdx]` |
 | `makeTraitRow(t, tIdx)` | Returns HTML string for one trait row in the combat block (gold colour scheme) | `state.infoTraits[tIdx]` |
 | `getSpellAtkBonus()` | Returns formatted spell attack bonus string (e.g. `"+5"`) from current spellcasting ability and proficiency bonus | form inputs, `state.abilities` |
@@ -576,9 +583,9 @@ DOMContentLoaded
 | `dismissTraitPanel()` | Backdrop tap or Cancel in panel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#traitPanel` |
 | `openSpellPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `spellPanelEditIdx = i` in both modes; shows backdrop + panel |
 | `addSpell()` | Tap + Add button in Spells section | Opens spell panel in edit mode with empty form; sets `spellPanelEditIdx = -1` |
-| `populateSpellViewPanel(i)` | Internal | Fills view-mode elements from `state.spells[i]`; shows save DC box if `saveAbility` is set; shows attack roll card if `attackRoll` is `true`; shows rolls box if `rolls` is non-empty and `attackRoll` is false |
-| `populateSpellEditForm(i)` | Internal | Fills edit form from `state.spells[i]` including `attackRoll`, `rolls` (rendered via `renderRollRows`), `showInCombat`, `combatActionType`, and `showInFeatures`; blanks all fields when `i = -1` |
-| `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes all fields including `rollDamage`, `showInCombat`, `combatActionType`, `showInFeatures`; calls `buildSpellList()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
+| `populateSpellViewPanel(i)` | Internal | Fills view-mode elements from `state.spells[i]`; shows save DC box if `saveAbility` is set (uses per-spell `saveDC` override when > 0, otherwise character's spell DC); shows attack roll card if `attackRoll` is `true`; shows rolls box if `rolls` is non-empty and `attackRoll` is false |
+| `populateSpellEditForm(i)` | Internal | Fills edit form from `state.spells[i]` including `saveAbility`, `saveDC`, `attackRoll`, `rolls` (rendered via `renderRollRows`), `showInCombat`, `combatActionType`, and `showInFeatures`; blanks all fields when `i = -1` |
+| `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes all fields including `saveAbility`, `saveDC`, `showInCombat`, `combatActionType`, `showInFeatures`; calls `buildSpellList()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
 | `deleteCurrentSpell()` | Tap Delete in edit mode | Confirms; splices from `state.spells`; calls `buildSpellList()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
 | `dismissSpellPanel()` | Backdrop tap or Cancel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#spellPanel` |
 | `renderFeatureDots(i)` | Any feature use/restore | Updates dots and `n/max` counter for feature `i` |

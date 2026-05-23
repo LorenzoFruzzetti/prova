@@ -3348,7 +3348,7 @@
         <input type="text" id="spEditDuration" placeholder="Instantaneous">
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
       <div class="sp-edit-field">
         <label>Saving Throw</label>
         <select id="spEditSaveAbility">
@@ -3360,6 +3360,10 @@
           <option value="WIS">Wisdom</option>
           <option value="CHA">Charisma</option>
         </select>
+      </div>
+      <div class="sp-edit-field">
+        <label>Save DC <span style="font-size:8px;color:var(--text-muted)">(0 = spell DC)</span></label>
+        <input type="number" id="spEditSaveDC" min="0" max="30" placeholder="e.g. 15">
       </div>
       <div class="sp-edit-field">
         <label>&nbsp;</label>
@@ -3389,6 +3393,7 @@
         <select id="spEditCombatType">
           <option value="action">Action</option>
           <option value="bonus">Bonus Action</option>
+          <option value="other">Other</option>
         </select>
       </div>
     </div>
@@ -3501,6 +3506,7 @@
         <select id="trEditCombatType">
           <option value="action">Action</option>
           <option value="bonus">Bonus Action</option>
+          <option value="other">Other</option>
         </select>
       </div>
     </div>
@@ -3618,6 +3624,18 @@
     <div class="sp-edit-field">
       <label>Description</label>
       <textarea id="fpEditDescription" placeholder="Describe this feature…" style="min-height:100px"></textarea>
+    </div>
+    <div class="sp-edit-field">
+      <div class="sp-edit-checkbox-row">
+        <label><input type="checkbox" id="fpEditShowInCombat" onchange="document.getElementById('fpEditCombatTypeRow').style.display=this.checked?'':'none'"> Show in Combat</label>
+      </div>
+      <div id="fpEditCombatTypeRow" style="display:none;margin-top:6px">
+        <select id="fpEditCombatType">
+          <option value="action">Action</option>
+          <option value="bonus">Bonus Action</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
     </div>
     <div class="sp-edit-actions">
       <button class="sp-edit-delete-btn" id="fpEditDeleteBtn" onclick="deleteFeatureFromPanel()">Delete</button>
@@ -3751,6 +3769,7 @@
       <select id="atkEditActionType">
         <option value="action">Action</option>
         <option value="bonus">Bonus Action</option>
+        <option value="other">Other</option>
       </select>
     </div>
     <div class="sp-edit-field" style="display:flex;align-items:center;gap:8px">
@@ -5262,8 +5281,9 @@ function populateSpellViewPanel(i) {
   ).join('');
   const saveDcBox = document.getElementById('spSaveDcBox');
   if (sp.saveAbility) {
-    const dcEl = document.getElementById('statSpellDC');
-    const dc = dcEl ? dcEl.textContent : '—';
+    const dc = (sp.saveDC && sp.saveDC > 0)
+      ? String(sp.saveDC)
+      : (document.getElementById('statSpellDC')?.textContent || '—');
     document.getElementById('spSaveDcValue').textContent = dc;
     document.getElementById('spSaveDcAbility').textContent = sp.saveAbility + ' Save';
     saveDcBox.style.display = '';
@@ -5301,6 +5321,7 @@ function populateSpellEditForm(i) {
   document.getElementById('spEditComponents').value  = sp ? (sp.components    || '') : '';
   document.getElementById('spEditDuration').value    = sp ? (sp.duration      || '') : '';
   document.getElementById('spEditSaveAbility').value = sp ? (sp.saveAbility   || '') : '';
+  document.getElementById('spEditSaveDC').value      = sp ? (sp.saveDC        || '') : '';
   document.getElementById('spEditConc').checked       = sp ? !!sp.concentration : false;
   document.getElementById('spEditRitual').checked     = sp ? !!sp.ritual        : false;
   document.getElementById('spEditAttackRoll').checked = sp ? !!sp.attackRoll    : false;
@@ -5332,6 +5353,7 @@ function saveSpellEdit() {
     components:       document.getElementById('spEditComponents').value.trim(),
     duration:         document.getElementById('spEditDuration').value.trim(),
     saveAbility:      document.getElementById('spEditSaveAbility').value,
+    saveDC:           parseInt(document.getElementById('spEditSaveDC').value) || 0,
     concentration:    document.getElementById('spEditConc').checked,
     ritual:           document.getElementById('spEditRitual').checked,
     attackRoll:       document.getElementById('spEditAttackRoll').checked,
@@ -5476,6 +5498,38 @@ function cancelFeatureNamePress() {
   document.querySelectorAll('.feature-name-area.holding').forEach(el => el.classList.remove('holding'));
 }
 
+// ── Feature combat row press handlers ──────────────────────────────────
+let featCombatPressTimer = null;
+let featCombatPressActive = false;
+
+function startFeatureCombatPress(e, i) {
+  featCombatPressActive = false;
+  clearTimeout(featCombatPressTimer);
+  featCombatPressTimer = setTimeout(() => {
+    featCombatPressActive = true;
+    openFeaturePanel(i, false);
+  }, 500);
+}
+
+function clickFeatureCombatItem(e, i) {
+  clearTimeout(featCombatPressTimer);
+  if (featCombatPressActive) { featCombatPressActive = false; return; }
+  const f = state.classFeatures[i];
+  if (!f) return;
+  if (f.attackRoll && f.attackMod) {
+    openFeaturePanel(i, false);
+  } else if (f.rolls && f.rolls.length) {
+    showRollsOnly(f.name, f.rolls);
+  } else {
+    openFeaturePanel(i, false);
+  }
+}
+
+function cancelFeatureCombatPress() {
+  clearTimeout(featCombatPressTimer);
+  featCombatPressActive = false;
+}
+
 // ── Feature panel ─────────────────────────────────────────────────────
 let featurePanelIdx = -1;
 
@@ -5528,6 +5582,10 @@ function populateFeatureEditForm(i) {
   document.getElementById('fpEditSaveAbility').value   = f ? (f.saveAbility || '') : '';
   document.getElementById('fpEditSaveDC').value        = f ? (f.saveDC || '') : '';
   document.getElementById('fpEditDescription').value   = f ? (f.description || '') : '';
+  const sic = f ? !!f.showInCombat : false;
+  document.getElementById('fpEditShowInCombat').checked = sic;
+  document.getElementById('fpEditCombatTypeRow').style.display = sic ? '' : 'none';
+  document.getElementById('fpEditCombatType').value     = f ? (f.combatActionType || 'action') : 'action';
   renderRollRows('fpRollRows', f ? (f.rolls || []) : []);
 }
 
@@ -5565,6 +5623,8 @@ function saveFeaturePanel() {
     saveAbility:      document.getElementById('fpEditSaveAbility').value,
     saveDC:           parseInt(document.getElementById('fpEditSaveDC').value, 10) || 0,
     description:      document.getElementById('fpEditDescription').value.trim(),
+    showInCombat:     document.getElementById('fpEditShowInCombat').checked,
+    combatActionType: document.getElementById('fpEditCombatType').value,
   };
   if (featurePanelIdx >= 0) {
     const f = state.classFeatures[featurePanelIdx];
@@ -6281,8 +6341,8 @@ function _populateAtkEdit(i) {
 function _populateAtkView(i) {
   const a = state.attacks[i];
   document.getElementById('atkPanelName').textContent = a.name;
-  document.getElementById('atkPanelMeta').textContent =
-    (a.actionType || 'action') === 'bonus' ? 'Bonus Action' : 'Action';
+  const atMap = {action: 'Action', bonus: 'Bonus Action', other: 'Other'};
+  document.getElementById('atkPanelMeta').textContent = atMap[a.actionType || 'action'] || 'Action';
   const bonus = getAttackBonus(a);
   const rollBox = document.getElementById('atkPanelRollBox');
   if (bonus && bonus !== '—') {
@@ -6394,17 +6454,26 @@ function renderAttacks() {
   const combatSpells = state.spells.filter(sp => sp.showInCombat);
   const combatSpellActions = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'action');
   const combatSpellBonus   = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'bonus');
+  const combatSpellOther   = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'other');
 
   const combatTraits = (state.infoTraits || []).filter(t => t.showInCombat);
   const combatTraitActions = combatTraits.filter(t => (t.combatActionType || 'action') === 'action');
   const combatTraitBonus   = combatTraits.filter(t => (t.combatActionType || 'action') === 'bonus');
+  const combatTraitOther   = combatTraits.filter(t => (t.combatActionType || 'action') === 'other');
+
+  const combatFeatures = (state.classFeatures || []).filter(f => f.showInCombat);
+  const combatFeatActions = combatFeatures.filter(f => (f.combatActionType || 'action') === 'action');
+  const combatFeatBonus   = combatFeatures.filter(f => (f.combatActionType || 'action') === 'bonus');
+  const combatFeatOther   = combatFeatures.filter(f => (f.combatActionType || 'action') === 'other');
 
   const actionAtks = state.attacks.filter(a => (a.actionType || 'action') === 'action');
   const bonusAtks  = state.attacks.filter(a => (a.actionType || 'action') === 'bonus');
+  const otherAtks  = state.attacks.filter(a => (a.actionType || 'action') === 'other');
 
-  const hasVisActions = actionAtks.length > 0 || combatSpellActions.length > 0 || combatTraitActions.length > 0;
-  const hasVisBonus   = bonusAtks.length > 0  || combatSpellBonus.length > 0   || combatTraitBonus.length > 0;
-  const hasAny        = state.attacks.length > 0 || combatSpells.length > 0    || combatTraits.length > 0;
+  const hasVisActions = actionAtks.length > 0 || combatSpellActions.length > 0 || combatTraitActions.length > 0 || combatFeatActions.length > 0;
+  const hasVisBonus   = bonusAtks.length > 0  || combatSpellBonus.length > 0   || combatTraitBonus.length > 0  || combatFeatBonus.length > 0;
+  const hasVisOther   = otherAtks.length > 0  || combatSpellOther.length > 0   || combatTraitOther.length > 0  || combatFeatOther.length > 0;
+  const hasAny        = state.attacks.length > 0 || combatSpells.length > 0    || combatTraits.length > 0      || combatFeatures.length > 0;
 
   if (!hasAny) {
     list.innerHTML = `<div class="attack-row" style="cursor:default">
@@ -6430,7 +6499,7 @@ function renderAttacks() {
   }
 
   function makeSpellRow(sp, spIdx) {
-    const bonus = sp.attackRoll ? getSpellAtkBonus() : '—';
+    const bonus = sp.attackRoll ? getSpellAtkBonus() : '\u2014';
     const dmg = getRollSummary(sp.rolls);
     return `
       <div class="attack-row spell-atk"
@@ -6447,8 +6516,8 @@ function renderAttacks() {
 
   function makeTraitRow(t, tIdx) {
     const saveText = t.saveAbility
-      ? `DC ${(t.saveDC && t.saveDC > 0) ? t.saveDC : (document.getElementById('statSpellDC')?.textContent || '—')} ${t.saveAbility}`
-      : '—';
+      ? `DC ${(t.saveDC && t.saveDC > 0) ? t.saveDC : (document.getElementById('statSpellDC')?.textContent || '\u2014')} ${t.saveAbility}`
+      : '\u2014';
     return `
       <div class="attack-row feat-atk"
            onpointerdown="startTraitPress(event, ${tIdx})"
@@ -6458,24 +6527,55 @@ function renderAttacks() {
            oncontextmenu="return false">
         <span class="attack-name">${escHtml(t.name)}</span>
         <span class="attack-bonus" style="color:var(--gold)">${escHtml(saveText)}</span>
-        <span class="attack-damage">${escHtml(t.damage || '—')}</span>
+        <span class="attack-damage">${escHtml(t.damage || '\u2014')}</span>
+      </div>`;
+  }
+
+  function makeFeatureRow(f, fIdx) {
+    const bonus = (f.attackRoll && f.attackMod) ? getFeatureAttackBonus(f) : '\u2014';
+    const dmg = getRollSummary(f.rolls);
+    return `
+      <div class="attack-row feat-atk"
+           onpointerdown="startFeatureCombatPress(event, ${fIdx})"
+           onclick="clickFeatureCombatItem(event, ${fIdx})"
+           onpointerup="cancelFeatureCombatPress()"
+           onpointercancel="cancelFeatureCombatPress()"
+           oncontextmenu="return false">
+        <span class="attack-name">${escHtml(f.name)}</span>
+        <span class="attack-bonus" style="color:var(--gold)">${escHtml(bonus)}</span>
+        <span class="attack-damage">${escHtml(dmg)}</span>
       </div>`;
   }
 
   let html = '';
+  let sectionCount = 0;
 
   if (hasVisActions) {
     html += `<div class="attack-section-label">Actions</div>`;
-    actionAtks.forEach((a, i) => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
+    actionAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
     combatSpellActions.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
     combatTraitActions.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
+    combatFeatActions.forEach(f  => { html += makeFeatureRow(f, state.classFeatures.indexOf(f)); });
+    sectionCount++;
   }
 
   if (hasVisBonus) {
-    html += `<div class="attack-section-label"${hasVisActions ? ' style="margin-top:8px"' : ''}>Bonus Actions</div>`;
-    bonusAtks.forEach((a, i) => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
+    if (sectionCount > 0) html += '<div style="margin-top:8px"></div>';
+    html += `<div class="attack-section-label">Bonus Actions</div>`;
+    bonusAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
     combatSpellBonus.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
     combatTraitBonus.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
+    combatFeatBonus.forEach(f  => { html += makeFeatureRow(f, state.classFeatures.indexOf(f)); });
+    sectionCount++;
+  }
+
+  if (hasVisOther) {
+    if (sectionCount > 0) html += '<div style="margin-top:8px"></div>';
+    html += `<div class="attack-section-label">Other</div>`;
+    otherAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
+    combatSpellOther.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
+    combatTraitOther.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
+    combatFeatOther.forEach(f  => { html += makeFeatureRow(f, state.classFeatures.indexOf(f)); });
   }
 
   list.innerHTML = html;
@@ -7192,6 +7292,7 @@ function _applyPayloadData(payload) {
       if (!sp.rolls) {
         sp.rolls = sp.damage ? [{dice: sp.damage, type: 'slashing', mod: ''}] : [];
       }
+      if (sp.saveDC === undefined) sp.saveDC = 0;
     });
     state.classFeatures.forEach(f => {
       if (!f.rolls) {
@@ -7201,6 +7302,8 @@ function _applyPayloadData(payload) {
       if (f.attackMod === undefined) f.attackMod = '';
       if (f.attackBonus === undefined) f.attackBonus = '—';
       if (f.attackProficient === undefined) f.attackProficient = false;
+      if (f.showInCombat === undefined) f.showInCombat = false;
+      if (f.combatActionType === undefined) f.combatActionType = 'action';
     });
   }
 }
@@ -7220,6 +7323,7 @@ function setupAutoSave() {
 // ── Data normalization helpers ─────────────────────────────────────────
 function _normalizeSpell(sp) {
   if (!sp.rolls) sp.rolls = sp.damage ? [{dice: sp.damage, type: 'slashing', mod: ''}] : [];
+  if (sp.saveDC === undefined) sp.saveDC = 0;
   return sp;
 }
 function _normalizeFeature(f) {
@@ -7228,6 +7332,8 @@ function _normalizeFeature(f) {
   if (f.attackMod === undefined) f.attackMod = '';
   if (f.attackBonus === undefined) f.attackBonus = '—';
   if (f.attackProficient === undefined) f.attackProficient = false;
+  if (f.showInCombat === undefined) f.showInCombat = false;
+  if (f.combatActionType === undefined) f.combatActionType = 'action';
   return f;
 }
 
