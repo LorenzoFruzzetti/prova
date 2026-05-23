@@ -358,8 +358,9 @@ let state = {
                           name, max, used, recharge, step,
                           description,           //   optional — shown in feature view panel
                           attackRoll,            //   boolean — true if feature has an attack roll (e.g. Divine Smite)
-                          attackMod,             //   ability key for the attack roll ('STR'|…|'SPELL'|'')
-                          attackProficient,      //   boolean — add proficiency bonus to feature attack roll
+                          attackMod,             //   ability key ('STR'|…|'SPELL'|'manual'|'') — '' means no roll
+                          attackBonus,           //   string — manual bonus string (e.g. "+7"); only used when attackMod='manual'
+                          attackProficient,      //   boolean — add proficiency bonus to computed feature attack roll
                           rolls,                 //   array of roll objects: [{dice, type, label?, mod?}] — same shape as spells.rolls
                           saveAbility,           //   ability key or ""
                           saveDC,                //   integer, 0 = use current Spell Save DC
@@ -488,7 +489,8 @@ DOMContentLoaded
 | `getRollBoxLabel(rolls)` | Returns `'Damage'` if any roll has a standard damage type; otherwise `'Roll'` |
 | `showRollsOnly(name, rolls)` | Evaluates a rolls array and shows result in the roll overlay; single roll shows as main total, multi-roll sums all and shows individual lines in secondary |
 | `getAttackBonus(a)` | Returns the formatted to-hit bonus string for an attack, computed from `abilityMod`, `proficient`, and `flatBonus`; falls back to `a.bonus` for `abilityMod='manual'` |
-| `getFeatureAttackBonus(f)` | Returns the formatted attack bonus for a class feature, computed from `attackMod` and `attackProficient` |
+| `getFeatureAttackBonus(f)` | Returns the formatted attack bonus for a class feature; falls back to `f.attackBonus` for `attackMod='manual'`, otherwise computes from ability score and `attackProficient` |
+| `toggleFpAtkBonusFields()` | Called on `fpEditAttackMod` change; shows manual bonus input when `manual` is selected, shows/hides the Prof checkbox based on selection |
 | `rollTypeOptions(sel)` | Returns `<option>` HTML for the damage-type dropdown with the given value selected |
 | `rollModOptions(sel)` | Returns `<option>` HTML for the ability-mod dropdown with the given value selected |
 | `buildRollRowHTML(r)` | Returns HTML for one edit-mode roll row (`dice` + `type` + optional `label` + `mod` + ✕ button) |
@@ -594,8 +596,8 @@ DOMContentLoaded
 | `openFeaturePanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `featurePanelIdx = i`; shows `#featurePanelBackdrop` and `#featurePanel`; `i = -1` means new feature |
 | `addFeature()` | + Add button | Calls `openFeaturePanel(-1, true)` (new feature mode) |
 | `populateFeatureViewPanel(i)` | Internal | Fills view-mode elements from `state.classFeatures[i]`; shows attack roll card if `attackRoll` and `attackMod` are set; shows rolls box if `rolls` is non-empty; shows save DC box if `saveAbility` is set |
-| `populateFeatureEditForm(i)` | Internal | Fills edit form from `state.classFeatures[i]` including `attackRoll`, `attackMod`, `attackProficient`, `rolls` (via `renderRollRows`); blanks all fields when `i = -1` |
-| `saveFeaturePanel()` | Tap Save in feature panel edit mode | Validates name; writes all fields including `attackRoll`, `attackMod`, `attackProficient`, `rolls` to `state.classFeatures[idx]` or pushes new entry; calls `buildFeatures()` + `saveData()`; dismisses panel |
+| `populateFeatureEditForm(i)` | Internal | Fills edit form from `state.classFeatures[i]` including `attackRoll`, `attackMod`, `attackBonus`, `attackProficient`, `rolls` (via `renderRollRows`); calls `toggleFpAtkBonusFields()`; blanks all fields when `i = -1` |
+| `saveFeaturePanel()` | Tap Save in feature panel edit mode | Validates name; writes all fields including `attackRoll`, `attackMod`, `attackBonus`, `attackProficient`, `rolls` to `state.classFeatures[idx]` or pushes new entry; calls `buildFeatures()` + `saveData()`; dismisses panel |
 | `rollFeatureDamage()` | Tap rolls box in feature panel view mode | Calls `showRollsOnly()` with feature's `rolls` array |
 | `rollFromFeaturePanel(mode)` | Tap attack roll card in feature panel view mode | Rolls d20 + computed feature attack bonus; shows all roll results in secondary |
 | `deleteFeatureFromPanel()` | Tap Delete in feature panel edit mode | `confirm()` dialog → splices `state.classFeatures`; calls `buildFeatures()` + `saveData()`; dismisses panel |

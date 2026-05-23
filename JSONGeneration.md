@@ -417,8 +417,9 @@ Each object:
 | `step` | integer | Points per dot and per +/− tap (default `1`); set to e.g. `5` for Lay on Hands |
 | `description` | string | Full description shown in the feature view panel (optional) |
 | `attackRoll` | boolean | `true` if the feature has an attack roll (e.g. Divine Smite) — shows a tappable d20 roll card |
-| `attackMod` | string | Ability key for the attack roll: `"STR"`/`"DEX"`/`"CON"`/`"INT"`/`"WIS"`/`"CHA"`/`"SPELL"` or `""` |
-| `attackProficient` | boolean | Add proficiency bonus to the feature's attack roll |
+| `attackMod` | string | Ability key for the attack roll: `"STR"`/`"DEX"`/`"CON"`/`"INT"`/`"WIS"`/`"CHA"`/`"SPELL"`/`"manual"` or `""` (empty = no attack roll) |
+| `attackBonus` | string | Manual attack roll modifier string (e.g. `"+7"`); only used when `attackMod` is `"manual"` |
+| `attackProficient` | boolean | Add proficiency bonus to the computed feature attack roll (ignored when `attackMod` is `"manual"`) |
 | `rolls` | array | Roll objects `[{dice, type, label?, mod?}]` — same structure as `spells.rolls` |
 | `saveAbility` | string | Ability key for a saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` |
 | `saveDC` | integer | Override DC; if `0` or omitted, the sheet's current Spell Save DC is used |
@@ -428,13 +429,13 @@ Each object:
 ```json
 "classFeatures": [
   { "name": "Channel Divinity", "max": 2, "used": 0, "recharge": "Short Rest", "step": 1,
-    "attackRoll": false, "attackMod": "", "attackProficient": false, "rolls": [],
+    "attackRoll": false, "attackMod": "", "attackBonus": "—", "attackProficient": false, "rolls": [],
     "description": "Sacred Weapon: imbue a weapon with your holy symbol for 1 minute." },
   { "name": "Lay on Hands", "max": 40, "used": 0, "recharge": "Long Rest", "step": 5,
-    "attackRoll": false, "attackMod": "", "attackProficient": false, "rolls": [],
+    "attackRoll": false, "attackMod": "", "attackBonus": "—", "attackProficient": false, "rolls": [],
     "description": "Restore HP by touching a creature (pool of 40 HP per Long Rest)." },
   { "name": "Divine Smite", "max": 0, "used": 0, "recharge": "", "step": 1,
-    "attackRoll": true, "attackMod": "STR", "attackProficient": true,
+    "attackRoll": true, "attackMod": "STR", "attackBonus": "—", "attackProficient": true,
     "rolls": [{"dice": "2d8", "type": "radiant", "mod": ""}],
     "description": "Expend a spell slot on a melee hit to deal radiant damage." }
 ]

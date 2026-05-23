@@ -3575,8 +3575,9 @@
         <label style="display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap">
           <input type="checkbox" id="fpEditAttackRoll"> Has Attack Roll
         </label>
-        <select id="fpEditAttackMod" style="padding:4px 6px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)">
+        <select id="fpEditAttackMod" style="padding:4px 6px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="toggleFpAtkBonusFields()">
           <option value="">— Ability</option>
+          <option value="manual">Manual</option>
           <option value="STR">STR</option>
           <option value="DEX">DEX</option>
           <option value="CON">CON</option>
@@ -3585,7 +3586,8 @@
           <option value="CHA">CHA</option>
           <option value="SPELL">Spell Atk</option>
         </select>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap">
+        <input type="text" id="fpEditAttackBonus" placeholder="+5" style="display:none;width:56px;padding:4px 6px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)">
+        <label id="fpEditProfLabel" style="display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap">
           <input type="checkbox" id="fpEditProficient"> Prof
         </label>
       </div>
@@ -4338,6 +4340,7 @@ function getFeatureAttackBonus(f) {
   if (!f.attackRoll) return '—';
   const am = f.attackMod || '';
   if (!am) return '—';
+  if (am === 'manual') return f.attackBonus || '—';
   if (am === 'SPELL') {
     const el = document.getElementById('statSpellAtk');
     return (el && el.textContent !== '—') ? el.textContent : '—';
@@ -4346,6 +4349,13 @@ function getFeatureAttackBonus(f) {
   let m = mod(state.abilities[am] || 10);
   if (f.attackProficient) m += prof;
   return fmtMod(m);
+}
+
+function toggleFpAtkBonusFields() {
+  const am = document.getElementById('fpEditAttackMod').value;
+  const isManual = am === 'manual';
+  document.getElementById('fpEditAttackBonus').style.display = isManual ? '' : 'none';
+  document.getElementById('fpEditProfLabel').style.display = (am && !isManual) ? '' : 'none';
 }
 
 function getRollMod(modKey) {
@@ -5512,7 +5522,9 @@ function populateFeatureEditForm(i) {
   document.getElementById('fpEditRecharge').value      = f ? (f.recharge || '') : 'Long Rest';
   document.getElementById('fpEditAttackRoll').checked  = f ? !!f.attackRoll : false;
   document.getElementById('fpEditAttackMod').value     = f ? (f.attackMod || '') : '';
+  document.getElementById('fpEditAttackBonus').value   = f ? (f.attackBonus || '') : '';
   document.getElementById('fpEditProficient').checked  = f ? !!f.attackProficient : false;
+  toggleFpAtkBonusFields();
   document.getElementById('fpEditSaveAbility').value   = f ? (f.saveAbility || '') : '';
   document.getElementById('fpEditSaveDC').value        = f ? (f.saveDC || '') : '';
   document.getElementById('fpEditDescription').value   = f ? (f.description || '') : '';
@@ -5547,6 +5559,7 @@ function saveFeaturePanel() {
     recharge:         document.getElementById('fpEditRecharge').value.trim(),
     attackRoll:       document.getElementById('fpEditAttackRoll').checked,
     attackMod:        document.getElementById('fpEditAttackMod').value,
+    attackBonus:      document.getElementById('fpEditAttackBonus').value.trim() || '—',
     attackProficient: document.getElementById('fpEditProficient').checked,
     rolls:            getRollsFromContainer('fpRollRows'),
     saveAbility:      document.getElementById('fpEditSaveAbility').value,
@@ -7186,6 +7199,7 @@ function _applyPayloadData(payload) {
       }
       if (f.attackRoll === undefined) f.attackRoll = false;
       if (f.attackMod === undefined) f.attackMod = '';
+      if (f.attackBonus === undefined) f.attackBonus = '—';
       if (f.attackProficient === undefined) f.attackProficient = false;
     });
   }
@@ -7212,6 +7226,7 @@ function _normalizeFeature(f) {
   if (!f.rolls) f.rolls = (f.rollDamage && f.damage) ? [{dice: f.damage, type: 'slashing', mod: ''}] : [];
   if (f.attackRoll === undefined) f.attackRoll = false;
   if (f.attackMod === undefined) f.attackMod = '';
+  if (f.attackBonus === undefined) f.attackBonus = '—';
   if (f.attackProficient === undefined) f.attackProficient = false;
   return f;
 }
