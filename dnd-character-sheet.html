@@ -2018,6 +2018,64 @@
     color: var(--red-light);
   }
 
+  .condition-tag.holding {
+    box-shadow: 0 0 0 2px rgba(192,57,43,0.5);
+  }
+
+  /* ── Condition Description Panel ── */
+  #conditionBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #conditionBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #conditionPanel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.88);
+    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
+    border: 2px solid var(--red-light);
+    border-radius: 20px;
+    padding: 22px 24px 20px;
+    z-index: 301;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    width: min(92vw, 500px);
+    max-height: 82vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  }
+  #conditionPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+
+  #conditionPanel .sp-mode-badge { color: var(--red-light); }
+
+  .cond-toggle-btn {
+    display: block;
+    width: 100%;
+    padding: 11px;
+    border-radius: 10px;
+    border: none;
+    font-size: 13px;
+    font-family: sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 0.15s;
+    margin-bottom: 14px;
+  }
+  .cond-toggle-btn.apply  { background: rgba(192,57,43,0.18); color: var(--red-light); border: 1px solid rgba(192,57,43,0.45); }
+  .cond-toggle-btn.remove { background: rgba(192,57,43,0.35); color: var(--red-light); border: 1px solid var(--red-light); }
+  .cond-toggle-btn:active { opacity: 0.75; }
+
   /* ── Settings menu ── */
   #settingsBackdrop {
     position: fixed; inset: 0;
@@ -3264,6 +3322,16 @@
   <span class="sp-dismiss-hint">tap to dismiss</span>
 </div>
 
+<!-- ── Condition Description Panel ── -->
+<div id="conditionBackdrop" onclick="dismissConditionPanel()"></div>
+<div id="conditionPanel" onclick="dismissConditionPanel()">
+  <div class="sp-mode-badge">Condition</div>
+  <div class="sp-name" id="condPanelName"></div>
+  <div class="sp-description" id="condPanelDesc"></div>
+  <button class="cond-toggle-btn" id="condPanelToggleBtn" onclick="event.stopPropagation(); toggleConditionFromPanel()"></button>
+  <span class="sp-dismiss-hint">tap to dismiss</span>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -3301,9 +3369,23 @@ const SKILLS = [
   {name:'Survival',        ab:'WIS', desc:'Follow tracks, hunt wild game, navigate the wilderness, predict weather, identify signs of nearby creatures, and avoid natural hazards. Essential for overland travel, foraging for food, and tracking quarry through difficult terrain.'},
 ];
 
-const CONDITIONS = ['Blinded','Charmed','Deafened','Exhausted','Frightened',
-  'Grappled','Incapacitated','Invisible','Paralyzed','Petrified',
-  'Poisoned','Prone','Restrained','Stunned','Unconscious'];
+const CONDITIONS = [
+  {name:'Blinded',       desc:"You can't see. You automatically fail any check that requires sight. Attack rolls against you have advantage; your attack rolls have disadvantage."},
+  {name:'Charmed',       desc:"You can't attack the charmer or target them with harmful abilities or spells. The charmer has advantage on ability checks to interact socially with you."},
+  {name:'Deafened',      desc:"You can't hear. You automatically fail any check that requires hearing."},
+  {name:'Exhausted',     desc:"Each exhaustion level stacks: 1 – disadvantage on checks; 2 – speed halved; 3 – disadvantage on attacks and saves; 4 – max HP halved; 5 – speed drops to 0; 6 – death. Finishing a long rest removes one level."},
+  {name:'Frightened',    desc:"You have disadvantage on ability checks and attack rolls while the source of fear is within line of sight. You can't willingly move closer to the source."},
+  {name:'Grappled',      desc:"Your speed becomes 0 and can't increase. The condition ends if the grappler is incapacitated, or if you're removed from the grappler's reach."},
+  {name:'Incapacitated', desc:"You can't take actions or reactions."},
+  {name:'Invisible',     desc:"You can't be seen without magic or special senses. You have advantage on attack rolls; attack rolls against you have disadvantage."},
+  {name:'Paralyzed',     desc:"You are incapacitated and can't move or speak. You automatically fail STR and DEX saves. Attacks against you have advantage, and any hit from within 5 ft is a critical hit."},
+  {name:'Petrified',     desc:"You are transformed into an inanimate substance. You are incapacitated, your weight increases ×10, and you don't age. You automatically fail STR and DEX saves, have resistance to all damage, and are immune to poison and disease."},
+  {name:'Poisoned',      desc:"You have disadvantage on attack rolls and ability checks."},
+  {name:'Prone',         desc:"Your only movement option is to crawl, or spend half your speed to stand up. You have disadvantage on attack rolls. Attacks against you from within 5 ft have advantage; ranged attacks against you have disadvantage."},
+  {name:'Restrained',    desc:"Your speed becomes 0. Attack rolls against you have advantage; your attack rolls have disadvantage. You have disadvantage on DEX saving throws."},
+  {name:'Stunned',       desc:"You are incapacitated, can't move, and can speak only falteringly. You automatically fail STR and DEX saves. Attack rolls against you have advantage."},
+  {name:'Unconscious',   desc:"You are incapacitated, can't move or speak, and are unaware of your surroundings. You drop prone, automatically fail STR and DEX saves, and attack rolls against you have advantage. Any hit from within 5 ft is a critical hit."},
+];
 
 const SPELL_SLOTS_DEFAULT = [
   {level:'1st', max:2}, {level:'2nd', max:0}, {level:'3rd', max:0},
@@ -3464,8 +3546,11 @@ function buildSkillsList() {
 function buildConditions() {
   const grid = document.getElementById('conditionsGrid');
   grid.innerHTML = CONDITIONS.map(c => `
-    <div class="condition-tag ${state.conditions.includes(c) ? 'active' : ''}"
-         onclick="toggleCondition('${c}', this)">${c}</div>
+    <div class="condition-tag ${state.conditions.includes(c.name) ? 'active' : ''}"
+         onpointerdown="startConditionPress(event, '${c.name}')"
+         onclick="clickConditionItem(event, '${c.name}', this)"
+         onpointercancel="cancelConditionPress()"
+         oncontextmenu="return false">${c.name}</div>
   `).join('');
 }
 
@@ -4011,6 +4096,70 @@ function rollSkillFromPanel() {
   if (!skillPanelCurrentName) return;
   dismissSkillPanel();
   rollSkill(skillPanelCurrentName);
+}
+
+// ── Condition press (tap = toggle, hold = description panel) ───────────
+let conditionPressTimer = null;
+let conditionPressActive = false;
+let conditionPanelCurrentName = null;
+
+function startConditionPress(e, name) {
+  conditionPressActive = false;
+  clearTimeout(conditionPressTimer);
+  const el = e.currentTarget;
+  conditionPressTimer = setTimeout(() => {
+    conditionPressActive = true;
+    if (el) el.classList.add('holding');
+    openConditionPanel(name);
+  }, 500);
+}
+
+function clickConditionItem(e, name, el) {
+  clearTimeout(conditionPressTimer);
+  document.querySelectorAll('.condition-tag.holding').forEach(t => t.classList.remove('holding'));
+  if (conditionPressActive) { conditionPressActive = false; return; }
+  toggleCondition(name, el);
+}
+
+function cancelConditionPress() {
+  clearTimeout(conditionPressTimer);
+  conditionPressActive = false;
+  document.querySelectorAll('.condition-tag.holding').forEach(t => t.classList.remove('holding'));
+}
+
+function openConditionPanel(name) {
+  const cond = CONDITIONS.find(c => c.name === name);
+  if (!cond) return;
+  conditionPanelCurrentName = name;
+  pushModalHistory();
+  document.getElementById('condPanelName').textContent = name;
+  document.getElementById('condPanelDesc').textContent = cond.desc;
+  const isActive = state.conditions.includes(name);
+  const btn = document.getElementById('condPanelToggleBtn');
+  btn.textContent = isActive ? 'Remove Condition' : 'Apply Condition';
+  btn.className = 'cond-toggle-btn ' + (isActive ? 'remove' : 'apply');
+  document.getElementById('conditionBackdrop').classList.add('show');
+  document.getElementById('conditionPanel').classList.add('show');
+}
+
+function dismissConditionPanel() {
+  popModalHistory();
+  document.getElementById('conditionPanel').classList.remove('show');
+  document.getElementById('conditionBackdrop').classList.remove('show');
+  conditionPanelCurrentName = null;
+  cancelConditionPress();
+}
+
+function toggleConditionFromPanel() {
+  if (!conditionPanelCurrentName) return;
+  const name = conditionPanelCurrentName;
+  dismissConditionPanel();
+  const idx = state.conditions.indexOf(name);
+  pushUndo({type: 'condition', name, wasActive: idx !== -1});
+  if (idx === -1) state.conditions.push(name);
+  else state.conditions.splice(idx, 1);
+  buildConditions();
+  saveData();
 }
 
 // ── Info Traits (Features & Traits in Info tab) ────────────────────────
@@ -5445,6 +5594,7 @@ window.addEventListener('popstate', () => {
   else if (settingsEl?.classList.contains('show'))      dismissSettings();
   else if (attackPanelEl?.classList.contains('show'))   dismissAttackPanel();
   else if (skillPanelEl?.classList.contains('show'))    dismissSkillPanel();
+  else if (document.getElementById('conditionPanel')?.classList.contains('show')) dismissConditionPanel();
 });
 
 // ── Settings menu ─────────────────────────────────────────────────────
