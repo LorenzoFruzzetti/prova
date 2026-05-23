@@ -148,8 +148,12 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.hp-display` | Flex center area showing current HP, max, and bar; tap to open HP dialog |
 | `.hp-bar` / `.hp-bar-fill` | Visual HP percentage bar |
 | `.stat-pills` | 3-column grid of combat stat tiles |
-| `.stat-pill` | One combat stat tile (value + label); short tap → rolls if rollable, otherwise opens info panel; hold 500 ms → always opens info panel |
-| `.stat-pill.rollable` | Adds `cursor:pointer` and gold border on active |
+| `.stat-pill` | One combat stat tile (value + label); short tap → rolls if rollable, otherwise opens info panel; hold 500 ms → always opens info panel. Pills that contain an `<input>` keep `--bg` (base) background to signal editability; the input's pointer events are stopped so the hold handler fires from the pill. |
+| `.stat-pill.rollable` | Adds `cursor:pointer`, gold-accent border, and slight accent background; active state deepens both. Used for Initiative and Spell Attack. |
+| `.stat-pill.interactive` | Same visual as `.rollable` but without an implicit roll on short-tap. Used for Spell DC (hold = info panel only). |
+| `.stat-pill-mod` | Tiny gold badge line inside a stat pill; shown only when a custom bonus is non-zero (set via `openStatModDialog`); hidden by default via `display:none` |
+| `#statModBackdrop` | Fixed dim layer behind the stat modifier dialog; tap to dismiss |
+| `#statModDialog` | Bottom-sheet dialog for entering a custom numeric bonus for a combat stat; same structure as `#hpDialog`; opened by `openStatModDialog(key)` |
 | `.death-saves` | Flex column stacking Successes above Failures; a `border-top` on `.save-group + .save-group` creates the horizontal divider |
 | `.save-dot` | 22 px circle; `.filled` colors it green or red |
 | `.inspiration-death-row` | Flex row containing the inspiration block (left) and death saves block (right) side by side inside a single `.section` |
@@ -411,6 +415,13 @@ let state = {
                           combatActionType,      //   'action' | 'bonus' | 'other' (default: 'action')
                         } ],
   portrait:           null, // base64 data URL string (e.g. "data:image/png;base64,...") or null
+  statMods:           {     // custom numeric bonuses added on top of each combat stat
+    ac: 0,            //   added to AC input value for display (visual badge only)
+    speed: 0,         //   added to Speed input value for display (visual badge only)
+    initiative: 0,    //   added to DEX modifier when computing statInit display & roll
+    spellatk: 0,      //   added to prof+spellMod when computing statSpellAtk display & roll
+    spelldc: 0,       //   added to 8+prof+spellMod when computing statSpellDC display
+  },
 }
 ```
 
@@ -441,6 +452,9 @@ infoPanelCfg        // object holding the rollFn, simpleRollFn, editFn, actionFn
 skillPressTimer / skillPressActive / skillPanelCurrentName  // skill row hold detection + current skill name
 conditionPressTimer / conditionPressActive / conditionPanelCurrentName  // condition chip hold detection
 abilityPressTimer / abilityPressActive  // ability card hold detection (500 ms → info panel)
+statPillPressTimer / statPillPressActive  // combat stat pill hold detection (500 ms → info panel)
+statModDialogKey    // string key ('ac'|'speed'|'initiative'|'spellatk'|'spelldc') for the currently-open stat modifier dialog
+inspirationPressTimer / inspirationPressActive  // inspiration button hold detection (tap = toggle, hold 500 ms = info panel)
 savePressTimer / savePressActive        // saving throw row hold detection
 statPillPressTimer / statPillPressActive  // combat stat pill hold detection
 hitDiePressTimer / hitDiePressActive    // hit die roll button hold detection
@@ -656,10 +670,18 @@ DOMContentLoaded
 | `infoPanelSimpleRoll()` | Tap `#ipSimpleRollBox` | Calls `infoPanelCfg.simpleRollFn()` |
 | `infoPanelEdit()` | Tap Edit button (`#ipEditBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.editFn()` |
 | `infoPanelAction()` | Tap action button (`#ipActionBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.actionFn()` |
-| `startStatPillPress(e, key)` | `pointerdown` on combat stat pill label | Starts 500 ms timer; on fire calls `openStatPillPanel(key)` |
-| `endStatPillPress(e, key)` | `pointerup` on combat stat pill label | If timer hadn't fired and stat is rollable: rolls directly (`rollInitiative()` / `rollSpellAtk()`); otherwise opens info panel |
+| `startStatPillPress(e, key)` | `pointerdown` on a combat stat pill | Starts 500 ms timer; on fire calls `openStatPillPanel(key)`. Handlers are now on the whole pill div; input elements stop propagation so typing doesn't trigger hold. |
+| `endStatPillPress(e, key)` | `pointerup` on a combat stat pill | If timer hadn't fired and stat is rollable: rolls directly (`rollInitiative()` / `rollSpellAtk()`); otherwise opens info panel |
 | `cancelStatPillPress()` | `pointercancel` on stat pill | Clears timer |
-| `openStatPillPanel(key)` | Internal | Opens `#infoPanel` with data from `STAT_PILL_INFO[key]`; rollable stats show a 3-zone roll button; hit die shows a simple roll button |
+| `openStatPillPanel(key)` | Internal | Opens `#infoPanel` with data from `STAT_PILL_INFO[key]`; rollable stats show a 3-zone roll button; hit die shows a simple roll button; if a non-zero `statMods[key]` exists its value appears in the meta line; if the info entry has an `editFn` the Edit button appears in the panel header |
+| `_updateStatModBadge(key)` | Called at end of `recalcAll()` | Shows or hides the `.stat-pill-mod` badge inside the pill for `key`; badge reads e.g. "+2 bonus" when non-zero, hidden when zero |
+| `openStatModDialog(key)` | `editFn` inside `STAT_PILL_INFO` entries | Dismisses info panel, opens `#statModDialog` bottom-sheet pre-filled with `state.statMods[key]`; calls `pushModalHistory()` |
+| `dismissStatModDialog()` | Cancel button or backdrop tap | Hides `#statModDialog`; calls `popModalHistory()` |
+| `applyStatModDialog()` | "Set Modifier" button in `#statModDialog` | Pushes undo (type `statMod`); writes `parseInt(input.value)` to `state.statMods[key]`; calls `recalcAll()` |
+| `startInspirationPress(e)` | `pointerdown` on `#inspirationBtn` | Starts 500 ms hold timer; on fire calls `openInspirationPanel()` |
+| `endInspirationPress(e)` | `pointerup` on `#inspirationBtn` | If timer hadn't fired: calls `toggleInspiration()` |
+| `cancelInspirationPress()` | `pointercancel` on inspiration button | Clears timer |
+| `openInspirationPanel()` | Internal (fired by hold timer) | Opens `#infoPanel` with Inspiration description and a "Gain / Remove Inspiration" action button |
 | `startHitDiePress(e)` | `pointerdown` on hit die roll button | Starts 500 ms timer; on fire opens `openStatPillPanel('dietype')` info panel |
 | `endHitDiePress(e)` | `pointerup` on hit die roll button | If timer hadn't fired: calls `rollHitDie()` |
 | `cancelHitDiePress()` | `pointercancel` on hit die roll button | Clears timer |
