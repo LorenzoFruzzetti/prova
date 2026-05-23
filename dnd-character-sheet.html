@@ -215,6 +215,85 @@
   .header-btn:active { border-color: var(--gold); color: var(--gold); background: rgba(var(--accent-rgb),0.15); }
   .header-btn:disabled { opacity: 0.35; pointer-events: none; }
 
+  /* ── Character roster menu ── */
+  .char-roster-wrap { position: relative; }
+
+  .char-menu-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 210px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    z-index: 300;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    overflow: hidden;
+  }
+  .char-menu-dropdown.open { display: block; }
+
+  .char-menu-list { max-height: 220px; overflow-y: auto; }
+
+  .char-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 10px;
+    border-bottom: 1px solid rgba(var(--border-rgb),0.4);
+    transition: background 0.1s;
+  }
+  .char-menu-item:last-child { border-bottom: none; }
+  .char-menu-item:hover { background: rgba(var(--accent-rgb),0.08); }
+  .char-menu-item.active { background: rgba(var(--accent-rgb),0.13); }
+  .char-menu-item.active .char-menu-name { color: var(--gold); font-weight: bold; }
+
+  .char-menu-name {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .char-menu-del {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: color 0.15s, opacity 0.15s, background 0.15s;
+  }
+  .char-menu-del:hover { color: var(--red-light); opacity: 1; background: rgba(200,60,60,0.12); }
+
+  .char-menu-footer {
+    padding: 8px 10px;
+    background: rgba(var(--accent-rgb),0.04);
+    border-top: 1px solid rgba(var(--border-rgb),0.4);
+  }
+
+  .char-menu-new-btn {
+    width: 100%;
+    background: rgba(var(--accent-rgb),0.08);
+    border: 1px dashed rgba(var(--accent-rgb),0.4);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: sans-serif;
+    padding: 6px 8px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .char-menu-new-btn:hover { background: rgba(var(--accent-rgb),0.16); border-color: var(--gold); color: var(--gold); }
+
   /* ── Tab Bar ── */
   .tab-bar {
     display: flex;
@@ -2319,6 +2398,15 @@
   <div class="header-top">
     <div class="header-title">Dungeons &amp; Dragons 5e</div>
     <div class="header-actions">
+      <div class="char-roster-wrap">
+        <button class="header-btn" onclick="toggleCharMenu()">🎭 ▾</button>
+        <div class="char-menu-dropdown" id="charMenuDropdown">
+          <div class="char-menu-list" id="charMenuList"></div>
+          <div class="char-menu-footer">
+            <button class="char-menu-new-btn" onclick="newCharacter()">+ New Character</button>
+          </div>
+        </div>
+      </div>
       <button class="header-btn" id="undoBtn" onclick="undo()" disabled>↩ Undo</button>
       <button class="header-btn" onclick="openSettings()">⚙ Settings</button>
     </div>
@@ -5542,6 +5630,8 @@ function updateHeader() {
   document.getElementById('metaClass').textContent  = cls   || '—';
   document.getElementById('metaRace').textContent   = race  || '—';
   document.getElementById('metaLevel').textContent  = `Lv ${lvl}`;
+  const activeLabel = document.querySelector('#charMenuList .char-menu-item.active .char-menu-name');
+  if (activeLabel) activeLabel.textContent = name;
 }
 
 // ── Tabs ───────────────────────────────────────────────────────────────
@@ -5784,33 +5874,190 @@ function buildPayload() {
   };
 }
 
+// ── Character roster ────────────────────────────────────────────────────
+let rosterActiveId = null;
+
+function genCharId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function loadRosterData() {
+  try {
+    const raw = localStorage.getItem('dnd5e_roster');
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function persistRoster(roster) {
+  try { localStorage.setItem('dnd5e_roster', JSON.stringify(roster)); } catch(e) {}
+}
+
+function migrateOldSheet() {
+  if (localStorage.getItem('dnd5e_roster')) return;
+  const id = genCharId();
+  const roster = { chars: {}, activeId: id };
+  try {
+    const oldRaw = localStorage.getItem('dnd5e_sheet');
+    if (oldRaw) {
+      const payload = JSON.parse(oldRaw);
+      const name = payload.form?.charName || 'Character 1';
+      roster.chars[id] = { name, payload };
+    } else {
+      roster.chars[id] = { name: 'Character 1', payload: null };
+    }
+  } catch(e) {
+    roster.chars[id] = { name: 'Character 1', payload: null };
+  }
+  persistRoster(roster);
+}
+
+function clearSheet() {
+  undoStack.length = 0;
+  document.getElementById('undoBtn').disabled = true;
+  document.querySelectorAll('input, textarea').forEach(el => {
+    el.value = el.defaultValue !== undefined ? el.defaultValue : '';
+  });
+  document.querySelectorAll('select').forEach(el => { el.selectedIndex = 0; });
+  Object.assign(state, {
+    abilities: {STR:10, DEX:10, CON:10, INT:10, WIS:10, CHA:10},
+    saveProficiencies: [], skillProficiencies: [], skillExpertise: [],
+    inspiration: false, hpCurrent: 10,
+    spellSlots: SPELL_SLOTS_DEFAULT.map(s => ({...s, used:0})),
+    spells: [], attacks: [], conditions: [], classFeatures: [],
+    infoTraits: [], hitDiceUsed: 0, diceRoller: null, portrait: null
+  });
+}
+
+function _rebuildAll() {
+  buildAbilityGrid(); buildSkillsList(); buildConditions();
+  buildSpellSlots(); buildSpellList(); buildFeatures(); buildFeaturedSpells();
+  buildInfoTraits(); buildDiceRoller(); renderHitDice(); renderAttacks();
+  recalcAll(); updateHeader(); updateHP(); applyPortrait();
+  document.getElementById('inspirationBtn').classList.toggle('active', state.inspiration);
+}
+
+function switchCharacter(id) {
+  if (id === rosterActiveId) { closeCharMenu(); return; }
+  saveData();
+  const roster = loadRosterData();
+  if (!roster?.chars[id]) return;
+  rosterActiveId = id;
+  roster.activeId = id;
+  persistRoster(roster);
+  clearSheet();
+  const char = roster.chars[id];
+  if (char.payload) _applyPayloadData(char.payload);
+  _rebuildAll();
+  renderCharMenu();
+  closeCharMenu();
+  toast(`Switched to ${char.name || 'Character'}`);
+}
+
+function newCharacter() {
+  saveData();
+  const roster = loadRosterData() || { chars: {}, activeId: null };
+  const id = genCharId();
+  const n = Object.keys(roster.chars).length + 1;
+  roster.chars[id] = { name: `Character ${n}`, payload: null };
+  roster.activeId = id;
+  rosterActiveId = id;
+  persistRoster(roster);
+  clearSheet();
+  _rebuildAll();
+  renderCharMenu();
+  closeCharMenu();
+  toast('New character created');
+}
+
+function deleteCharacter(id) {
+  const roster = loadRosterData();
+  if (!roster) return;
+  if (Object.keys(roster.chars).length <= 1) { toast('Cannot delete the only character'); return; }
+  const name = roster.chars[id]?.name || 'Character';
+  delete roster.chars[id];
+  if (rosterActiveId === id) {
+    const newId = Object.keys(roster.chars)[0];
+    rosterActiveId = newId;
+    roster.activeId = newId;
+    persistRoster(roster);
+    clearSheet();
+    const char = roster.chars[newId];
+    if (char?.payload) _applyPayloadData(char.payload);
+    _rebuildAll();
+  } else {
+    persistRoster(roster);
+  }
+  renderCharMenu();
+  closeCharMenu();
+  toast(`${name} deleted`);
+}
+
+let charMenuOpen = false;
+
+function toggleCharMenu() {
+  charMenuOpen = !charMenuOpen;
+  const drop = document.getElementById('charMenuDropdown');
+  if (drop) drop.classList.toggle('open', charMenuOpen);
+  if (charMenuOpen) renderCharMenu();
+}
+
+function closeCharMenu() {
+  charMenuOpen = false;
+  document.getElementById('charMenuDropdown')?.classList.remove('open');
+}
+
+function renderCharMenu() {
+  const roster = loadRosterData();
+  const list = document.getElementById('charMenuList');
+  if (!list || !roster) return;
+  list.innerHTML = '';
+  Object.entries(roster.chars).forEach(([id, char]) => {
+    const isActive = id === rosterActiveId;
+    const item = document.createElement('div');
+    item.className = 'char-menu-item' + (isActive ? ' active' : '');
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'char-menu-name';
+    nameSpan.textContent = char.name || 'Unnamed';
+    nameSpan.onclick = () => switchCharacter(id);
+    const delBtn = document.createElement('button');
+    delBtn.className = 'char-menu-del';
+    delBtn.textContent = '✕';
+    delBtn.title = 'Delete';
+    delBtn.onclick = e => { e.stopPropagation(); deleteCharacter(id); };
+    item.appendChild(nameSpan);
+    item.appendChild(delBtn);
+    list.appendChild(item);
+  });
+}
+
 function saveData() {
-  try { localStorage.setItem('dnd5e_sheet', JSON.stringify(buildPayload())); } catch(e) {}
+  if (!rosterActiveId) return;
+  const roster = loadRosterData() || { chars: {}, activeId: rosterActiveId };
+  const name = document.getElementById('charName')?.value?.trim() || 'Unnamed';
+  if (!roster.chars[rosterActiveId]) roster.chars[rosterActiveId] = {};
+  roster.chars[rosterActiveId].name = name;
+  roster.chars[rosterActiveId].payload = buildPayload();
+  roster.activeId = rosterActiveId;
+  persistRoster(roster);
 }
 
 function loadData() {
-  try {
-    const raw = localStorage.getItem('dnd5e_sheet');
-    if (!raw) return;
-    const payload = JSON.parse(raw);
-    if (payload.form) {
-      Object.entries(payload.form).forEach(([id, val]) => {
-        const el = document.getElementById(id); if (el) el.value = val;
-      });
-    }
-    if (payload.state) {
-      Object.assign(state, payload.state);
-      if (state.spellSlots.length < 9) {
-        state.spellSlots = SPELL_SLOTS_DEFAULT.map((def, i) => state.spellSlots[i] || {...def});
-      }
-      if (!Array.isArray(state.classFeatures)) state.classFeatures = [];
-      if (!Array.isArray(state.infoTraits)) state.infoTraits = [];
-      if (!Array.isArray(state.spells)) state.spells = [];
-      if (typeof state.hitDiceUsed !== 'number') state.hitDiceUsed = 0;
-      if (!Array.isArray(state.diceRoller)) state.diceRoller = null;
-      if (typeof state.portrait !== 'string') state.portrait = null;
-    }
-  } catch(e) {}
+  migrateOldSheet();
+  let roster = loadRosterData() || { chars: {}, activeId: null };
+  if (!Object.keys(roster.chars).length) {
+    const id = genCharId();
+    roster.chars[id] = { name: 'Character 1', payload: null };
+    roster.activeId = id;
+    persistRoster(roster);
+  }
+  rosterActiveId = roster.activeId;
+  if (!rosterActiveId || !roster.chars[rosterActiveId]) {
+    rosterActiveId = Object.keys(roster.chars)[0];
+    roster.activeId = rosterActiveId;
+    persistRoster(roster);
+  }
+  const char = roster.chars[rosterActiveId];
+  if (char?.payload) _applyPayloadData(char.payload);
 }
 
 // ── JSON export ────────────────────────────────────────────────────────
@@ -5844,7 +6091,7 @@ function importFromJSON(input) {
   input.value = '';
 }
 
-function applyPayload(payload) {
+function _applyPayloadData(payload) {
   if (payload.form) {
     Object.entries(payload.form).forEach(([id, val]) => {
       const el = document.getElementById(id); if (el) el.value = val;
@@ -5852,30 +6099,20 @@ function applyPayload(payload) {
   }
   if (payload.state) {
     Object.assign(state, payload.state);
-    if (state.spellSlots.length < 9) {
+    if (state.spellSlots.length < 9)
       state.spellSlots = SPELL_SLOTS_DEFAULT.map((def, i) => state.spellSlots[i] || {...def});
-    }
     if (!Array.isArray(state.classFeatures)) state.classFeatures = [];
     if (!Array.isArray(state.infoTraits)) state.infoTraits = [];
     if (!Array.isArray(state.spells)) state.spells = [];
     if (typeof state.hitDiceUsed !== 'number') state.hitDiceUsed = 0;
     if (!Array.isArray(state.diceRoller)) state.diceRoller = null;
+    if (typeof state.portrait !== 'string') state.portrait = null;
   }
-  buildAbilityGrid();
-  buildSkillsList();
-  buildConditions();
-  buildSpellSlots();
-  buildSpellList();
-  buildFeatures();
-  buildFeaturedSpells();
-  buildInfoTraits();
-  buildDiceRoller();
-  renderHitDice();
-  renderAttacks();
-  recalcAll();
-  updateHeader();
-  updateHP();
-  document.getElementById('inspirationBtn').classList.toggle('active', state.inspiration);
+}
+
+function applyPayload(payload) {
+  _applyPayloadData(payload);
+  _rebuildAll();
 }
 
 function setupAutoSave() {
@@ -5895,6 +6132,10 @@ window.addEventListener('DOMContentLoaded', () => {
   updateHP();
   renderAttacks();
   document.getElementById('inspirationBtn').classList.toggle('active', state.inspiration);
+  renderCharMenu();
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.char-roster-wrap')) closeCharMenu();
+  });
 });
 </script>
 </body>
