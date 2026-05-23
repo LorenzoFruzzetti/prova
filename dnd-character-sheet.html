@@ -421,7 +421,7 @@
   }
 
   /* ── Panels ── */
-  .panel { display: none; padding: 16px; }
+  .panel { display: none; padding: 16px; touch-action: pan-y; }
   .panel.active { display: block; }
 
   /* ── Section ── */
@@ -7290,16 +7290,24 @@ function switchTab(id) {
 }
 
 function setupSwipe() {
-  let x0 = null, y0 = null;
+  let x0 = null, y0 = null, xLast = null, yLast = null;
   document.body.addEventListener('touchstart', e => {
-    x0 = e.touches[0].clientX;
-    y0 = e.touches[0].clientY;
+    x0    = e.touches[0].clientX;
+    y0    = e.touches[0].clientY;
+    xLast = x0;
+    yLast = y0;
   }, {passive: true});
-  document.body.addEventListener('touchend', e => {
+  document.body.addEventListener('touchmove', e => {
+    if (e.touches.length > 0) {
+      xLast = e.touches[0].clientX;
+      yLast = e.touches[0].clientY;
+    }
+  }, {passive: true});
+  function applySwipe(endX, endY) {
     if (x0 === null) return;
-    const dx = e.changedTouches[0].clientX - x0;
-    const dy = e.changedTouches[0].clientY - y0;
-    x0 = null;
+    const dx = endX - x0;
+    const dy = endY - y0;
+    x0 = null; xLast = null; yLast = null;
     if (document.getElementById('rollResult').classList.contains('show')) return;
     if (document.getElementById('spellPanel')?.classList.contains('show')) return;
     if (document.getElementById('attackPanel')?.classList.contains('show')) return;
@@ -7307,6 +7315,14 @@ function setupSwipe() {
     const cur = TABS.indexOf(document.querySelector('.tab-btn.active')?.dataset.tab ?? TABS[0]);
     const next = Math.max(0, Math.min(TABS.length - 1, cur + (dx < 0 ? 1 : -1)));
     if (next !== cur) switchTab(TABS[next]);
+  }
+  document.body.addEventListener('touchend', e => {
+    applySwipe(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  }, {passive: true});
+  // touchcancel fires when the browser takes over the gesture (e.g. scroll);
+  // use the last tracked position so a nearly-complete horizontal swipe still registers.
+  document.body.addEventListener('touchcancel', () => {
+    applySwipe(xLast ?? x0 ?? 0, yLast ?? y0 ?? 0);
   }, {passive: true});
 }
 
