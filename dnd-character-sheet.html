@@ -4734,6 +4734,7 @@ function dismissInfoPanel() {
   document.getElementById('infoPanelBackdrop').classList.remove('show');
   infoPanelCfg = {};
   infoPanelEditCfg = null;
+  document.querySelectorAll('.holding').forEach(el => el.classList.remove('holding'));
 }
 
 function infoPanelRoll(mode) {
