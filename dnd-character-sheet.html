@@ -1789,18 +1789,18 @@
     margin-top: 14px;
   }
   .sp-edit-save-btn {
-    background: var(--green);
-    color: #fff;
-    border: none;
+    background: none;
+    border: 1px solid var(--green);
     border-radius: 6px;
+    color: var(--green);
     padding: 9px 20px;
     font-size: 13px;
     font-weight: bold;
     font-family: sans-serif;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: border-color 0.15s, color 0.15s;
   }
-  .sp-edit-save-btn:active { background: #1e9051; }
+  .sp-edit-save-btn:active { border-color: #1e9051; color: #1e9051; }
   .sp-edit-cancel-btn {
     background: none;
     border: 1px solid var(--border);
