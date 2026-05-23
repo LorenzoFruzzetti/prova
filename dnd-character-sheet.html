@@ -2960,7 +2960,10 @@
 <div id="spellPanel">
   <!-- View mode -->
   <div class="sp-view-section">
-    <div class="sp-mode-badge" id="spModeBadge">Spell</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="sp-mode-badge" id="spModeBadge">Spell</div>
+      <button class="attack-edit-btn" onclick="event.stopPropagation();switchToSpellEdit()">Edit</button>
+    </div>
     <div class="sp-name" id="spNameView"></div>
     <div class="sp-meta" id="spMetaView"></div>
     <div class="sp-details-grid" id="spDetailsView"></div>
@@ -2979,7 +2982,7 @@
       <div class="sp-atk-bonus" id="spDmgDice"></div>
     </div>
     <div class="sp-description" id="spDescView"></div>
-    <span class="sp-dismiss-hint">tap to dismiss · hold to edit</span>
+    <span class="sp-dismiss-hint">tap to dismiss</span>
   </div>
   <!-- Edit mode -->
   <div class="sp-edit-section">
@@ -3119,7 +3122,10 @@
 <div id="traitPanel">
   <!-- View mode -->
   <div class="tr-view-section">
-    <div class="tr-mode-badge">Feature / Trait</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="tr-mode-badge">Feature / Trait</div>
+      <button class="attack-edit-btn" onclick="event.stopPropagation();switchToTraitEdit()">Edit</button>
+    </div>
     <div class="tr-name" id="trNameView"></div>
     <div class="sp-save-dc-box" id="trSaveDcBox" style="display:none">
       <div class="sp-save-dc-label">Saving Throw DC</div>
@@ -3131,7 +3137,7 @@
       <div class="sp-atk-bonus" id="trDmgDice"></div>
     </div>
     <div class="tr-description" id="trDescView"></div>
-    <span class="sp-dismiss-hint">tap to dismiss · hold to edit</span>
+    <span class="sp-dismiss-hint">tap to dismiss</span>
   </div>
   <!-- Edit mode -->
   <div class="tr-edit-section">
@@ -3201,7 +3207,10 @@
 <div id="featurePanel">
   <!-- View mode -->
   <div class="fp-view-section">
-    <div class="fp-mode-badge">Class Feature</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="fp-mode-badge">Class Feature</div>
+      <button class="attack-edit-btn" onclick="event.stopPropagation();switchToFeatureEdit()">Edit</button>
+    </div>
     <div class="fp-name" id="fpNameView"></div>
     <div class="fp-recharge" id="fpRechargeView"></div>
     <div class="sp-save-dc-box" id="fpSaveDcBox" style="display:none">
@@ -3214,7 +3223,7 @@
       <div class="sp-atk-bonus" id="fpDmgDice"></div>
     </div>
     <div class="fp-description" id="fpDescView"></div>
-    <span class="sp-dismiss-hint">tap to dismiss · hold to edit</span>
+    <span class="sp-dismiss-hint">tap to dismiss</span>
   </div>
   <!-- Edit mode -->
   <div class="fp-edit-section">
@@ -4108,7 +4117,7 @@ function buildSpellList() {
   body.innerHTML = html;
 }
 
-// ── Spell press (tap = view, hold = edit) ──────────────────────────────
+// ── Spell press (tap = roll or view, hold = info panel) ────────────────
 let spellPressTimer = null;
 let spellPressActive = false;
 
@@ -4119,21 +4128,36 @@ function startSpellPress(e, i) {
   spellPressTimer = setTimeout(() => {
     spellPressActive = true;
     if (el) el.classList.add('holding');
-    openSpellPanel(i, true);
+    openSpellPanel(i, false);
   }, 500);
 }
 
 function clickSpellItem(e, i) {
   clearTimeout(spellPressTimer);
-  document.querySelectorAll('.spell-item.holding').forEach(el => el.classList.remove('holding'));
+  document.querySelectorAll('.spell-item.holding, .feature-name-area.holding').forEach(el => el.classList.remove('holding'));
   if (spellPressActive) { spellPressActive = false; return; }
-  openSpellPanel(i, false);
+  const sp = state.spells[i];
+  if (!sp) return;
+  if (sp.attackRoll) {
+    const atkEl = document.getElementById('statSpellAtk');
+    if (!atkEl || atkEl.textContent === '—') { toast('No spellcasting ability set'); return; }
+    const roll = d20();
+    const m = parseInt(atkEl.textContent) || 0;
+    const secondary = sp.damage ? `${sp.damage} = ${rollDiceExpr(sp.damage)}` : undefined;
+    showRoll(sp.name, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll), secondary);
+  } else if (sp.rollDamage && sp.damage) {
+    const dmg = rollDiceExpr(sp.damage);
+    if (dmg === null) { toast('Invalid dice expression'); return; }
+    showRoll(sp.name + ' Damage', sp.damage, dmg, '', '');
+  } else {
+    openSpellPanel(i, false);
+  }
 }
 
 function cancelSpellPress() {
   clearTimeout(spellPressTimer);
   spellPressActive = false;
-  document.querySelectorAll('.spell-item.holding').forEach(el => el.classList.remove('holding'));
+  document.querySelectorAll('.spell-item.holding, .feature-name-area.holding').forEach(el => el.classList.remove('holding'));
 }
 
 // ── Skill press (tap = roll, hold = description panel) ─────────────────
@@ -4193,7 +4217,7 @@ function rollSkillFromPanel() {
   rollSkill(skillPanelCurrentName);
 }
 
-// ── Condition press (tap = toggle, hold = description panel) ───────────
+// ── Condition press (tap = info panel, hold = info panel) ──────────────
 let conditionPressTimer = null;
 let conditionPressActive = false;
 let conditionPanelCurrentName = null;
@@ -4213,7 +4237,7 @@ function clickConditionItem(e, name, el) {
   clearTimeout(conditionPressTimer);
   document.querySelectorAll('.condition-tag.holding').forEach(t => t.classList.remove('holding'));
   if (conditionPressActive) { conditionPressActive = false; return; }
-  toggleCondition(name, el);
+  openConditionPanel(name);
 }
 
 function cancelConditionPress() {
@@ -4295,7 +4319,7 @@ function startTraitPress(e, i) {
   traitPressTimer = setTimeout(() => {
     traitPressActive = true;
     if (el) el.classList.add('holding');
-    openTraitPanel(i, true);
+    openTraitPanel(i, false);
   }, 500);
 }
 
@@ -4303,7 +4327,15 @@ function clickTraitItem(e, i) {
   clearTimeout(traitPressTimer);
   document.querySelectorAll('.trait-item.holding').forEach(el => el.classList.remove('holding'));
   if (traitPressActive) { traitPressActive = false; return; }
-  openTraitPanel(i, false);
+  const t = state.infoTraits[i];
+  if (!t) return;
+  if (t.rollDamage && t.damage) {
+    const total = rollDiceExpr(t.damage);
+    if (total === null) { toast('Invalid dice expression'); return; }
+    showRoll(t.name + ' — Damage', t.damage, total, '');
+  } else {
+    openTraitPanel(i, false);
+  }
 }
 
 function cancelTraitPress() {
@@ -4421,6 +4453,13 @@ function deleteCurrentTrait() {
   renderAttacks();
   saveData();
   dismissTraitPanel();
+}
+
+function switchToTraitEdit() {
+  document.getElementById('traitPanel').classList.add('edit-mode');
+  populateTraitEditForm(traitPanelEditIdx);
+  document.getElementById('trEditDeleteBtn').style.display = traitPanelEditIdx >= 0 ? '' : 'none';
+  setTimeout(() => document.getElementById('trEditName').focus(), 100);
 }
 
 function dismissTraitPanel() {
@@ -4595,6 +4634,13 @@ function deleteCurrentSpell() {
   toast('Spell deleted');
 }
 
+function switchToSpellEdit() {
+  document.getElementById('spellPanel').classList.add('edit-mode');
+  populateSpellEditForm(spellPanelEditIdx);
+  document.getElementById('spEditDeleteBtn').style.display = spellPanelEditIdx >= 0 ? '' : 'none';
+  setTimeout(() => document.getElementById('spEditName').focus(), 100);
+}
+
 function dismissSpellPanel() {
   popModalHistory();
   document.getElementById('spellPanel').classList.remove('show', 'edit-mode');
@@ -4656,7 +4702,7 @@ function buildFeatures() {
   state.classFeatures.forEach((_, i) => renderFeatureDots(i));
 }
 
-// ── Feature name press (tap = view, hold = edit) ───────────────────────
+// ── Feature name press (tap = roll or view, hold = info panel) ─────────
 let featureNamePressTimer = null;
 let featureNamePressActive = false;
 
@@ -4667,7 +4713,7 @@ function startFeatureNamePress(e, i) {
   featureNamePressTimer = setTimeout(() => {
     featureNamePressActive = true;
     if (el) el.classList.add('holding');
-    openFeaturePanel(i, true);
+    openFeaturePanel(i, false);
   }, 500);
 }
 
@@ -4675,7 +4721,15 @@ function clickFeatureName(e, i) {
   clearTimeout(featureNamePressTimer);
   document.querySelectorAll('.feature-name-area.holding').forEach(el => el.classList.remove('holding'));
   if (featureNamePressActive) { featureNamePressActive = false; return; }
-  openFeaturePanel(i, false);
+  const f = state.classFeatures[i];
+  if (!f) return;
+  if (f.rollDamage && f.damage) {
+    const total = rollDiceExpr(f.damage);
+    if (total === null) { toast('Invalid dice expression'); return; }
+    showRoll(f.name + ' — Damage', f.damage, total, '');
+  } else {
+    openFeaturePanel(i, false);
+  }
 }
 
 function cancelFeatureNamePress() {
@@ -4788,6 +4842,13 @@ function deleteFeatureFromPanel() {
   buildFeatures();
   saveData();
   dismissFeaturePanel();
+}
+
+function switchToFeatureEdit() {
+  document.getElementById('featurePanel').classList.add('edit-mode');
+  populateFeatureEditForm(featurePanelIdx);
+  document.getElementById('fpEditDeleteBtn').style.display = featurePanelIdx >= 0 ? '' : 'none';
+  setTimeout(() => document.getElementById('fpEditName').focus(), 100);
 }
 
 function dismissFeaturePanel() {
@@ -5190,7 +5251,7 @@ function startLongPress(e, i) {
   clearTimeout(longPressTimer);
   longPressTimer = setTimeout(() => {
     longPressActive = true;
-    openAttackPanel(i, true);
+    openAttackPanel(i, false);
   }, 500);
 }
 
@@ -5397,7 +5458,10 @@ function renderAttacks() {
     const bonus = sp.attackRoll ? getSpellAtkBonus() : '—';
     return `
       <div class="attack-row spell-atk"
-           onclick="openSpellPanel(${spIdx}, false)"
+           onpointerdown="startSpellPress(event, ${spIdx})"
+           onclick="clickSpellItem(event, ${spIdx})"
+           onpointerup="cancelSpellPress()"
+           onpointercancel="cancelSpellPress()"
            oncontextmenu="return false">
         <span class="attack-name" style="display:flex;align-items:center;gap:5px">${escHtml(sp.name)}${sp.level > 0 ? `<span class="spell-lvl-pip">${sp.level}</span>` : ''}</span>
         <span class="attack-bonus" style="color:var(--spell)">${escHtml(bonus)}</span>
@@ -5412,7 +5476,10 @@ function renderAttacks() {
       : '—';
     return `
       <div class="attack-row feat-atk"
-           onclick="openTraitPanel(${tIdx}, false)"
+           onpointerdown="startTraitPress(event, ${tIdx})"
+           onclick="clickTraitItem(event, ${tIdx})"
+           onpointerup="cancelTraitPress()"
+           onpointercancel="cancelTraitPress()"
            oncontextmenu="return false">
         <span class="attack-name">${escHtml(t.name)}</span>
         <span class="attack-bonus" style="color:var(--gold)">${escHtml(saveText)}</span>
@@ -5454,7 +5521,15 @@ function renderAttacks() {
 function rollAttack(i) {
   if (longPressActive) { longPressActive = false; return; }
   const a = state.attacks[i];
-  openAttackPanel(i, a.hidden ? true : false);
+  if (a.hidden) { openAttackPanel(i, true); return; }
+  if (a.bonus && a.bonus !== '—') {
+    const roll = d20();
+    const bonus = parseInt(a.bonus) || 0;
+    const dmg = rollDiceExpr(a.damage);
+    showRoll(a.name, `d20(${roll}) ${fmtMod(bonus)}`, roll + bonus, natMsg(roll), dmg !== null ? `Dmg: ${dmg}` : '');
+  } else {
+    openAttackPanel(i, false);
+  }
 }
 
 function removeAttack(i) {
