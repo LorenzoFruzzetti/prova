@@ -309,17 +309,16 @@ Each object:
 | `saveAbility` | string | Ability for the saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` if the spell has no save |
 | `concentration` | boolean | `true` if the spell requires concentration |
 | `ritual` | boolean | `true` if the spell can be cast as a ritual |
-| `attackRoll` | boolean | `true` if the spell requires a ranged/melee spell attack roll (shows a tappable roll button in the view panel) |
-| `rollDamage` | boolean | `true` to show a tappable damage roll button in the view panel (can be used independently of `attackRoll`, e.g. for save-or-damage spells) |
-| `damage` | string | Damage expression, e.g. `"4d6 radiant"`. Rolled when `attackRoll` or `rollDamage` is `true` |
+| `attackRoll` | boolean | `true` if the spell requires a ranged/melee spell attack roll (shows a tappable d20 roll card in the view panel) |
+| `rolls` | array | Array of roll objects `[{dice, type, label?, mod?}]`. Each entry: `dice` = expression (`"4d6"`); `type` = damage type key or `"not_damage"` or `"other"`; `label` = custom label when `type="other"`; `mod` = ability key to add (`"STR"`/`"DEX"`/…/`"SPELL"` or `""`). |
 | `description` | string | Full spell description; newlines are preserved |
 | `showInCombat` | boolean | `true` to show the spell as a row in the combat attack block. Use this instead of duplicating the spell in `state.attacks[]` |
 | `combatActionType` | string | `"action"` (default) or `"bonus"` — which sub-section of the combat block the spell appears in when `showInCombat` is `true` |
 | `showInFeatures` | boolean | `true` to show the spell in the "Featured Spells" block inside the Features tab — useful for spells that function like limited-use class features |
 
-When a spell has a `saveAbility` set, the view panel automatically pulls the current **Spell Save DC** (derived from the chosen spellcasting ability) and displays it prominently. The view panel also contains a tappable attack-roll card (when `attackRoll` is `true`) and a tappable damage card (when `rollDamage && !attackRoll`).
+When a spell has a `saveAbility` set, the view panel shows the current **Spell Save DC** prominently. The view panel contains a tappable attack-roll card (when `attackRoll` is `true`) and a tappable rolls card (when `rolls` is non-empty and `attackRoll` is `false`).
 
-**Tap/hold behaviour on spell rows:** tapping a spell row rolls directly — d20 + spell attack bonus if `attackRoll` is `true`; damage expression if `rollDamage` is `true` and `attackRoll` is `false`; opens the info panel when neither is set. Holding (500 ms) always opens the info panel. An **Edit** button in the top-right of the info panel switches to edit mode within the same modal.
+**Tap/hold behaviour on spell rows:** tapping a spell row rolls directly — d20 + spell attack bonus if `attackRoll` is `true` (rolls are shown in secondary); all `rolls` dice if `rolls` is non-empty and `attackRoll` is `false`; opens the info panel when neither is set. Holding (500 ms) always opens the info panel.
 
 Spells with `showInCombat: true` appear in the combat attack block under "Actions" or "Bonus Actions" depending on `combatActionType`. The same tap/hold rules apply there. The spell level is shown as a gold circle badge (level 1–9); cantrips (level 0) show no badge. **Do not duplicate a spell in `state.attacks[]` — set `showInCombat: true` on the spell object instead.**
 
@@ -331,7 +330,8 @@ Spells with `showInCombat: true` appear in the combat attack block under "Action
     "components": "V, S, M (a tiny ball of bat guano and sulfur)",
     "duration": "Instantaneous", "saveAbility": "DEX",
     "concentration": false, "ritual": false,
-    "attackRoll": false, "rollDamage": true, "damage": "8d6 fire",
+    "attackRoll": false,
+    "rolls": [{"dice": "8d6", "type": "fire", "mod": ""}],
     "description": "A bright streak flashes from your pointing finger...",
     "showInCombat": true, "combatActionType": "action", "showInFeatures": false
   },
@@ -340,16 +340,28 @@ Spells with `showInCombat: true` appear in the combat attack block under "Action
     "castingTime": "1 action", "range": "120 feet",
     "components": "V, S", "duration": "1 round",
     "saveAbility": "", "concentration": false, "ritual": false,
-    "attackRoll": true, "rollDamage": true, "damage": "4d6 radiant",
+    "attackRoll": true,
+    "rolls": [{"dice": "4d6", "type": "radiant", "mod": ""}],
     "description": "A flash of light streaks toward a creature...",
     "showInCombat": true, "combatActionType": "action", "showInFeatures": false
+  },
+  {
+    "name": "Guidance", "level": 0, "school": "Divination",
+    "castingTime": "1 action", "range": "Touch",
+    "components": "V, S", "duration": "Concentration, 1 minute",
+    "saveAbility": "", "concentration": true, "ritual": false,
+    "attackRoll": false,
+    "rolls": [{"dice": "1d4", "type": "not_damage", "mod": ""}],
+    "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice.",
+    "showInCombat": false, "combatActionType": "action", "showInFeatures": false
   },
   {
     "name": "Healing Word", "level": 1, "school": "Evocation",
     "castingTime": "1 bonus action", "range": "60 ft",
     "components": "V", "duration": "Instantaneous",
     "saveAbility": "", "concentration": false, "ritual": false,
-    "attackRoll": false, "rollDamage": true, "damage": "1d4+3",
+    "attackRoll": false,
+    "rolls": [{"dice": "1d4", "type": "healing", "mod": "SPELL"}],
     "description": "A creature of your choice regains HP equal to 1d4 + your spellcasting modifier.",
     "showInCombat": true, "combatActionType": "bonus", "showInFeatures": false
   }
@@ -364,23 +376,30 @@ Each object:
 | Key | Type | Description |
 |---|---|---|
 | `name` | string | Weapon or ability name (required) |
-| `bonus` | string | Attack roll modifier, e.g. `"+7"` or `"—"` |
-| `damage` | string | Damage expression, e.g. `"1d8+4"` or `"—"` |
+| `abilityMod` | string | Which ability drives the to-hit roll: `""` (no roll), `"manual"` (use `bonus` string), `"STR"`/`"DEX"`/`"CON"`/`"INT"`/`"WIS"`/`"CHA"`, or `"SPELL"` (spell attack bonus) |
+| `proficient` | boolean | Add proficiency bonus to the computed attack roll (only when `abilityMod` is an ability key or `"SPELL"`) |
+| `flatBonus` | integer | Additional flat modifier added to the computed roll (default `0`) |
+| `bonus` | string | Manual attack roll modifier string, e.g. `"+7"` — only used when `abilityMod: "manual"` |
+| `rolls` | array | Roll objects `[{dice, type, label?, mod?}]` — same structure as `spells.rolls` |
 | `actionType` | string | `"action"` (default) or `"bonus"` — which combat sub-section to show in |
 | `hidden` | boolean | `true` to hide the row from normal view; visible only in manage mode (default `false`) |
 | `saveAbility` | string | Ability key for a saving throw option: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` for none |
 | `saveDC` | integer | Save DC value (e.g. `15`); `0` or omitted means no save DC displayed |
 | `description` | string | Free text shown in the attack view panel — weapon masteries, special effects, etc. (optional) |
 
-All fields except `name` are optional and default gracefully when absent (`actionType` defaults to `"action"`, `hidden` defaults to `false`, etc.).
+All fields except `name` are optional and default gracefully when absent.
 
 ```json
 "attacks": [
-  { "name": "Longsword",    "bonus": "+6", "damage": "1d8+4",  "actionType": "action" },
-  { "name": "Hand Crossbow","bonus": "+6", "damage": "1d6+4",  "actionType": "action" },
-  { "name": "Shove",        "bonus": "—",  "damage": "—",      "actionType": "action",
+  { "name": "Longsword", "abilityMod": "STR", "proficient": true, "flatBonus": 0,
+    "rolls": [{"dice": "1d8", "type": "slashing", "mod": "STR"}], "actionType": "action" },
+  { "name": "Hand Crossbow", "abilityMod": "DEX", "proficient": true, "flatBonus": 0,
+    "rolls": [{"dice": "1d6", "type": "piercing", "mod": "DEX"}], "actionType": "action" },
+  { "name": "Shove", "abilityMod": "", "bonus": "—",
+    "rolls": [], "actionType": "action",
     "saveAbility": "STR", "saveDC": 14, "description": "Contested Strength (Athletics) check." },
-  { "name": "Offhand Dagger","bonus": "+6", "damage": "1d4+2", "actionType": "bonus" }
+  { "name": "Eldritch Blast", "abilityMod": "SPELL", "proficient": true, "flatBonus": 0,
+    "rolls": [{"dice": "1d10", "type": "force", "mod": "CHA"}], "actionType": "action" }
 ]
 ```
 
@@ -397,22 +416,27 @@ Each object:
 | `recharge` | string | When it recharges, e.g. `"Short Rest"`, `"Long Rest"`, or `""` |
 | `step` | integer | Points per dot and per +/− tap (default `1`); set to e.g. `5` for Lay on Hands |
 | `description` | string | Full description shown in the feature view panel (optional) |
-| `damage` | string | Damage expression, e.g. `"2d8 radiant"` — shown as a rollable card in the view panel (optional) |
-| `rollDamage` | boolean | `true` to enable a tappable damage roll button in the view panel |
+| `attackRoll` | boolean | `true` if the feature has an attack roll (e.g. Divine Smite) — shows a tappable d20 roll card |
+| `attackMod` | string | Ability key for the attack roll: `"STR"`/`"DEX"`/`"CON"`/`"INT"`/`"WIS"`/`"CHA"`/`"SPELL"` or `""` |
+| `attackProficient` | boolean | Add proficiency bonus to the feature's attack roll |
+| `rolls` | array | Roll objects `[{dice, type, label?, mod?}]` — same structure as `spells.rolls` |
 | `saveAbility` | string | Ability key for a saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` |
 | `saveDC` | integer | Override DC; if `0` or omitted, the sheet's current Spell Save DC is used |
 
-**Tap/hold behaviour on feature rows:** tapping the feature name area rolls the damage expression directly if `rollDamage` is `true`; otherwise it opens the info panel. Holding (500 ms) always opens the info panel. An **Edit** button in the top-right of the info panel switches to edit mode within the same modal. Alternatively, the **EDIT** button on the right side of the row opens the edit panel directly without going through the info panel. The `max` value can only be changed through the edit panel — there is no inline max input on the row.
+**Tap/hold behaviour on feature rows:** tapping the feature name area runs rolls directly if `rolls` is non-empty (opens panel first if `attackRoll` is also `true`); otherwise opens the info panel. Holding (500 ms) always opens the info panel.
 
 ```json
 "classFeatures": [
-  { "name": "Channel Divinity", "max": 2,  "used": 0, "recharge": "Short Rest", "step": 1,
+  { "name": "Channel Divinity", "max": 2, "used": 0, "recharge": "Short Rest", "step": 1,
+    "attackRoll": false, "attackMod": "", "attackProficient": false, "rolls": [],
     "description": "Sacred Weapon: imbue a weapon with your holy symbol for 1 minute." },
-  { "name": "Lay on Hands",     "max": 40, "used": 0, "recharge": "Long Rest",  "step": 5,
+  { "name": "Lay on Hands", "max": 40, "used": 0, "recharge": "Long Rest", "step": 5,
+    "attackRoll": false, "attackMod": "", "attackProficient": false, "rolls": [],
     "description": "Restore HP by touching a creature (pool of 40 HP per Long Rest)." },
-  { "name": "Divine Smite",     "max": 0,  "used": 0, "recharge": "",           "step": 1,
-    "description": "Expend a spell slot on a melee hit to deal radiant damage.",
-    "damage": "2d8 radiant", "rollDamage": true }
+  { "name": "Divine Smite", "max": 0, "used": 0, "recharge": "", "step": 1,
+    "attackRoll": true, "attackMod": "STR", "attackProficient": true,
+    "rolls": [{"dice": "2d8", "type": "radiant", "mod": ""}],
+    "description": "Expend a spell slot on a melee hit to deal radiant damage." }
 ]
 ```
 
