@@ -38,6 +38,8 @@ dnd-character-sheet.html
 │   ├── #aiImportBackdrop  Fixed backdrop for the AI/SRD import modal
 │   ├── #aiImportPanel  Fixed centered modal for importing spells, features, and traits; two modes — ✨ AI (prompt-copy + paste-back) and 📖 SRD (live search against dnd5eapi.co); three type tabs: Spells / Features / Traits
 │   ├── #charGridOverlay  Fixed full-screen overlay for the character roster grid panel; open via the 🎭 header button; tap backdrop to dismiss
+│   ├── #infoPanelBackdrop  Fixed full-screen dim layer behind the unified info panel; tap to dismiss
+│   ├── #infoPanel  Fixed centered card (≤500 px, scrollable) — the single unified info panel used for skills, abilities, saving throws, combat stats, hit die, death saves, conditions, attacks, spells, class features, and traits; badge + title + optional meta + optional 3-zone roll button + optional simple roll button + description + optional action button; `.show` reveals it
 │   └── #toast       Floating feedback message (non-roll events only)
 └── <script>         All application logic (no external libraries)
 ```
@@ -102,7 +104,7 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.section-body` | Padded content area inside a `.section` |
 | `.field-row` | CSS grid row for form inputs; `.col-2` / `.col-3` variants |
 | `.ability-grid` | 3-column grid of ability score cards |
-| `.ability-card` | One ability score (name, large modifier, score input); tap to roll d20 + modifier |
+| `.ability-card` | One ability score (name, large modifier, score input); short tap → roll d20 + modifier (normal); hold 500 ms → open info panel with description + 3-zone roll button |
 | `.check-list` | Unstyled `<ul>` for saving throws and skills |
 | `.check-item` | One row: dots + modifier + name + ability tag; tap row to roll, tap dot to toggle prof |
 | `.check-item.proficient` | Fills the first (or only) prof dot gold |
@@ -112,8 +114,8 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.hp-display` | Flex center area showing current HP, max, and bar; tap to open HP dialog |
 | `.hp-bar` / `.hp-bar-fill` | Visual HP percentage bar |
 | `.stat-pills` | 3-column grid of combat stat tiles |
-| `.stat-pill` | One combat stat tile (value + label) |
-| `.stat-pill.rollable` | Adds `cursor:pointer` and gold border on active; tap to roll |
+| `.stat-pill` | One combat stat tile (value + label); short tap → rolls if rollable, otherwise opens info panel; hold 500 ms → always opens info panel |
+| `.stat-pill.rollable` | Adds `cursor:pointer` and gold border on active |
 | `.death-saves` | Flex column stacking Successes above Failures; a `border-top` on `.save-group + .save-group` creates the horizontal divider |
 | `.save-dot` | 22 px circle; `.filled` colors it green or red |
 | `.inspiration-death-row` | Flex row containing the inspiration block (left) and death saves block (right) side by side inside a single `.section` |
@@ -171,6 +173,16 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `#attackPanel` | Fixed centered card (≤500 px, scrollable) showing attack details (view mode) or editable form (edit mode); gold border in view mode, blue border in edit mode; `.edit-mode` class toggles `.atk-view-section` / `.atk-edit-section` |
 | `.atk-view-section` | Wrapper for all attack panel view-mode content; hidden when `#attackPanel.edit-mode` |
 | `.atk-edit-section` | Wrapper for all attack panel edit form; hidden by default, shown when `#attackPanel.edit-mode` |
+| `#infoPanelBackdrop` | Fixed full-screen dim layer behind `#infoPanel`; tap dismisses |
+| `#infoPanel` | Fixed centered card; `.show` reveals it; `border-color` is set per invocation (gold default, red for death saves / conditions, etc.) |
+| `#ipBadge` | Tiny uppercase badge label at the top of `#infoPanel` (e.g. "Skill", "Ability", "Combat Stat") |
+| `#ipEditBtn` | "Edit" button in the top-right of `#infoPanel`; hidden when no `editFn` is provided |
+| `#ipTitle` | Large title heading inside `#infoPanel` |
+| `#ipMeta` | Italic muted subtitle line inside `#infoPanel`; hidden when empty |
+| `#ipRollBox` | `.roll-tri` 3-zone roll button inside `#infoPanel`; hidden when no `rollFn` is provided |
+| `#ipSimpleRollBox` | `.sp-atk-box` simple (no advantage/disadvantage) roll button inside `#infoPanel`; hidden when no `simpleRollFn` is provided |
+| `#ipDesc` | Pre-wrapped description text block inside `#infoPanel` |
+| `#ipActionBtn` | Action button at the bottom of `#infoPanel` (e.g. "Apply Condition" / "Remove Condition"); hidden when no `actionFn` is provided |
 | `.condition-tag` | Pill chip; `.active` turns it red |
 | `.currency-grid` | 5-column grid for CP/SP/EP/GP/PP |
 | `#toast` | Fixed floating feedback pill (2 s); `.show` fades it in; used for non-roll events |
@@ -186,9 +198,17 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.sp-detail-value` | Value text in the details grid |
 | `.sp-save-dc-box` | Gold-tinted box shown only when the spell has a saving throw; displays the current Spell Save DC and ability |
 | `.sp-save-dc-value` | 34 px bold DC number inside `.sp-save-dc-box` |
-| `.sp-atk-box` | Blue-tinted tappable card shown only when `sp.attackRoll === true`; displays current spell attack bonus and damage expression; tapping calls `rollSpellFromPanel()` |
-| `.sp-atk-bonus` | 34 px bold attack bonus in blue inside `.sp-atk-box` |
-| `.sp-atk-damage` | Small damage expression line inside `.sp-atk-box` |
+| `.sp-atk-box` | Blue-tinted tappable card; used for simple (non-d20) roll buttons where advantage/disadvantage doesn't apply |
+| `.sp-atk-bonus` | 34 px bold value in blue inside `.sp-atk-box` |
+| `.sp-atk-damage` | Small secondary line inside `.sp-atk-box` |
+| `.roll-tri` | 3-zone d20 roll button: top zone = normal roll, bottom-left = disadvantage, bottom-right = advantage; gold border; used in `#infoPanel`, spell panel, and attack panel |
+| `.rtz-top` | Top zone of `.roll-tri`; displays roll label and bonus; tap triggers normal roll |
+| `.rtz-label` | Tiny uppercase label inside `.rtz-top` (e.g. "Skill Check") |
+| `.rtz-bonus` | Large bold modifier value inside `.rtz-top` (e.g. "+5") |
+| `.rtz-damage` | Optional small secondary line inside `.rtz-top` (e.g. damage expression) |
+| `.rtz-bottom` | Flex row containing `.rtz-dis` and `.rtz-adv` side by side |
+| `.rtz-dis` | Left half of `.rtz-bottom`; red tint; tap triggers disadvantage roll |
+| `.rtz-adv` | Right half of `.rtz-bottom`; green tint; tap triggers advantage roll |
 | `.sp-description` | Pre-wrapped description text block |
 | `.sp-dismiss-hint` | Tiny uppercase footer "tap to dismiss" shown at the bottom of view panels |
 | `.sp-view-section` | Wrapper for all view-mode content; hidden when `#spellPanel.edit-mode` |
@@ -276,9 +296,11 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 ```js
 ABILITIES       // ['STR','DEX','CON','INT','WIS','CHA']
 ABILITY_NAMES   // ['Strength','Dexterity','Constitution','Intelligence','Wisdom','Charisma']
+ABILITY_DESCS   // {STR,DEX,CON,INT,WIS,CHA} — one-paragraph description of each ability score; used in ability card hold panels
 SAVES           // [{name, ab}] — 6 saving throw definitions
-SKILLS          // [{name, ab}] — 18 skill definitions
-CONDITIONS      // 15 condition strings
+SKILLS          // [{name, ab}] — 18 skill definitions; each entry has a .desc field with a short description used in the skill info panel
+CONDITIONS      // array of {name, desc} objects — 15 conditions with descriptions
+STAT_PILL_INFO  // {ac, initiative, speed, dietype, spellatk, spelldc} — metadata for each combat stat pill; each entry has title, meta, desc; rollable entries add rollLabel/rollFn; simpleRollFn for hit die
 SPELL_SLOTS_DEFAULT  // [{level, max}] — 9 levels, all max:0 except 1st:2
 LEVEL_LABELS    // ['Cantrip','1st','2nd',...,'9th'] — display labels for spell levels 0–9
 TABS            // ['overview','abilities','skills','combat','spells','features','inventory','rolls']
@@ -370,6 +392,13 @@ hitDiceHoldTimer/Interval  // hold-to-repeat timers for hit dice +/− buttons
 featureNamePressTimer      // setTimeout handle for feature name long-press (500 ms → edit mode)
 featureNamePressActive     // boolean — true during and after a held feature name press
 featurePanelEditIdx        // index into state.classFeatures currently being edited; −1 = new feature
+infoPanelCfg        // object holding the rollFn, simpleRollFn, editFn, actionFn closures for the currently-open #infoPanel
+skillPressTimer / skillPressActive / skillPanelCurrentName  // skill row hold detection + current skill name
+conditionPressTimer / conditionPressActive / conditionPanelCurrentName  // condition chip hold detection
+abilityPressTimer / abilityPressActive  // ability card hold detection (500 ms → info panel)
+savePressTimer / savePressActive        // saving throw row hold detection
+statPillPressTimer / statPillPressActive  // combat stat pill hold detection
+hitDiePressTimer / hitDiePressActive    // hit die roll button hold detection
 fontSizeIdx         // index into FONT_SIZES; persisted separately in localStorage as 'dnd5e_fontsize'
 leftyMode           // boolean; persisted separately in localStorage as 'dnd5e_lefty'
 currentTheme        // string — active theme key; persisted in localStorage as 'dnd5e_theme'
@@ -417,8 +446,8 @@ DOMContentLoaded
 
 | Function | What it renders | Reads from |
 |---|---|---|
-| `buildAbilityGrid()` | 6 ability cards; tap card → roll d20+mod | `state.abilities` |
-| `buildSavingThrows()` | 6 rows; tap row → roll; tap prof dot → toggle proficiency | `state.saveProficiencies` |
+| `buildAbilityGrid()` | 6 ability cards; tap → roll d20+mod (normal); hold 500 ms → open info panel with description + 3-zone roll button | `state.abilities` |
+| `buildSavingThrows()` | 6 rows; short tap → roll (normal mode); hold 500 ms → open info panel with 3-zone roll button; tap prof dot → toggle proficiency | `state.saveProficiencies` |
 | `buildSkillsList()` | 18 skill rows; tap row → roll; tap prof dots → cycle prof | `state.skillProficiencies`, `state.skillExpertise` |
 | `buildConditions()` | 15 condition chips | `state.conditions` |
 | `buildSpellSlots()` | Renders `#spellSlotsBody`: a pill strip of hidden levels (max=0) at the top, then one row per active level (max>0) with dots and mini +/− tracker | `state.spellSlots` |
@@ -443,6 +472,8 @@ DOMContentLoaded
 | Function | Description |
 |---|---|
 | `d20()` | Returns a random integer 1–20 |
+| `d20Roll(mode)` | Rolls one or two d20s depending on mode (`'normal'` / `'adv'` / `'dis'`); returns `{roll, breakdown}` where `roll` is the final value and `breakdown` is the display string (e.g. `"d20(14,8)"`) |
+| `modeSuffix(mode)` | Returns `' (Adv)'`, `' (Disadv)'`, or `''`; appended to roll labels |
 | `natMsg(roll)` | Returns `' ★ NAT 20!'`, `' ✦ Nat 1'`, or `''` |
 | `rollDiceExpr(expr)` | Parses and rolls a dice expression (e.g. `"2d6+4"`, `"+2d8 radiant"`); returns integer total or `null` if unparseable |
 
@@ -462,14 +493,25 @@ DOMContentLoaded
 | Function | Trigger | Effect |
 |---|---|---|
 | `onAbilityInput(ab, val)` | Ability score input | Pushes debounced undo entry; updates `state.abilities[ab]`; calls `recalcAll()` |
-| `rollAbility(ab)` | Tap ability card | Rolls d20 + ability modifier; calls `showRoll()` |
+| `startAbilityPress(e, ab)` | `pointerdown` on ability card | Starts 500 ms timer; on fire opens ability info panel via `openInfoPanel()` with roll button |
+| `endAbilityPress(e, ab)` | `pointerup` on ability card | If timer hadn't fired: calls `rollAbility(ab)` directly |
+| `cancelAbilityPress()` | `pointercancel` on ability card | Clears timer |
+| `rollAbility(ab, mode='normal')` | Short tap on ability card or roll button in info panel | Rolls d20 + ability modifier with given mode; calls `showRoll()` |
 | `toggleSaveProf(ab, el)` | Tap prof dot on saving throw row | Pushes undo; toggles ability key in `state.saveProficiencies` |
-| `rollSave(ab)` | Tap saving throw row (outside dot) | Rolls d20 + save modifier; calls `showRoll()` |
+| `startSavePress(e, ab)` | `pointerdown` on saving throw row (outside dot) | Starts 500 ms timer; on fire opens saving throw info panel via `openInfoPanel()` |
+| `endSavePress(e, ab)` | `pointerup` on saving throw row | If timer hadn't fired: calls `rollSave(ab)` directly |
+| `cancelSavePress()` | `pointercancel` on saving throw row | Clears timer |
+| `rollSave(ab, mode='normal')` | Short tap on saving throw row or roll button in info panel | Rolls d20 + save modifier with given mode; calls `showRoll()` |
 | `cycleSkillProf(name, el)` | Tap prof dots on skill row | Pushes undo; cycles None → Proficient → Expert → None |
-| `rollSkill(name)` | Tap skill row (outside dots) | Rolls d20 + skill modifier; calls `showRoll()` |
-| `rollInitiative()` | Tap Initiative stat pill | Rolls d20 + DEX modifier; calls `showRoll()` |
-| `rollSpellAtk()` | Tap Spell Atk stat pill | Rolls d20 + spell attack bonus; calls `showRoll()` (shows toast if no spell ability set) |
-| `rollSpellFromPanel()` | Tap attack card in spell view panel | Reads current spell from `spellPanelEditIdx`; rolls d20 + spell attack bonus; rolls `sp.damage` as secondary if set; calls `showRoll()` |
+| `startSkillPress(e, name)` | `pointerdown` on skill row | Starts 500 ms timer; on fire opens skill info panel via `openInfoPanel()` |
+| `clickSkillItem(e, name)` | `click` on skill row | If timer hadn't fired: calls `rollSkill(name)` |
+| `cancelSkillPress()` | `pointercancel` on skill row | Clears timer |
+| `openSkillPanel(name)` | Internal (fired by hold timer) | Opens info panel for the given skill with roll button |
+| `dismissSkillPanel()` | (alias) | Clears `skillPanelCurrentName` and calls `dismissInfoPanel()` |
+| `rollSkill(name, mode='normal')` | Short tap skill row or roll button in info panel | Rolls d20 + skill modifier with given mode; calls `showRoll()` |
+| `rollInitiative(mode='normal')` | Tap Initiative stat pill (tap) or roll button in info panel | Rolls d20 + DEX modifier with given mode; calls `showRoll()` |
+| `rollSpellAtk(mode='normal')` | Tap Spell Atk stat pill (tap) or roll button in info panel | Rolls d20 + spell attack bonus with given mode; calls `showRoll()` (shows toast if no spell ability set) |
+| `rollSpellFromPanel(mode='normal')` | Tap zone in `.roll-tri` inside spell view panel | Reads current spell from `spellPanelEditIdx`; rolls d20 + spell attack bonus; rolls `sp.damage` as secondary if set; calls `showRoll()` |
 | `rollAttack(i)` | Tap weapon attack row | If the attack is hidden, opens the panel in edit mode; if the attack has a bonus, rolls d20 + bonus and optionally rolls damage; otherwise opens info panel; no-ops if `longPressActive` |
 | `startLongPress(e, i)` | `pointerdown` on weapon attack row | Starts 500 ms timer; on fire calls `openAttackPanel(i, false)` to open info/view mode |
 | `cancelLongPress()` | `pointerup` / `pointercancel` on attack row | Clears the long-press timer |
@@ -478,7 +520,7 @@ DOMContentLoaded
 | `saveAttackPanel()` | Tap Save in attack panel edit mode | Validates name; creates or updates `state.attacks[attackPanelIdx]`; calls `renderAttacks()` + `saveData()`; dismisses panel |
 | `deleteFromAttackPanel()` | Tap Delete in attack panel edit mode | Splices `state.attacks[attackPanelIdx]`; calls `renderAttacks()` + `saveData()`; dismisses panel |
 | `dismissAttackPanel()` | Backdrop tap or Cancel in panel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#attackPanel` |
-| `rollFromAttackPanel()` | Tap attack-roll card in attack panel view | Rolls d20 + attack bonus; rolls damage as secondary; calls `showRoll()` |
+| `rollFromAttackPanel(mode='normal')` | Tap zone in `.roll-tri` inside attack panel view | Rolls d20 + attack bonus with given mode; rolls damage as secondary; calls `showRoll()` |
 | `hideAttack(i)` | Tap Hide button in manage mode on a visible attack row | Sets `state.attacks[i].hidden = true`; calls `renderAttacks()` + `saveData()` |
 | `showAttack(i)` | Tap Show button in manage mode on a hidden attack row | Sets `state.attacks[i].hidden = false`; calls `renderAttacks()` + `saveData()` |
 | `toggleAttackEdit()` | Tap Edit/Done button in Attacks section | Toggles `manage-mode` class on `#attackList`; reveals hidden rows and per-row manage buttons |
@@ -543,6 +585,23 @@ DOMContentLoaded
 | `restoreHitDice()` | ↺ Restore button in Hit Dice section | Sets `state.hitDiceUsed = 0`; rerenders |
 | `fullLongRest()` | ⟳ Long Rest button in Overview panel | Restores HP to max, resets hit dice, all spell slots, and all class features; saves |
 | `removeAttack(i)` | Tap bin button (🗑) on attack row (manage mode) | Pushes undo; splices `state.attacks`; rerenders |
+| `openInfoPanel(cfg)` | Called by any item that opens the unified info panel | Applies badge, title, meta, description, optional 3-zone roll button, optional simple roll button, optional edit button, optional action button; calls `pushModalHistory()`; stores `rollFn/simpleRollFn/editFn/actionFn` in `infoPanelCfg` |
+| `dismissInfoPanel()` | Backdrop tap or browser back | Calls `popModalHistory()`; hides `#infoPanel` and backdrop; clears `infoPanelCfg` |
+| `infoPanelRoll(mode)` | Tap zone in `#ipRollBox` | Calls `infoPanelCfg.rollFn(mode)` |
+| `infoPanelSimpleRoll()` | Tap `#ipSimpleRollBox` | Calls `infoPanelCfg.simpleRollFn()` |
+| `infoPanelEdit()` | Tap Edit button (`#ipEditBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.editFn()` |
+| `infoPanelAction()` | Tap action button (`#ipActionBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.actionFn()` |
+| `startStatPillPress(e, key)` | `pointerdown` on combat stat pill label | Starts 500 ms timer; on fire calls `openStatPillPanel(key)` |
+| `endStatPillPress(e, key)` | `pointerup` on combat stat pill label | If timer hadn't fired and stat is rollable: rolls directly (`rollInitiative()` / `rollSpellAtk()`); otherwise opens info panel |
+| `cancelStatPillPress()` | `pointercancel` on stat pill | Clears timer |
+| `openStatPillPanel(key)` | Internal | Opens `#infoPanel` with data from `STAT_PILL_INFO[key]`; rollable stats show a 3-zone roll button; hit die shows a simple roll button |
+| `startHitDiePress(e)` | `pointerdown` on hit die roll button | Starts 500 ms timer; on fire opens `openStatPillPanel('dietype')` info panel |
+| `endHitDiePress(e)` | `pointerup` on hit die roll button | If timer hadn't fired: calls `rollHitDie()` |
+| `cancelHitDiePress()` | `pointercancel` on hit die roll button | Clears timer |
+| `openDeathSavePanel()` | Tap Roll button next to Death Saving Throws | Opens `#infoPanel` with death save description and a 3-zone roll button |
+| `rollDeathSave(mode='normal')` | Roll zone in death save info panel | Rolls d20 (no modifier); interprets nat-1/nat-20 specially; calls `showRoll()` |
+| `openConditionPanel(name)` | Internal (fired by hold timer on condition chip) | Opens `#infoPanel` with condition description and an "Apply / Remove Condition" action button |
+| `dismissConditionPanel()` | (alias) | Clears `conditionPanelCurrentName` and calls `dismissInfoPanel()` |
 | `clickConditionItem(e, name, el)` | Tap condition chip | Calls `toggleCondition()` directly (instant on/off); no-ops if long-press already fired |
 | `toggleCondition(name, el)` | Short tap on condition chip, or Apply/Remove button inside condition panel | Pushes undo; toggles name in `state.conditions`; rebuilds condition chips |
 | `toggleInspiration()` | Tap inspiration button | Pushes undo; flips `state.inspiration` boolean |
@@ -567,6 +626,30 @@ Hold  → always open the info/view panel (500 ms threshold)
 Specific behaviours per item type:
 
 ```
+Ability card
+  Tap                → rollAbility(ab)              — rolls d20 + modifier; normal mode
+  Hold (500 ms)      → openInfoPanel(...)           — shows description + 3-zone roll button (normal / adv / dis)
+
+Saving throw row (outside dot)
+  Tap                → rollSave(ab)                 — rolls d20 + save modifier; normal mode
+  Hold (500 ms)      → openInfoPanel(...)           — shows description + 3-zone roll button
+
+Skill row (outside dots)
+  Tap                → rollSkill(name)              — rolls d20 + skill modifier; normal mode
+  Hold (500 ms)      → openSkillPanel(name)         — shows description + 3-zone roll button
+
+Combat stat pill (AC, Initiative, Speed, Hit Die, Spell Atk, Spell DC)
+  Tap (rollable)     → rollInitiative() / rollSpellAtk()    — normal roll
+  Tap (info-only)    → openStatPillPanel(key)               — opens info panel; no roll button shown
+  Hold (500 ms)      → openStatPillPanel(key)               — always opens info panel
+
+Hit Die roll button
+  Tap                → rollHitDie()                — rolls the hit die + CON modifier
+  Hold (500 ms)      → openStatPillPanel('dietype')— opens Hit Die info panel with simple roll button
+
+Death Save Roll button
+  Tap                → openDeathSavePanel()        — opens info panel with 3-zone roll button (no modifier)
+
 Weapon attack row
   Tap                → rollAttack(i)               — rolls d20 + bonus + optional damage; opens info panel if no bonus; edit mode if attack is hidden
   Hold (500 ms)      → openAttackPanel(i, false)   — opens attack info panel (view mode)
@@ -681,7 +764,7 @@ The session variable `rosterActiveId` (string) holds the currently loaded charac
 | `setupAutoSave()` | Attaches `saveData` as `input` + `change` listener to every form element |
 | `openSettings()` / `dismissSettings()` | Opens / closes the ⚙ settings bottom-sheet; manages `pushModalHistory` / `popModalHistory` |
 | `pushModalHistory()` | Calls `history.pushState()` to add an entry so the browser back button can dismiss the open modal |
-| `popModalHistory()` | Called by each dismiss function; the `popstate` handler fires on browser back and calls the appropriate dismiss function — cascade order: `#rollResult` → `#spellPanel` → `#traitPanel` → `#attackPanel` → settings sheet → HP dialog → feature editor sheet |
+| `popModalHistory()` | Called by each dismiss function; the `popstate` handler fires on browser back and calls the appropriate dismiss function — cascade order: `#rollResult` → `#spellPanel` → `#traitPanel` → `#featurePanel` → `#stepMenu` → `#hpDialog` → `#settingsMenu` → `#attackPanel` → `#infoPanel` |
 | `loadFontSize()` | Reads `dnd5e_fontsize` from `localStorage`; resolves index into `FONT_SIZES`; calls `applyFontSize()` |
 | `applyFontSize()` | Sets `document.body.style.zoom` to the current `FONT_SIZES[fontSizeIdx]` value; updates `#fontSizeLabel` |
 | `changeFontSize(dir)` | Increments or decrements `fontSizeIdx` (clamped to `FONT_SIZES` bounds); calls `applyFontSize()`; persists to `localStorage` |

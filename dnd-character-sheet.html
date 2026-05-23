@@ -1587,8 +1587,8 @@
   #spellPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
   #spellPanel.edit-mode { border-color: var(--spell); }
 
-  /* ── Skill Description Panel ── */
-  #skillBackdrop {
+  /* ── Unified Info Panel ── */
+  #infoPanelBackdrop {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.55);
@@ -1597,9 +1597,9 @@
     pointer-events: none;
     transition: opacity 0.2s;
   }
-  #skillBackdrop.show { opacity: 1; pointer-events: auto; }
+  #infoPanelBackdrop.show { opacity: 1; pointer-events: auto; }
 
-  #skillPanel {
+  #infoPanel {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -1610,7 +1610,7 @@
     padding: 22px 24px 20px;
     z-index: 301;
     opacity: 0;
-    transition: opacity 0.2s, transform 0.2s;
+    transition: opacity 0.2s, transform 0.2s, border-color 0.25s;
     pointer-events: none;
     width: min(92vw, 500px);
     max-height: 82vh;
@@ -1620,7 +1620,7 @@
     -webkit-user-select: none;
     -webkit-touch-callout: none;
   }
-  #skillPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  #infoPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
 
   .check-item.holding { background: rgba(var(--accent-rgb),0.08); box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb),0.4); border-radius: var(--radius); }
 
@@ -2216,42 +2216,69 @@
     box-shadow: 0 0 0 2px rgba(192,57,43,0.5);
   }
 
-  /* ── Condition Description Panel ── */
-  #conditionBackdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.55);
-    z-index: 300;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-  }
-  #conditionBackdrop.show { opacity: 1; pointer-events: auto; }
-
-  #conditionPanel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.88);
-    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
-    border: 2px solid var(--red-light);
-    border-radius: 20px;
-    padding: 22px 24px 20px;
-    z-index: 301;
-    opacity: 0;
-    transition: opacity 0.2s, transform 0.2s;
-    pointer-events: none;
-    width: min(92vw, 500px);
-    max-height: 82vh;
-    overflow-y: auto;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  /* ── 3-zone advantage/disadvantage roll button ── */
+  .roll-tri {
+    border: var(--roll-border) solid var(--gold);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 12px 0;
     user-select: none;
     -webkit-user-select: none;
-    -webkit-touch-callout: none;
   }
-  #conditionPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
-
-  #conditionPanel .sp-mode-badge { color: var(--red-light); }
+  .rtz-top {
+    padding: 14px 12px 10px;
+    text-align: center;
+    cursor: pointer;
+    background: rgba(var(--accent-rgb), 0.08);
+    border-bottom: 1px solid rgba(var(--border-rgb), 0.4);
+    transition: background 0.15s;
+  }
+  .rtz-top:active { background: rgba(var(--accent-rgb), 0.18); }
+  .rtz-label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    margin-bottom: 3px;
+  }
+  .rtz-bonus {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--gold-light);
+    line-height: 1.1;
+  }
+  .rtz-damage {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .rtz-bottom {
+    display: flex;
+  }
+  .rtz-dis, .rtz-adv {
+    flex: 1;
+    padding: 9px 4px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-family: sans-serif;
+    transition: background 0.15s;
+  }
+  .rtz-dis {
+    background: rgba(192,57,43,0.07);
+    color: var(--red-light);
+    border-right: 1px solid rgba(var(--border-rgb), 0.4);
+  }
+  .rtz-dis:active { background: rgba(192,57,43,0.20); }
+  .rtz-adv {
+    background: rgba(39,174,96,0.07);
+    color: var(--green);
+  }
+  .rtz-adv:active { background: rgba(39,174,96,0.20); }
 
   .cond-toggle-btn {
     display: block;
@@ -2845,29 +2872,47 @@
       <div class="stat-pills">
         <div class="stat-pill">
           <input type="number" id="statAC" value="10" oninput="saveData()">
-          <div class="stat-pill-label">Armor Class</div>
+          <div class="stat-pill-label"
+               onpointerdown="startStatPillPress(event,'ac')"
+               onpointerup="endStatPillPress(event,'ac')"
+               onpointercancel="cancelStatPillPress()">Armor Class</div>
         </div>
-        <div class="stat-pill rollable" onclick="rollInitiative()">
+        <div class="stat-pill rollable"
+             onpointerdown="startStatPillPress(event,'initiative')"
+             onpointerup="endStatPillPress(event,'initiative')"
+             onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statInit">+0</div>
           <div class="stat-pill-label">Initiative</div>
         </div>
         <div class="stat-pill">
           <input type="number" id="statSpeed" value="30" oninput="saveData()">
-          <div class="stat-pill-label">Speed (ft)</div>
+          <div class="stat-pill-label"
+               onpointerdown="startStatPillPress(event,'speed')"
+               onpointerup="endStatPillPress(event,'speed')"
+               onpointercancel="cancelStatPillPress()">Speed (ft)</div>
         </div>
       </div>
       <div class="stat-pills" style="margin-top:8px">
         <div class="stat-pill">
           <input type="text" id="statHitDice" value="1d8" oninput="saveData(); updateHitDieBadge()" style="font-size:16px">
-          <div class="stat-pill-label">Die Type</div>
+          <div class="stat-pill-label"
+               onpointerdown="startStatPillPress(event,'dietype')"
+               onpointerup="endStatPillPress(event,'dietype')"
+               onpointercancel="cancelStatPillPress()">Die Type</div>
         </div>
-        <div class="stat-pill rollable" onclick="rollSpellAtk()">
+        <div class="stat-pill rollable"
+             onpointerdown="startStatPillPress(event,'spellatk')"
+             onpointerup="endStatPillPress(event,'spellatk')"
+             onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statSpellAtk">+2</div>
           <div class="stat-pill-label">Spell Atk</div>
         </div>
         <div class="stat-pill">
           <div class="stat-pill-value" id="statSpellDC">12</div>
-          <div class="stat-pill-label">Spell DC</div>
+          <div class="stat-pill-label"
+               onpointerdown="startStatPillPress(event,'spelldc')"
+               onpointerup="endStatPillPress(event,'spelldc')"
+               onpointercancel="cancelStatPillPress()">Spell DC</div>
         </div>
       </div>
     </div>
@@ -2892,7 +2937,10 @@
                   onpointerup="stopHitDiceHold()"
                   onpointercancel="stopHitDiceHold()">+</button>
         </div>
-        <div class="hit-die-roll" id="hitDiceRollBtn" onclick="rollHitDie()">d8</div>
+        <div class="hit-die-roll" id="hitDiceRollBtn"
+             onpointerdown="startHitDiePress(event)"
+             onpointerup="endHitDiePress(event)"
+             onpointercancel="cancelHitDiePress()">d8</div>
       </div>
     </div>
   </div>
@@ -2904,7 +2952,10 @@
         <button class="inspiration-btn" id="inspirationBtn" onclick="toggleInspiration()">★</button>
       </div>
       <div class="death-block">
-        <div class="death-block-title">Death Saving Throws</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="death-block-title">Death Saving Throws</div>
+          <button class="attack-edit-btn" onclick="openDeathSavePanel()" style="font-size:10px">Roll</button>
+        </div>
         <div class="death-saves">
           <div class="save-group">
             <div class="save-group-label success">Successes</div>
@@ -3183,10 +3234,16 @@
       <div class="sp-save-dc-value" id="spSaveDcValue">—</div>
       <div class="sp-save-dc-ability" id="spSaveDcAbility"></div>
     </div>
-    <div class="sp-atk-box" id="spAtkBox" style="display:none" onclick="rollSpellFromPanel()">
-      <div class="sp-atk-label">Spell Attack — tap to roll</div>
-      <div class="sp-atk-bonus" id="spAtkBonus">—</div>
-      <div class="sp-atk-damage" id="spAtkDamage"></div>
+    <div class="roll-tri" id="spAtkBox" style="display:none">
+      <div class="rtz-top" onclick="event.stopPropagation();rollSpellFromPanel('normal')">
+        <div class="rtz-label">Spell Attack</div>
+        <div class="rtz-bonus" id="spAtkBonus">—</div>
+        <div class="rtz-damage" id="spAtkDamage"></div>
+      </div>
+      <div class="rtz-bottom">
+        <div class="rtz-dis" onclick="event.stopPropagation();rollSpellFromPanel('dis')">Disadv</div>
+        <div class="rtz-adv" onclick="event.stopPropagation();rollSpellFromPanel('adv')">Adv</div>
+      </div>
     </div>
     <div class="sp-atk-box" id="spDmgBox" style="display:none" onclick="rollDamageFromSpellPanel()">
       <div class="sp-atk-label">Damage — tap to roll</div>
@@ -3552,10 +3609,16 @@
     </div>
     <div class="sp-name" id="atkPanelName"></div>
     <div class="sp-meta" id="atkPanelMeta"></div>
-    <div class="sp-atk-box" id="atkPanelRollBox" onclick="event.stopPropagation();rollFromAttackPanel()">
-      <div class="sp-atk-label">Attack Roll — tap to roll</div>
-      <div class="sp-atk-bonus" id="atkPanelBonus"></div>
-      <div class="sp-atk-damage" id="atkPanelDamage"></div>
+    <div class="roll-tri" id="atkPanelRollBox">
+      <div class="rtz-top" onclick="event.stopPropagation();rollFromAttackPanel('normal')">
+        <div class="rtz-label">Attack Roll</div>
+        <div class="rtz-bonus" id="atkPanelBonus"></div>
+        <div class="rtz-damage" id="atkPanelDamage"></div>
+      </div>
+      <div class="rtz-bottom">
+        <div class="rtz-dis" onclick="event.stopPropagation();rollFromAttackPanel('dis')">Disadv</div>
+        <div class="rtz-adv" onclick="event.stopPropagation();rollFromAttackPanel('adv')">Adv</div>
+      </div>
     </div>
     <div class="sp-save-dc-box" id="atkPanelSaveDcBox" style="display:none">
       <div class="sp-save-dc-label">Save DC</div>
@@ -3619,27 +3682,33 @@
   </div>
 </div>
 
-<!-- ── Skill Description Panel ── -->
-<div id="skillBackdrop" onclick="dismissSkillPanel()"></div>
-<div id="skillPanel" onclick="dismissSkillPanel()">
-  <div class="sp-mode-badge">Skill</div>
-  <div class="sp-name" id="skPanelName"></div>
-  <div class="sp-meta" id="skPanelMeta"></div>
-  <div class="sp-description" id="skPanelDesc"></div>
-  <div class="sp-atk-box" id="skPanelRollBox" onclick="event.stopPropagation(); rollSkillFromPanel()">
-    <div class="sp-atk-label">Skill Check — tap to roll</div>
-    <div class="sp-atk-bonus" id="skPanelBonus">+0</div>
+<!-- ── Unified Info Panel ── -->
+<div id="infoPanelBackdrop" onclick="dismissInfoPanel()"></div>
+<div id="infoPanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <div class="sp-mode-badge" id="ipBadge">Info</div>
+    <button class="attack-edit-btn" id="ipEditBtn" style="display:none" onclick="event.stopPropagation();infoPanelEdit()">Edit</button>
   </div>
-  <span class="sp-dismiss-hint">tap to dismiss</span>
-</div>
-
-<!-- ── Condition Description Panel ── -->
-<div id="conditionBackdrop" onclick="dismissConditionPanel()"></div>
-<div id="conditionPanel" onclick="dismissConditionPanel()">
-  <div class="sp-mode-badge">Condition</div>
-  <div class="sp-name" id="condPanelName"></div>
-  <div class="sp-description" id="condPanelDesc"></div>
-  <button class="cond-toggle-btn" id="condPanelToggleBtn" onclick="event.stopPropagation(); toggleConditionFromPanel()"></button>
+  <div class="sp-name" id="ipTitle"></div>
+  <div class="sp-meta" id="ipMeta" style="display:none"></div>
+  <!-- 3-zone d20 roll box -->
+  <div class="roll-tri" id="ipRollBox" style="display:none">
+    <div class="rtz-top" onclick="event.stopPropagation();infoPanelRoll('normal')">
+      <div class="rtz-label" id="ipRollLabel">Roll</div>
+      <div class="rtz-bonus" id="ipRollBonus">+0</div>
+    </div>
+    <div class="rtz-bottom">
+      <div class="rtz-dis" onclick="event.stopPropagation();infoPanelRoll('dis')">Disadv</div>
+      <div class="rtz-adv" onclick="event.stopPropagation();infoPanelRoll('adv')">Adv</div>
+    </div>
+  </div>
+  <!-- Simple roll box (for non-d20 rolls like hit dice) -->
+  <div class="sp-atk-box" id="ipSimpleRollBox" style="display:none" onclick="event.stopPropagation();infoPanelSimpleRoll()">
+    <div class="sp-atk-label" id="ipSimpleRollLabel">Roll</div>
+    <div class="sp-atk-bonus" id="ipSimpleRollBonus">—</div>
+  </div>
+  <div class="sp-description" id="ipDesc"></div>
+  <button class="cond-toggle-btn" id="ipActionBtn" style="display:none" onclick="event.stopPropagation();infoPanelAction()"></button>
   <span class="sp-dismiss-hint">tap to dismiss</span>
 </div>
 
@@ -3883,18 +3952,27 @@ function buildAbilityGrid() {
   grid.innerHTML = ABILITIES.map(ab => {
     const prof = state.saveProficiencies.includes(ab);
     return `
-    <div class="ability-card" onclick="rollAbility('${ab}')">
+    <div class="ability-card"
+         onpointerdown="startAbilityPress(event,'${ab}')"
+         onpointerup="endAbilityPress(event,'${ab}')"
+         onpointercancel="cancelAbilityPress()">
       <div class="ability-header">
         <span class="ability-name">${ab}</span>
         <input type="number" id="score-${ab}" value="${state.abilities[ab]}"
           min="1" max="30"
           oninput="onAbilityInput('${ab}', this.value)"
-          onclick="event.stopPropagation()">
+          onclick="event.stopPropagation()"
+          onpointerdown="event.stopPropagation()"
+          onpointerup="event.stopPropagation()">
       </div>
       <div class="ability-mod" id="mod-${ab}">+0</div>
       <div class="ability-save ${prof ? 'proficient' : ''}"
-           onclick="event.stopPropagation(); rollSave('${ab}')">
+           onpointerdown="event.stopPropagation();startSavePress(event,'${ab}')"
+           onpointerup="event.stopPropagation();endSavePress(event,'${ab}')"
+           onpointercancel="event.stopPropagation();cancelSavePress()">
         <div class="prof-dot"
+             onpointerdown="event.stopPropagation()"
+             onpointerup="event.stopPropagation()"
              onclick="event.stopPropagation(); toggleSaveProf('${ab}', this.closest('.ability-save'))"></div>
         <span class="save-mod" id="save-mod-${ab}">+0</span>
         <span class="save-label">Save</span>
@@ -4030,6 +4108,114 @@ function rollDiceExpr(expr) {
   return total;
 }
 
+// ── Mode-aware d20 roll ────────────────────────────────────────────────
+function d20Roll(mode) {
+  if (mode === 'adv') {
+    const r1 = d20(), r2 = d20();
+    return { roll: Math.max(r1, r2), breakdown: `d20(${r1},${r2})` };
+  }
+  if (mode === 'dis') {
+    const r1 = d20(), r2 = d20();
+    return { roll: Math.min(r1, r2), breakdown: `d20(${r1},${r2})` };
+  }
+  const roll = d20();
+  return { roll, breakdown: `d20(${roll})` };
+}
+function modeSuffix(mode) {
+  return mode === 'adv' ? ' (Adv)' : mode === 'dis' ? ' (Disadv)' : '';
+}
+
+// ── Unified Info Panel ─────────────────────────────────────────────────
+let infoPanelCfg = {};
+
+function openInfoPanel(cfg) {
+  const {
+    badge = 'Info',
+    borderColor = 'var(--gold)',
+    title = '',
+    meta = '',
+    description = '',
+    rollLabel = '',
+    rollBonus = '',
+    rollFn = null,
+    simpleRollLabel = null,
+    simpleRollBonus = '',
+    simpleRollFn = null,
+    editFn = null,
+    actionLabel = null,
+    actionClass = '',
+    actionFn = null,
+  } = cfg;
+
+  infoPanelCfg = { rollFn, simpleRollFn, editFn, actionFn };
+
+  const panel = document.getElementById('infoPanel');
+  panel.style.borderColor = borderColor;
+  document.getElementById('ipBadge').textContent = badge;
+  document.getElementById('ipTitle').textContent = title;
+  const metaEl = document.getElementById('ipMeta');
+  metaEl.textContent = meta;
+  metaEl.style.display = meta ? '' : 'none';
+  document.getElementById('ipDesc').textContent = description;
+
+  const rollBox = document.getElementById('ipRollBox');
+  if (rollFn) {
+    document.getElementById('ipRollLabel').textContent = rollLabel || 'Roll';
+    document.getElementById('ipRollBonus').textContent = rollBonus;
+    rollBox.style.display = '';
+  } else {
+    rollBox.style.display = 'none';
+  }
+
+  const simpleBox = document.getElementById('ipSimpleRollBox');
+  if (simpleRollFn) {
+    document.getElementById('ipSimpleRollLabel').textContent = simpleRollLabel || 'Roll';
+    document.getElementById('ipSimpleRollBonus').textContent = simpleRollBonus;
+    simpleBox.style.display = '';
+  } else {
+    simpleBox.style.display = 'none';
+  }
+
+  document.getElementById('ipEditBtn').style.display = editFn ? '' : 'none';
+
+  const actionBtn = document.getElementById('ipActionBtn');
+  if (actionFn && actionLabel) {
+    actionBtn.textContent = actionLabel;
+    actionBtn.className = 'cond-toggle-btn ' + actionClass;
+    actionBtn.style.display = '';
+  } else {
+    actionBtn.style.display = 'none';
+  }
+
+  pushModalHistory();
+  document.getElementById('infoPanelBackdrop').classList.add('show');
+  panel.classList.add('show');
+}
+
+function dismissInfoPanel() {
+  popModalHistory();
+  document.getElementById('infoPanel').classList.remove('show');
+  document.getElementById('infoPanelBackdrop').classList.remove('show');
+  infoPanelCfg = {};
+}
+
+function infoPanelRoll(mode) {
+  if (infoPanelCfg.rollFn) infoPanelCfg.rollFn(mode || 'normal');
+}
+function infoPanelSimpleRoll() {
+  if (infoPanelCfg.simpleRollFn) infoPanelCfg.simpleRollFn();
+}
+function infoPanelEdit() {
+  const fn = infoPanelCfg.editFn;
+  dismissInfoPanel();
+  if (fn) fn();
+}
+function infoPanelAction() {
+  const fn = infoPanelCfg.actionFn;
+  dismissInfoPanel();
+  if (fn) fn();
+}
+
 // ── Roll result overlay & log ──────────────────────────────────────────
 let rollLog = [];
 
@@ -4084,56 +4270,56 @@ function clearRollLog() {
 }
 
 // ── Roll functions ─────────────────────────────────────────────────────
-function rollAbility(ab) {
-  const roll = d20();
+function rollAbility(ab, mode = 'normal') {
+  const {roll, breakdown} = d20Roll(mode);
   const m = mod(state.abilities[ab]);
   const label = ABILITY_NAMES[ABILITIES.indexOf(ab)] + ' Check';
-  showRoll(label, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
+  showRoll(label + modeSuffix(mode), `${breakdown} ${fmtMod(m)}`, roll + m, natMsg(roll));
 }
 
-function rollSave(ab) {
-  const roll = d20();
+function rollSave(ab, mode = 'normal') {
+  const {roll, breakdown} = d20Roll(mode);
   const el = document.getElementById(`save-mod-${ab}`);
   const m = el ? parseInt(el.textContent) : 0;
   const name = SAVES.find(s => s.ab === ab).name;
-  showRoll(name + ' Save', `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
+  showRoll(name + ' Save' + modeSuffix(mode), `${breakdown} ${fmtMod(m)}`, roll + m, natMsg(roll));
 }
 
-function rollSkill(name) {
-  const roll = d20();
+function rollSkill(name, mode = 'normal') {
+  const {roll, breakdown} = d20Roll(mode);
   const el = document.getElementById(`skill-mod-${name.replace(/\s/g, '_')}`);
   const m = el ? parseInt(el.textContent) : 0;
-  showRoll(name, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
+  showRoll(name + modeSuffix(mode), `${breakdown} ${fmtMod(m)}`, roll + m, natMsg(roll));
 }
 
-function rollInitiative() {
-  const roll = d20();
+function rollInitiative(mode = 'normal') {
+  const {roll, breakdown} = d20Roll(mode);
   const m = mod(state.abilities['DEX']);
-  showRoll('Initiative', `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
+  showRoll('Initiative' + modeSuffix(mode), `${breakdown} ${fmtMod(m)}`, roll + m, natMsg(roll));
 }
 
-function rollSpellAtk() {
+function rollSpellAtk(mode = 'normal') {
   const el = document.getElementById('statSpellAtk');
   if (!el || el.textContent === '—') { toast('No spellcasting ability set'); return; }
-  const roll = d20();
+  const {roll, breakdown} = d20Roll(mode);
   const m = parseInt(el.textContent) || 0;
-  showRoll('Spell Attack', `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll));
+  showRoll('Spell Attack' + modeSuffix(mode), `${breakdown} ${fmtMod(m)}`, roll + m, natMsg(roll));
 }
 
-function rollSpellFromPanel() {
+function rollSpellFromPanel(mode = 'normal') {
   if (spellPanelEditIdx < 0) return;
   const sp = state.spells[spellPanelEditIdx];
   if (!sp || !sp.attackRoll) return;
   const el = document.getElementById('statSpellAtk');
   if (!el || el.textContent === '—') { toast('No spellcasting ability set'); return; }
-  const roll = d20();
+  const {roll, breakdown} = d20Roll(mode);
   const m = parseInt(el.textContent) || 0;
   let secondary;
   if (sp.damage) {
     const dmg = rollDiceExpr(sp.damage);
     secondary = `${sp.damage} = ${dmg}`;
   }
-  showRoll(sp.name, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll), secondary);
+  showRoll(sp.name + modeSuffix(mode), `${breakdown} ${fmtMod(m)}`, roll + m, natMsg(roll), secondary);
 }
 
 function rollDamageFromSpellPanel() {
@@ -4471,29 +4657,27 @@ function openSkillPanel(name) {
   const sk = SKILLS.find(s => s.name === name);
   if (!sk) return;
   skillPanelCurrentName = name;
-  pushModalHistory();
-  document.getElementById('skPanelName').textContent = name;
-  document.getElementById('skPanelMeta').textContent = sk.ab + ' · Skill Check';
-  document.getElementById('skPanelDesc').textContent = sk.desc;
   const modEl = document.getElementById(`skill-mod-${name.replace(/\s/g, '_')}`);
-  document.getElementById('skPanelBonus').textContent = modEl ? modEl.textContent : '+0';
-  document.getElementById('skillBackdrop').classList.add('show');
-  document.getElementById('skillPanel').classList.add('show');
+  const bonus = modEl ? modEl.textContent : '+0';
+  openInfoPanel({
+    badge: 'Skill',
+    title: name,
+    meta: sk.ab + ' · Skill Check',
+    description: sk.desc,
+    rollLabel: 'Skill Check',
+    rollBonus: bonus,
+    rollFn: mode => rollSkill(name, mode),
+  });
 }
 
 function dismissSkillPanel() {
-  popModalHistory();
-  document.getElementById('skillPanel').classList.remove('show');
-  document.getElementById('skillBackdrop').classList.remove('show');
   skillPanelCurrentName = null;
   cancelSkillPress();
+  dismissInfoPanel();
 }
 
 function rollSkillFromPanel() {
-  if (!skillPanelCurrentName) return;
-  const name = skillPanelCurrentName;
-  dismissSkillPanel();
-  rollSkill(name);
+  if (skillPanelCurrentName) rollSkill(skillPanelCurrentName);
 }
 
 // ── Condition press (tap = toggle, hold = info panel) ──────────────────
@@ -4529,35 +4713,33 @@ function openConditionPanel(name) {
   const cond = CONDITIONS.find(c => c.name === name);
   if (!cond) return;
   conditionPanelCurrentName = name;
-  pushModalHistory();
-  document.getElementById('condPanelName').textContent = name;
-  document.getElementById('condPanelDesc').textContent = cond.desc;
   const isActive = state.conditions.includes(name);
-  const btn = document.getElementById('condPanelToggleBtn');
-  btn.textContent = isActive ? 'Remove Condition' : 'Apply Condition';
-  btn.className = 'cond-toggle-btn ' + (isActive ? 'remove' : 'apply');
-  document.getElementById('conditionBackdrop').classList.add('show');
-  document.getElementById('conditionPanel').classList.add('show');
+  openInfoPanel({
+    badge: 'Condition',
+    borderColor: 'var(--red-light)',
+    title: name,
+    description: cond.desc,
+    actionLabel: isActive ? 'Remove Condition' : 'Apply Condition',
+    actionClass: isActive ? 'remove' : 'apply',
+    actionFn: () => {
+      const idx = state.conditions.indexOf(name);
+      pushUndo({type: 'condition', name, wasActive: idx !== -1});
+      if (idx === -1) state.conditions.push(name);
+      else state.conditions.splice(idx, 1);
+      buildConditions();
+      saveData();
+    },
+  });
 }
 
 function dismissConditionPanel() {
-  popModalHistory();
-  document.getElementById('conditionPanel').classList.remove('show');
-  document.getElementById('conditionBackdrop').classList.remove('show');
   conditionPanelCurrentName = null;
   cancelConditionPress();
+  dismissInfoPanel();
 }
 
 function toggleConditionFromPanel() {
-  if (!conditionPanelCurrentName) return;
-  const name = conditionPanelCurrentName;
-  dismissConditionPanel();
-  const idx = state.conditions.indexOf(name);
-  pushUndo({type: 'condition', name, wasActive: idx !== -1});
-  if (idx === -1) state.conditions.push(name);
-  else state.conditions.splice(idx, 1);
-  buildConditions();
-  saveData();
+  // no-op: handled by actionFn inside openConditionPanel via infoPanelAction()
 }
 
 // ── Info Traits (Features & Traits in Info tab) ────────────────────────
@@ -5424,6 +5606,230 @@ function rollHitDie() {
   showRoll(`Hit Die (d${sides})`, `d${sides}(${roll}) ${fmtMod(conMod)}`, total, '');
 }
 
+// ── Hit die press (tap = roll, hold = info panel) ─────────────────────
+let hitDiePressTimer = null;
+let hitDiePressActive = false;
+
+function startHitDiePress(e) {
+  hitDiePressActive = false;
+  clearTimeout(hitDiePressTimer);
+  hitDiePressTimer = setTimeout(() => {
+    hitDiePressActive = true;
+    openStatPillPanel('dietype');
+  }, 500);
+}
+
+function endHitDiePress(e) {
+  const wasLong = hitDiePressActive;
+  clearTimeout(hitDiePressTimer);
+  hitDiePressActive = false;
+  if (!wasLong) rollHitDie();
+}
+
+function cancelHitDiePress() {
+  clearTimeout(hitDiePressTimer);
+  hitDiePressActive = false;
+}
+
+// ── Death saves ────────────────────────────────────────────────────────
+function openDeathSavePanel() {
+  openInfoPanel({
+    badge: 'Death Save',
+    borderColor: 'var(--red-light)',
+    title: 'Death Saving Throw',
+    meta: 'd20 · DC 10',
+    description: 'When you start your turn at 0 HP, roll a d20 (no modifiers).\n\n• 10 or higher → 1 Success\n• 9 or lower → 1 Failure\n• Natural 1 → 2 Failures\n• Natural 20 → Return to 1 HP, clear all marks\n\n3 Successes = stable. 3 Failures = death.',
+    rollLabel: 'Death Saving Throw',
+    rollBonus: '',
+    rollFn: mode => rollDeathSave(mode),
+  });
+}
+
+function rollDeathSave(mode = 'normal') {
+  const {roll, breakdown} = d20Roll(mode);
+  const nat20 = roll === 20;
+  const nat1  = roll === 1;
+  let secondary = roll >= 10 ? '✓ Success' : '✗ Failure';
+  if (nat20) secondary = '✦ Nat 20 — Return to 1 HP!';
+  else if (nat1) secondary = '✦ Nat 1 — Two Failures!';
+  showRoll('Death Save' + modeSuffix(mode), breakdown, roll,
+    nat20 ? natMsg(20) : (nat1 ? natMsg(1) : ''), secondary);
+}
+
+// ── Stat pill press (tap = roll or info, hold = info panel) ────────────
+const STAT_PILL_INFO = {
+  ac: {
+    title: 'Armor Class',
+    meta: 'Defense Rating',
+    desc: 'Armor Class represents how difficult you are to hit. Attack rolls must equal or exceed your AC to hit. Base AC is 10 + DEX modifier; armor, shields, and class features change this.',
+  },
+  initiative: {
+    title: 'Initiative',
+    meta: 'DEX · Combat Turn Order',
+    desc: 'Initiative determines your turn order when combat begins. Roll a d20 + DEX modifier; higher results act first.',
+    rollable: true,
+    rollLabel: 'Initiative',
+    rollFn: mode => rollInitiative(mode),
+    bonusId: 'statInit',
+  },
+  speed: {
+    title: 'Speed',
+    meta: 'Movement (feet per turn)',
+    desc: 'Speed is how many feet you can move on your turn. Difficult terrain costs double movement. Some conditions reduce speed to 0.',
+  },
+  dietype: {
+    title: 'Hit Die',
+    meta: 'Short Rest Recovery',
+    desc: 'Spend hit dice during a short rest to regain HP. Roll one or more and add your CON modifier to each. You have one per character level and regain half (rounded up) after a long rest.',
+    simpleRollLabel: 'Roll Hit Die',
+    simpleRollFn: () => rollHitDie(),
+  },
+  spellatk: {
+    title: 'Spell Attack',
+    meta: 'Proficiency + Spellcasting Ability',
+    desc: 'Added to attack rolls for spells that require them. Formula: Proficiency Bonus + Spellcasting Ability Modifier. Set your spellcasting ability in the Spells tab.',
+    rollable: true,
+    rollLabel: 'Spell Attack',
+    rollFn: mode => rollSpellAtk(mode),
+    bonusId: 'statSpellAtk',
+  },
+  spelldc: {
+    title: 'Spell Save DC',
+    meta: '8 + Proficiency + Spellcasting Ability',
+    desc: 'Creatures saving against your spells must roll equal to or higher than this DC. Formula: 8 + Proficiency Bonus + Spellcasting Ability Modifier.',
+  },
+};
+
+let statPillPressTimer = null;
+let statPillPressActive = false;
+
+function startStatPillPress(e, key) {
+  statPillPressActive = false;
+  clearTimeout(statPillPressTimer);
+  statPillPressTimer = setTimeout(() => {
+    statPillPressActive = true;
+    openStatPillPanel(key);
+  }, 500);
+}
+
+function endStatPillPress(e, key) {
+  const wasLong = statPillPressActive;
+  clearTimeout(statPillPressTimer);
+  statPillPressActive = false;
+  if (!wasLong) {
+    const info = STAT_PILL_INFO[key];
+    if (info && info.rollable) {
+      if (key === 'initiative') rollInitiative();
+      else if (key === 'spellatk') rollSpellAtk();
+    } else {
+      openStatPillPanel(key);
+    }
+  }
+}
+
+function cancelStatPillPress() {
+  clearTimeout(statPillPressTimer);
+  statPillPressActive = false;
+}
+
+function openStatPillPanel(key) {
+  const info = STAT_PILL_INFO[key];
+  if (!info) return;
+  const bonus = info.bonusId ? (document.getElementById(info.bonusId)?.textContent || '') : '';
+  openInfoPanel({
+    badge: 'Combat Stat',
+    title: info.title,
+    meta: info.meta,
+    description: info.desc,
+    rollLabel: info.rollLabel,
+    rollBonus: bonus,
+    rollFn: info.rollable ? info.rollFn : null,
+    simpleRollLabel: info.simpleRollLabel,
+    simpleRollFn: info.simpleRollFn || null,
+  });
+}
+
+// ── Ability card press (tap = roll check, hold = info panel) ──────────
+const ABILITY_DESCS = {
+  STR: 'Strength measures raw physical power. Used for melee attacks with heavy weapons, Athletics checks, forcing open doors, and breaking objects. STR modifier is added to strength-based damage rolls.',
+  DEX: 'Dexterity measures agility, reflexes, and balance. Used for ranged attacks, Acrobatics, Sleight of Hand, and Stealth. Also determines your Initiative bonus and unarmored AC.',
+  CON: 'Constitution represents endurance and vitality. Your CON modifier is added to HP gained each level. Also governs Constitution saving throws, which frequently arise from concentration spells and poison.',
+  INT: 'Intelligence measures reasoning, memory, and learning. Used for Arcana, History, Investigation, Nature, and Religion checks. The primary spellcasting ability for Wizards.',
+  WIS: 'Wisdom reflects awareness, insight, and connection to the world. Used for Animal Handling, Insight, Medicine, Perception, and Survival. Primary spellcasting ability for Clerics and Druids.',
+  CHA: 'Charisma measures force of personality, charm, and leadership. Used for Deception, Intimidation, Performance, and Persuasion. Primary spellcasting ability for Bards, Sorcerers, and Warlocks.',
+};
+
+let abilityPressTimer = null;
+let abilityPressActive = false;
+
+function startAbilityPress(e, ab) {
+  abilityPressActive = false;
+  clearTimeout(abilityPressTimer);
+  abilityPressTimer = setTimeout(() => {
+    abilityPressActive = true;
+    const m = fmtMod(mod(state.abilities[ab]));
+    const name = ABILITY_NAMES[ABILITIES.indexOf(ab)];
+    openInfoPanel({
+      badge: 'Ability',
+      title: name,
+      meta: ab + ' · ' + m,
+      description: ABILITY_DESCS[ab] || '',
+      rollLabel: name + ' Check',
+      rollBonus: m,
+      rollFn: mode => rollAbility(ab, mode),
+    });
+  }, 500);
+}
+
+function endAbilityPress(e, ab) {
+  const wasLong = abilityPressActive;
+  clearTimeout(abilityPressTimer);
+  abilityPressActive = false;
+  if (!wasLong) rollAbility(ab);
+}
+
+function cancelAbilityPress() {
+  clearTimeout(abilityPressTimer);
+  abilityPressActive = false;
+}
+
+// ── Saving throw press (tap = roll save, hold = info panel) ───────────
+let savePressTimer = null;
+let savePressActive = false;
+
+function startSavePress(e, ab) {
+  savePressActive = false;
+  clearTimeout(savePressTimer);
+  savePressTimer = setTimeout(() => {
+    savePressActive = true;
+    const name = SAVES.find(s => s.ab === ab).name;
+    const mEl = document.getElementById(`save-mod-${ab}`);
+    const m = mEl ? mEl.textContent : '+0';
+    const profText = state.saveProficiencies.includes(ab) ? 'Proficient' : 'Not Proficient';
+    openInfoPanel({
+      badge: 'Saving Throw',
+      title: name + ' Save',
+      meta: ab + ' · ' + profText,
+      description: `Roll d20 + ${m} against the effect's DC. Add proficiency bonus if proficient.\n\nSaving throws resist spells, traps, poisons, diseases, and similar hazards.`,
+      rollLabel: name + ' Save',
+      rollBonus: m,
+      rollFn: mode => rollSave(ab, mode),
+    });
+  }, 500);
+}
+
+function endSavePress(e, ab) {
+  const wasLong = savePressActive;
+  clearTimeout(savePressTimer);
+  savePressActive = false;
+  if (!wasLong) rollSave(ab);
+}
+
+function cancelSavePress() {
+  clearTimeout(savePressTimer);
+  savePressActive = false;
+}
+
 function toggleHitDie(j) {
   const max = parseInt(document.getElementById('charLevel')?.value) || 1;
   const used = Math.min(state.hitDiceUsed, max);
@@ -5646,21 +6052,21 @@ function dismissAttackPanel() {
   longPressActive = false;
 }
 
-function rollFromAttackPanel() {
+function rollFromAttackPanel(mode = 'normal') {
   if (attackPanelIdx < 0) return;
   const a = state.attacks[attackPanelIdx];
-  const roll = d20();
+  const {roll, breakdown: bd} = d20Roll(mode);
   let breakdown, total;
   if (a.bonus && a.bonus !== '—') {
     const bonus = parseInt(a.bonus) || 0;
-    breakdown = `d20(${roll}) ${fmtMod(bonus)}`;
+    breakdown = `${bd} ${fmtMod(bonus)}`;
     total = roll + bonus;
   } else {
-    breakdown = `d20(${roll})`;
+    breakdown = bd;
     total = roll;
   }
   const dmg = rollDiceExpr(a.damage);
-  showRoll(a.name, breakdown, total, natMsg(roll), dmg !== null ? `Dmg: ${dmg}` : '');
+  showRoll(a.name + modeSuffix(mode), breakdown, total, natMsg(roll), dmg !== null ? `Dmg: ${dmg}` : '');
 }
 
 function hideAttack(i) {
@@ -6043,7 +6449,7 @@ window.addEventListener('popstate', () => {
   const hpEl           = document.getElementById('hpDialog');
   const settingsEl     = document.getElementById('settingsMenu');
   const attackPanelEl  = document.getElementById('attackPanel');
-  const skillPanelEl   = document.getElementById('skillPanel');
+  const infoPanelEl    = document.getElementById('infoPanel');
   if (rollEl?.classList.contains('show'))               dismissRollResult();
   else if (spellEl?.classList.contains('show'))         dismissSpellPanel();
   else if (traitEl?.classList.contains('show'))         dismissTraitPanel();
@@ -6052,8 +6458,7 @@ window.addEventListener('popstate', () => {
   else if (hpEl?.classList.contains('show'))            dismissHpDialog();
   else if (settingsEl?.classList.contains('show'))      dismissSettings();
   else if (attackPanelEl?.classList.contains('show'))   dismissAttackPanel();
-  else if (skillPanelEl?.classList.contains('show'))    dismissSkillPanel();
-  else if (document.getElementById('conditionPanel')?.classList.contains('show')) dismissConditionPanel();
+  else if (infoPanelEl?.classList.contains('show'))     dismissInfoPanel();
 });
 
 // ── Settings menu ─────────────────────────────────────────────────────
