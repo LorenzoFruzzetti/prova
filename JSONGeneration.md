@@ -382,7 +382,7 @@ Each object:
 | `bonus` | string | Manual attack roll modifier string, e.g. `"+7"` — only used when `abilityMod: "manual"` |
 | `rolls` | array | Roll objects `[{dice, type, label?, mod?}]` — same structure as `spells.rolls` |
 | `actionType` | string | `"action"` (default) or `"bonus"` — which combat sub-section to show in |
-| `hidden` | boolean | `true` to hide the row from normal view; visible only in manage mode (default `false`) |
+| `hidden` | boolean | `true` to show the row faded in the combat list; toggled via "Hide from combat list" in the edit panel (default `false`) |
 | `saveAbility` | string | Ability key for a saving throw option: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` for none |
 | `saveDC` | integer | Save DC value (e.g. `15`); `0` or omitted means no save DC displayed |
 | `description` | string | Free text shown in the attack view panel — weapon masteries, special effects, etc. (optional) |

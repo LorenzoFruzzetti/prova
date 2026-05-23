@@ -1379,7 +1379,7 @@
   /* ── Attack rows ──*/
   .attack-row {
     display: grid;
-    grid-template-columns: 1fr auto auto auto;
+    grid-template-columns: 1fr auto auto;
     gap: 8px;
     align-items: center;
     padding: 8px 0 8px calc(var(--roll-border) + 6px);
@@ -1401,20 +1401,6 @@
   .attack-name { font-weight: bold; }
   .attack-bonus { color: var(--gold-light); font-family: sans-serif; font-size: 12px; text-align: center; }
   .attack-damage { color: var(--red-light); font-family: sans-serif; font-size: 12px; text-align: right; }
-
-  .attack-del {
-    display: none;
-    background: none;
-    border: none;
-    color: var(--red-light);
-    cursor: pointer;
-    font-size: 15px;
-    line-height: 1;
-    padding: 2px 4px;
-    font-family: sans-serif;
-    opacity: 0.8;
-  }
-  .attack-del:active { opacity: 1; }
 
 
   .attack-edit-btn {
@@ -2461,31 +2447,8 @@
   .attack-row.feat-atk:active { background: rgba(var(--accent-rgb),0.12); }
   .attack-row.feat-atk .attack-name { color: var(--gold-light); }
 
-  /* Hidden attack rows - hidden by default, shown in manage mode */
-  .attack-row.atk-hidden { display: none; opacity: 0.5; }
-  #attackList.manage-mode .attack-row.atk-hidden { display: grid; }
-
-  /* Hidden section label */
-  .atk-hidden-label { display: none; color: var(--text-muted); margin-top: 8px; }
-  #attackList.manage-mode .atk-hidden-label { display: block; }
-
-  /* Manage-mode buttons */
-  .atk-manage-btn {
-    display: none;
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text-muted);
-    font-size: 10px;
-    font-family: sans-serif;
-    padding: 2px 6px;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-    white-space: nowrap;
-  }
-  .atk-manage-btn:active { border-color: var(--gold); color: var(--gold); }
-  #attackList.manage-mode .atk-manage-btn { display: inline-block; }
-  #attackList.manage-mode .attack-del { display: inline-block; }
+  /* Hidden attacks shown faded */
+  .attack-row.atk-hidden { opacity: 0.4; }
 
   /* Attack edit bottom sheet */
   #attackSheetBackdrop {
@@ -3067,10 +3030,7 @@
   </div>
 
   <div class="section">
-    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
-      Attacks
-      <button class="attack-edit-btn" id="attackEditBtn" onclick="toggleAttackEdit()">Edit</button>
-    </div>
+    <div class="section-title">Attacks</div>
     <div class="section-body">
       <div id="attackList">
         <div class="attack-row">
@@ -3790,6 +3750,11 @@
         <option value="action">Action</option>
         <option value="bonus">Bonus Action</option>
       </select>
+    </div>
+    <div class="sp-edit-field" style="display:flex;align-items:center;gap:8px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted)">
+        <input type="checkbox" id="atkEditHidden"> Hide from combat list
+      </label>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="sp-edit-field">
@@ -6254,7 +6219,6 @@ let longPressActive = false;
 let attackPanelIdx = -1;
 
 function startLongPress(e, i) {
-  if (e.target.closest('.atk-manage-btn') || e.target.closest('.attack-del')) return;
   longPressActive = false;
   clearTimeout(longPressTimer);
   longPressTimer = setTimeout(() => {
@@ -6264,15 +6228,6 @@ function startLongPress(e, i) {
 }
 
 function cancelLongPress() { clearTimeout(longPressTimer); }
-
-function toggleAttackEdit() {
-  const list = document.getElementById('attackList');
-  const btn  = document.getElementById('attackEditBtn');
-  const active = list.classList.toggle('manage-mode');
-  longPressActive = false;
-  if (btn) { btn.textContent = active ? 'Done' : 'Edit'; btn.classList.toggle('active', active); }
-  renderAttacks();
-}
 
 function addAttack() { openAttackPanel(-1, true); }
 
@@ -6305,6 +6260,7 @@ function _populateAtkEdit(i) {
   document.getElementById('atkEditBonus').value       = a ? (a.bonus === '—' ? '' : (a.bonus || '')) : '';
   document.getElementById('atkEditProficient').checked = a ? !!a.proficient : false;
   document.getElementById('atkEditFlatBonus').value   = a ? (a.flatBonus || '') : '';
+  document.getElementById('atkEditHidden').checked    = a ? !!a.hidden : false;
   toggleAtkBonusFields();
   renderRollRows('atkRollRows', a ? (a.rolls || []) : []);
 }
@@ -6363,12 +6319,13 @@ function saveAttackPanel() {
   const saveAbility = document.getElementById('atkEditSaveAbility').value;
   const saveDC      = parseInt(document.getElementById('atkEditSaveDC').value) || 0;
   const description = document.getElementById('atkEditDesc').value.trim();
+  const hidden      = document.getElementById('atkEditHidden').checked;
   if (attackPanelIdx < 0) {
-    state.attacks.push({name, abilityMod, proficient, flatBonus, bonus, rolls, actionType, saveAbility, saveDC, description, hidden: false});
+    state.attacks.push({name, abilityMod, proficient, flatBonus, bonus, rolls, actionType, saveAbility, saveDC, description, hidden});
     pushUndo({type: 'addAttack', index: state.attacks.length - 1});
     toast('Attack added');
   } else {
-    state.attacks[attackPanelIdx] = {...state.attacks[attackPanelIdx], name, abilityMod, proficient, flatBonus, bonus, rolls, actionType, saveAbility, saveDC, description};
+    state.attacks[attackPanelIdx] = {...state.attacks[attackPanelIdx], name, abilityMod, proficient, flatBonus, bonus, rolls, actionType, saveAbility, saveDC, description, hidden};
     toast('Attack updated');
   }
   renderAttacks();
@@ -6412,18 +6369,6 @@ function rollAtkRollsOnly() {
   showRollsOnly(a.name, a.rolls);
 }
 
-function hideAttack(i) {
-  state.attacks[i].hidden = true;
-  renderAttacks();
-  saveData();
-}
-
-function showAttack(i) {
-  state.attacks[i].hidden = false;
-  renderAttacks();
-  saveData();
-}
-
 function getSpellAtkBonus() {
   const el = document.getElementById('statSpellAtk');
   return el ? el.textContent : '—';
@@ -6432,7 +6377,6 @@ function getSpellAtkBonus() {
 
 function renderAttacks() {
   const list = document.getElementById('attackList');
-  const manageMode = list.classList.contains('manage-mode');
 
   const combatSpells = state.spells.filter(sp => sp.showInCombat);
   const combatSpellActions = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'action');
@@ -6442,27 +6386,25 @@ function renderAttacks() {
   const combatTraitActions = combatTraits.filter(t => (t.combatActionType || 'action') === 'action');
   const combatTraitBonus   = combatTraits.filter(t => (t.combatActionType || 'action') === 'bonus');
 
-  const visActionAtks = state.attacks.filter(a => !a.hidden && (a.actionType || 'action') === 'action');
-  const visBonusAtks  = state.attacks.filter(a => !a.hidden && (a.actionType || 'action') === 'bonus');
-  const hiddenAtks    = state.attacks.filter(a => !!a.hidden);
+  const actionAtks = state.attacks.filter(a => (a.actionType || 'action') === 'action');
+  const bonusAtks  = state.attacks.filter(a => (a.actionType || 'action') === 'bonus');
 
-  const hasVisActions = visActionAtks.length > 0 || combatSpellActions.length > 0 || combatTraitActions.length > 0;
-  const hasVisBonus   = visBonusAtks.length > 0  || combatSpellBonus.length > 0  || combatTraitBonus.length > 0;
-  const hasAny        = state.attacks.length > 0  || combatSpells.length > 0     || combatTraits.length > 0;
+  const hasVisActions = actionAtks.length > 0 || combatSpellActions.length > 0 || combatTraitActions.length > 0;
+  const hasVisBonus   = bonusAtks.length > 0  || combatSpellBonus.length > 0   || combatTraitBonus.length > 0;
+  const hasAny        = state.attacks.length > 0 || combatSpells.length > 0    || combatTraits.length > 0;
 
   if (!hasAny) {
     list.innerHTML = `<div class="attack-row" style="cursor:default">
       <span class="attack-name" style="color:var(--text-muted);font-size:12px;font-style:italic">No attacks added</span>
-      <span></span><span></span><span></span></div>`;
+      <span></span><span></span></div>`;
     return;
   }
 
   function makeAtkRow(a, i) {
-    const isHidden = !!a.hidden;
     const displayBonus = getAttackBonus(a);
     const displayDmg = getRollSummary(a.rolls);
     return `
-      <div class="attack-row${isHidden ? ' atk-hidden' : ''}" data-idx="${i}"
+      <div class="attack-row${a.hidden ? ' atk-hidden' : ''}" data-idx="${i}"
            onclick="rollAttack(${i})"
            onpointerdown="startLongPress(event,${i})"
            onpointerup="cancelLongPress()"
@@ -6471,16 +6413,6 @@ function renderAttacks() {
         <span class="attack-name">${escHtml(a.name)}</span>
         <span class="attack-bonus">${escHtml(displayBonus)}</span>
         <span class="attack-damage">${escHtml(displayDmg)}</span>
-        <div style="display:flex;gap:4px;align-items:center;justify-content:flex-end">
-          ${isHidden
-            ? `<button class="atk-manage-btn" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation();showAttack(${i})">Show</button>`
-            : `<button class="atk-manage-btn" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation();hideAttack(${i})">Hide</button>`
-          }
-          <button class="attack-del"
-                  onpointerdown="event.stopPropagation()"
-                  onclick="event.stopPropagation();removeAttack(${i})"
-                  title="Delete">🗑</button>
-        </div>
       </div>`;
   }
 
@@ -6497,7 +6429,6 @@ function renderAttacks() {
         <span class="attack-name" style="display:flex;align-items:center;gap:5px">${escHtml(sp.name)}${sp.level > 0 ? `<span class="spell-lvl-pip">${sp.level}</span>` : ''}</span>
         <span class="attack-bonus" style="color:var(--spell)">${escHtml(bonus)}</span>
         <span class="attack-damage">${escHtml(dmg)}</span>
-        <div></div>
       </div>`;
   }
 
@@ -6515,7 +6446,6 @@ function renderAttacks() {
         <span class="attack-name">${escHtml(t.name)}</span>
         <span class="attack-bonus" style="color:var(--gold)">${escHtml(saveText)}</span>
         <span class="attack-damage">${escHtml(t.damage || '—')}</span>
-        <div></div>
       </div>`;
   }
 
@@ -6523,27 +6453,16 @@ function renderAttacks() {
 
   if (hasVisActions) {
     html += `<div class="attack-section-label">Actions</div>`;
-    state.attacks.forEach((a, i) => {
-      if (!!a.hidden || (a.actionType || 'action') !== 'action') return;
-      html += makeAtkRow(a, i);
-    });
+    actionAtks.forEach((a, i) => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
     combatSpellActions.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
     combatTraitActions.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
   }
 
   if (hasVisBonus) {
     html += `<div class="attack-section-label"${hasVisActions ? ' style="margin-top:8px"' : ''}>Bonus Actions</div>`;
-    state.attacks.forEach((a, i) => {
-      if (!!a.hidden || (a.actionType || 'action') !== 'bonus') return;
-      html += makeAtkRow(a, i);
-    });
+    bonusAtks.forEach((a, i) => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
     combatSpellBonus.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
     combatTraitBonus.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
-  }
-
-  if (hiddenAtks.length > 0) {
-    html += `<div class="attack-section-label atk-hidden-label">Hidden</div>`;
-    hiddenAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
   }
 
   list.innerHTML = html;
@@ -6552,7 +6471,6 @@ function renderAttacks() {
 function rollAttack(i) {
   if (longPressActive) { longPressActive = false; return; }
   const a = state.attacks[i];
-  if (a.hidden) { openAttackPanel(i, true); return; }
   const bonus = getAttackBonus(a);
   const hasRolls = a.rolls && a.rolls.length > 0;
   if (bonus && bonus !== '—') {

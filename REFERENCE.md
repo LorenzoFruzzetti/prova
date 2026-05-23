@@ -160,14 +160,11 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.fp-edit-section` | Wrapper for all feature panel edit form; hidden by default, shown when `#featurePanel.edit-mode` |
 | `#featuredSpellsSection` | Block in the Features tab showing spells with `showInFeatures: true`; hidden when empty |
 | `#featuredSpellsBody` | Container for spell rows inside `#featuredSpellsSection` |
-| `.attack-row` | 4-column grid: name / bonus / damage / manage button; `cursor:pointer`; tap to view/roll |
+| `.attack-row` | 3-column grid: name / bonus / damage; `cursor:pointer`; tap to view/roll |
 | `.attack-row.spell-atk` | Spell variant of `.attack-row`; blue left-border tint; tap rolls the spell directly (same logic as spell list rows); hold 500 ms opens info panel |
-| `.attack-row.atk-hidden` | Hidden attack row; `display:none` normally; revealed when `#attackList.manage-mode` is active |
+| `.attack-row.atk-hidden` | Hidden attack row shown faded (`opacity: 0.4`); always visible in the list |
 | `.attack-section-label` | Gold uppercase section divider inside `#attackList` (e.g. "Actions", "Bonus Actions") |
-| `.attack-del` | 🗑 bin button; hidden by default; shown when `#attackList.manage-mode` is active |
-| `.atk-manage-btn` | Per-row "Show" action button (un-hides a hidden attack); hidden by default; shown in manage mode |
-| `.atk-hidden-label` | "Hidden" section label inside `#attackList`; block only when manage mode is active |
-| `.attack-edit-btn` | Small "Edit" or "Done" button used in two contexts: (1) in the Attacks section title to toggle manage mode; (2) in the top-right of spell/trait/feature/attack view panels to switch to edit mode within the same modal |
+| `.attack-edit-btn` | Small "Edit" button in the top-right of spell/trait/feature/attack view panels to switch to edit mode within the same modal |
 | `.spell-lvl-pip` | Gold circle badge (15 px) showing spell level (1–9) next to a spell name in the combat block; not rendered for cantrips |
 | `#attackPanelBackdrop` | Fixed full-screen dim layer behind the attack panel; tap to dismiss |
 | `#attackPanel` | Fixed centered card (≤500 px, scrollable) showing attack details (view mode) or editable form (edit mode); gold border in view mode, blue border in edit mode; `.edit-mode` class toggles `.atk-view-section` / `.atk-edit-section` |
@@ -350,7 +347,7 @@ let state = {
                           bonus,                 //   string — manual attack roll modifier (only used when abilityMod='manual')
                           rolls,                 //   array of roll objects: [{dice, type, label?, mod?}] — same shape as spells.rolls
                           actionType,            //   'action' | 'bonus' (default: 'action')
-                          hidden,                //   boolean — hides row from normal view; visible in manage mode
+                          hidden,                //   boolean — shows row faded in the combat list; toggled via the edit panel checkbox
                           saveAbility,           //   ability key for a saving throw option, or ''
                           saveDC,                //   integer save DC, or 0
                           description,           //   free text — weapon masteries, special effects, etc.
@@ -468,7 +465,7 @@ DOMContentLoaded
 | `buildInfoTraits()` | Features & Traits rows in `#infoTraitsBody`, or empty-state placeholder | `state.infoTraits` |
 | `renderFeatureDots(i)` | Dot row + counter for one feature, scaled by `step` | `state.classFeatures[i]` |
 | `renderHitDice()` | Hit dice dots in `#hitDiceDots`; max = character level | `state.hitDiceUsed`, `charLevel` input |
-| `renderAttacks()` | Attack rows split into "Actions" and "Bonus Actions" sub-sections; combat spells (`showInCombat`) and combat traits (`showInCombat`) injected into each section; hidden rows only shown in manage mode | `state.attacks`, `state.spells`, `state.infoTraits` |
+| `renderAttacks()` | Attack rows split into "Actions" and "Bonus Actions" sub-sections; combat spells (`showInCombat`) and combat traits (`showInCombat`) injected into each section; hidden attacks always shown but faded (`atk-hidden` class) | `state.attacks`, `state.spells`, `state.infoTraits` |
 | `makeSpellRow(sp, spIdx)` | Returns HTML string for one spell row in the combat block; shows gold level pip for level > 0 | `state.spells[spIdx]` |
 | `makeTraitRow(t, tIdx)` | Returns HTML string for one trait row in the combat block (gold colour scheme) | `state.infoTraits[tIdx]` |
 | `getSpellAtkBonus()` | Returns formatted spell attack bonus string (e.g. `"+5"`) from current spellcasting ability and proficiency bonus | form inputs, `state.abilities` |
@@ -548,9 +545,6 @@ DOMContentLoaded
 | `deleteFromAttackPanel()` | Tap Delete in attack panel edit mode | Splices `state.attacks[attackPanelIdx]`; calls `renderAttacks()` + `saveData()`; dismisses panel |
 | `dismissAttackPanel()` | Backdrop tap or Cancel in panel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#attackPanel` |
 | `rollFromAttackPanel(mode='normal')` | Tap zone in `.roll-tri` inside attack panel view | Rolls d20 + attack bonus with given mode; rolls damage as secondary; calls `showRoll()` |
-| `hideAttack(i)` | Tap Hide button in manage mode on a visible attack row | Sets `state.attacks[i].hidden = true`; calls `renderAttacks()` + `saveData()` |
-| `showAttack(i)` | Tap Show button in manage mode on a hidden attack row | Sets `state.attacks[i].hidden = false`; calls `renderAttacks()` + `saveData()` |
-| `toggleAttackEdit()` | Tap Edit/Done button in Attacks section | Toggles `manage-mode` class on `#attackList`; reveals hidden rows and per-row manage buttons |
 | `addAttack()` | "+ Add Attack" button | Opens attack panel in edit mode with empty form (`attackPanelIdx = -1`) |
 | `adjustHP(delta)` | +/− HP buttons (single tap) | Pushes undo; clamps `state.hpCurrent` to `[0, max]`; calls `updateHP()` |
 | `startHpHold(delta)` / `stopHpHold()` | `pointerdown` / `pointerup` on HP buttons | Calls `adjustHP` immediately, then repeats at 80 ms after a 500 ms delay |
@@ -612,7 +606,7 @@ DOMContentLoaded
 | `startHitDiceHold(delta)` / `stopHitDiceHold()` | `pointerdown` / `pointerup` on hit dice +/− | Hold-to-repeat at 80 ms |
 | `restoreHitDice()` | ↺ Restore button in Hit Dice section | Sets `state.hitDiceUsed = 0`; rerenders |
 | `fullLongRest()` | ⟳ Long Rest button in Overview panel | Restores HP to max, resets hit dice, all spell slots, and all class features; saves |
-| `removeAttack(i)` | Tap bin button (🗑) on attack row (manage mode) | Pushes undo; splices `state.attacks`; rerenders |
+| `removeAttack(i)` | Tap Delete button in attack edit panel | Pushes undo; splices `state.attacks`; rerenders |
 | `openInfoPanel(cfg)` | Called by any item that opens the unified info panel | Applies badge, title, meta, description, optional 3-zone roll button, optional simple roll button, optional edit button, optional action button; calls `pushModalHistory()`; stores `rollFn/simpleRollFn/editFn/actionFn` in `infoPanelCfg` |
 | `dismissInfoPanel()` | Backdrop tap or browser back | Calls `popModalHistory()`; hides `#infoPanel` and backdrop; clears `infoPanelCfg` |
 | `infoPanelRoll(mode)` | Tap zone in `#ipRollBox` | Calls `infoPanelCfg.rollFn(mode)` |
@@ -702,17 +696,12 @@ Condition chip
   Tap                → toggleCondition(name, el)    — instantly toggles the condition on/off (conditions are checkboxes, not rolls)
   Hold (500 ms)      → openConditionPanel(name)     — opens condition info panel with description and Apply/Remove button
 
-Manage mode (attacks section — separate from the above pattern)
-  Tap Edit button    → toggleAttackEdit()           — activates manage mode; shows hidden rows, Show and bin buttons
-  Tap Show button    → showAttack(i)                — un-hides that attack row
-  Tap bin button     → removeAttack(i)              — deletes with undo support; no confirm dialog
-  Tap Done button    → toggleAttackEdit()           — deactivates manage mode
 ```
 
 Attack panel states:
 ```
-View mode  (default) — shows name, action type, attack roll card (tappable), save DC box, description, Edit button (top-right)
-Edit mode            — shows editable form for all fields (name, bonus, damage, action type, saving throw, description)
+View mode  (default) — shows name, action type, attack roll card (tappable), save DC box, rolls-only box, description, Edit button (top-right)
+Edit mode            — shows editable form for all fields (name, attack roll selector with proficiency/flat bonus or manual entry, rolls rows, action type, hidden checkbox, saving throw, description)
 ```
 
 ---
