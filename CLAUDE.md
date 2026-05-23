@@ -1,141 +1,186 @@
----
-name: Project Documentation Agent
-description: "Use to understand how the project is structured and to update all project documentation — READMEs, examples, environment setup guides, and directory maps."
-argument-hint: "Describe which documentation to update or ask for a full documentation refresh."
-tools: [read, search, edit, execute, todo]
-user-invocable: true
+# CLAUDE.md — Project Instructions for AI Assistants
+
+You are working on a **single-file mobile-first D&D 5e character sheet**. The entire application is `dnd-character-sheet.html` — no build step, no dependencies, no server required.
+
 ---
 
-You are a project documentation specialist. Your job is to help users understand the project structure and keep all documentation accurate and up to date.
+## 1. Actual project structure
 
-## 1) Project Structure
-
-The project currently contains:
-
-```text
-<project_root>/
-|-- README.md
-|-- CLAUDE.md                    <-- this file
-|-- REFERENCE.md                 <-- D&D sheet code structure reference
-|-- JSONGeneration.md            <-- JSON file format specification
-|-- dnd-character-sheet.html     <-- main application (single-file, no build step)
-|-- .env/
-|   |-- .envVariables
-|   |-- ENVIRONMENT_SETUP.md
-|   |-- environment.yml
-|   `-- requirements.txt
-|-- src/
-|   |-- <classes>
-|   |-- <utils>
-|   `-- <package_or_modules>/
-|-- tests/
-|-- examples/
-|   |-- README.md
-|   `-- data/
-|-- temp_image/
-|-- temporary_files/
-`-- debugging_scripts/
 ```
+prova/
+├── dnd-character-sheet.html   ← the entire application
+├── CLAUDE.md                  ← this file (AI instructions)
+├── REFERENCE.md               ← developer reference: CSS tokens, JS functions, state shape
+├── JSONGeneration.md          ← JSON import/export schema specification
+├── README.md                  ← user-facing documentation
+└── examples/
+    └── data/
+        ├── ernenegilia-warlock.json   ← sample: Aasimar Warlock lv1
+        └── seraphina-dawnblade.json   ← sample: Human Paladin lv8
+```
+
+There is no build toolchain, no `src/` directory, no `tests/` directory, no `.env/` directory. Everything is in one HTML file.
 
 ### Key files
 
 | File | Purpose |
 |---|---|
-| `dnd-character-sheet.html` | Mobile-first D&D 5e character sheet — open directly in any browser, no server needed. |
-| `REFERENCE.md` | Developer reference: CSS architecture, JS functions, state object, and extension checklist. |
-| `JSONGeneration.md` | JSON schema specification for import/export files compatible with the character sheet. |
+| `dnd-character-sheet.html` | The complete app: HTML + `<style>` + `<script>` in one file |
+| `REFERENCE.md` | CSS tokens, component classes, JS constants, state object shape, all functions |
+| `JSONGeneration.md` | JSON field names, types, valid values, full annotated example |
+| `README.md` | User-facing: how to open, features, input/output, directory map |
+| `examples/data/` | Two sample characters for import testing |
 
-### Key directories
+---
 
-| Directory | Purpose |
+## 2. Application architecture
+
+`dnd-character-sheet.html` is structured as:
+
+```
+<style>    — All CSS (variables, component classes, theme overrides)
+<body>     — Static HTML: header, tab bar, 8 panels, all modal overlays
+<script>   — All JS: constants, state object, build/calc/handler/persistence functions
+```
+
+### State model
+
+Character data lives in two places:
+- **`state` object** — structured data (abilities, spells, attacks, features, etc.)
+- **HTML form inputs** — flat values read directly by `document.getElementById` (charName, hpMax, AC, etc.)
+
+Both are serialised together by `buildPayload()` → `{ form, state }` and stored in `localStorage` under `dnd5e_roster`.
+
+### Tab panels
+
+Eight tabs in order (used by swipe navigation and `switchTab()`):
+`overview` → `abilities` → `skills` → `combat` → `spells` → `features` → `inventory` → `rolls`
+
+### Key entry points
+
+| Function | Role |
 |---|---|
-| `src/` | All production source code — classes, utilities, and packages. |
-| `tests/` | Unit and integration tests. |
-| `examples/` | Minimal runnable examples with sample data and their own README. |
-| `.env/` | Environment configuration: Conda `environment.yml`, `requirements.txt`, `.envVariables`, and `ENVIRONMENT_SETUP.md`. |
-| `temp_image/` | Transient images that are not part of project output. |
-| `temporary_files/` | Non-output transient files. |
-| `debugging_scripts/` | Experimental or diagnostic code without a clear product purpose. |
+| `init()` | Called on `DOMContentLoaded`; loads data, builds all dynamic UI, sets up listeners |
+| `applyPayload(payload)` | Used for JSON import; same rebuild sequence as `init()` minus `loadData`/`setupAutoSave` |
+| `recalcAll()` | Recomputes all derived values (modifiers, DC, proficiency bonus); calls `saveData()` |
+| `saveData()` | Serialises active character and writes to `localStorage` |
+| `loadData()` | Restores form + state from `localStorage`; handles legacy migration |
 
-## 2) D&D Character Sheet — Documentation Rules
+---
 
-`dnd-character-sheet.html` is the primary deliverable. Its documentation lives in two companion files:
+## 3. Documentation sync rules
 
-| Doc file | What it covers | When to update |
+`dnd-character-sheet.html` has **two companion docs** that must stay in sync:
+
+| Doc | Covers | Update when |
 |---|---|---|
-| `REFERENCE.md` | Code structure: CSS tokens, component classes, JS constants, state shape, all functions and their signatures | Any change to HTML structure, CSS classes, JS functions, state object, or data flow |
-| `JSONGeneration.md` | JSON import/export format: field names, types, valid values, examples, common mistakes | Any change to `collectFormData()` (new/removed form field IDs), `buildPayload()` structure, or `state` object shape |
+| `REFERENCE.md` | CSS tokens, component classes, JS constants, state shape, all function signatures | Any HTML structure, CSS class, JS function, state key, or data-flow change |
+| `JSONGeneration.md` | JSON field names, types, valid values, examples, common mistakes | Any change to `collectFormData()`, `buildPayload()`, or the `state` object shape |
 
-### Prompt to keep docs in sync
+### Pre-commit checklist for `dnd-character-sheet.html` changes
 
-When you modify `dnd-character-sheet.html`, apply the following checklist before committing:
+1. **New form field** (new `id` + added to `collectFormData()`):
+   - Add to the `form` field reference table in `JSONGeneration.md`
+   - Add to the annotated example in `JSONGeneration.md` if relevant
+   - If it drives a derived value, note it in the `recalcAll()` row of `REFERENCE.md`
 
-1. **New form field added** (new `id` in the HTML + added to `collectFormData()`):
-   - Add the field to the `form` field reference table in `JSONGeneration.md`.
-   - Add the field to the annotated example in `JSONGeneration.md` if it belongs in the example.
-   - If the field has a corresponding derived value, note it in the `recalcAll()` row of `REFERENCE.md`.
-
-2. **State object changed** (new key in `state`, or changed type):
-   - Update the `state` object in `REFERENCE.md` (Runtime state object section).
-   - Update the `state` field reference in `JSONGeneration.md`.
-   - Update the complete annotated example in `JSONGeneration.md`.
+2. **State object changed** (new key, or changed type):
+   - Update the `state` object block in `REFERENCE.md`
+   - Update the `state` field reference section in `JSONGeneration.md`
+   - Update the complete annotated example in `JSONGeneration.md`
 
 3. **New JS function added or renamed**:
-   - Add/update the entry in the relevant function table in `REFERENCE.md` (Build functions, Calculation functions, Interaction handlers, Persistence functions, or Utility functions).
+   - Add/update the entry in the relevant function table in `REFERENCE.md`
+     (Build · Calculation · Interaction handlers · Roll result · Undo · Persistence · Roster · Utility · AI/SRD Import)
 
 4. **New CSS class added or renamed**:
-   - Add/update the entry in the Key component classes table in `REFERENCE.md`.
-   - If it is a new design token (`--variable`), add it to the Design tokens table.
+   - Add/update the entry in the Key component classes table in `REFERENCE.md`
+   - If it is a new design token (`--variable`), add it to the Design tokens table
 
 5. **New tab or panel added**:
-   - Update the Top-level layout diagram in `REFERENCE.md`.
-   - Update the Initialisation flow if new build functions are needed.
+   - Update the Top-level layout diagram in `REFERENCE.md`
+   - Update the Initialisation flow section if new build functions are needed
 
 6. **New skill, condition, or class option added**:
-   - Update the valid values list in `JSONGeneration.md`.
+   - Update the valid values list in `JSONGeneration.md`
 
-## 3) How to Update Documentation
+---
 
-### 3.1 When to update docs
-Update documentation whenever any of the following change:
-- Entrypoints (new script, renamed module, changed CLI arguments).
-- Input or output contracts (file formats, schemas, paths).
-- Directory structure (new folders, moved files).
-- Environment dependencies (new packages, changed versions).
-- Examples (new example added, existing example modified).
+## 4. Development conventions
 
-### 3.2 README.md requirements
-The root `README.md` must always contain these sections:
+### No build step
+Open `dnd-character-sheet.html` directly in a browser. There is no transpilation, bundling, or npm. Test changes by refreshing the page.
 
-1. **Entrypoints** — Exact commands to run every primary script/module, both from an editor and from the terminal.
-2. **Expected input** — Required and optional formats, schema notes, and input paths.
-3. **Expected output** — Generated files/directories and runtime side effects.
-4. **Directory map** — Clear map of source code, configs, environment files, tests, scripts, and outputs.
-5. **Examples** — Pointers to runnable examples and sample data locations.
+### Single-file discipline
+Keep all HTML, CSS, and JS in `dnd-character-sheet.html`. Do not create external `.css`, `.js`, or module files.
 
-README quality rules:
-- Commands must be copy/paste ready.
-- Paths must be explicit and relative to the project root.
-- No stale references — every path and command listed must match the current state of the repo.
+### State vs form inputs
+- Store structured, typed data in `state` (arrays, booleans, integers).
+- Store flat string values in HTML `<input>` elements (read with `document.getElementById(id).value`).
+- Never duplicate data between `state` and form inputs.
+- Do not store derived values (modifiers, save DC, proficiency bonus) — always recalculate them.
 
-### 3.3 Environment files
-Keep these files aligned whenever dependencies change:
-- `.env/environment.yml`
-- `.env/requirements.txt`
-- `.env/.envVariables`
-- `.env/ENVIRONMENT_SETUP.md` — step-by-step setup instructions.
+### CSS tokens
+Use the `:root` CSS variables (`--bg`, `--gold`, `--surface`, etc.) rather than hardcoded colours. Themes work by overriding these variables on `[data-theme]` selectors. Never add a new hardcoded colour without adding a token first.
 
-### 3.4 Examples documentation
-Each major feature or pipeline should have a minimal runnable example in `examples/`. For each example, document:
-- What it demonstrates.
-- Required input and where to find sample data.
-- Expected output.
+### Interaction model (tap/hold)
+All interactive rows follow the same pattern:
+- **Tap** → roll directly if the item is rollable; open info panel otherwise
+- **Hold (500 ms)** → always open the info/view panel
 
-Update `examples/README.md` whenever examples are added, removed, or changed.
+Timers are `pointerdown`-started and cleared on `pointerup`/`pointercancel`.
 
-### 3.5 Documentation update workflow
-1. Scan the current project structure and compare it against existing docs.
-2. Identify any mismatches (missing entries, stale paths, outdated commands).
-3. Update each affected doc file.
-4. Verify that all documented commands and paths are valid.
-5. Report what was updated and flag anything that needs user input.
+### Undo
+Use `pushUndo(action)` before any state mutation that should be undoable. The `undoStack` is session-only (not persisted). Maximum 50 entries.
+
+### localStorage keys
+| Key | Contents |
+|---|---|
+| `dnd5e_roster` | Full roster: `{ chars: { [id]: { name, payload } }, activeId }` |
+| `dnd5e_fontsize` | Font size index (integer) |
+| `dnd5e_lefty` | Lefty mode flag (boolean) |
+| `dnd5e_theme` | Active theme key (string) |
+| `srd_v1_*` | SRD API response cache entries |
+
+### SRD API
+The SRD tab in the Import modal calls `https://www.dnd5eapi.co/api/<path>` with `localStorage` caching. Responses are cached under keys prefixed `srd_v1_`. Requires internet; the rest of the app works fully offline.
+
+---
+
+## 5. README.md requirements
+
+`README.md` must always contain:
+1. **How to run** — exact OS commands and browser instructions
+2. **Features** — a summary table
+3. **Settings** — what the ⚙ button exposes
+4. **Expected input** — JSON schema overview, link to `JSONGeneration.md`
+5. **Expected output** — localStorage + file download behaviour
+6. **Directory map** — accurate paths relative to project root
+
+Update `README.md` whenever new features, settings, or input/output behaviour changes.
+
+---
+
+## 6. Examples
+
+Sample JSON files live in `examples/data/`. Each file is a complete `{ form, state }` payload loadable via ⚙ → Load Character.
+
+| File | Character | Demonstrates |
+|---|---|---|
+| `examples/data/ernenegilia-warlock.json` | Ernenegilia, Aasimar Warlock lv1 | Cantrips with `attackRoll`/`rollDamage`, Hex with concentration + bonus-action combat, Pact of the Chain trait, minimal currency |
+| `examples/data/seraphina-dawnblade.json` | Seraphina Dawnblade, Human Paladin lv8 | Multi-slot spellcasting, `classFeatures` with `step`, `infoTraits` with `showInCombat`, portrait field, full proficiency/expertise setup |
+
+When adding a new example: document what it demonstrates in this table and in `examples/README.md` (create the file if it does not exist yet).
+
+---
+
+## 7. What is intentionally absent
+
+The following directories are referenced in older docs but **do not exist** in this repo:
+
+- `src/` — no separate source directory; everything is in the HTML file
+- `tests/` — no automated test suite
+- `.env/` — no environment configuration needed
+- `temp_image/`, `temporary_files/`, `debugging_scripts/` — scratch directories not committed
+
+Do not create these directories unless there is a concrete need. Do not reference them in documentation.
