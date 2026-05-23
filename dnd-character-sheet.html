@@ -1403,6 +1403,40 @@
   #spellPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
   #spellPanel.edit-mode { border-color: var(--spell); }
 
+  /* ── Skill Description Panel ── */
+  #skillBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #skillBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #skillPanel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.88);
+    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
+    border: 2px solid var(--gold);
+    border-radius: 20px;
+    padding: 22px 24px 20px;
+    z-index: 301;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    width: min(92vw, 500px);
+    max-height: 82vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  }
+  #skillPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+
+  .check-item.holding { background: rgba(var(--accent-rgb),0.08); box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb),0.4); border-radius: var(--radius); }
+
   .sp-mode-badge {
     font-size: 9px;
     letter-spacing: 2.5px;
@@ -1941,6 +1975,11 @@
   }
   .dice-dot:active { transform: scale(0.82); background: var(--gold-light); }
 
+  #diceRollerBody .feature-row {
+    padding: 10px 0;
+    margin-bottom: 4px;
+  }
+
   /* ── Misc ── */
   .flex-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 
@@ -1963,10 +2002,10 @@
   }
 
   .condition-tag {
-    padding: 4px 10px;
-    border-radius: 12px;
+    padding: 7px 14px;
+    border-radius: 14px;
     border: 1px solid var(--border);
-    font-size: 11px;
+    font-size: 13px;
     font-family: sans-serif;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
@@ -1978,6 +2017,64 @@
     border-color: var(--red-light);
     color: var(--red-light);
   }
+
+  .condition-tag.holding {
+    box-shadow: 0 0 0 2px rgba(192,57,43,0.5);
+  }
+
+  /* ── Condition Description Panel ── */
+  #conditionBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #conditionBackdrop.show { opacity: 1; pointer-events: auto; }
+
+  #conditionPanel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.88);
+    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
+    border: 2px solid var(--red-light);
+    border-radius: 20px;
+    padding: 22px 24px 20px;
+    z-index: 301;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    width: min(92vw, 500px);
+    max-height: 82vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  }
+  #conditionPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+
+  #conditionPanel .sp-mode-badge { color: var(--red-light); }
+
+  .cond-toggle-btn {
+    display: block;
+    width: 100%;
+    padding: 11px;
+    border-radius: 10px;
+    border: none;
+    font-size: 13px;
+    font-family: sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 0.15s;
+    margin-bottom: 14px;
+  }
+  .cond-toggle-btn.apply  { background: rgba(192,57,43,0.18); color: var(--red-light); border: 1px solid rgba(192,57,43,0.45); }
+  .cond-toggle-btn.remove { background: rgba(192,57,43,0.35); color: var(--red-light); border: 1px solid var(--red-light); }
+  .cond-toggle-btn:active { opacity: 0.75; }
 
   /* ── Settings menu ── */
   #settingsBackdrop {
@@ -2548,7 +2645,10 @@
   </div>
 
   <div class="section">
-    <div class="section-title">Conditions</div>
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+      Conditions
+      <button onclick="clearAllConditions()" style="font-size:10px;font-family:sans-serif;padding:3px 9px;border-radius:8px;border:1px solid rgba(192,57,43,0.5);background:rgba(192,57,43,0.1);color:var(--red-light);cursor:pointer;letter-spacing:0.3px">Clear all</button>
+    </div>
     <div class="section-body">
       <div class="conditions-grid" id="conditionsGrid"></div>
     </div>
@@ -3211,6 +3311,30 @@
   </div>
 </div>
 
+<!-- ── Skill Description Panel ── -->
+<div id="skillBackdrop" onclick="dismissSkillPanel()"></div>
+<div id="skillPanel" onclick="dismissSkillPanel()">
+  <div class="sp-mode-badge">Skill</div>
+  <div class="sp-name" id="skPanelName"></div>
+  <div class="sp-meta" id="skPanelMeta"></div>
+  <div class="sp-description" id="skPanelDesc"></div>
+  <div class="sp-atk-box" id="skPanelRollBox" onclick="event.stopPropagation(); rollSkillFromPanel()">
+    <div class="sp-atk-label">Skill Check — tap to roll</div>
+    <div class="sp-atk-bonus" id="skPanelBonus">+0</div>
+  </div>
+  <span class="sp-dismiss-hint">tap to dismiss</span>
+</div>
+
+<!-- ── Condition Description Panel ── -->
+<div id="conditionBackdrop" onclick="dismissConditionPanel()"></div>
+<div id="conditionPanel" onclick="dismissConditionPanel()">
+  <div class="sp-mode-badge">Condition</div>
+  <div class="sp-name" id="condPanelName"></div>
+  <div class="sp-description" id="condPanelDesc"></div>
+  <button class="cond-toggle-btn" id="condPanelToggleBtn" onclick="event.stopPropagation(); toggleConditionFromPanel()"></button>
+  <span class="sp-dismiss-hint">tap to dismiss</span>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -3228,29 +3352,43 @@ const SAVES = [
 ];
 
 const SKILLS = [
-  {name:'Acrobatics',      ab:'DEX'},
-  {name:'Animal Handling', ab:'WIS'},
-  {name:'Arcana',          ab:'INT'},
-  {name:'Athletics',       ab:'STR'},
-  {name:'Deception',       ab:'CHA'},
-  {name:'History',         ab:'INT'},
-  {name:'Insight',         ab:'WIS'},
-  {name:'Intimidation',    ab:'CHA'},
-  {name:'Investigation',   ab:'INT'},
-  {name:'Medicine',        ab:'WIS'},
-  {name:'Nature',          ab:'INT'},
-  {name:'Perception',      ab:'WIS'},
-  {name:'Performance',     ab:'CHA'},
-  {name:'Persuasion',      ab:'CHA'},
-  {name:'Religion',        ab:'INT'},
-  {name:'Sleight of Hand', ab:'DEX'},
-  {name:'Stealth',         ab:'DEX'},
-  {name:'Survival',        ab:'WIS'},
+  {name:'Acrobatics',      ab:'DEX', desc:'Stay on your feet in tricky situations, tumble through tight spaces, perform acrobatic stunts, or escape from grapples and restraints. Also used when you attempt to keep your balance on unstable or slippery surfaces.'},
+  {name:'Animal Handling', ab:'WIS', desc:'Calm a spooked animal, intuit an animal\'s intentions, keep a mount from bolting, or control a beast in combat. Also used to train animals or communicate basic commands to them.'},
+  {name:'Arcana',          ab:'INT', desc:'Recall lore about spells, magic items, eldritch symbols, magical traditions, the planes of existence, and the inhabitants of those planes. Identify magical phenomena and assess the nature of enchantments.'},
+  {name:'Athletics',       ab:'STR', desc:'Climb sheer surfaces, jump across wide gaps, swim through rough currents, or break free from physical restraints. Also covers feats of raw strength such as lifting heavy objects or forcing doors open.'},
+  {name:'Deception',       ab:'CHA', desc:'Convincingly hide the truth through lies, misleading half-truths, disguise, or misdirection. Used when fast-talking guards, maintaining a false identity, gambling, or passing off forgeries as genuine.'},
+  {name:'History',         ab:'INT', desc:'Recall information about historical events, legendary people, ancient kingdoms, past disputes, recent wars, and lost civilizations. Useful when identifying ruins, deciphering old texts, or placing an artifact in context.'},
+  {name:'Insight',         ab:'WIS', desc:'Determine the true intentions of a creature — whether it is lying, frightened, or hiding something. Read body language, sense emotions, and pick up on subtle cues in conversation that reveal hidden motives.'},
+  {name:'Intimidation',    ab:'CHA', desc:'Influence others through overt threats, hostile body language, or fear-inducing displays of power. Used to extract information, cow someone into compliance, or warn off a group of bandits.'},
+  {name:'Investigation',   ab:'INT', desc:'Deduce conclusions from clues, search for hidden objects, and examine areas or items for telling details. More methodical than Perception — it involves reasoning about what you observe rather than simply noticing it.'},
+  {name:'Medicine',        ab:'WIS', desc:'Stabilize a dying creature, diagnose illnesses and poisons, recall knowledge about anatomy, and determine the cause of death. Useful for triage on the battlefield or understanding what afflicts a sick NPC.'},
+  {name:'Nature',          ab:'INT', desc:'Recall lore about terrain, plants, animals, weather patterns, natural cycles, and the dangers of the wilderness. Identify plants and creatures, predict weather, and understand how natural environments work.'},
+  {name:'Perception',      ab:'WIS', desc:'Spot, hear, smell, or otherwise detect the presence of something using your senses. The most commonly called check — used to notice hidden creatures, detect ambushes, find secret doors, and keep watch.'},
+  {name:'Performance',     ab:'CHA', desc:'Entertain an audience with music, dance, acting, storytelling, comedy, or another art form. The quality of your performance determines whether you earn goodwill, coin, or a crowd\'s admiration.'},
+  {name:'Persuasion',      ab:'CHA', desc:'Influence others through tact, social grace, good-natured arguments, or sincere appeals to logic or emotion. Used when negotiating prices, rallying allies, petitioning nobles, or smoothing over social tension.'},
+  {name:'Religion',        ab:'INT', desc:'Recall lore about deities, rites, prayers, religious hierarchies, holy symbols, and the practices of secret cults. Identify undead, divine magic, or religious iconography, and understand the beliefs of various faiths.'},
+  {name:'Sleight of Hand', ab:'DEX', desc:'Perform feats of manual dexterity without being noticed — pickpocketing, planting objects on others, palming items, or concealing something on your person. Also covers tasks like picking locks and disabling traps when fine motor control is key.'},
+  {name:'Stealth',         ab:'DEX', desc:'Conceal yourself from enemies, slip past guards, move silently through shadows, or hide and wait in ambush. Opposed by a creature\'s passive Perception; used whenever you try to move or act without being detected.'},
+  {name:'Survival',        ab:'WIS', desc:'Follow tracks, hunt wild game, navigate the wilderness, predict weather, identify signs of nearby creatures, and avoid natural hazards. Essential for overland travel, foraging for food, and tracking quarry through difficult terrain.'},
 ];
 
-const CONDITIONS = ['Blinded','Charmed','Deafened','Exhausted','Frightened',
-  'Grappled','Incapacitated','Invisible','Paralyzed','Petrified',
-  'Poisoned','Prone','Restrained','Stunned','Unconscious'];
+const CONDITIONS = [
+  {name:'Blinded',       desc:"You can't see. You automatically fail any check that requires sight. Attack rolls against you have advantage; your attack rolls have disadvantage."},
+  {name:'Charmed',       desc:"You can't attack the charmer or target them with harmful abilities or spells. The charmer has advantage on ability checks to interact socially with you."},
+  {name:'Deafened',      desc:"You can't hear. You automatically fail any check that requires hearing."},
+  {name:'Exhausted',     desc:"Each exhaustion level stacks: 1 – disadvantage on checks; 2 – speed halved; 3 – disadvantage on attacks and saves; 4 – max HP halved; 5 – speed drops to 0; 6 – death. Finishing a long rest removes one level."},
+  {name:'Frightened',    desc:"You have disadvantage on ability checks and attack rolls while the source of fear is within line of sight. You can't willingly move closer to the source."},
+  {name:'Grappled',      desc:"Your speed becomes 0 and can't increase. The condition ends if the grappler is incapacitated, or if you're removed from the grappler's reach."},
+  {name:'Incapacitated', desc:"You can't take actions or reactions."},
+  {name:'Invisible',     desc:"You can't be seen without magic or special senses. You have advantage on attack rolls; attack rolls against you have disadvantage."},
+  {name:'Paralyzed',     desc:"You are incapacitated and can't move or speak. You automatically fail STR and DEX saves. Attacks against you have advantage, and any hit from within 5 ft is a critical hit."},
+  {name:'Petrified',     desc:"You are transformed into an inanimate substance. You are incapacitated, your weight increases ×10, and you don't age. You automatically fail STR and DEX saves, have resistance to all damage, and are immune to poison and disease."},
+  {name:'Poisoned',      desc:"You have disadvantage on attack rolls and ability checks."},
+  {name:'Prone',         desc:"Your only movement option is to crawl, or spend half your speed to stand up. You have disadvantage on attack rolls. Attacks against you from within 5 ft have advantage; ranged attacks against you have disadvantage."},
+  {name:'Restrained',    desc:"Your speed becomes 0. Attack rolls against you have advantage; your attack rolls have disadvantage. You have disadvantage on DEX saving throws."},
+  {name:'Stunned',       desc:"You are incapacitated, can't move, and can speak only falteringly. You automatically fail STR and DEX saves. Attack rolls against you have advantage."},
+  {name:'Unconscious',   desc:"You are incapacitated, can't move or speak, and are unaware of your surroundings. You drop prone, automatically fail STR and DEX saves, and attack rolls against you have advantage. Any hit from within 5 ft is a critical hit."},
+];
 
 const SPELL_SLOTS_DEFAULT = [
   {level:'1st', max:2}, {level:'2nd', max:0}, {level:'3rd', max:0},
@@ -3344,6 +3482,10 @@ function applyUndo(a) {
       if (inp) inp.value = a.previous;
       recalcAll(); toast('↩ Ability score'); break;
     }
+    case 'clearConditions': {
+      state.conditions = [...a.previous];
+      buildConditions(); saveData(); toast('↩ Conditions restored'); break;
+    }
     case 'condition': {
       const ci = state.conditions.indexOf(a.name);
       if (a.wasActive && ci === -1) state.conditions.push(a.name);
@@ -3394,7 +3536,10 @@ function buildSkillsList() {
     const exp  = state.skillExpertise.includes(s.name);
     return `
     <li class="check-item ${exp ? 'expert' : prof ? 'proficient' : ''}"
-        onclick="rollSkill('${s.name}')">
+        onpointerdown="startSkillPress(event, '${s.name}')"
+        onclick="clickSkillItem(event, '${s.name}')"
+        onpointercancel="cancelSkillPress()"
+        oncontextmenu="return false">
       <div class="prof-dots" onclick="event.stopPropagation(); cycleSkillProf('${s.name}', this.closest('li'))">
         <div class="prof-dot"></div><div class="prof-dot"></div>
       </div>
@@ -3408,8 +3553,11 @@ function buildSkillsList() {
 function buildConditions() {
   const grid = document.getElementById('conditionsGrid');
   grid.innerHTML = CONDITIONS.map(c => `
-    <div class="condition-tag ${state.conditions.includes(c) ? 'active' : ''}"
-         onclick="toggleCondition('${c}', this)">${c}</div>
+    <div class="condition-tag ${state.conditions.includes(c.name) ? 'active' : ''}"
+         onpointerdown="startConditionPress(event, '${c.name}')"
+         onclick="clickConditionItem(event, '${c.name}', this)"
+         onpointercancel="cancelConditionPress()"
+         oncontextmenu="return false">${c.name}</div>
   `).join('');
 }
 
@@ -3898,6 +4046,127 @@ function cancelSpellPress() {
   clearTimeout(spellPressTimer);
   spellPressActive = false;
   document.querySelectorAll('.spell-item.holding').forEach(el => el.classList.remove('holding'));
+}
+
+// ── Skill press (tap = roll, hold = description panel) ─────────────────
+let skillPressTimer = null;
+let skillPressActive = false;
+let skillPanelCurrentName = null;
+
+function startSkillPress(e, name) {
+  skillPressActive = false;
+  clearTimeout(skillPressTimer);
+  const el = e.currentTarget;
+  skillPressTimer = setTimeout(() => {
+    skillPressActive = true;
+    if (el) el.classList.add('holding');
+    openSkillPanel(name);
+  }, 500);
+}
+
+function clickSkillItem(e, name) {
+  clearTimeout(skillPressTimer);
+  document.querySelectorAll('.check-item.holding').forEach(el => el.classList.remove('holding'));
+  if (skillPressActive) { skillPressActive = false; return; }
+  rollSkill(name);
+}
+
+function cancelSkillPress() {
+  clearTimeout(skillPressTimer);
+  skillPressActive = false;
+  document.querySelectorAll('.check-item.holding').forEach(el => el.classList.remove('holding'));
+}
+
+function openSkillPanel(name) {
+  const sk = SKILLS.find(s => s.name === name);
+  if (!sk) return;
+  skillPanelCurrentName = name;
+  pushModalHistory();
+  document.getElementById('skPanelName').textContent = name;
+  document.getElementById('skPanelMeta').textContent = sk.ab + ' · Skill Check';
+  document.getElementById('skPanelDesc').textContent = sk.desc;
+  const modEl = document.getElementById(`skill-mod-${name.replace(/\s/g, '_')}`);
+  document.getElementById('skPanelBonus').textContent = modEl ? modEl.textContent : '+0';
+  document.getElementById('skillBackdrop').classList.add('show');
+  document.getElementById('skillPanel').classList.add('show');
+}
+
+function dismissSkillPanel() {
+  popModalHistory();
+  document.getElementById('skillPanel').classList.remove('show');
+  document.getElementById('skillBackdrop').classList.remove('show');
+  skillPanelCurrentName = null;
+  cancelSkillPress();
+}
+
+function rollSkillFromPanel() {
+  if (!skillPanelCurrentName) return;
+  dismissSkillPanel();
+  rollSkill(skillPanelCurrentName);
+}
+
+// ── Condition press (tap = toggle, hold = description panel) ───────────
+let conditionPressTimer = null;
+let conditionPressActive = false;
+let conditionPanelCurrentName = null;
+
+function startConditionPress(e, name) {
+  conditionPressActive = false;
+  clearTimeout(conditionPressTimer);
+  const el = e.currentTarget;
+  conditionPressTimer = setTimeout(() => {
+    conditionPressActive = true;
+    if (el) el.classList.add('holding');
+    openConditionPanel(name);
+  }, 500);
+}
+
+function clickConditionItem(e, name, el) {
+  clearTimeout(conditionPressTimer);
+  document.querySelectorAll('.condition-tag.holding').forEach(t => t.classList.remove('holding'));
+  if (conditionPressActive) { conditionPressActive = false; return; }
+  toggleCondition(name, el);
+}
+
+function cancelConditionPress() {
+  clearTimeout(conditionPressTimer);
+  conditionPressActive = false;
+  document.querySelectorAll('.condition-tag.holding').forEach(t => t.classList.remove('holding'));
+}
+
+function openConditionPanel(name) {
+  const cond = CONDITIONS.find(c => c.name === name);
+  if (!cond) return;
+  conditionPanelCurrentName = name;
+  pushModalHistory();
+  document.getElementById('condPanelName').textContent = name;
+  document.getElementById('condPanelDesc').textContent = cond.desc;
+  const isActive = state.conditions.includes(name);
+  const btn = document.getElementById('condPanelToggleBtn');
+  btn.textContent = isActive ? 'Remove Condition' : 'Apply Condition';
+  btn.className = 'cond-toggle-btn ' + (isActive ? 'remove' : 'apply');
+  document.getElementById('conditionBackdrop').classList.add('show');
+  document.getElementById('conditionPanel').classList.add('show');
+}
+
+function dismissConditionPanel() {
+  popModalHistory();
+  document.getElementById('conditionPanel').classList.remove('show');
+  document.getElementById('conditionBackdrop').classList.remove('show');
+  conditionPanelCurrentName = null;
+  cancelConditionPress();
+}
+
+function toggleConditionFromPanel() {
+  if (!conditionPanelCurrentName) return;
+  const name = conditionPanelCurrentName;
+  dismissConditionPanel();
+  const idx = state.conditions.indexOf(name);
+  pushUndo({type: 'condition', name, wasActive: idx !== -1});
+  if (idx === -1) state.conditions.push(name);
+  else state.conditions.splice(idx, 1);
+  buildConditions();
+  saveData();
 }
 
 // ── Info Traits (Features & Traits in Info tab) ────────────────────────
@@ -5141,10 +5410,14 @@ function buildDiceRoller() {
           </div>
           <div class="mini-tracker">
             <button class="mini-btn minus"
-                    onclick="adjustDiceCount(${i}, -1)">−</button>
+                    onpointerdown="startDiceHold(${i}, -1)"
+                    onpointerup="stopDiceHold()"
+                    onpointercancel="stopDiceHold()">−</button>
             <span class="mini-val" id="dice-val-${i}">${d.count}</span>
             <button class="mini-btn plus"
-                    onclick="adjustDiceCount(${i}, 1)">+</button>
+                    onpointerdown="startDiceHold(${i}, 1)"
+                    onpointerup="stopDiceHold()"
+                    onpointercancel="stopDiceHold()">+</button>
           </div>
         </div>
       </div>
@@ -5177,6 +5450,23 @@ function adjustDiceCount(i, delta) {
   dice[i].count = Math.max(1, Math.min(10, dice[i].count + delta));
   buildDiceRoller();
   saveData();
+}
+
+let diceHoldTimer = null;
+let diceHoldInterval = null;
+
+function startDiceHold(i, delta) {
+  adjustDiceCount(i, delta);
+  diceHoldTimer = setTimeout(() => {
+    diceHoldInterval = setInterval(() => adjustDiceCount(i, delta), 80);
+  }, 400);
+}
+
+function stopDiceHold() {
+  clearTimeout(diceHoldTimer);
+  clearInterval(diceHoldInterval);
+  diceHoldTimer = null;
+  diceHoldInterval = null;
 }
 
 function removeCustomDie(i) {
@@ -5212,6 +5502,14 @@ function confirmAddDie() {
 }
 
 // ── Conditions ────────────────────────────────────────────────────────
+function clearAllConditions() {
+  if (!state.conditions.length) return;
+  pushUndo({type: 'clearConditions', previous: [...state.conditions]});
+  state.conditions = [];
+  buildConditions();
+  saveData();
+}
+
 function toggleCondition(name, el) {
   pushUndo({type: 'condition', name, wasActive: state.conditions.includes(name)});
   const idx = state.conditions.indexOf(name);
@@ -5301,6 +5599,7 @@ window.addEventListener('popstate', () => {
   const hpEl           = document.getElementById('hpDialog');
   const settingsEl     = document.getElementById('settingsMenu');
   const attackPanelEl  = document.getElementById('attackPanel');
+  const skillPanelEl   = document.getElementById('skillPanel');
   if (rollEl?.classList.contains('show'))               dismissRollResult();
   else if (spellEl?.classList.contains('show'))         dismissSpellPanel();
   else if (traitEl?.classList.contains('show'))         dismissTraitPanel();
@@ -5309,6 +5608,8 @@ window.addEventListener('popstate', () => {
   else if (hpEl?.classList.contains('show'))            dismissHpDialog();
   else if (settingsEl?.classList.contains('show'))      dismissSettings();
   else if (attackPanelEl?.classList.contains('show'))   dismissAttackPanel();
+  else if (skillPanelEl?.classList.contains('show'))    dismissSkillPanel();
+  else if (document.getElementById('conditionPanel')?.classList.contains('show')) dismissConditionPanel();
 });
 
 // ── Settings menu ─────────────────────────────────────────────────────
