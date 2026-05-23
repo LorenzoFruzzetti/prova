@@ -1379,7 +1379,7 @@
   /* ── Attack rows ──*/
   .attack-row {
     display: grid;
-    grid-template-columns: 1fr auto auto auto;
+    grid-template-columns: 1fr auto auto;
     gap: 8px;
     align-items: center;
     padding: 8px 0 8px calc(var(--roll-border) + 6px);
@@ -1401,20 +1401,6 @@
   .attack-name { font-weight: bold; }
   .attack-bonus { color: var(--gold-light); font-family: sans-serif; font-size: 12px; text-align: center; }
   .attack-damage { color: var(--red-light); font-family: sans-serif; font-size: 12px; text-align: right; }
-
-  .attack-del {
-    display: none;
-    background: none;
-    border: none;
-    color: var(--red-light);
-    cursor: pointer;
-    font-size: 15px;
-    line-height: 1;
-    padding: 2px 4px;
-    font-family: sans-serif;
-    opacity: 0.8;
-  }
-  .attack-del:active { opacity: 1; }
 
 
   .attack-edit-btn {
@@ -1932,6 +1918,7 @@
     font-family: sans-serif;
     margin-top: 4px;
     min-height: 18px;
+    white-space: pre-line;
   }
   .rr-nat {
     font-size: 15px;
@@ -2460,31 +2447,8 @@
   .attack-row.feat-atk:active { background: rgba(var(--accent-rgb),0.12); }
   .attack-row.feat-atk .attack-name { color: var(--gold-light); }
 
-  /* Hidden attack rows - hidden by default, shown in manage mode */
-  .attack-row.atk-hidden { display: none; opacity: 0.5; }
-  #attackList.manage-mode .attack-row.atk-hidden { display: grid; }
-
-  /* Hidden section label */
-  .atk-hidden-label { display: none; color: var(--text-muted); margin-top: 8px; }
-  #attackList.manage-mode .atk-hidden-label { display: block; }
-
-  /* Manage-mode buttons */
-  .atk-manage-btn {
-    display: none;
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text-muted);
-    font-size: 10px;
-    font-family: sans-serif;
-    padding: 2px 6px;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-    white-space: nowrap;
-  }
-  .atk-manage-btn:active { border-color: var(--gold); color: var(--gold); }
-  #attackList.manage-mode .atk-manage-btn { display: inline-block; }
-  #attackList.manage-mode .attack-del { display: inline-block; }
+  /* Hidden attacks shown faded */
+  .attack-row.atk-hidden { opacity: 0.4; }
 
   /* Attack edit bottom sheet */
   #attackSheetBackdrop {
@@ -2632,6 +2596,93 @@
   }
   .srd-hint, .srd-loading {
     padding: 14px; text-align: center; color: var(--text-muted); font-size: 0.8rem;
+  }
+
+  /* ── Roll rows (edit panels) ── */
+  .roll-row-edit {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 5px;
+    flex-wrap: wrap;
+  }
+  .roll-row-edit .rr-dice {
+    width: 68px;
+    padding: 5px 6px;
+    font-size: 13px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: sans-serif;
+    box-sizing: border-box;
+  }
+  .roll-row-edit .rr-type {
+    flex: 1;
+    min-width: 90px;
+    max-width: 118px;
+    padding: 5px 4px;
+    font-size: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+  }
+  .roll-row-edit .rr-label {
+    flex: 1;
+    min-width: 64px;
+    padding: 5px 6px;
+    font-size: 13px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: sans-serif;
+    box-sizing: border-box;
+  }
+  .roll-row-edit .rr-mod {
+    width: 62px;
+    padding: 5px 3px;
+    font-size: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+  }
+  .roll-row-del {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 3px 5px;
+    line-height: 1;
+    border-radius: 4px;
+  }
+  .roll-row-del:hover { color: var(--red-light); }
+  .add-roll-btn {
+    width: 100%;
+    margin-top: 4px;
+    padding: 6px;
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: sans-serif;
+  }
+  .add-roll-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .atk-bonus-field input, .atk-bonus-field select {
+    width: 100%;
+    padding: 5px;
+    font-size: 13px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: sans-serif;
+    box-sizing: border-box;
   }
 </style>
 </head>
@@ -2979,10 +3030,7 @@
   </div>
 
   <div class="section">
-    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
-      Attacks
-      <button class="attack-edit-btn" id="attackEditBtn" onclick="toggleAttackEdit()">Edit</button>
-    </div>
+    <div class="section-title">Attacks</div>
     <div class="section-body">
       <div id="attackList">
         <div class="attack-row">
@@ -3246,7 +3294,7 @@
       </div>
     </div>
     <div class="sp-atk-box" id="spDmgBox" style="display:none" onclick="rollDamageFromSpellPanel()">
-      <div class="sp-atk-label">Damage — tap to roll</div>
+      <div class="sp-atk-label" id="spDmgLabel">Rolls — tap to roll</div>
       <div class="sp-atk-bonus" id="spDmgDice"></div>
     </div>
     <div class="sp-description" id="spDescView"></div>
@@ -3300,7 +3348,7 @@
         <input type="text" id="spEditDuration" placeholder="Instantaneous">
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
       <div class="sp-edit-field">
         <label>Saving Throw</label>
         <select id="spEditSaveAbility">
@@ -3314,6 +3362,10 @@
         </select>
       </div>
       <div class="sp-edit-field">
+        <label>Save DC <span style="font-size:8px;color:var(--text-muted)">(0 = spell DC)</span></label>
+        <input type="number" id="spEditSaveDC" min="0" max="30" placeholder="e.g. 15">
+      </div>
+      <div class="sp-edit-field">
         <label>&nbsp;</label>
         <div class="sp-edit-checkbox-row">
           <label><input type="checkbox" id="spEditConc"> Conc.</label>
@@ -3321,18 +3373,15 @@
         </div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="sp-edit-field">
-        <label>Damage</label>
-        <input type="text" id="spEditDamage" placeholder="e.g. 4d6 radiant">
+    <div class="sp-edit-field">
+      <div class="sp-edit-checkbox-row">
+        <label><input type="checkbox" id="spEditAttackRoll"> Attack Roll (uses spell attack bonus)</label>
       </div>
-      <div class="sp-edit-field">
-        <label>&nbsp;</label>
-        <div class="sp-edit-checkbox-row">
-          <label><input type="checkbox" id="spEditAttackRoll"> Attack Roll</label>
-          <label><input type="checkbox" id="spEditRollDamage"> Roll Dmg</label>
-        </div>
-      </div>
+    </div>
+    <div class="sp-edit-field">
+      <label>Rolls</label>
+      <div id="spRollRows"></div>
+      <button type="button" class="add-roll-btn" onclick="addRollRow('spRollRows')">+ Add Roll</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="sp-edit-field">
@@ -3344,6 +3393,7 @@
         <select id="spEditCombatType">
           <option value="action">Action</option>
           <option value="bonus">Bonus Action</option>
+          <option value="other">Other</option>
         </select>
       </div>
     </div>
@@ -3456,6 +3506,7 @@
         <select id="trEditCombatType">
           <option value="action">Action</option>
           <option value="bonus">Bonus Action</option>
+          <option value="other">Other</option>
         </select>
       </div>
     </div>
@@ -3486,8 +3537,18 @@
       <div class="sp-save-dc-value" id="fpSaveDcValue">—</div>
       <div class="sp-save-dc-ability" id="fpSaveDcAbility"></div>
     </div>
+    <div class="roll-tri" id="fpAtkBox" style="display:none">
+      <div class="rtz-top" onclick="event.stopPropagation();rollFromFeaturePanel('normal')">
+        <div class="rtz-label">Attack Roll</div>
+        <div class="rtz-bonus" id="fpAtkBonus">—</div>
+      </div>
+      <div class="rtz-bottom">
+        <div class="rtz-dis" onclick="event.stopPropagation();rollFromFeaturePanel('dis')">Disadv</div>
+        <div class="rtz-adv" onclick="event.stopPropagation();rollFromFeaturePanel('adv')">Adv</div>
+      </div>
+    </div>
     <div class="sp-atk-box" id="fpDmgBox" style="display:none" onclick="rollFeatureDamage()">
-      <div class="sp-atk-label">Damage — tap to roll</div>
+      <div class="sp-atk-label" id="fpDmgLabel">Rolls — tap to roll</div>
       <div class="sp-atk-bonus" id="fpDmgDice"></div>
     </div>
     <div class="fp-description" id="fpDescView"></div>
@@ -3514,17 +3575,33 @@
         <input type="text" id="fpEditRecharge" placeholder="Long Rest">
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="sp-edit-field">
-        <label>Damage</label>
-        <input type="text" id="fpEditDamage" placeholder="e.g. 2d8 radiant">
+    <div class="sp-edit-field">
+      <label>Attack Roll</label>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap">
+          <input type="checkbox" id="fpEditAttackRoll"> Has Attack Roll
+        </label>
+        <select id="fpEditAttackMod" style="padding:4px 6px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="toggleFpAtkBonusFields()">
+          <option value="">— Ability</option>
+          <option value="manual">Manual</option>
+          <option value="STR">STR</option>
+          <option value="DEX">DEX</option>
+          <option value="CON">CON</option>
+          <option value="INT">INT</option>
+          <option value="WIS">WIS</option>
+          <option value="CHA">CHA</option>
+          <option value="SPELL">Spell Atk</option>
+        </select>
+        <input type="text" id="fpEditAttackBonus" placeholder="+5" style="display:none;width:56px;padding:4px 6px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)">
+        <label id="fpEditProfLabel" style="display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap">
+          <input type="checkbox" id="fpEditProficient"> Prof
+        </label>
       </div>
-      <div class="sp-edit-field">
-        <label>&nbsp;</label>
-        <div class="sp-edit-checkbox-row">
-          <label><input type="checkbox" id="fpEditRollDamage"> Roll Dmg</label>
-        </div>
-      </div>
+    </div>
+    <div class="sp-edit-field">
+      <label>Rolls</label>
+      <div id="fpRollRows"></div>
+      <button type="button" class="add-roll-btn" onclick="addRollRow('fpRollRows')">+ Add Roll</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="sp-edit-field">
@@ -3547,6 +3624,18 @@
     <div class="sp-edit-field">
       <label>Description</label>
       <textarea id="fpEditDescription" placeholder="Describe this feature…" style="min-height:100px"></textarea>
+    </div>
+    <div class="sp-edit-field">
+      <div class="sp-edit-checkbox-row">
+        <label><input type="checkbox" id="fpEditShowInCombat" onchange="document.getElementById('fpEditCombatTypeRow').style.display=this.checked?'':'none'"> Show in Combat</label>
+      </div>
+      <div id="fpEditCombatTypeRow" style="display:none;margin-top:6px">
+        <select id="fpEditCombatType">
+          <option value="action">Action</option>
+          <option value="bonus">Bonus Action</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
     </div>
     <div class="sp-edit-actions">
       <button class="sp-edit-delete-btn" id="fpEditDeleteBtn" onclick="deleteFeatureFromPanel()">Delete</button>
@@ -3625,6 +3714,10 @@
       <div class="sp-save-dc-value" id="atkPanelSaveDcValue">—</div>
       <div class="sp-save-dc-ability" id="atkPanelSaveAbility"></div>
     </div>
+    <div class="sp-atk-box" id="atkPanelRollsBox" style="display:none" onclick="rollAtkRollsOnly()">
+      <div class="sp-atk-label" id="atkPanelRollsLabel">Rolls — tap to roll</div>
+      <div class="sp-atk-bonus" id="atkPanelRollsSummary"></div>
+    </div>
     <div class="sp-description" id="atkPanelDesc"></div>
     <span class="sp-dismiss-hint">tap to dismiss</span>
   </div>
@@ -3635,22 +3728,54 @@
       <label>Name</label>
       <input type="text" id="atkEditName" placeholder="e.g. Longsword">
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="sp-edit-field">
-        <label>Attack Bonus</label>
-        <input type="text" id="atkEditBonus" placeholder="+5">
+    <div class="sp-edit-field">
+      <label>Attack Roll</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px">
+        <div class="atk-bonus-field">
+          <select id="atkEditAbilityMod" onchange="toggleAtkBonusFields()">
+            <option value="">— No Roll</option>
+            <option value="manual">Manual</option>
+            <option value="STR">STR</option>
+            <option value="DEX">DEX</option>
+            <option value="CON">CON</option>
+            <option value="INT">INT</option>
+            <option value="WIS">WIS</option>
+            <option value="CHA">CHA</option>
+            <option value="SPELL">Spell Atk</option>
+          </select>
+        </div>
+        <div class="atk-bonus-field" id="atkBonusManual" style="display:none">
+          <input type="text" id="atkEditBonus" placeholder="+5">
+        </div>
       </div>
-      <div class="sp-edit-field">
-        <label>Damage</label>
-        <input type="text" id="atkEditDamage" placeholder="1d8+3">
+      <div id="atkBonusComputed" style="display:none">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-muted);white-space:nowrap">
+            <input type="checkbox" id="atkEditProficient"> Proficient
+          </label>
+          <div class="atk-bonus-field" style="flex:1;min-width:80px">
+            <input type="number" id="atkEditFlatBonus" placeholder="Flat ±0" min="-10" max="20">
+          </div>
+        </div>
       </div>
+    </div>
+    <div class="sp-edit-field">
+      <label>Rolls</label>
+      <div id="atkRollRows"></div>
+      <button type="button" class="add-roll-btn" onclick="addRollRow('atkRollRows')">+ Add Roll</button>
     </div>
     <div class="sp-edit-field">
       <label>Action Type</label>
       <select id="atkEditActionType">
         <option value="action">Action</option>
         <option value="bonus">Bonus Action</option>
+        <option value="other">Other</option>
       </select>
+    </div>
+    <div class="sp-edit-field" style="display:flex;align-items:center;gap:8px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted)">
+        <input type="checkbox" id="atkEditHidden"> Hide from combat list
+      </label>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="sp-edit-field">
@@ -3841,6 +3966,25 @@ const SPELL_SLOTS_DEFAULT = [
 ];
 
 const LEVEL_LABELS = ['Cantrip', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
+
+const ROLL_TYPES = [
+  {value:'slashing',    label:'Slashing'},
+  {value:'piercing',    label:'Piercing'},
+  {value:'bludgeoning', label:'Bludgeoning'},
+  {value:'fire',        label:'Fire'},
+  {value:'cold',        label:'Cold'},
+  {value:'lightning',   label:'Lightning'},
+  {value:'thunder',     label:'Thunder'},
+  {value:'acid',        label:'Acid'},
+  {value:'poison',      label:'Poison'},
+  {value:'necrotic',    label:'Necrotic'},
+  {value:'radiant',     label:'Radiant'},
+  {value:'force',       label:'Force'},
+  {value:'psychic',     label:'Psychic'},
+  {value:'healing',     label:'Healing'},
+  {value:'not_damage',  label:'Not Damage'},
+  {value:'other',       label:'Other'},
+];
 
 let state = {
   abilities: {STR:10, DEX:10, CON:10, INT:10, WIS:10, CHA:10},
@@ -4125,6 +4269,167 @@ function modeSuffix(mode) {
   return mode === 'adv' ? ' (Adv)' : mode === 'dis' ? ' (Disadv)' : '';
 }
 
+// ── Roll-row helpers ───────────────────────────────────────────────────
+function rollTypeOptions(sel) {
+  return ROLL_TYPES.map(t =>
+    `<option value="${t.value}"${t.value === sel ? ' selected' : ''}>${escHtml(t.label)}</option>`
+  ).join('');
+}
+
+function rollModOptions(sel) {
+  const opts = [
+    {value:'',      label:'— No mod'},
+    {value:'STR',   label:'STR'},
+    {value:'DEX',   label:'DEX'},
+    {value:'CON',   label:'CON'},
+    {value:'INT',   label:'INT'},
+    {value:'WIS',   label:'WIS'},
+    {value:'CHA',   label:'CHA'},
+    {value:'SPELL', label:'Spell'},
+  ];
+  return opts.map(o =>
+    `<option value="${o.value}"${o.value === sel ? ' selected' : ''}>${o.label}</option>`
+  ).join('');
+}
+
+function buildRollRowHTML(r) {
+  const isOther = (r.type || '') === 'other';
+  return `<div class="roll-row-edit">
+    <input type="text" class="rr-dice" placeholder="2d6" value="${escHtml(r.dice||'')}">
+    <select class="rr-type" onchange="onRollTypeChange(this)">${rollTypeOptions(r.type||'slashing')}</select>
+    <input type="text" class="rr-label" placeholder="label" value="${escHtml(r.label||'')}" style="${isOther?'':'display:none'}">
+    <select class="rr-mod">${rollModOptions(r.mod||'')}</select>
+    <button type="button" class="roll-row-del" onclick="removeRollRow(this)">✕</button>
+  </div>`;
+}
+
+function onRollTypeChange(sel) {
+  const lbl = sel.closest('.roll-row-edit').querySelector('.rr-label');
+  if (lbl) lbl.style.display = sel.value === 'other' ? '' : 'none';
+}
+
+function renderRollRows(containerId, rolls) {
+  const el = document.getElementById(containerId);
+  if (el) el.innerHTML = (rolls||[]).map(buildRollRowHTML).join('');
+}
+
+function addRollRow(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.insertAdjacentHTML('beforeend', buildRollRowHTML({dice:'', type:'slashing', label:'', mod:''}));
+}
+
+function removeRollRow(btn) {
+  btn.closest('.roll-row-edit').remove();
+}
+
+function getRollsFromContainer(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return [];
+  return Array.from(el.querySelectorAll('.roll-row-edit')).map(row => ({
+    dice:  row.querySelector('.rr-dice')?.value.trim() || '',
+    type:  row.querySelector('.rr-type')?.value || 'slashing',
+    label: row.querySelector('.rr-label')?.value.trim() || '',
+    mod:   row.querySelector('.rr-mod')?.value || '',
+  })).filter(r => r.dice);
+}
+
+function toggleAtkBonusFields() {
+  const am = document.getElementById('atkEditAbilityMod')?.value || '';
+  document.getElementById('atkBonusManual').style.display   = am === 'manual' ? '' : 'none';
+  document.getElementById('atkBonusComputed').style.display = (am && am !== 'manual') ? '' : 'none';
+}
+
+function getAttackBonus(a) {
+  const am = a.abilityMod || '';
+  if (!am || am === 'manual') return a.bonus || '—';
+  if (am === 'SPELL') {
+    const el = document.getElementById('statSpellAtk');
+    if (!el || el.textContent === '—') return '—';
+    return fmtMod((parseInt(el.textContent) || 0) + (a.flatBonus || 0));
+  }
+  const prof = getProfBonus();
+  let m = mod(state.abilities[am] || 10);
+  if (a.proficient) m += prof;
+  m += (a.flatBonus || 0);
+  return fmtMod(m);
+}
+
+function getFeatureAttackBonus(f) {
+  if (!f.attackRoll) return '—';
+  const am = f.attackMod || '';
+  if (!am) return '—';
+  if (am === 'manual') return f.attackBonus || '—';
+  if (am === 'SPELL') {
+    const el = document.getElementById('statSpellAtk');
+    return (el && el.textContent !== '—') ? el.textContent : '—';
+  }
+  const prof = getProfBonus();
+  let m = mod(state.abilities[am] || 10);
+  if (f.attackProficient) m += prof;
+  return fmtMod(m);
+}
+
+function toggleFpAtkBonusFields() {
+  const am = document.getElementById('fpEditAttackMod').value;
+  const isManual = am === 'manual';
+  document.getElementById('fpEditAttackBonus').style.display = isManual ? '' : 'none';
+  document.getElementById('fpEditProfLabel').style.display = (am && !isManual) ? '' : 'none';
+}
+
+function getRollMod(modKey) {
+  if (!modKey) return 0;
+  if (modKey === 'SPELL') {
+    const el = document.getElementById('statSpellAtk');
+    return (el && el.textContent !== '—') ? (parseInt(el.textContent) || 0) : 0;
+  }
+  return state.abilities[modKey] !== undefined ? mod(state.abilities[modKey]) : 0;
+}
+
+function computeRollResults(rolls) {
+  if (!rolls || !rolls.length) return null;
+  const lines = [];
+  rolls.forEach(r => {
+    if (!r.dice) return;
+    const base = rollDiceExpr(r.dice);
+    if (base === null) return;
+    const mv = getRollMod(r.mod);
+    const total = base + mv;
+    let lbl;
+    if (r.type === 'not_damage') lbl = r.dice + (r.mod && mv !== 0 ? ` ${fmtMod(mv)}` : '');
+    else if (r.type === 'other')  lbl = r.label || 'Other';
+    else                          lbl = r.type.charAt(0).toUpperCase() + r.type.slice(1);
+    lines.push(`${lbl}: ${total}`);
+  });
+  return lines.length ? lines : null;
+}
+
+function getRollSummary(rolls) {
+  if (!rolls || !rolls.length) return '—';
+  return rolls.filter(r => r.dice).map(r => r.dice).join(' + ') || '—';
+}
+
+function getRollBoxLabel(rolls) {
+  if (!rolls || !rolls.length) return 'Roll';
+  const hasDmg = rolls.some(r => r.dice && !['not_damage','other'].includes(r.type));
+  return hasDmg ? 'Damage' : 'Roll';
+}
+
+function showRollsOnly(name, rolls) {
+  const rollLines = computeRollResults(rolls);
+  if (!rollLines) { toast('No valid rolls'); return; }
+  if (rollLines.length === 1) {
+    const r = rolls[0];
+    const base = rollDiceExpr(r.dice) || 0;
+    const mv = getRollMod(r.mod);
+    showRoll(name, r.dice + (r.mod ? ` ${fmtMod(mv)}` : ''), base + mv, '', '');
+  } else {
+    let total = 0;
+    rollLines.forEach(line => { total += parseInt(line.split(': ')[1] || '0') || 0; });
+    showRoll(name, 'Total', total, '', rollLines.join('\n'));
+  }
+}
+
 // ── Unified Info Panel ─────────────────────────────────────────────────
 let infoPanelCfg = {};
 
@@ -4314,21 +4619,15 @@ function rollSpellFromPanel(mode = 'normal') {
   if (!el || el.textContent === '—') { toast('No spellcasting ability set'); return; }
   const {roll, breakdown} = d20Roll(mode);
   const m = parseInt(el.textContent) || 0;
-  let secondary;
-  if (sp.damage) {
-    const dmg = rollDiceExpr(sp.damage);
-    secondary = `${sp.damage} = ${dmg}`;
-  }
-  showRoll(sp.name + modeSuffix(mode), `${breakdown} ${fmtMod(m)}`, roll + m, natMsg(roll), secondary);
+  const rollLines = computeRollResults(sp.rolls);
+  showRoll(sp.name + modeSuffix(mode), `${breakdown} ${fmtMod(m)}`, roll + m, natMsg(roll), rollLines ? rollLines.join('\n') : '');
 }
 
 function rollDamageFromSpellPanel() {
   if (spellPanelEditIdx < 0) return;
   const sp = state.spells[spellPanelEditIdx];
-  if (!sp || !sp.damage) return;
-  const dmg = rollDiceExpr(sp.damage);
-  if (dmg === null) return;
-  showRoll(sp.name + ' Damage', sp.damage, dmg, '', '');
+  if (!sp || !sp.rolls || !sp.rolls.length) return;
+  showRollsOnly(sp.name, sp.rolls);
 }
 
 function getProfBonus() {
@@ -4607,12 +4906,10 @@ function clickSpellItem(e, i) {
     if (!atkEl || atkEl.textContent === '—') { toast('No spellcasting ability set'); return; }
     const roll = d20();
     const m = parseInt(atkEl.textContent) || 0;
-    const secondary = sp.damage ? `${sp.damage} = ${rollDiceExpr(sp.damage)}` : undefined;
-    showRoll(sp.name, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll), secondary);
-  } else if (sp.rollDamage && sp.damage) {
-    const dmg = rollDiceExpr(sp.damage);
-    if (dmg === null) { toast('Invalid dice expression'); return; }
-    showRoll(sp.name + ' Damage', sp.damage, dmg, '', '');
+    const rollLines = computeRollResults(sp.rolls);
+    showRoll(sp.name, `d20(${roll}) ${fmtMod(m)}`, roll + m, natMsg(roll), rollLines ? rollLines.join('\n') : '');
+  } else if (sp.rolls && sp.rolls.length) {
+    showRollsOnly(sp.name, sp.rolls);
   } else {
     openSpellPanel(i, false);
   }
@@ -4984,8 +5281,9 @@ function populateSpellViewPanel(i) {
   ).join('');
   const saveDcBox = document.getElementById('spSaveDcBox');
   if (sp.saveAbility) {
-    const dcEl = document.getElementById('statSpellDC');
-    const dc = dcEl ? dcEl.textContent : '—';
+    const dc = (sp.saveDC && sp.saveDC > 0)
+      ? String(sp.saveDC)
+      : (document.getElementById('statSpellDC')?.textContent || '—');
     document.getElementById('spSaveDcValue').textContent = dc;
     document.getElementById('spSaveDcAbility').textContent = sp.saveAbility + ' Save';
     saveDcBox.style.display = '';
@@ -4997,14 +5295,15 @@ function populateSpellViewPanel(i) {
     const atkEl = document.getElementById('statSpellAtk');
     const bonus = atkEl ? atkEl.textContent : '—';
     document.getElementById('spAtkBonus').textContent = bonus;
-    document.getElementById('spAtkDamage').textContent = sp.damage || '';
+    document.getElementById('spAtkDamage').textContent = getRollSummary(sp.rolls);
     atkBox.style.display = '';
   } else {
     atkBox.style.display = 'none';
   }
   const dmgBox = document.getElementById('spDmgBox');
-  if (sp.rollDamage && !sp.attackRoll && sp.damage) {
-    document.getElementById('spDmgDice').textContent = sp.damage;
+  if (sp.rolls && sp.rolls.length && !sp.attackRoll) {
+    document.getElementById('spDmgLabel').textContent = getRollBoxLabel(sp.rolls) + ' — tap to roll';
+    document.getElementById('spDmgDice').textContent = getRollSummary(sp.rolls);
     dmgBox.style.display = '';
   } else {
     dmgBox.style.display = 'none';
@@ -5022,12 +5321,12 @@ function populateSpellEditForm(i) {
   document.getElementById('spEditComponents').value  = sp ? (sp.components    || '') : '';
   document.getElementById('spEditDuration').value    = sp ? (sp.duration      || '') : '';
   document.getElementById('spEditSaveAbility').value = sp ? (sp.saveAbility   || '') : '';
-  document.getElementById('spEditConc').checked           = sp ? !!sp.concentration : false;
-  document.getElementById('spEditRitual').checked         = sp ? !!sp.ritual        : false;
-  document.getElementById('spEditAttackRoll').checked     = sp ? !!sp.attackRoll    : false;
-  document.getElementById('spEditRollDamage').checked     = sp ? !!sp.rollDamage    : false;
-  document.getElementById('spEditDamage').value           = sp ? (sp.damage         || '') : '';
-  document.getElementById('spEditDescription').value      = sp ? (sp.description    || '') : '';
+  document.getElementById('spEditSaveDC').value      = sp ? (sp.saveDC        || '') : '';
+  document.getElementById('spEditConc').checked       = sp ? !!sp.concentration : false;
+  document.getElementById('spEditRitual').checked     = sp ? !!sp.ritual        : false;
+  document.getElementById('spEditAttackRoll').checked = sp ? !!sp.attackRoll    : false;
+  document.getElementById('spEditDescription').value  = sp ? (sp.description    || '') : '';
+  renderRollRows('spRollRows', sp ? (sp.rolls || []) : []);
   document.getElementById('spEditShowInCombat').checked   = sp ? !!sp.showInCombat    : false;
   document.getElementById('spEditCombatType').value       = sp ? (sp.combatActionType || 'action') : 'action';
   const showFeat = sp ? !!sp.showInFeatures : false;
@@ -5054,11 +5353,11 @@ function saveSpellEdit() {
     components:       document.getElementById('spEditComponents').value.trim(),
     duration:         document.getElementById('spEditDuration').value.trim(),
     saveAbility:      document.getElementById('spEditSaveAbility').value,
+    saveDC:           parseInt(document.getElementById('spEditSaveDC').value) || 0,
     concentration:    document.getElementById('spEditConc').checked,
     ritual:           document.getElementById('spEditRitual').checked,
     attackRoll:       document.getElementById('spEditAttackRoll').checked,
-    rollDamage:       document.getElementById('spEditRollDamage').checked,
-    damage:           document.getElementById('spEditDamage').value.trim(),
+    rolls:            getRollsFromContainer('spRollRows'),
     description:      document.getElementById('spEditDescription').value.trim(),
     showInCombat:       document.getElementById('spEditShowInCombat').checked,
     combatActionType:   document.getElementById('spEditCombatType').value,
@@ -5119,10 +5418,10 @@ function buildFeatures() {
   }
   body.innerHTML = state.classFeatures.map((f, i) => {
     const step = f.step || 1;
-    const hasTags = f.saveAbility || (f.rollDamage && f.damage);
     const tags = [];
     if (f.saveAbility) tags.push(`<span class="spell-item-tag" style="color:var(--gold)">${escHtml(f.saveAbility)}</span>`);
-    if (f.rollDamage && f.damage) tags.push('<span class="spell-item-tag" style="color:var(--red-light)">DMG</span>');
+    if (f.rolls && f.rolls.length) tags.push('<span class="spell-item-tag" style="color:var(--red-light)">DMG</span>');
+    if (f.attackRoll) tags.push('<span class="spell-item-tag" style="color:var(--spell)">ATK</span>');
     return `
       <div class="feature-row">
         <div class="feature-left-col">
@@ -5184,10 +5483,10 @@ function clickFeatureName(e, i) {
   if (featureNamePressActive) { featureNamePressActive = false; return; }
   const f = state.classFeatures[i];
   if (!f) return;
-  if (f.rollDamage && f.damage) {
-    const total = rollDiceExpr(f.damage);
-    if (total === null) { toast('Invalid dice expression'); return; }
-    showRoll(f.name + ' — Damage', f.damage, total, '');
+  if (f.attackRoll && f.attackMod) {
+    openFeaturePanel(i, false);
+  } else if (f.rolls && f.rolls.length) {
+    showRollsOnly(f.name, f.rolls);
   } else {
     openFeaturePanel(i, false);
   }
@@ -5197,6 +5496,38 @@ function cancelFeatureNamePress() {
   clearTimeout(featureNamePressTimer);
   featureNamePressActive = false;
   document.querySelectorAll('.feature-name-area.holding').forEach(el => el.classList.remove('holding'));
+}
+
+// ── Feature combat row press handlers ──────────────────────────────────
+let featCombatPressTimer = null;
+let featCombatPressActive = false;
+
+function startFeatureCombatPress(e, i) {
+  featCombatPressActive = false;
+  clearTimeout(featCombatPressTimer);
+  featCombatPressTimer = setTimeout(() => {
+    featCombatPressActive = true;
+    openFeaturePanel(i, false);
+  }, 500);
+}
+
+function clickFeatureCombatItem(e, i) {
+  clearTimeout(featCombatPressTimer);
+  if (featCombatPressActive) { featCombatPressActive = false; return; }
+  const f = state.classFeatures[i];
+  if (!f) return;
+  if (f.attackRoll && f.attackMod) {
+    openFeaturePanel(i, false);
+  } else if (f.rolls && f.rolls.length) {
+    showRollsOnly(f.name, f.rolls);
+  } else {
+    openFeaturePanel(i, false);
+  }
+}
+
+function cancelFeatureCombatPress() {
+  clearTimeout(featCombatPressTimer);
+  featCombatPressActive = false;
 }
 
 // ── Feature panel ─────────────────────────────────────────────────────
@@ -5219,9 +5550,17 @@ function populateFeatureViewPanel(i) {
   } else {
     saveDcBox.style.display = 'none';
   }
+  const atkBox = document.getElementById('fpAtkBox');
+  if (f.attackRoll && f.attackMod) {
+    document.getElementById('fpAtkBonus').textContent = getFeatureAttackBonus(f);
+    atkBox.style.display = '';
+  } else {
+    atkBox.style.display = 'none';
+  }
   const dmgBox = document.getElementById('fpDmgBox');
-  if (f.rollDamage && f.damage) {
-    document.getElementById('fpDmgDice').textContent = f.damage;
+  if (f.rolls && f.rolls.length) {
+    document.getElementById('fpDmgLabel').textContent = getRollBoxLabel(f.rolls) + ' — tap to roll';
+    document.getElementById('fpDmgDice').textContent = getRollSummary(f.rolls);
     dmgBox.style.display = '';
   } else {
     dmgBox.style.display = 'none';
@@ -5231,15 +5570,23 @@ function populateFeatureViewPanel(i) {
 
 function populateFeatureEditForm(i) {
   const f = i >= 0 ? state.classFeatures[i] : null;
-  document.getElementById('fpEditName').value        = f ? f.name : '';
-  document.getElementById('fpEditMax').value         = f ? f.max  : '1';
-  document.getElementById('fpEditStep').value        = f ? (f.step || 1) : '1';
-  document.getElementById('fpEditRecharge').value    = f ? (f.recharge || '') : 'Long Rest';
-  document.getElementById('fpEditDamage').value      = f ? (f.damage || '') : '';
-  document.getElementById('fpEditRollDamage').checked = f ? !!f.rollDamage : false;
-  document.getElementById('fpEditSaveAbility').value = f ? (f.saveAbility || '') : '';
-  document.getElementById('fpEditSaveDC').value      = f ? (f.saveDC || '') : '';
-  document.getElementById('fpEditDescription').value = f ? (f.description || '') : '';
+  document.getElementById('fpEditName').value          = f ? f.name : '';
+  document.getElementById('fpEditMax').value           = f ? f.max  : '1';
+  document.getElementById('fpEditStep').value          = f ? (f.step || 1) : '1';
+  document.getElementById('fpEditRecharge').value      = f ? (f.recharge || '') : 'Long Rest';
+  document.getElementById('fpEditAttackRoll').checked  = f ? !!f.attackRoll : false;
+  document.getElementById('fpEditAttackMod').value     = f ? (f.attackMod || '') : '';
+  document.getElementById('fpEditAttackBonus').value   = f ? (f.attackBonus || '') : '';
+  document.getElementById('fpEditProficient').checked  = f ? !!f.attackProficient : false;
+  toggleFpAtkBonusFields();
+  document.getElementById('fpEditSaveAbility').value   = f ? (f.saveAbility || '') : '';
+  document.getElementById('fpEditSaveDC').value        = f ? (f.saveDC || '') : '';
+  document.getElementById('fpEditDescription').value   = f ? (f.description || '') : '';
+  const sic = f ? !!f.showInCombat : false;
+  document.getElementById('fpEditShowInCombat').checked = sic;
+  document.getElementById('fpEditCombatTypeRow').style.display = sic ? '' : 'none';
+  document.getElementById('fpEditCombatType').value     = f ? (f.combatActionType || 'action') : 'action';
+  renderRollRows('fpRollRows', f ? (f.rolls || []) : []);
 }
 
 function openFeaturePanel(i, editMode) {
@@ -5265,14 +5612,19 @@ function saveFeaturePanel() {
   const step = Math.max(1, parseInt(document.getElementById('fpEditStep').value) || 1);
   const data = {
     name,
-    max:         Math.max(1, max),
+    max:              Math.max(1, max),
     step,
-    recharge:    document.getElementById('fpEditRecharge').value.trim(),
-    damage:      document.getElementById('fpEditDamage').value.trim(),
-    rollDamage:  document.getElementById('fpEditRollDamage').checked,
-    saveAbility: document.getElementById('fpEditSaveAbility').value,
-    saveDC:      parseInt(document.getElementById('fpEditSaveDC').value, 10) || 0,
-    description: document.getElementById('fpEditDescription').value.trim(),
+    recharge:         document.getElementById('fpEditRecharge').value.trim(),
+    attackRoll:       document.getElementById('fpEditAttackRoll').checked,
+    attackMod:        document.getElementById('fpEditAttackMod').value,
+    attackBonus:      document.getElementById('fpEditAttackBonus').value.trim() || '—',
+    attackProficient: document.getElementById('fpEditProficient').checked,
+    rolls:            getRollsFromContainer('fpRollRows'),
+    saveAbility:      document.getElementById('fpEditSaveAbility').value,
+    saveDC:           parseInt(document.getElementById('fpEditSaveDC').value, 10) || 0,
+    description:      document.getElementById('fpEditDescription').value.trim(),
+    showInCombat:     document.getElementById('fpEditShowInCombat').checked,
+    combatActionType: document.getElementById('fpEditCombatType').value,
   };
   if (featurePanelIdx >= 0) {
     const f = state.classFeatures[featurePanelIdx];
@@ -5290,10 +5642,19 @@ function saveFeaturePanel() {
 
 function rollFeatureDamage() {
   const f = state.classFeatures[featurePanelIdx];
-  if (!f || !f.damage) return;
-  const total = rollDiceExpr(f.damage);
-  if (total === null) { toast('Invalid dice expression'); return; }
-  showRoll(f.name + ' — Damage', f.damage, total, '');
+  if (!f || !f.rolls || !f.rolls.length) return;
+  showRollsOnly(f.name, f.rolls);
+}
+
+function rollFromFeaturePanel(mode = 'normal') {
+  const f = state.classFeatures[featurePanelIdx];
+  if (!f || !f.attackRoll) return;
+  const bonus = getFeatureAttackBonus(f);
+  if (bonus === '—') { toast('No attack modifier set'); return; }
+  const bonusNum = parseInt(bonus) || 0;
+  const {roll, breakdown} = d20Roll(mode);
+  const rollLines = computeRollResults(f.rolls);
+  showRoll(f.name + modeSuffix(mode), `${breakdown} ${fmtMod(bonusNum)}`, roll + bonusNum, natMsg(roll), rollLines ? rollLines.join('\n') : '');
 }
 
 function deleteFeatureFromPanel() {
@@ -5931,7 +6292,6 @@ let longPressActive = false;
 let attackPanelIdx = -1;
 
 function startLongPress(e, i) {
-  if (e.target.closest('.atk-manage-btn') || e.target.closest('.attack-del')) return;
   longPressActive = false;
   clearTimeout(longPressTimer);
   longPressTimer = setTimeout(() => {
@@ -5942,15 +6302,6 @@ function startLongPress(e, i) {
 
 function cancelLongPress() { clearTimeout(longPressTimer); }
 
-function toggleAttackEdit() {
-  const list = document.getElementById('attackList');
-  const btn  = document.getElementById('attackEditBtn');
-  const active = list.classList.toggle('manage-mode');
-  longPressActive = false;
-  if (btn) { btn.textContent = active ? 'Done' : 'Edit'; btn.classList.toggle('active', active); }
-  renderAttacks();
-}
-
 function addAttack() { openAttackPanel(-1, true); }
 
 function openAttackPanel(i, editMode) {
@@ -5959,56 +6310,72 @@ function openAttackPanel(i, editMode) {
   const panel = document.getElementById('attackPanel');
   if (editMode) {
     panel.classList.add('edit-mode');
-    const a = i >= 0 ? state.attacks[i] : null;
-    document.getElementById('atkEditName').value         = a ? a.name : '';
-    document.getElementById('atkEditBonus').value        = a ? (a.bonus === '—' ? '' : a.bonus) : '';
-    document.getElementById('atkEditDamage').value       = a ? (a.damage === '—' ? '' : a.damage) : '';
-    document.getElementById('atkEditActionType').value   = a ? (a.actionType || 'action') : 'action';
-    document.getElementById('atkEditSaveAbility').value  = a ? (a.saveAbility || '') : '';
-    document.getElementById('atkEditSaveDC').value       = a ? (a.saveDC || '') : '';
-    document.getElementById('atkEditDesc').value         = a ? (a.description || '') : '';
+    _populateAtkEdit(i);
     document.getElementById('atkEditDeleteBtn').style.display = i < 0 ? 'none' : '';
     setTimeout(() => document.getElementById('atkEditName').focus(), 250);
   } else {
     panel.classList.remove('edit-mode');
-    const a = state.attacks[i];
-    document.getElementById('atkPanelName').textContent = a.name;
-    document.getElementById('atkPanelMeta').textContent =
-      (a.actionType || 'action') === 'bonus' ? 'Bonus Action' : 'Action';
-    const rollBox = document.getElementById('atkPanelRollBox');
-    if (a.bonus && a.bonus !== '—') {
-      rollBox.style.display = '';
-      document.getElementById('atkPanelBonus').textContent = a.bonus;
-      document.getElementById('atkPanelDamage').textContent = a.damage !== '—' ? a.damage : '';
-    } else {
-      rollBox.style.display = 'none';
-    }
-    const saveDcBox = document.getElementById('atkPanelSaveDcBox');
-    if (a.saveAbility && a.saveDC) {
-      document.getElementById('atkPanelSaveDcValue').textContent = a.saveDC;
-      document.getElementById('atkPanelSaveAbility').textContent = a.saveAbility + ' Save';
-      saveDcBox.style.display = '';
-    } else {
-      saveDcBox.style.display = 'none';
-    }
-    const descEl = document.getElementById('atkPanelDesc');
-    descEl.textContent = a.description || '';
-    descEl.style.display = a.description ? '' : 'none';
+    _populateAtkView(i);
   }
   document.getElementById('attackPanelBackdrop').classList.add('show');
   panel.classList.add('show');
 }
 
+function _populateAtkEdit(i) {
+  const a = i >= 0 ? state.attacks[i] : null;
+  document.getElementById('atkEditName').value        = a ? a.name : '';
+  document.getElementById('atkEditActionType').value  = a ? (a.actionType || 'action') : 'action';
+  document.getElementById('atkEditSaveAbility').value = a ? (a.saveAbility || '') : '';
+  document.getElementById('atkEditSaveDC').value      = a ? (a.saveDC || '') : '';
+  document.getElementById('atkEditDesc').value        = a ? (a.description || '') : '';
+  const am = a ? (a.abilityMod || '') : '';
+  document.getElementById('atkEditAbilityMod').value  = am;
+  document.getElementById('atkEditBonus').value       = a ? (a.bonus === '—' ? '' : (a.bonus || '')) : '';
+  document.getElementById('atkEditProficient').checked = a ? !!a.proficient : false;
+  document.getElementById('atkEditFlatBonus').value   = a ? (a.flatBonus || '') : '';
+  document.getElementById('atkEditHidden').checked    = a ? !!a.hidden : false;
+  toggleAtkBonusFields();
+  renderRollRows('atkRollRows', a ? (a.rolls || []) : []);
+}
+
+function _populateAtkView(i) {
+  const a = state.attacks[i];
+  document.getElementById('atkPanelName').textContent = a.name;
+  const atMap = {action: 'Action', bonus: 'Bonus Action', other: 'Other'};
+  document.getElementById('atkPanelMeta').textContent = atMap[a.actionType || 'action'] || 'Action';
+  const bonus = getAttackBonus(a);
+  const rollBox = document.getElementById('atkPanelRollBox');
+  if (bonus && bonus !== '—') {
+    rollBox.style.display = '';
+    document.getElementById('atkPanelBonus').textContent = bonus;
+    document.getElementById('atkPanelDamage').textContent = getRollSummary(a.rolls);
+  } else {
+    rollBox.style.display = 'none';
+  }
+  const rollsBox = document.getElementById('atkPanelRollsBox');
+  if (a.rolls && a.rolls.length && (!bonus || bonus === '—')) {
+    document.getElementById('atkPanelRollsLabel').textContent = getRollBoxLabel(a.rolls) + ' — tap to roll';
+    document.getElementById('atkPanelRollsSummary').textContent = getRollSummary(a.rolls);
+    rollsBox.style.display = '';
+  } else {
+    rollsBox.style.display = 'none';
+  }
+  const saveDcBox = document.getElementById('atkPanelSaveDcBox');
+  if (a.saveAbility && a.saveDC) {
+    document.getElementById('atkPanelSaveDcValue').textContent = a.saveDC;
+    document.getElementById('atkPanelSaveAbility').textContent = a.saveAbility + ' Save';
+    saveDcBox.style.display = '';
+  } else {
+    saveDcBox.style.display = 'none';
+  }
+  const descEl = document.getElementById('atkPanelDesc');
+  descEl.textContent = a.description || '';
+  descEl.style.display = a.description ? '' : 'none';
+}
+
 function switchToAtkEdit() {
   document.getElementById('attackPanel').classList.add('edit-mode');
-  const a = attackPanelIdx >= 0 ? state.attacks[attackPanelIdx] : null;
-  document.getElementById('atkEditName').value         = a ? a.name : '';
-  document.getElementById('atkEditBonus').value        = a ? (a.bonus === '—' ? '' : a.bonus) : '';
-  document.getElementById('atkEditDamage').value       = a ? (a.damage === '—' ? '' : a.damage) : '';
-  document.getElementById('atkEditActionType').value   = a ? (a.actionType || 'action') : 'action';
-  document.getElementById('atkEditSaveAbility').value  = a ? (a.saveAbility || '') : '';
-  document.getElementById('atkEditSaveDC').value       = a ? (a.saveDC || '') : '';
-  document.getElementById('atkEditDesc').value         = a ? (a.description || '') : '';
+  _populateAtkEdit(attackPanelIdx);
   document.getElementById('atkEditDeleteBtn').style.display = attackPanelIdx < 0 ? 'none' : '';
   setTimeout(() => document.getElementById('atkEditName').focus(), 100);
 }
@@ -6016,18 +6383,22 @@ function switchToAtkEdit() {
 function saveAttackPanel() {
   const name = document.getElementById('atkEditName').value.trim();
   if (!name) { toast('Attack name is required'); document.getElementById('atkEditName').focus(); return; }
-  const bonus       = document.getElementById('atkEditBonus').value.trim() || '—';
-  const damage      = document.getElementById('atkEditDamage').value.trim() || '—';
+  const abilityMod  = document.getElementById('atkEditAbilityMod').value;
+  const proficient  = document.getElementById('atkEditProficient').checked;
+  const flatBonus   = parseInt(document.getElementById('atkEditFlatBonus').value) || 0;
+  const bonus       = (abilityMod === 'manual') ? (document.getElementById('atkEditBonus').value.trim() || '—') : '—';
+  const rolls       = getRollsFromContainer('atkRollRows');
   const actionType  = document.getElementById('atkEditActionType').value;
   const saveAbility = document.getElementById('atkEditSaveAbility').value;
   const saveDC      = parseInt(document.getElementById('atkEditSaveDC').value) || 0;
   const description = document.getElementById('atkEditDesc').value.trim();
+  const hidden      = document.getElementById('atkEditHidden').checked;
   if (attackPanelIdx < 0) {
-    state.attacks.push({name, bonus, damage, actionType, saveAbility, saveDC, description, hidden: false});
+    state.attacks.push({name, abilityMod, proficient, flatBonus, bonus, rolls, actionType, saveAbility, saveDC, description, hidden});
     pushUndo({type: 'addAttack', index: state.attacks.length - 1});
     toast('Attack added');
   } else {
-    state.attacks[attackPanelIdx] = {...state.attacks[attackPanelIdx], name, bonus, damage, actionType, saveAbility, saveDC, description};
+    state.attacks[attackPanelIdx] = {...state.attacks[attackPanelIdx], name, abilityMod, proficient, flatBonus, bonus, rolls, actionType, saveAbility, saveDC, description, hidden};
     toast('Attack updated');
   }
   renderAttacks();
@@ -6055,30 +6426,20 @@ function dismissAttackPanel() {
 function rollFromAttackPanel(mode = 'normal') {
   if (attackPanelIdx < 0) return;
   const a = state.attacks[attackPanelIdx];
+  const bonus = getAttackBonus(a);
   const {roll, breakdown: bd} = d20Roll(mode);
-  let breakdown, total;
-  if (a.bonus && a.bonus !== '—') {
-    const bonus = parseInt(a.bonus) || 0;
-    breakdown = `${bd} ${fmtMod(bonus)}`;
-    total = roll + bonus;
-  } else {
-    breakdown = bd;
-    total = roll;
-  }
-  const dmg = rollDiceExpr(a.damage);
-  showRoll(a.name + modeSuffix(mode), breakdown, total, natMsg(roll), dmg !== null ? `Dmg: ${dmg}` : '');
+  const bonusNum = bonus !== '—' ? (parseInt(bonus) || 0) : 0;
+  const breakdown = bonus !== '—' ? `${bd} ${fmtMod(bonusNum)}` : bd;
+  const total = roll + bonusNum;
+  const rollLines = computeRollResults(a.rolls);
+  showRoll(a.name + modeSuffix(mode), breakdown, total, natMsg(roll), rollLines ? rollLines.join('\n') : '');
 }
 
-function hideAttack(i) {
-  state.attacks[i].hidden = true;
-  renderAttacks();
-  saveData();
-}
-
-function showAttack(i) {
-  state.attacks[i].hidden = false;
-  renderAttacks();
-  saveData();
+function rollAtkRollsOnly() {
+  if (attackPanelIdx < 0) return;
+  const a = state.attacks[attackPanelIdx];
+  if (!a.rolls || !a.rolls.length) { toast('No rolls configured'); return; }
+  showRollsOnly(a.name, a.rolls);
 }
 
 function getSpellAtkBonus() {
@@ -6089,58 +6450,57 @@ function getSpellAtkBonus() {
 
 function renderAttacks() {
   const list = document.getElementById('attackList');
-  const manageMode = list.classList.contains('manage-mode');
 
   const combatSpells = state.spells.filter(sp => sp.showInCombat);
   const combatSpellActions = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'action');
   const combatSpellBonus   = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'bonus');
+  const combatSpellOther   = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'other');
 
   const combatTraits = (state.infoTraits || []).filter(t => t.showInCombat);
   const combatTraitActions = combatTraits.filter(t => (t.combatActionType || 'action') === 'action');
   const combatTraitBonus   = combatTraits.filter(t => (t.combatActionType || 'action') === 'bonus');
+  const combatTraitOther   = combatTraits.filter(t => (t.combatActionType || 'action') === 'other');
 
-  const visActionAtks = state.attacks.filter(a => !a.hidden && (a.actionType || 'action') === 'action');
-  const visBonusAtks  = state.attacks.filter(a => !a.hidden && (a.actionType || 'action') === 'bonus');
-  const hiddenAtks    = state.attacks.filter(a => !!a.hidden);
+  const combatFeatures = (state.classFeatures || []).filter(f => f.showInCombat);
+  const combatFeatActions = combatFeatures.filter(f => (f.combatActionType || 'action') === 'action');
+  const combatFeatBonus   = combatFeatures.filter(f => (f.combatActionType || 'action') === 'bonus');
+  const combatFeatOther   = combatFeatures.filter(f => (f.combatActionType || 'action') === 'other');
 
-  const hasVisActions = visActionAtks.length > 0 || combatSpellActions.length > 0 || combatTraitActions.length > 0;
-  const hasVisBonus   = visBonusAtks.length > 0  || combatSpellBonus.length > 0  || combatTraitBonus.length > 0;
-  const hasAny        = state.attacks.length > 0  || combatSpells.length > 0     || combatTraits.length > 0;
+  const actionAtks = state.attacks.filter(a => (a.actionType || 'action') === 'action');
+  const bonusAtks  = state.attacks.filter(a => (a.actionType || 'action') === 'bonus');
+  const otherAtks  = state.attacks.filter(a => (a.actionType || 'action') === 'other');
+
+  const hasVisActions = actionAtks.length > 0 || combatSpellActions.length > 0 || combatTraitActions.length > 0 || combatFeatActions.length > 0;
+  const hasVisBonus   = bonusAtks.length > 0  || combatSpellBonus.length > 0   || combatTraitBonus.length > 0  || combatFeatBonus.length > 0;
+  const hasVisOther   = otherAtks.length > 0  || combatSpellOther.length > 0   || combatTraitOther.length > 0  || combatFeatOther.length > 0;
+  const hasAny        = state.attacks.length > 0 || combatSpells.length > 0    || combatTraits.length > 0      || combatFeatures.length > 0;
 
   if (!hasAny) {
     list.innerHTML = `<div class="attack-row" style="cursor:default">
       <span class="attack-name" style="color:var(--text-muted);font-size:12px;font-style:italic">No attacks added</span>
-      <span></span><span></span><span></span></div>`;
+      <span></span><span></span></div>`;
     return;
   }
 
   function makeAtkRow(a, i) {
-    const isHidden = !!a.hidden;
+    const displayBonus = getAttackBonus(a);
+    const displayDmg = getRollSummary(a.rolls);
     return `
-      <div class="attack-row${isHidden ? ' atk-hidden' : ''}" data-idx="${i}"
+      <div class="attack-row${a.hidden ? ' atk-hidden' : ''}" data-idx="${i}"
            onclick="rollAttack(${i})"
            onpointerdown="startLongPress(event,${i})"
            onpointerup="cancelLongPress()"
            onpointercancel="cancelLongPress()"
            oncontextmenu="return false">
         <span class="attack-name">${escHtml(a.name)}</span>
-        <span class="attack-bonus">${escHtml(a.bonus)}</span>
-        <span class="attack-damage">${escHtml(a.damage)}</span>
-        <div style="display:flex;gap:4px;align-items:center;justify-content:flex-end">
-          ${isHidden
-            ? `<button class="atk-manage-btn" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation();showAttack(${i})">Show</button>`
-            : `<button class="atk-manage-btn" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation();hideAttack(${i})">Hide</button>`
-          }
-          <button class="attack-del"
-                  onpointerdown="event.stopPropagation()"
-                  onclick="event.stopPropagation();removeAttack(${i})"
-                  title="Delete">🗑</button>
-        </div>
+        <span class="attack-bonus">${escHtml(displayBonus)}</span>
+        <span class="attack-damage">${escHtml(displayDmg)}</span>
       </div>`;
   }
 
   function makeSpellRow(sp, spIdx) {
-    const bonus = sp.attackRoll ? getSpellAtkBonus() : '—';
+    const bonus = sp.attackRoll ? getSpellAtkBonus() : '\u2014';
+    const dmg = getRollSummary(sp.rolls);
     return `
       <div class="attack-row spell-atk"
            onpointerdown="startSpellPress(event, ${spIdx})"
@@ -6150,15 +6510,14 @@ function renderAttacks() {
            oncontextmenu="return false">
         <span class="attack-name" style="display:flex;align-items:center;gap:5px">${escHtml(sp.name)}${sp.level > 0 ? `<span class="spell-lvl-pip">${sp.level}</span>` : ''}</span>
         <span class="attack-bonus" style="color:var(--spell)">${escHtml(bonus)}</span>
-        <span class="attack-damage">${escHtml(sp.damage || '—')}</span>
-        <div></div>
+        <span class="attack-damage">${escHtml(dmg)}</span>
       </div>`;
   }
 
   function makeTraitRow(t, tIdx) {
     const saveText = t.saveAbility
-      ? `DC ${(t.saveDC && t.saveDC > 0) ? t.saveDC : (document.getElementById('statSpellDC')?.textContent || '—')} ${t.saveAbility}`
-      : '—';
+      ? `DC ${(t.saveDC && t.saveDC > 0) ? t.saveDC : (document.getElementById('statSpellDC')?.textContent || '\u2014')} ${t.saveAbility}`
+      : '\u2014';
     return `
       <div class="attack-row feat-atk"
            onpointerdown="startTraitPress(event, ${tIdx})"
@@ -6168,36 +6527,55 @@ function renderAttacks() {
            oncontextmenu="return false">
         <span class="attack-name">${escHtml(t.name)}</span>
         <span class="attack-bonus" style="color:var(--gold)">${escHtml(saveText)}</span>
-        <span class="attack-damage">${escHtml(t.damage || '—')}</span>
-        <div></div>
+        <span class="attack-damage">${escHtml(t.damage || '\u2014')}</span>
+      </div>`;
+  }
+
+  function makeFeatureRow(f, fIdx) {
+    const bonus = (f.attackRoll && f.attackMod) ? getFeatureAttackBonus(f) : '\u2014';
+    const dmg = getRollSummary(f.rolls);
+    return `
+      <div class="attack-row feat-atk"
+           onpointerdown="startFeatureCombatPress(event, ${fIdx})"
+           onclick="clickFeatureCombatItem(event, ${fIdx})"
+           onpointerup="cancelFeatureCombatPress()"
+           onpointercancel="cancelFeatureCombatPress()"
+           oncontextmenu="return false">
+        <span class="attack-name">${escHtml(f.name)}</span>
+        <span class="attack-bonus" style="color:var(--gold)">${escHtml(bonus)}</span>
+        <span class="attack-damage">${escHtml(dmg)}</span>
       </div>`;
   }
 
   let html = '';
+  let sectionCount = 0;
 
   if (hasVisActions) {
     html += `<div class="attack-section-label">Actions</div>`;
-    state.attacks.forEach((a, i) => {
-      if (!!a.hidden || (a.actionType || 'action') !== 'action') return;
-      html += makeAtkRow(a, i);
-    });
+    actionAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
     combatSpellActions.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
     combatTraitActions.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
+    combatFeatActions.forEach(f  => { html += makeFeatureRow(f, state.classFeatures.indexOf(f)); });
+    sectionCount++;
   }
 
   if (hasVisBonus) {
-    html += `<div class="attack-section-label"${hasVisActions ? ' style="margin-top:8px"' : ''}>Bonus Actions</div>`;
-    state.attacks.forEach((a, i) => {
-      if (!!a.hidden || (a.actionType || 'action') !== 'bonus') return;
-      html += makeAtkRow(a, i);
-    });
+    if (sectionCount > 0) html += '<div style="margin-top:8px"></div>';
+    html += `<div class="attack-section-label">Bonus Actions</div>`;
+    bonusAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
     combatSpellBonus.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
     combatTraitBonus.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
+    combatFeatBonus.forEach(f  => { html += makeFeatureRow(f, state.classFeatures.indexOf(f)); });
+    sectionCount++;
   }
 
-  if (hiddenAtks.length > 0) {
-    html += `<div class="attack-section-label atk-hidden-label">Hidden</div>`;
-    hiddenAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
+  if (hasVisOther) {
+    if (sectionCount > 0) html += '<div style="margin-top:8px"></div>';
+    html += `<div class="attack-section-label">Other</div>`;
+    otherAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
+    combatSpellOther.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
+    combatTraitOther.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
+    combatFeatOther.forEach(f  => { html += makeFeatureRow(f, state.classFeatures.indexOf(f)); });
   }
 
   list.innerHTML = html;
@@ -6206,12 +6584,15 @@ function renderAttacks() {
 function rollAttack(i) {
   if (longPressActive) { longPressActive = false; return; }
   const a = state.attacks[i];
-  if (a.hidden) { openAttackPanel(i, true); return; }
-  if (a.bonus && a.bonus !== '—') {
+  const bonus = getAttackBonus(a);
+  const hasRolls = a.rolls && a.rolls.length > 0;
+  if (bonus && bonus !== '—') {
     const roll = d20();
-    const bonus = parseInt(a.bonus) || 0;
-    const dmg = rollDiceExpr(a.damage);
-    showRoll(a.name, `d20(${roll}) ${fmtMod(bonus)}`, roll + bonus, natMsg(roll), dmg !== null ? `Dmg: ${dmg}` : '');
+    const bonusNum = parseInt(bonus) || 0;
+    const rollLines = computeRollResults(a.rolls);
+    showRoll(a.name, `d20(${roll}) ${fmtMod(bonusNum)}`, roll + bonusNum, natMsg(roll), rollLines ? rollLines.join('\n') : '');
+  } else if (hasRolls) {
+    openAttackPanel(i, false);
   } else {
     openAttackPanel(i, false);
   }
@@ -6898,6 +7279,32 @@ function _applyPayloadData(payload) {
     if (typeof state.hitDiceUsed !== 'number') state.hitDiceUsed = 0;
     if (!Array.isArray(state.diceRoller)) state.diceRoller = null;
     if (typeof state.portrait !== 'string') state.portrait = null;
+    // Migrate old data formats to new rolls-based model
+    state.attacks.forEach(a => {
+      if (!a.rolls) {
+        a.rolls = (a.damage && a.damage !== '—') ? [{dice: a.damage, type: 'slashing', mod: ''}] : [];
+      }
+      if (a.abilityMod === undefined) a.abilityMod = '';
+      if (a.proficient === undefined) a.proficient = false;
+      if (a.flatBonus === undefined) a.flatBonus = 0;
+    });
+    state.spells.forEach(sp => {
+      if (!sp.rolls) {
+        sp.rolls = sp.damage ? [{dice: sp.damage, type: 'slashing', mod: ''}] : [];
+      }
+      if (sp.saveDC === undefined) sp.saveDC = 0;
+    });
+    state.classFeatures.forEach(f => {
+      if (!f.rolls) {
+        f.rolls = (f.rollDamage && f.damage) ? [{dice: f.damage, type: 'slashing', mod: ''}] : [];
+      }
+      if (f.attackRoll === undefined) f.attackRoll = false;
+      if (f.attackMod === undefined) f.attackMod = '';
+      if (f.attackBonus === undefined) f.attackBonus = '—';
+      if (f.attackProficient === undefined) f.attackProficient = false;
+      if (f.showInCombat === undefined) f.showInCombat = false;
+      if (f.combatActionType === undefined) f.combatActionType = 'action';
+    });
   }
 }
 
@@ -6911,6 +7318,23 @@ function setupAutoSave() {
     el.addEventListener('input', saveData);
     el.addEventListener('change', saveData);
   });
+}
+
+// ── Data normalization helpers ─────────────────────────────────────────
+function _normalizeSpell(sp) {
+  if (!sp.rolls) sp.rolls = sp.damage ? [{dice: sp.damage, type: 'slashing', mod: ''}] : [];
+  if (sp.saveDC === undefined) sp.saveDC = 0;
+  return sp;
+}
+function _normalizeFeature(f) {
+  if (!f.rolls) f.rolls = (f.rollDamage && f.damage) ? [{dice: f.damage, type: 'slashing', mod: ''}] : [];
+  if (f.attackRoll === undefined) f.attackRoll = false;
+  if (f.attackMod === undefined) f.attackMod = '';
+  if (f.attackBonus === undefined) f.attackBonus = '—';
+  if (f.attackProficient === undefined) f.attackProficient = false;
+  if (f.showInCombat === undefined) f.showInCombat = false;
+  if (f.combatActionType === undefined) f.combatActionType = 'action';
+  return f;
 }
 
 // ── AI Import ──────────────────────────────────────────────────────────
@@ -7075,7 +7499,7 @@ function importAIResponse() {
 
   if (aiImportType === 'spells') {
     const existingNames = new Set((state.spells || []).map(s => s.name.toLowerCase()));
-    const newItems = items.filter(s => !existingNames.has(s.name.toLowerCase()));
+    const newItems = items.filter(s => !existingNames.has(s.name.toLowerCase())).map(_normalizeSpell);
     if (!newItems.length) { toast('All spells already exist'); return; }
     state.spells = (state.spells || []).concat(newItems);
     buildSpellList(); saveData();
@@ -7089,7 +7513,7 @@ function importAIResponse() {
     toast(`${newItems.length} trait${newItems.length > 1 ? 's' : ''} added`);
   } else {
     const existingNames = new Set((state.classFeatures || []).map(f => f.name.toLowerCase()));
-    const newItems = items.filter(f => !existingNames.has(f.name.toLowerCase()));
+    const newItems = items.filter(f => !existingNames.has(f.name.toLowerCase())).map(_normalizeFeature);
     if (!newItems.length) { toast('All features already exist'); return; }
     state.classFeatures = (state.classFeatures || []).concat(newItems);
     buildFeatures(); saveData();
@@ -7302,6 +7726,9 @@ function _mapSrdSpell(sp) {
   const toBool = v => v === true || v === 'yes';
   const ct     = (sp.casting_time || '').toLowerCase();
   const desc   = (Array.isArray(sp.desc) ? sp.desc : [sp.desc || '']).join('\n\n');
+  const rawDmg = sp.damage?.damage_at_slot_level?.[sp.level]
+              || sp.damage?.damage_at_character_level?.['1'] || '';
+  const rawType = (sp.damage?.damage_type?.name || 'slashing').toLowerCase();
   return {
     name:            sp.name,
     level:           typeof sp.level === 'number' ? sp.level : 0,
@@ -7314,8 +7741,7 @@ function _mapSrdSpell(sp) {
     concentration:   toBool(sp.concentration),
     ritual:          toBool(sp.ritual),
     attackRoll:      !!(sp.attack_type),
-    damage:          sp.damage?.damage_at_slot_level?.[sp.level]
-                  || sp.damage?.damage_at_character_level?.['1'] || '',
+    rolls:           rawDmg ? [{dice: rawDmg, type: rawType, mod: ''}] : [],
     description:     desc.length > 600 ? desc.slice(0, 597) + '…' : desc,
     showInCombat:    true,
     combatActionType: ct.includes('bonus') ? 'bonus' : ct.includes('reaction') ? 'reaction' : 'action',
@@ -7336,11 +7762,12 @@ function _mapSrdTrait(tr) {
 function _mapSrdFeature(feat) {
   const desc = (Array.isArray(feat.desc) ? feat.desc : [feat.desc || '']).join('\n\n');
   return {
-    name:        feat.name,
-    max:         1, used: 0, recharge: 'Long Rest', step: 1,
-    damage:      '', rollDamage: false,
-    saveAbility: '', saveDC:     0,
-    description: desc.length > 600 ? desc.slice(0, 597) + '…' : desc,
+    name:             feat.name,
+    max:              1, used: 0, recharge: 'Long Rest', step: 1,
+    attackRoll:       false, attackMod: '', attackProficient: false,
+    rolls:            [],
+    saveAbility:      '', saveDC: 0,
+    description:      desc.length > 600 ? desc.slice(0, 597) + '…' : desc,
   };
 }
 
