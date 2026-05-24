@@ -1,0 +1,132 @@
+{
+  "_comment": "Maps 2014 SRD (dnd5eapi.co) terminology to 2024 SRD equivalents used in this local index.",
+  "_license": "This work includes material from the System Reference Document 5.2 by Wizards of the Coast LLC, licensed under CC BY 4.0. https://dnd.wizards.com/resources/systems-reference-document",
+
+  "localFiles": {
+    "spells":            "srd2024/spells.json",
+    "species":           "srd2024/species.json",
+    "classes":           "srd2024/classes.json",
+    "backgrounds":       "srd2024/backgrounds.json",
+    "feats":             "srd2024/feats.json",
+    "conditions":        "srd2024/conditions.json",
+    "equipment":         "srd2024/equipment.json",
+    "magic-items":       "srd2024/magic-items.json",
+    "weapon-properties": "srd2024/weapon-properties.json",
+    "creatures":         "srd2024/creatures.json"
+  },
+
+  "endpointAliases": {
+    "races":     "species",
+    "subraces":  "species",
+    "monsters":  "creatures",
+    "magic-items": "magic-items"
+  },
+
+  "fieldAliases": {
+    "race":              "species",
+    "subrace":           "subspecies",
+    "racial_traits":     "traits",
+    "ability_bonuses":   "ability_score_increase",
+    "language_options":  "languages",
+    "trait_options":     "traits",
+    "starting_proficiencies": "proficiencies",
+    "desc":              "description"
+  },
+
+  "uiLabels": {
+    "Race":              "Species",
+    "Subrace":           "Subspecies",
+    "Racial Traits":     "Species Traits",
+    "Race Traits":       "Species Traits",
+    "Racial Bonus":      "Species Trait",
+    "Monster":           "Creature",
+    "Monsters":          "Creatures"
+  },
+
+  "castingTimeNormalisation": {
+    "1 action":          "Action",
+    "1 bonus action":    "Bonus Action",
+    "1 reaction":        "Reaction",
+    "1 minute":          "1 Minute",
+    "10 minutes":        "10 Minutes",
+    "1 hour":            "1 Hour",
+    "8 hours":           "8 Hours",
+    "12 hours":          "12 Hours",
+    "24 hours":          "24 Hours"
+  },
+
+  "schoolNormalisation": {
+    "abjuration":   "Abjuration",
+    "conjuration":  "Conjuration",
+    "divination":   "Divination",
+    "enchantment":  "Enchantment",
+    "evocation":    "Evocation",
+    "illusion":     "Illusion",
+    "necromancy":   "Necromancy",
+    "transmutation": "Transmutation"
+  },
+
+  "savingThrowNormalisation": {
+    "str": "Strength",
+    "dex": "Dexterity",
+    "con": "Constitution",
+    "int": "Intelligence",
+    "wis": "Wisdom",
+    "cha": "Charisma",
+    "strength":     "Strength",
+    "dexterity":    "Dexterity",
+    "constitution": "Constitution",
+    "intelligence": "Intelligence",
+    "wisdom":       "Wisdom",
+    "charisma":     "Charisma"
+  },
+
+  "abilityScoreAbbreviations": {
+    "str": "STR", "STR": "str",
+    "dex": "DEX", "DEX": "dex",
+    "con": "CON", "CON": "con",
+    "int": "INT", "INT": "int",
+    "wis": "WIS", "WIS": "wis",
+    "cha": "CHA", "CHA": "cha",
+    "Strength":     "str",
+    "Dexterity":    "dex",
+    "Constitution": "con",
+    "Intelligence": "int",
+    "Wisdom":       "wis",
+    "Charisma":     "cha"
+  },
+
+  "damageTypeNormalisation": {
+    "acid":        "Acid",
+    "bludgeoning": "Bludgeoning",
+    "cold":        "Cold",
+    "fire":        "Fire",
+    "force":       "Force",
+    "lightning":   "Lightning",
+    "necrotic":    "Necrotic",
+    "piercing":    "Piercing",
+    "poison":      "Poison",
+    "psychic":     "Psychic",
+    "radiant":     "Radiant",
+    "slashing":    "Slashing",
+    "thunder":     "Thunder"
+  },
+
+  "sizeNormalisation": {
+    "tiny":   "Tiny",
+    "small":  "Small",
+    "medium": "Medium",
+    "large":  "Large",
+    "huge":   "Huge",
+    "gargantuan": "Gargantuan"
+  },
+
+  "actionTypeLabels": {
+    "ACTION":           "Action",
+    "BONUS_ACTION":     "Bonus Action",
+    "REACTION":         "Reaction",
+    "LEGENDARY_ACTION": "Legendary Action",
+    "LAIR_ACTION":      "Lair Action",
+    "MYTHIC_ACTION":    "Mythic Action"
+  }
+}

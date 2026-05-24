@@ -1,0 +1,65 @@
+[
+  {
+    "index": "acolyte",
+    "name": "Acolyte",
+    "description": null,
+    "ability_scores": [
+      "INT",
+      "WIS",
+      "CHA"
+    ],
+    "feat": "Magic Initiate",
+    "proficiencies": [
+      "Skill: Insight",
+      "Skill: Religion",
+      "Tool: Calligrapher's Supplies"
+    ]
+  },
+  {
+    "index": "criminal",
+    "name": "Criminal",
+    "description": null,
+    "ability_scores": [
+      "DEX",
+      "CON",
+      "INT"
+    ],
+    "feat": "Alert",
+    "proficiencies": [
+      "Skill: Sleight of Hand",
+      "Skill: Stealth",
+      "Tool: Thieves' Tools"
+    ]
+  },
+  {
+    "index": "sage",
+    "name": "Sage",
+    "description": null,
+    "ability_scores": [
+      "CON",
+      "INT",
+      "WIS"
+    ],
+    "feat": "Magic Initiate",
+    "proficiencies": [
+      "Skill: Arcana",
+      "Skill: History",
+      "Tool: Calligrapher's Supplies"
+    ]
+  },
+  {
+    "index": "soldier",
+    "name": "Soldier",
+    "description": null,
+    "ability_scores": [
+      "STR",
+      "DEX",
+      "CON"
+    ],
+    "feat": "Savage Attacker",
+    "proficiencies": [
+      "Skill: Athletics",
+      "Skill: Intimidation"
+    ]
+  }
+]
