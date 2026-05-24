@@ -1399,8 +1399,8 @@ Generates a copy-ready LLM prompt containing the exact JSON schema and the names
 | `setModalMode(mode)` | Switches between `'ai'` and `'srd'` content areas; calls `_srdInitForType()` when switching to SRD |
 | `setAIImportType(type)` | Updates active state on type-tab buttons; calls `_srdInitForType()` if currently in SRD mode |
 | `generateAndCopyAIPrompt()` | Builds the prompt for the active type via `_buildSpellPrompt`, `_buildFeaturePrompt`, or `_buildTraitPrompt`; writes to clipboard via `navigator.clipboard` with `execCommand` fallback |
-| `_buildSpellPrompt(what)` | Returns a prompt string with the spell JSON schema and the list of already-present spell names |
-| `_buildFeaturePrompt(what)` | Returns a prompt string with the classFeature JSON schema and existing feature names |
+| `_buildSpellPrompt(what)` | Returns a prompt string with the spell JSON schema (uses `rolls` array, not legacy `damage` field) and the list of already-present spell names; instructs the AI to set `"mod":"SPELL"` when the spell text says "add your spellcasting ability modifier" |
+| `_buildFeaturePrompt(what)` | Returns a prompt string with the classFeature JSON schema (uses `rolls` array) and existing feature names; instructs the AI to set `"mod":"SPELL"` when the feature text says "add your spellcasting ability modifier" |
 | `_buildTraitPrompt(what)` | Returns a prompt string with the infoTrait JSON schema and existing trait names |
 | `importAIResponse()` | Parses the pasted text (strips markdown fences); merges into `state.spells`, `state.classFeatures`, or `state.infoTraits` depending on active type; deduplicates by lowercase name; rebuilds the relevant list |
 
@@ -1463,11 +1463,11 @@ Edition availability is detected automatically on modal open via `_srd24Detect()
 
 | Function | Source format | Target |
 |---|---|---|
-| `_mapSrdSpell(sp)` | 2014 API spell object | `state.spells` entry |
+| `_mapSrdSpell(sp)` | 2014 API spell object | `state.spells` entry; sets `rolls[].mod = 'SPELL'` when the description mentions "spellcasting ability modifier" or "spellcasting modifier" |
 | `_mapSrdTrait(tr)` | 2014 API trait object | `state.infoTraits` entry |
 | `_mapSrdFeature(feat)` | 2014 API feature object | `state.classFeatures` entry |
 | `_mapSrdEquipment(eq)` | 2014 API equipment object | `state.equipmentItems` entry |
-| `_mapSrd24Spell(sp)` | 2024 local `spells.json` entry | `state.spells` entry |
+| `_mapSrd24Spell(sp)` | 2024 local `spells.json` entry | `state.spells` entry; sets `rolls[].mod = 'SPELL'` when the description mentions "spellcasting ability modifier" or "spellcasting modifier" |
 | `_mapSrd24Trait(tr)` | 2024 local species trait (`description` field) | `state.infoTraits` entry |
 | `_mapSrd24Feature(f)` | 2024 local class feature (`description` field) | `state.classFeatures` entry |
 | `_mapSrd24Equipment(eq)` | 2024 local `equipment.json` entry | `state.equipmentItems` entry |
