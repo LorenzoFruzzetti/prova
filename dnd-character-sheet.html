@@ -701,9 +701,23 @@
   .hp-current.warning { color: #e67e22; }
 
   .hp-max-label {
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text-muted);
     font-family: sans-serif;
+  }
+
+  .hp-display-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .hp-temp-display {
+    font-size: 11px;
+    color: var(--green);
+    font-family: sans-serif;
+    margin-top: 2px;
   }
 
   .hp-bar {
@@ -3056,7 +3070,7 @@
   <div class="section">
     <div class="section-title">Hit Points</div>
     <div class="section-body">
-      <div class="field-row col-2" style="margin-bottom:12px">
+      <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-bottom:12px">
         <div>
           <label>Max HP</label>
           <input type="number" id="hpMax" value="10" min="1" oninput="updateHP()">
@@ -3065,6 +3079,9 @@
           <label>Temp HP</label>
           <input type="number" id="hpTemp" value="0" min="0" oninput="updateHP()">
         </div>
+        <div>
+          <button class="attack-edit-btn" onclick="resetHPToFull()" style="white-space:nowrap">↺ Restore HP</button>
+        </div>
       </div>
       <div class="hp-tracker">
         <button class="hp-btn minus"
@@ -3072,17 +3089,17 @@
                 onpointerup="stopHpHold()"
                 onpointercancel="cancelHpHold()">−</button>
         <div class="hp-display" onclick="openHpDialog()" title="Tap to set HP">
-          <div class="hp-current" id="hpCurrent">10</div>
-          <div class="hp-max-label">/ <span id="hpMaxLabel">10</span> HP</div>
+          <div class="hp-display-row">
+            <span class="hp-current" id="hpCurrent">10</span>
+            <span class="hp-max-label">/ <span id="hpMaxLabel">10</span> HP</span>
+          </div>
           <div class="hp-bar"><div class="hp-bar-fill" id="hpBarFill" style="width:100%"></div></div>
+          <div class="hp-temp-display" id="hpTempDisplay" style="display:none">+<span id="hpTempLabel">0</span> temp</div>
         </div>
         <button class="hp-btn plus"
                 onpointerdown="startHpHold(+1)"
                 onpointerup="stopHpHold()"
                 onpointercancel="cancelHpHold()">+</button>
-      </div>
-      <div style="text-align:center;margin-top:10px">
-        <button class="attack-edit-btn" onclick="resetHPToFull()">↺ Restore HP</button>
       </div>
     </div>
   </div>
@@ -5088,7 +5105,10 @@ function updateHP() {
   if (curEl) {
     curEl.className = 'hp-current' + (pct <= 25 ? ' danger' : pct <= 50 ? ' warning' : '');
   }
-  document.getElementById('hpMaxLabel').textContent = max + (temp > 0 ? ` (+${temp})` : '');
+  const tempEl  = document.getElementById('hpTempDisplay');
+  const tempLbl = document.getElementById('hpTempLabel');
+  if (tempEl)  tempEl.style.display  = temp > 0 ? '' : 'none';
+  if (tempLbl) tempLbl.textContent   = temp;
   saveData();
 }
 
