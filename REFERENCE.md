@@ -86,7 +86,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **Generic info panel (`#infoPanel`)** — The single reusable floating card for items that have no dedicated panel: skills, ability scores, saving throws, combat stat pills, hit die, death saves, conditions, and the Turn title hold. Opened via `openInfoPanel(cfg)`. Accepts: badge label, title, optional meta line, optional 3-zone roll button, optional simple roll button, description text, and an optional action button (e.g. "Apply Condition"). Does **not** handle spells, traits, attacks, or class features — those use dedicated panels.
 
-**Dedicated view/edit panels** — Four item-specific panels: `#spellPanel`, `#traitPanel`, `#featurePanel`, and `#attackPanel`. Each has two modes toggled by the `.edit-mode` CSS class:
+**Dedicated view/edit panels** — Five item-specific panels: `#spellPanel`, `#traitPanel`, `#featurePanel`, `#attackPanel`, and `#equipItemPanel`. Each has two modes toggled by the `.edit-mode` CSS class:
 - *View mode* — read-only display of the item (name, description, roll boxes); Edit button top-right switches to edit mode; "tap to dismiss" hint at the bottom.
 - *Edit mode* — editable form with labeled fields; Delete / Cancel / Save button row at the bottom.
 
@@ -102,7 +102,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **Settings sheet (`#settingsMenu`)** — Bottom-sheet opened by the ⚙ header button. Contains Save to file, Load from file, font size control, lefty mode toggle, and theme swatches.
 
-**AI / SRD Import panel (`#aiImportPanel`)** — Modal opened by the ⇓ Import header button. Two modes: **AI mode** generates a copy-ready LLM prompt and accepts paste-back JSON; **SRD mode** searches the live D&D 5e SRD API (`dnd5eapi.co`) and imports selected spells, features, or traits.
+**AI / SRD Import panel (`#aiImportPanel`)** — Modal opened by the ⇓ Import header button, or by any "+ Add" section button (pre-selected to the matching type tab). Two modes: **AI mode** generates a copy-ready LLM prompt and accepts paste-back JSON, plus a "+ Create custom" button that opens the matching item panel directly; **SRD mode** searches the live D&D 5e SRD API (`dnd5eapi.co`) and imports selected items. Four type tabs: **Spells** / **Features** / **Traits** / **Items** (equipment).
 
 **Character Grid (`#charGridOverlay`)** — Full-screen overlay opened by the 🎭 header button. Displays one card per saved character; supports switching, creating, and deleting characters.
 
@@ -154,7 +154,6 @@ These are the flat string values stored directly in HTML `<input>` / `<textarea>
 | `statSpeed` | Movement speed in feet (before `statMods.speed`) | Combat Stats section |
 | `statHitDice` | Hit die type string (e.g. "d8") | Used by `rollHitDie()` and displayed in the Hit Dice pill |
 | `spellAbility` | Spellcasting ability key (`STR`/`DEX`/`CON`/`INT`/`WIS`/`CHA` or blank) | Drives spell attack bonus and spell save DC via `recalcAll()` |
-| `equipment` | Equipment & items free-text block | Inventory tab |
 | `languages` | Languages free-text | Inventory tab |
 | `notes` | Campaign notes free-text | Inventory tab |
 | `cp` | Copper pieces | Currency grid |
@@ -191,6 +190,7 @@ These are the structured, typed values in the `state` object. They are persisted
 | `portrait` | `string|null` | Base64 data URL for the character portrait, or `null` |
 | `statMods` | `{ac,speed,initiative,spellatk,spelldc}` | Custom numeric bonuses added on top of the base stat values |
 | `damageResistances` | `{[damageType]: -1|0|1}` | Per damage-type resistance state: `1` = resistant (green), `-1` = vulnerable (red), `0` or absent = normal |
+| `equipmentItems` | `object[]` | Structured equipment items in the Inventory tab; each entry: `{name, quantity, weight, cost, category, description}` (see nested fields below) |
 
 ---
 
@@ -262,6 +262,7 @@ Not persisted. Reset on page reload or character switch.
 | `spellPanelEditIdx` | Index into `state.spells`; `-1` = new spell |
 | `traitPanelEditIdx` | Index into `state.infoTraits`; `-1` = new trait |
 | `featurePanelIdx` | Index into `state.classFeatures`; `-1` = new feature |
+| `equipItemPanelIdx` | Index into `state.equipmentItems`; `-1` = new item |
 | `statModDialogKey` | Key string (`'ac'`\|`'speed'`\|`'initiative'`\|`'spellatk'`\|`'spelldc'`) for the stat modifier dialog currently open |
 | `fontSizeIdx` | Current index into `FONT_SIZES`; persisted separately in `localStorage` as `dnd5e_fontsize` |
 | `leftyMode` | Boolean; persisted in `localStorage` as `dnd5e_lefty` |
@@ -499,6 +500,19 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.tr-description` | Pre-wrapped description text block in the trait panel view section |
 | `.tr-view-section` | Wrapper for all trait panel view-mode content; hidden when `#traitPanel.edit-mode` |
 | `.tr-edit-section` | Wrapper for all trait panel edit form; hidden by default, shown when `#traitPanel.edit-mode` |
+| `.eq-item-row` | One equipment item row in `#equipmentItemsBody`; gold-left-border tint; tap opens item view panel; hold 500 ms also opens view panel; `.holding` added during hold |
+| `.eq-item-name` | Bold item name inside `.eq-item-row` |
+| `.eq-item-qty` | Gold-light quantity badge (e.g. "×3") inside `.eq-item-row`; hidden when quantity = 1 |
+| `.eq-item-tag` | Small muted category badge inside `.eq-item-row` (e.g. "Weapon") |
+| `.eq-item-weight` | Muted weight label inside `.eq-item-row` (e.g. "3 lb") |
+| `#equipItemBackdrop` | Fixed full-screen dim layer behind the equipment item panel; tap to dismiss |
+| `#equipItemPanel` | Fixed centered card (≤500 px, scrollable) for viewing or editing an equipment item; gold border in view mode, blue border in edit mode; `.edit-mode` toggles `.eq-view-section` / `.eq-edit-section` |
+| `.eq-mode-badge` | Tiny uppercase label ("Equipment" or "Editing Equipment") at the top of the equipment item panel |
+| `.eq-panel-name` | Large item name heading inside the equipment panel view section |
+| `.eq-panel-meta` | Muted meta line (qty · category · weight · cost) in the equipment panel view section |
+| `.eq-panel-description` | Pre-wrapped description text block in the equipment panel view section |
+| `.eq-view-section` | Wrapper for all equipment panel view-mode content; hidden when `#equipItemPanel.edit-mode` |
+| `.eq-edit-section` | Wrapper for all equipment panel edit form; hidden by default, shown when `#equipItemPanel.edit-mode` |
 | `.mini-tracker` | Flex row grouping `[−][counter][+]` tightly together |
 | `.mini-btn` | 38 px circular button for mini trackers; `.minus` = red, `.plus` = green |
 | `.mini-val` | Small `n/max` counter label inside a mini tracker |
