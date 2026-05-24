@@ -10207,7 +10207,7 @@ function importCharFromAI() {
     toast('Invalid JSON — check the pasted text'); return;
   }
   if (typeof parsed !== 'object' || Array.isArray(parsed) || (!parsed.form && !parsed.state)) {
-    toast(‘Expected {"form":{...},"state":{...}} — check the AI response’); return;
+    toast('Expected {"form":{...},"state":{...}} — check the AI response'); return;
   }
   applyPayload(parsed);
   saveData();
