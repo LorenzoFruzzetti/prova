@@ -23,7 +23,6 @@
     "spellAbility":   "CHA",
 
     "equipment":      "- Longsword (1d8 slashing, versatile 1d10)\n- Shield (+2 AC)\n- Plate Armor\n- Holy Symbol\n- Healer's Kit\n- Signet Ring of House Dawnblade",
-    "proficiencies":  "All armor, shields, simple weapons, martial weapons",
     "languages":      "Common, Celestial, Elvish",
     "notes":          "Divine Smite: expend spell slot for +2d8 radiant per slot level (up to 5d8). +1d8 vs undead/fiends.\nCantrips via Magic Initiate feat (Cleric).",
 
@@ -54,6 +53,9 @@
     ],
 
     "skillExpertise": [],
+
+    "equipProficiencies": ["Light Armor", "Medium Armor", "Heavy Armor", "Shields", "Simple Weapons", "Martial Weapons", "Healer's Kit"],
+    "customEquipProfRows": [],
 
     "inspiration": true,
 

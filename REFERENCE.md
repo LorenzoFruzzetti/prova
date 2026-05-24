@@ -34,7 +34,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 | Combat | `combat` | `#panel-combat` | Hit Points, Combat Stats, Hit Dice, Resistances & Vulnerabilities, Inspiration & Death Saves, Turn block, Conditions |
 | Spells | `spells` | `#panel-spells` | Spellcasting ability, Spells Known (collapsible, with prep counter + max), Spell Slots, Spells Prepared |
 | Features | `features` | `#panel-features` | Class Features (dot trackers), Featured Spells |
-| Gear | `inventory` | `#panel-inventory` | Currency, Equipment, Proficiencies & Languages, Notes |
+| Gear | `inventory` | `#panel-inventory` | Currency, Equipment, Armor/Weapon/Tool Proficiencies (dot list), Languages, Notes |
 | Dice | `dice` | `#panel-dice` | Free-form Dice Roller |
 | Logs | `rolls` | `#panel-rolls` | Roll Log (session history) |
 
@@ -155,7 +155,6 @@ These are the flat string values stored directly in HTML `<input>` / `<textarea>
 | `statHitDice` | Hit die type string (e.g. "d8") | Used by `rollHitDie()` and displayed in the Hit Dice pill |
 | `spellAbility` | Spellcasting ability key (`STR`/`DEX`/`CON`/`INT`/`WIS`/`CHA` or blank) | Drives spell attack bonus and spell save DC via `recalcAll()` |
 | `equipment` | Equipment & items free-text block | Inventory tab |
-| `proficiencies` | Armor/weapon proficiencies free-text | Inventory tab |
 | `languages` | Languages free-text | Inventory tab |
 | `notes` | Campaign notes free-text | Inventory tab |
 | `cp` | Copper pieces | Currency grid |
@@ -176,6 +175,8 @@ These are the structured, typed values in the `state` object. They are persisted
 | `saveProficiencies` | `string[]` | Ability keys (e.g. `['STR','CON']`) the character is proficient in for saving throws |
 | `skillProficiencies` | `string[]` | Skill names the character is proficient in (e.g. `['Perception','Arcana']`) |
 | `skillExpertise` | `string[]` | Subset of `skillProficiencies`; these skills use double proficiency bonus |
+| `equipProficiencies` | `string[]` | Item/category names the character is proficient with (e.g. `['Light Armor','Martial Weapons']`); tapped against the `EQUIP_PROF_GROUPS` constant for predefined items, or `customEquipProfRows` for user-added entries |
+| `customEquipProfRows` | `string[]` | Names of custom equipment/tool entries the user has added to the proficiency list; each entry renders as a row with a single prof dot and a delete (×) button |
 | `inspiration` | `boolean` | Whether the character currently has Inspiration |
 | `hpCurrent` | `integer` | Current hit points; clamped to `[0, hpMax]` |
 | `spellSlots` | `object[]` | Nine spell slot levels; each entry: `{level, max, used}` |
@@ -449,8 +450,10 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.check-item` | One row: dots + modifier + name + ability tag; tap row to roll, tap dot to toggle prof |
 | `.check-item.proficient` | Fills the first (or only) prof dot gold |
 | `.check-item.expert` | Fills both dots in `.prof-dots` gold-light |
-| `.prof-dot` | Single circular dot (14 px) used in saving throws; tap to toggle proficiency |
-| `.prof-dots` | Flex container with two `.prof-dot`s used in skills; tap to cycle prof |
+| `.prof-dot` | Single circular dot (14 px) used in saving throws and equipment proficiencies; tap to toggle proficiency |
+| `.prof-dots` | Flex container with two `.prof-dot`s used in skills (one `.prof-dot` in equipment proficiency rows); tap to cycle prof |
+| `.equip-prof-group-header` | Section divider `<li>` inside `#equipProfList`; small-caps gold-muted text (e.g. "Armor", "Artisan Tools"); no dot or interaction |
+| `.equip-prof-del-btn` | Small × button on the right of custom proficiency rows; red tint on hover; tap calls `deleteCustomEquipProf(name)` |
 | `.hp-display` | Flex center area showing current HP, max, and bar; tap to open HP dialog |
 | `.hp-bar` / `.hp-bar-fill` | Visual HP percentage bar |
 | `.stat-pills` | 3-column grid of combat stat tiles |
@@ -655,6 +658,9 @@ ABILITY_DESCS   // {STR,DEX,CON,INT,WIS,CHA} — one-paragraph description of ea
 SAVES           // [{name, ab}] — 6 saving throw definitions
 SKILLS          // [{name, ab}] — 18 skill definitions; each entry has a .desc field with a short description used in the skill info panel
 CONDITIONS      // array of {name, desc} objects — 15 conditions with descriptions
+EQUIP_PROF_GROUPS  // array of {group, items[]} — predefined armor/weapon/tool proficiency groups for the Inventory tab;
+                   //   each item: {name, desc}; groups: Armor, Weapons, Artisan Tools, Other Tools & Kits,
+                   //   Musical Instruments, Gaming Sets, Vehicles
 STAT_PILL_INFO  // {ac, initiative, speed, dietype, spellatk, spelldc} — metadata for each combat stat pill; each entry has title, meta, desc; rollable entries add rollLabel/rollFn; simpleRollFn for hit die
 SPELL_SLOTS_DEFAULT  // [{level, max}] — 9 levels, all max:0 except 1st:2
 LEVEL_LABELS    // ['Cantrip','1st','2nd',...,'9th'] — display labels for spell levels 0–9
@@ -673,6 +679,8 @@ let state = {
   saveProficiencies:  [],   // ability keys e.g. ['STR', 'CON']
   skillProficiencies: [],   // skill names e.g. ['Perception']
   skillExpertise:     [],   // skill names (subset of skillProficiencies)
+  equipProficiencies: [],   // item/category names e.g. ['Light Armor', 'Martial Weapons']
+  customEquipProfRows:[],   // user-added item names (appear at bottom of proficiency list)
   inspiration:        false,
   hpCurrent:          10,
   spellSlots:         [ { level, max, used } ],  // 9 entries; levels with max=0 render as collapsed rows
@@ -783,6 +791,7 @@ featureNamePressActive     // boolean — true during and after a held feature n
 featurePanelEditIdx        // index into state.classFeatures currently being edited; −1 = new feature
 infoPanelCfg        // object holding the rollFn, simpleRollFn, editFn, actionFn closures for the currently-open #infoPanel
 skillPressTimer / skillPressActive / skillPanelCurrentName  // skill row hold detection + current skill name
+equipProfPressTimer / equipProfPressActive  // equipment proficiency row hold detection (tap = info panel, hold 500 ms = same)
 conditionPressTimer / conditionPressActive / conditionPanelCurrentName  // condition chip hold detection
 abilityPressTimer / abilityPressActive  // ability card hold detection (500 ms → info panel)
 statPillPressTimer / statPillPressActive  // combat stat pill hold detection (500 ms → info panel)
@@ -813,6 +822,7 @@ DOMContentLoaded
        ├─ loadData()          restore state + form fields from localStorage
        ├─ buildAbilityGrid()  inject ability cards (+ saving throw rows) into #abilityGrid
        ├─ buildSkillsList()   inject skill rows into #skillsList
+       ├─ buildEquipProfList() inject proficiency rows into #equipProfList (Inventory tab)
        ├─ buildConditions()   inject condition chips into #conditionsGrid
        ├─ buildSpellsKnown()   inject spell rows with P/∞ dots into #spellsKnownBody (collapsed by default); levels with max=0 appear only as pills
        ├─ buildSpellsPrepared() inject prepared+always-prepared spell rows into #spellsPreparedBody; calls updatePreparedCount()
@@ -843,6 +853,7 @@ DOMContentLoaded
 | `buildAbilityGrid()` | 6 ability cards in `#abilityGrid`; each card contains the score input, modifier, and a saving throw row with prof dot. Tap card → roll d20+mod; hold 500 ms → open info panel with 3-zone roll button. Tap save row → roll save; tap prof dot → toggle proficiency. | `state.abilities`, `state.saveProficiencies` |
 | `buildDiceRoller()` | Die rows in `#diceRollerBody`; one row per entry in `getDiceRoller()`; default set is d4/d6/d8/d10/d12/d20/d100. Each row has a count tracker and a roll button. Custom dice (non-default sides) show a remove button. | `state.diceRoller` |
 | `buildSkillsList()` | 18 skill rows; tap row → roll; tap prof dots → cycle prof | `state.skillProficiencies`, `state.skillExpertise` |
+| `buildEquipProfList()` | Proficiency list in `#equipProfList`; renders predefined items from `EQUIP_PROF_GROUPS` followed by custom rows from `state.customEquipProfRows`; each row has a single prof dot (gold = proficient, empty = not); group headers use `.equip-prof-group-header`; custom rows include a × delete button; tap dot → toggle proficiency; tap/hold name area → open info panel | `state.equipProficiencies`, `state.customEquipProfRows`, `EQUIP_PROF_GROUPS` |
 | `buildConditions()` | 15 condition chips | `state.conditions` |
 | `buildSpellSlots()` | Renders `#spellSlotsBody`: a pill strip of hidden levels (max=0) at the top, then one row per active level (max>0) with dots and mini +/− tracker | `state.spellSlots` |
 | `expandSpellLevel(i)` | Sets `state.spellSlots[i].max` to 1 and rebuilds spell slots (moves that level from the pill strip into the active rows) | `state.spellSlots[i]` |
@@ -935,6 +946,15 @@ DOMContentLoaded
 | `clickSkillItem(e, name)` | `click` on skill row | If timer hadn't fired: calls `rollSkill(name)` |
 | `cancelSkillPress()` | `pointercancel` on skill row | Clears timer |
 | `openSkillPanel(name)` | Internal (fired by hold timer) | Opens info panel for the given skill with roll button |
+| `cycleEquipProf(name, el)` | Tap prof dot on equipment proficiency row | Pushes undo; toggles `name` in `state.equipProficiencies` (None ↔ Proficient); calls `saveData()` |
+| `openEquipProfPanel(name)` | Tap or hold on equipment proficiency row name area | Opens info panel (badge: "Proficiency") with item description from `EQUIP_PROF_GROUPS`; meta line shows "Proficient" or "Not Proficient" |
+| `startEquipProfPress(e, name)` | `pointerdown` on equipment proficiency row name area | Starts 500 ms timer; on fire adds `.holding`, calls `openEquipProfPanel(name)` |
+| `clickEquipProfItem(e, name)` | `click` on equipment proficiency row name area | If hold hadn't fired: calls `openEquipProfPanel(name)`; otherwise clears guard |
+| `cancelEquipProfPress()` | `pointercancel` on equipment proficiency row | Clears timer; removes `.holding` |
+| `showEquipProfAddInput()` | Tap `+ Add custom` button in proficiency section | Reveals `#equipProfAddRow` (text input + Add + ✕ buttons); hides `#equipProfAddBtn` |
+| `confirmAddEquipProf()` | Tap `Add` button or press Enter in add input | Validates name is non-empty and not a duplicate; pushes undo; appends to `state.customEquipProfRows`; calls `buildEquipProfList()` + `saveData()`; calls `cancelEquipProfAdd()` |
+| `cancelEquipProfAdd()` | Tap ✕ or after confirm | Hides `#equipProfAddRow`; shows `#equipProfAddBtn` |
+| `deleteCustomEquipProf(name)` | Tap × on a custom proficiency row | Pushes undo; removes from `state.customEquipProfRows` and (if present) from `state.equipProficiencies`; calls `buildEquipProfList()` + `saveData()` |
 | `dismissSkillPanel()` | (alias) | Clears `skillPanelCurrentName` and calls `dismissInfoPanel()` |
 | `rollSkill(name, mode='normal')` | Short tap skill row or roll button in info panel | Rolls d20 + skill modifier with given mode; calls `showRoll()` |
 | `rollInitiative(mode='normal')` | Tap Initiative stat pill (tap) or roll button in info panel | Rolls d20 + DEX modifier with given mode; calls `showRoll()` |

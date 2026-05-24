@@ -851,6 +851,38 @@
     border-color: var(--gold-light);
   }
 
+  /* Equipment proficiency list: single dot — override the last-child reset from skills */
+  #equipProfList .check-item.proficient .prof-dots .prof-dot:last-child {
+    background: var(--gold);
+    border-color: var(--gold);
+  }
+
+  .equip-prof-group-header {
+    font-size: 9px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    padding: 10px 0 3px;
+    border-bottom: 1px solid rgba(var(--border-rgb),0.5);
+    list-style: none;
+  }
+  .equip-prof-group-header:first-child { padding-top: 4px; }
+
+  .equip-prof-del-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 15px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    opacity: 0.55;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .equip-prof-del-btn:hover { opacity: 1; color: var(--red, #e07060); }
+
   .check-modifier {
     font-size: 13px;
     font-weight: bold;
@@ -3664,8 +3696,15 @@
          oncontextmenu="return false">Proficiencies &amp; Languages <span class="turn-hold-hint">hold</span></div>
     <div class="section-body">
       <div style="margin-bottom:10px">
-        <label>Armor &amp; Weapon Proficiencies</label>
-        <textarea id="proficiencies" style="min-height:80px" placeholder="Light armor, medium armor, shields, simple weapons..."></textarea>
+        <label>Armor, Weapon &amp; Tool Proficiencies</label>
+        <ul class="check-list" id="equipProfList"></ul>
+        <button class="attack-edit-btn" id="equipProfAddBtn" style="margin-top:8px" onclick="showEquipProfAddInput()">+ Add custom</button>
+        <div id="equipProfAddRow" style="display:none;margin-top:8px;gap:6px;align-items:center">
+          <input type="text" id="equipProfAddInput" placeholder="Custom proficiency..." style="flex:1;margin:0"
+                 onkeydown="if(event.key==='Enter')confirmAddEquipProf();else if(event.key==='Escape')cancelEquipProfAdd()">
+          <button class="attack-edit-btn" onclick="confirmAddEquipProf()">Add</button>
+          <button class="attack-edit-btn" onclick="cancelEquipProfAdd()" style="padding:4px 8px">✕</button>
+        </div>
       </div>
       <div>
         <label>Languages</label>
@@ -4490,6 +4529,73 @@ const CONDITIONS = [
   {name:'Unconscious',   desc:"You are incapacitated, can't move or speak, and are unaware of your surroundings. You drop prone, automatically fail STR and DEX saves, and attack rolls against you have advantage. Any hit from within 5 ft is a critical hit."},
 ];
 
+const EQUIP_PROF_GROUPS = [
+  { group: 'Armor', items: [
+    { name: 'Light Armor',   desc: 'Includes padded, leather, and studded leather. Provides AC 11–12 + your full DEX modifier. No minimum Strength required. You can cast spells and move freely while wearing it.' },
+    { name: 'Medium Armor',  desc: 'Includes hide, chain shirt, scale mail, breastplate, and half plate. Provides AC 12–15 + DEX modifier (max +2). Several types impose disadvantage on Stealth checks.' },
+    { name: 'Heavy Armor',   desc: 'Includes ring mail, chain mail, splint, and plate. Provides AC 14–18 with no DEX modifier added. Most types require a minimum Strength score and impose disadvantage on Stealth checks.' },
+    { name: 'Shields',       desc: 'A shield is strapped to your arm and grants +2 AC. You must have a free hand to use a shield. You cannot use a shield with a two-handed weapon.' },
+  ]},
+  { group: 'Weapons', items: [
+    { name: 'Simple Weapons',         desc: 'Includes clubs, daggers, handaxes, javelins, light crossbows, quarterstaffs, and more. Most classes are proficient with all simple weapons.' },
+    { name: 'Martial Weapons',        desc: 'Includes longswords, battleaxes, rapiers, longbows, and similar weapons requiring more training. Fighters, Paladins, Rangers, and Barbarians typically gain this proficiency.' },
+    { name: 'Simple Melee Weapons',   desc: 'A subset of simple weapons for melee: clubs, daggers, greatclubs, handaxes, javelins, light hammers, maces, quarterstaffs, sickles, spears.' },
+    { name: 'Simple Ranged Weapons',  desc: 'A subset of simple weapons for ranged attacks: darts, light crossbows, shortbows, slings.' },
+    { name: 'Martial Melee Weapons',  desc: 'Melee weapons requiring martial training: battleaxes, flails, glaives, greataxes, greatswords, halberds, lances, longswords, mauls, morningstars, pikes, rapiers, scimitars, shortswords, tridents, war picks, warhammers, whips.' },
+    { name: 'Martial Ranged Weapons', desc: 'Ranged weapons requiring martial training: blowguns, hand crossbows, heavy crossbows, longbows, nets.' },
+  ]},
+  { group: 'Artisan Tools', items: [
+    { name: "Alchemist's Supplies",   desc: "Mortars and pestles, vials, and common chemical reagents. Used to brew potions, identify alchemical substances, and craft explosives or acids. Add proficiency to INT checks when working with alchemical items." },
+    { name: "Brewer's Supplies",      desc: "Large containers, siphons, and fermentation equipment. Used to brew ales, mead, and other fermented drinks, and to identify potions. Add proficiency to INT checks related to fermented substances." },
+    { name: "Calligrapher's Supplies",desc: "Fine parchment, inks, and quills. Used to copy documents, forge signatures, and create artistic lettering. Add proficiency to DEX and INT checks related to written documents." },
+    { name: "Carpenter's Tools",      desc: "Saws, hammers, chisels, and measuring tools. Used to build structures, craft furniture, and repair wood objects. Add proficiency to STR and INT checks relating to construction." },
+    { name: "Cartographer's Tools",   desc: "Parchment, ink, compasses, and rulers. Used to draw accurate maps, navigate wilderness, and identify geographic features. Add proficiency to INT checks related to navigation and geography." },
+    { name: "Cobbler's Tools",        desc: "Shoe lasts, awls, hammers, and leather. Used to craft and repair footwear and identify tracks. Add proficiency to DEX and INT checks about footwear or tracks." },
+    { name: "Cook's Utensils",        desc: "Pots, pans, knives, and seasoning. Used to prepare meals, identify food and drink, and forage in the wild. A skilled cook can identify poisons in food with a proficiency check." },
+    { name: "Glassblower's Tools",    desc: "Blowpipes, paddles, and shears for working molten glass. Used to craft glass vessels and lenses. Add proficiency to INT checks about glass or sand, and DEX checks for careful glasswork." },
+    { name: "Jeweler's Tools",        desc: "Loupes, tweezers, saws, and polishing cloths. Used to appraise gemstones and craft jewelry. Add proficiency to INT checks about gems or precious metals." },
+    { name: "Leatherworker's Tools",  desc: "Knives, needles, thread, and tanning agents. Used to craft leather armor and goods, repair leather items, and appraise hides. Add proficiency to DEX and INT checks about leather or tanning." },
+    { name: "Mason's Tools",          desc: "Trowels, hammers, chisels, and levels. Used to work stone, build walls, and spot weaknesses in masonry. Add proficiency to STR and INT checks about stonework." },
+    { name: "Painter's Supplies",     desc: "Brushes, paints, and canvas. Used to paint scenes, create forgeries of paintings, and disguise surfaces. Add proficiency to DEX and INT checks about art or visual inspection." },
+    { name: "Potter's Tools",         desc: "Potter's wheel, kiln, clay, and shaping tools. Used to craft pottery and appraise ceramic artifacts. Add proficiency to DEX and INT checks about pottery or clay." },
+    { name: "Smith's Tools",          desc: "Hammers, tongs, bellows, and an anvil. Used to craft metal armor, weapons, and tools, and to repair damaged metal items. Add proficiency to STR and INT checks about metalwork or forging." },
+    { name: "Tinker's Tools",         desc: "Bellows, copper wire, glass, and small hand tools. Used to construct and repair small mechanical devices and pick locks. Add proficiency to DEX and INT checks about mechanical devices." },
+    { name: "Weaver's Tools",         desc: "Needles, thread, and cloth scraps. Used to craft cloth goods, mend garments, identify fabrics, and create disguises from clothing. Add proficiency to DEX and INT checks about cloth or fashion." },
+    { name: "Woodcarver's Tools",     desc: "Chisels, gouges, and knives for shaping wood. Used to craft wooden weapons, arrows, and figurines. Add proficiency to DEX and INT checks about woodcraft or carved items." },
+  ]},
+  { group: 'Other Tools & Kits', items: [
+    { name: "Thieves' Tools",   desc: "A small file, lock picks, a mirror, and pliers. Required to pick locks and disarm mechanical traps. Add proficiency to DEX checks made to pick a lock or disable a trap." },
+    { name: 'Disguise Kit',     desc: "Cosmetics, hair dye, props, and small costume pieces. Used to create convincing disguises. Add proficiency to CHA (Deception) checks when using a disguise made with this kit." },
+    { name: 'Forgery Kit',      desc: "Fine inks, parchment, small tools, and sealing wax. Allows you to create convincing written forgeries. Add proficiency to DEX checks when forging documents." },
+    { name: 'Herbalism Kit',    desc: "Clippers, pouches, leather gloves, and common herbs. Used to identify and apply herbal remedies and craft potions of healing. Add proficiency to INT (Nature) checks about plants." },
+    { name: "Navigator's Tools",desc: "A sextant, compass, charts, and dividers. Used to determine your position and plot a course at sea or in featureless terrain. Add proficiency to WIS checks for navigation." },
+    { name: "Poisoner's Kit",   desc: "Glass vials, a mortar and pestle, chemical reagents, and protective gloves. Used to create, identify, and apply poisons. Add proficiency to INT checks when working with poisons." },
+    { name: "Healer's Kit",     desc: "Bandages, salves, splints, and antiseptic. Used to stabilize a dying creature (DC 10 WIS Medicine check). Proficiency adds bonus to Medicine checks when using this kit." },
+  ]},
+  { group: 'Musical Instruments', items: [
+    { name: 'Bagpipes',   desc: 'A wind instrument with an inflatable bag and multiple pipes. Loud enough to be heard over battle. Add proficiency to CHA (Performance) checks when playing bagpipes.' },
+    { name: 'Drum',       desc: 'A percussion instrument struck with hands or sticks. Used in military marches, religious ceremonies, and entertainment. Add proficiency to CHA (Performance) checks when playing drums.' },
+    { name: 'Dulcimer',   desc: 'A stringed instrument played by striking the strings with small hammers. Common in taverns. Add proficiency to CHA (Performance) checks when playing the dulcimer.' },
+    { name: 'Flute',      desc: 'A small wind instrument played by blowing across a mouthpiece. Portable and melodic, popular across cultures. Add proficiency to CHA (Performance) checks when playing the flute.' },
+    { name: 'Lute',       desc: "A plucked string instrument with a rounded body. The classic instrument of bards and troubadours. Add proficiency to CHA (Performance) checks when playing the lute." },
+    { name: 'Lyre',       desc: 'An ancient stringed instrument held in one hand and plucked with the other. Associated with noble traditions. Add proficiency to CHA (Performance) checks when playing the lyre.' },
+    { name: 'Horn',       desc: 'A wind instrument made from animal horn or metal. Used for signaling in battle or as a musical instrument in ceremonies. Add proficiency to CHA (Performance) checks when playing the horn.' },
+    { name: 'Pan Flute',  desc: 'A set of graduated pipes played by blowing across the open tops. Associated with nature spirits and rural cultures. Add proficiency to CHA (Performance) checks when playing the pan flute.' },
+    { name: 'Shawm',      desc: 'A loud, double-reed wind instrument similar to an oboe. Common at festivals and outdoor events. Add proficiency to CHA (Performance) checks when playing the shawm.' },
+    { name: 'Viol',       desc: 'A bowed string instrument held between the legs. Preferred in noble courts. Add proficiency to CHA (Performance) checks when playing the viol.' },
+  ]},
+  { group: 'Gaming Sets', items: [
+    { name: 'Dice Set',              desc: 'A set of polyhedral dice for games of chance. Add proficiency to CHA and WIS checks when playing dice games, and INT checks to spot cheating or recall rules.' },
+    { name: 'Dragonchess Set',       desc: 'A complex board game with pieces representing fantasy creatures. Add proficiency to INT checks when playing dragonchess or analyzing strategy.' },
+    { name: 'Playing Card Set',      desc: 'A deck of illustrated playing cards. Add proficiency to CHA checks when playing card games and DEX checks for sleight-of-hand card tricks.' },
+    { name: 'Three-Dragon Ante Set', desc: 'Cards for a popular gambling game in the Forgotten Realms. Add proficiency to CHA checks when playing Three-Dragon Ante and INT checks for game strategy.' },
+  ]},
+  { group: 'Vehicles', items: [
+    { name: 'Land Vehicles',  desc: 'Allows you to drive and maintain carts, wagons, chariots, and similar conveyances. Add proficiency to DEX checks when operating a land vehicle under difficult conditions.' },
+    { name: 'Water Vehicles', desc: 'Allows you to sail and navigate ships, boats, and similar watercraft. Add proficiency to WIS checks for navigation and STR checks when handling sails in rough weather.' },
+  ]},
+];
+
 const SPELL_SLOTS_DEFAULT = [
   {level:'1st', max:2}, {level:'2nd', max:0}, {level:'3rd', max:0},
   {level:'4th', max:0}, {level:'5th', max:0}, {level:'6th', max:0},
@@ -4556,6 +4662,8 @@ let state = {
   saveProficiencies: [],
   skillProficiencies: [],
   skillExpertise: [],
+  equipProficiencies: [],
+  customEquipProfRows: [],
   inspiration: false,
   hpCurrent: 10,
   spellSlots: SPELL_SLOTS_DEFAULT.map(s => ({...s, used:0})),
@@ -4577,6 +4685,7 @@ function init() {
   loadData();
   buildAbilityGrid();
   buildSkillsList();
+  buildEquipProfList();
   buildConditions();
   buildSpellSlots();
   buildSpellsKnown();
@@ -4669,6 +4778,24 @@ function applyUndo(a) {
       if (!state.damageResistances) state.damageResistances = {};
       state.damageResistances[a.dmgType] = a.previous;
       buildDamageResistances(); saveData(); toast('↩ Damage resistance'); break;
+    case 'equipProf': {
+      const pi = state.equipProficiencies.indexOf(a.name);
+      if (a.wasProficient && pi === -1) state.equipProficiencies.push(a.name);
+      else if (!a.wasProficient && pi !== -1) state.equipProficiencies.splice(pi, 1);
+      buildEquipProfList(); saveData(); toast('↩ Equipment proficiency'); break;
+    }
+    case 'addCustomEquipProf': {
+      const ci = state.customEquipProfRows.indexOf(a.name);
+      if (ci !== -1) state.customEquipProfRows.splice(ci, 1);
+      const pi = state.equipProficiencies.indexOf(a.name);
+      if (pi !== -1) state.equipProficiencies.splice(pi, 1);
+      buildEquipProfList(); saveData(); toast('↩ Custom proficiency removed'); break;
+    }
+    case 'deleteCustomEquipProf': {
+      if (!state.customEquipProfRows.includes(a.name)) state.customEquipProfRows.push(a.name);
+      if (a.wasProficient && !state.equipProficiencies.includes(a.name)) state.equipProficiencies.push(a.name);
+      buildEquipProfList(); saveData(); toast('↩ Custom proficiency restored'); break;
+    }
   }
 }
 
@@ -4730,6 +4857,52 @@ function buildSkillsList() {
       </div>
     </li>`;
   }).join('');
+}
+
+function buildEquipProfList() {
+  const list = document.getElementById('equipProfList');
+  if (!list) return;
+  let html = '';
+  EQUIP_PROF_GROUPS.forEach(group => {
+    html += `<li class="equip-prof-group-header">${group.group}</li>`;
+    group.items.forEach(item => {
+      const prof = state.equipProficiencies.includes(item.name);
+      const safe = item.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html += `
+      <li class="check-item ${prof ? 'proficient' : ''}" oncontextmenu="return false">
+        <div class="prof-dots" onclick="event.stopPropagation();cycleEquipProf('${safe}',this.closest('li'))">
+          <div class="prof-dot"></div>
+        </div>
+        <div class="check-roll-area"
+             onpointerdown="startEquipProfPress(event,'${safe}')"
+             onclick="clickEquipProfItem(event,'${safe}')"
+             onpointercancel="cancelEquipProfPress()">
+          <span class="check-name">${item.name}</span>
+        </div>
+      </li>`;
+    });
+  });
+  if (state.customEquipProfRows.length > 0) {
+    html += `<li class="equip-prof-group-header">Custom</li>`;
+    state.customEquipProfRows.forEach(name => {
+      const prof = state.equipProficiencies.includes(name);
+      const safe = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html += `
+      <li class="check-item ${prof ? 'proficient' : ''}" oncontextmenu="return false">
+        <div class="prof-dots" onclick="event.stopPropagation();cycleEquipProf('${safe}',this.closest('li'))">
+          <div class="prof-dot"></div>
+        </div>
+        <div class="check-roll-area"
+             onpointerdown="startEquipProfPress(event,'${safe}')"
+             onclick="clickEquipProfItem(event,'${safe}')"
+             onpointercancel="cancelEquipProfPress()">
+          <span class="check-name">${name}</span>
+        </div>
+        <button class="equip-prof-del-btn" onclick="event.stopPropagation();deleteCustomEquipProf('${safe}')">×</button>
+      </li>`;
+    });
+  }
+  list.innerHTML = html;
 }
 
 function buildConditions() {
@@ -5391,6 +5564,102 @@ function cycleSkillProf(name, el) {
     toast('Proficient: ' + name);
   }
   recalcAll();
+}
+
+function cycleEquipProf(name, el) {
+  pushUndo({ type: 'equipProf', name, wasProficient: state.equipProficiencies.includes(name) });
+  const idx = state.equipProficiencies.indexOf(name);
+  if (idx !== -1) {
+    state.equipProficiencies.splice(idx, 1);
+    el.classList.remove('proficient');
+    toast('Not Proficient: ' + name);
+  } else {
+    state.equipProficiencies.push(name);
+    el.classList.add('proficient');
+    toast('Proficient: ' + name);
+  }
+  saveData();
+}
+
+function openEquipProfPanel(name) {
+  let desc = null;
+  for (const group of EQUIP_PROF_GROUPS) {
+    const item = group.items.find(i => i.name === name);
+    if (item) { desc = item.desc; break; }
+  }
+  if (!desc) desc = 'A custom proficiency. You add your Proficiency Bonus to relevant ability checks.';
+  const isProficient = state.equipProficiencies.includes(name);
+  openInfoPanel({
+    badge: 'Proficiency',
+    title: name,
+    meta: isProficient ? 'Proficient' : 'Not Proficient',
+    description: desc,
+  });
+}
+
+let equipProfPressTimer = null;
+let equipProfPressActive = false;
+
+function startEquipProfPress(e, name) {
+  equipProfPressActive = false;
+  clearTimeout(equipProfPressTimer);
+  const el = e.currentTarget;
+  equipProfPressTimer = setTimeout(() => {
+    equipProfPressActive = true;
+    if (el) el.classList.add('holding');
+    openEquipProfPanel(name);
+  }, 500);
+}
+
+function clickEquipProfItem(e, name) {
+  clearTimeout(equipProfPressTimer);
+  document.querySelectorAll('.check-roll-area.holding').forEach(el => el.classList.remove('holding'));
+  if (equipProfPressActive) { equipProfPressActive = false; return; }
+  openEquipProfPanel(name);
+}
+
+function cancelEquipProfPress() {
+  clearTimeout(equipProfPressTimer);
+  equipProfPressActive = false;
+  document.querySelectorAll('.check-roll-area.holding').forEach(el => el.classList.remove('holding'));
+}
+
+function showEquipProfAddInput() {
+  document.getElementById('equipProfAddRow').style.display = 'flex';
+  document.getElementById('equipProfAddBtn').style.display = 'none';
+  const inp = document.getElementById('equipProfAddInput');
+  inp.value = '';
+  inp.focus();
+}
+
+function confirmAddEquipProf() {
+  const inp = document.getElementById('equipProfAddInput');
+  const name = inp.value.trim();
+  if (!name) return;
+  const allExisting = EQUIP_PROF_GROUPS.flatMap(g => g.items.map(i => i.name)).concat(state.customEquipProfRows);
+  if (allExisting.includes(name)) { toast('Already exists: ' + name); return; }
+  pushUndo({ type: 'addCustomEquipProf', name });
+  state.customEquipProfRows.push(name);
+  buildEquipProfList();
+  saveData();
+  cancelEquipProfAdd();
+  toast('Added: ' + name);
+}
+
+function cancelEquipProfAdd() {
+  document.getElementById('equipProfAddRow').style.display = 'none';
+  document.getElementById('equipProfAddBtn').style.display = '';
+}
+
+function deleteCustomEquipProf(name) {
+  pushUndo({ type: 'deleteCustomEquipProf', name, wasProficient: state.equipProficiencies.includes(name) });
+  const ci = state.customEquipProfRows.indexOf(name);
+  if (ci !== -1) state.customEquipProfRows.splice(ci, 1);
+  const pi = state.equipProficiencies.indexOf(name);
+  if (pi !== -1) state.equipProficiencies.splice(pi, 1);
+  buildEquipProfList();
+  saveData();
+  toast('Removed: ' + name);
 }
 
 // ── HP ─────────────────────────────────────────────────────────────────
@@ -8234,7 +8503,7 @@ function collectFormData() {
   const ids = ['charName','charClass','charSubclass','charRace','charLevel','charBackground',
     'charAlignment','charXP','personality','ideals','bonds','flaws',
     'hpMax','hpTemp','statAC','statSpeed','statHitDice','equipment',
-    'proficiencies','languages','notes','spellAbility','cp','sp','ep','gp','pp'];
+    'languages','notes','spellAbility','cp','sp','ep','gp','pp'];
   const data = {};
   ids.forEach(id => { const el = document.getElementById(id); if (el) data[id] = el.value; });
   return data;
@@ -8248,6 +8517,8 @@ function buildPayload() {
       saveProficiencies: state.saveProficiencies,
       skillProficiencies: state.skillProficiencies,
       skillExpertise: state.skillExpertise,
+      equipProficiencies: state.equipProficiencies,
+      customEquipProfRows: state.customEquipProfRows,
       inspiration: state.inspiration,
       hpCurrent: state.hpCurrent,
       spellSlots: state.spellSlots,
@@ -8313,6 +8584,7 @@ function clearSheet() {
   Object.assign(state, {
     abilities: {STR:10, DEX:10, CON:10, INT:10, WIS:10, CHA:10},
     saveProficiencies: [], skillProficiencies: [], skillExpertise: [],
+    equipProficiencies: [], customEquipProfRows: [],
     inspiration: false, hpCurrent: 10,
     spellSlots: SPELL_SLOTS_DEFAULT.map(s => ({...s, used:0})),
     spells: [], attacks: [], conditions: [], classFeatures: [],
@@ -8323,7 +8595,7 @@ function clearSheet() {
 }
 
 function _rebuildAll() {
-  buildAbilityGrid(); buildSkillsList(); buildConditions();
+  buildAbilityGrid(); buildSkillsList(); buildEquipProfList(); buildConditions();
   buildSpellSlots(); buildSpellsKnown(); buildSpellsPrepared(); buildFeatures(); buildFeaturedSpells();
   buildInfoTraits(); buildDiceRoller(); renderHitDice(); buildDamageResistances(); renderAttacks();
   recalcAll(); updateHeader(); updateHP(); applyPortrait();
@@ -8568,6 +8840,8 @@ function _applyPayloadData(payload) {
     if (!state.damageResistances || typeof state.damageResistances !== 'object') {
       state.damageResistances = {};
     }
+    if (!Array.isArray(state.equipProficiencies)) state.equipProficiencies = [];
+    if (!Array.isArray(state.customEquipProfRows)) state.customEquipProfRows = [];
   }
 }
 

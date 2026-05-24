@@ -46,7 +46,6 @@ Contains every HTML form field value as a **string**, even when the field holds 
   "spellAbility":   "INT",
 
   "equipment":      "- Rapier (1d8 piercing)\n- Hand Crossbow\n- Thieves' Tools\n- Bag of Holding",
-  "proficiencies":  "Light armor, simple weapons, hand crossbows, longswords, rapiers, shortswords",
   "languages":      "Common, Elvish, Thieves' Cant",
   "notes":          "Session 12: found the map to the vault.",
 
@@ -81,7 +80,6 @@ Contains every HTML form field value as a **string**, even when the field holds 
 | `statHitDice` | string | Dice notation e.g. `"7d8"` |
 | `spellAbility` | string | `"INT"`, `"WIS"`, `"CHA"`, or `""` |
 | `equipment` | string | Free text |
-| `proficiencies` | string | Free text |
 | `languages` | string | Free text |
 | `notes` | string | Free text |
 | `cp` | string (int) | `"0"` or higher (copper pieces) |
@@ -270,6 +268,40 @@ Expertise doubles the proficiency bonus for that skill.
 ```
 
 Visual effect: two filled dots instead of one.
+
+#### `equipProficiencies`
+Array of equipment/tool category name strings the character is proficient with. Each entry corresponds to a row in the Inventory tab's "Armor, Weapon & Tool Proficiencies" list. Tap the dot next to an item to toggle it.
+
+```json
+"equipProficiencies": ["Light Armor", "Simple Weapons", "Thieves' Tools"]
+```
+
+Predefined item names (use exact spelling):
+
+**Armor:** `Light Armor`, `Medium Armor`, `Heavy Armor`, `Shields`
+
+**Weapons:** `Simple Weapons`, `Martial Weapons`, `Simple Melee Weapons`, `Simple Ranged Weapons`, `Martial Melee Weapons`, `Martial Ranged Weapons`
+
+**Artisan Tools:** `Alchemist's Supplies`, `Brewer's Supplies`, `Calligrapher's Supplies`, `Carpenter's Tools`, `Cartographer's Tools`, `Cobbler's Tools`, `Cook's Utensils`, `Glassblower's Tools`, `Jeweler's Tools`, `Leatherworker's Tools`, `Mason's Tools`, `Painter's Supplies`, `Potter's Tools`, `Smith's Tools`, `Tinker's Tools`, `Weaver's Tools`, `Woodcarver's Tools`
+
+**Other Tools & Kits:** `Thieves' Tools`, `Disguise Kit`, `Forgery Kit`, `Herbalism Kit`, `Navigator's Tools`, `Poisoner's Kit`, `Healer's Kit`
+
+**Musical Instruments:** `Bagpipes`, `Drum`, `Dulcimer`, `Flute`, `Lute`, `Lyre`, `Horn`, `Pan Flute`, `Shawm`, `Viol`
+
+**Gaming Sets:** `Dice Set`, `Dragonchess Set`, `Playing Card Set`, `Three-Dragon Ante Set`
+
+**Vehicles:** `Land Vehicles`, `Water Vehicles`
+
+Names from `customEquipProfRows` can also appear here.
+
+#### `customEquipProfRows`
+Array of custom item name strings the user has added to the proficiency list (rows not found in the predefined `EQUIP_PROF_GROUPS`). These appear under a "Custom" group header at the bottom of the list and include a × delete button.
+
+```json
+"customEquipProfRows": ["Firearms", "Net"]
+```
+
+Any name in this array that also appears in `equipProficiencies` will render its dot as filled (proficient).
 
 #### `inspiration`
 Boolean. `true` = character currently has inspiration.
@@ -629,7 +661,6 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
     "spellAbility":   "CHA",
     "spellsList":     "1st: Bless, Cure Wounds, Shield of Faith\n2nd: Aid, Lesser Restoration",
     "equipment":      "- Longsword (1d8 slashing)\n- Shield\n- Plate Armor\n- Holy Symbol\n- Explorer's Pack",
-    "proficiencies":  "All armor, shields, simple and martial weapons",
     "languages":      "Common, Celestial",
     "notes":          "",
     "cp": "0", "sp": "0", "ep": "0", "gp": "150", "pp": "2"
@@ -639,6 +670,8 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
     "saveProficiencies": ["WIS", "CHA"],
     "skillProficiencies": ["Athletics", "Insight", "Persuasion", "Religion"],
     "skillExpertise": [],
+    "equipProficiencies": ["Light Armor", "Medium Armor", "Heavy Armor", "Shields", "Simple Weapons", "Martial Weapons"],
+    "customEquipProfRows": [],
     "inspiration": false,
     "hpCurrent": 47,
     "spellSlots": [
