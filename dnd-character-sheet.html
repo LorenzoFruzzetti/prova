@@ -781,19 +781,26 @@
   .check-item {
     display: flex;
     align-items: center;
-    gap: 10px;
     padding: 7px 0;
     border-bottom: 1px solid rgba(var(--border-rgb),0.3);
-    cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
+  }
+
+  .check-item:last-child { border-bottom: none; }
+
+  .check-roll-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    align-self: stretch;
+    cursor: pointer;
     touch-action: manipulation;
   }
 
-  .check-item:active { background: rgba(var(--accent-rgb),0.08); }
-
-  .check-item:last-child { border-bottom: none; }
+  .check-roll-area:active { background: rgba(var(--accent-rgb),0.08); }
 
   .prof-dots {
     display: flex;
@@ -1656,7 +1663,7 @@
   }
   #infoPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
 
-  .check-item.holding { background: rgba(var(--accent-rgb),0.08); box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb),0.4); border-radius: var(--radius); }
+  .check-roll-area.holding { background: rgba(var(--accent-rgb),0.08); box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb),0.4); border-radius: var(--radius); }
 
   .sp-mode-badge {
     font-size: 9px;
@@ -4376,18 +4383,19 @@ function buildSkillsList() {
     const exp  = state.skillExpertise.includes(s.name);
     return `
     <li class="check-item ${exp ? 'expert' : prof ? 'proficient' : ''}"
-        onpointerdown="startSkillPress(event, '${s.name}')"
-        onclick="clickSkillItem(event, '${s.name}')"
-        onpointercancel="cancelSkillPress()"
         oncontextmenu="return false">
       <div class="prof-dots"
-           onpointerdown="event.stopPropagation()"
            onclick="event.stopPropagation(); cycleSkillProf('${s.name}', this.closest('li'))">
         <div class="prof-dot"></div><div class="prof-dot"></div>
       </div>
-      <span class="check-modifier" id="skill-mod-${s.name.replace(/\s/g,'_')}">+0</span>
-      <span class="check-name">${s.name}</span>
-      <span class="check-ability">${s.ab}</span>
+      <div class="check-roll-area"
+           onpointerdown="startSkillPress(event, '${s.name}')"
+           onclick="clickSkillItem(event, '${s.name}')"
+           onpointercancel="cancelSkillPress()">
+        <span class="check-modifier" id="skill-mod-${s.name.replace(/\s/g,'_')}">+0</span>
+        <span class="check-name">${s.name}</span>
+        <span class="check-ability">${s.ab}</span>
+      </div>
     </li>`;
   }).join('');
 }
@@ -5012,13 +5020,16 @@ function recalcAll() {
 // ── Toggle proficiencies ───────────────────────────────────────────────
 function toggleSaveProf(ab, el) {
   pushUndo({type: 'saveProf', ab, wasProficient: state.saveProficiencies.includes(ab)});
+  const saveName = SAVES.find(s => s.ab === ab).name;
   const idx = state.saveProficiencies.indexOf(ab);
   if (idx === -1) {
     state.saveProficiencies.push(ab);
     el.classList.add('proficient');
+    toast('Proficient: ' + saveName + ' Save');
   } else {
     state.saveProficiencies.splice(idx, 1);
     el.classList.remove('proficient');
+    toast('Not Proficient: ' + saveName + ' Save');
   }
   recalcAll();
 }
@@ -5034,16 +5045,18 @@ function cycleSkillProf(name, el) {
     state.skillExpertise.splice(expIdx, 1);
     state.skillProficiencies.splice(state.skillProficiencies.indexOf(name), 1);
     el.classList.remove('expert');
+    toast('Not Proficient: ' + name);
   } else if (profIdx !== -1) {
     // Proficient → Expert
     state.skillExpertise.push(name);
     el.classList.remove('proficient');
     el.classList.add('expert');
-    toast('Expertise!');
+    toast('Expertise: ' + name);
   } else {
     // None → Proficient
     state.skillProficiencies.push(name);
     el.classList.add('proficient');
+    toast('Proficient: ' + name);
   }
   recalcAll();
 }
@@ -5249,7 +5262,7 @@ function startSkillPress(e, name) {
 
 function clickSkillItem(e, name) {
   clearTimeout(skillPressTimer);
-  document.querySelectorAll('.check-item.holding').forEach(el => el.classList.remove('holding'));
+  document.querySelectorAll('.check-roll-area.holding').forEach(el => el.classList.remove('holding'));
   if (skillPressActive) { skillPressActive = false; return; }
   rollSkill(name);
 }
@@ -5257,7 +5270,7 @@ function clickSkillItem(e, name) {
 function cancelSkillPress() {
   clearTimeout(skillPressTimer);
   skillPressActive = false;
-  document.querySelectorAll('.check-item.holding').forEach(el => el.classList.remove('holding'));
+  document.querySelectorAll('.check-roll-area.holding').forEach(el => el.classList.remove('holding'));
 }
 
 function openSkillPanel(name) {
