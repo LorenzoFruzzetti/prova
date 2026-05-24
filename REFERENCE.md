@@ -106,6 +106,8 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **AI / SRD Import panel (`#aiImportPanel`)** — Modal opened by the ⇓ Import header button, or by any "+ Add" section button (pre-selected to the matching type tab). Two modes: **AI mode** generates a copy-ready LLM prompt and accepts paste-back JSON, plus a "+ Create custom" button that opens the matching item panel directly; **SRD mode** searches the live D&D 5e SRD API (`dnd5eapi.co`) and imports selected items. Four type tabs: **Spells** / **Features** / **Traits** / **Items** (equipment).
 
+**Item Content Assist (inline ✨ Fill)** — Collapsible section that appears inside the edit form of each dedicated panel (spell, trait, class feature, equipment item), revealed by tapping the **✨ Fill** button next to the Description label. Two modes: **📖 SRD** searches the live SRD API by the item's current name and previews the found description; **✨ AI Prompt** generates a copy-ready LLM prompt and accepts a pasted response. For spells and equipment, "Apply All Fields" also fills mechanical fields (level, school, casting time, range, etc. for spells; weight, cost, category for equipment). For all types, "Desc Only" / "Apply Description" fills only the description textarea. Controlled by `toggleIca(p)`, `setIcaMode(p, mode)`, `icaSearchSrd(p, type)`, `icaApply(p)`, `icaApplyDesc(p)`, `icaCopyPrompt(p, type)`, `icaApplyAI(p, type)`, `icaApplyAIDesc(p)` where `p` is a panel prefix (`'sp'`/`'tr'`/`'fp'`/`'eq'`). Requires internet for SRD mode; clipboard API for copy (degrades gracefully on `file://`). The section is automatically collapsed when `populate*EditForm()` is called.
+
 **AI Character Import panel (`#charImportPanel`)** — Modal opened from Settings → 🤖 AI Import Character. Generates a schema-rich LLM prompt intended to be sent with photos of a physical or digital character sheet. Tries to load `JSONGeneration.md` from the same folder via `fetch`; on failure shows a file picker and a "Use built-in schema" fallback. Pasted JSON is validated and fed into `applyPayload()` to replace the current character.
 
 **Character Grid (`#charGridOverlay`)** — Full-screen overlay opened by the 🎭 header button. Displays one card per saved character; supports switching, creating, and deleting characters.
@@ -277,6 +279,7 @@ Not persisted. Reset on page reload or character switch.
 | `currentTheme` | Active theme key string; persisted in `localStorage` as `dnd5e_theme` |
 | `srdModalMode` | `'ai'` or `'srd'` — which tab is active in `#aiImportPanel` |
 | `srdSelected` | `Set<string>` of SRD item indices checked in the current search results |
+| `_icaCache` | `{sp?, tr?, fp?, eq?}` — holds the last SRD detail object fetched for each panel prefix by `icaSearchSrd`; cleared by `_icaReset` |
 | `longPressActive` | `true` after a hold fires on an attack row; causes the click handler to no-op and then reset |
 | `charMenuOpen` | `true` while the character grid overlay (`#charGridOverlay`) is visible |
 
@@ -674,6 +677,16 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.srd-lv-group` | Level-group header row in the class-features results (e.g. "Level 3"); gold uppercase, subtle background |
 | `.srd-hint` | Centred muted placeholder text shown when `#srdResults` is idle or has no matches |
 | `.srd-loading` | Same style as `.srd-hint`; used while an SRD fetch is in progress |
+| `.ica-label-row` | Flex row inside each edit panel's Description field; holds the label on the left and the `✨ Fill` button on the right |
+| `.ica-fill-btn` | Small spell-blue bordered button that toggles the Item Content Assist section |
+| `.item-content-assist` | Collapsible block shown below the Description label in edit panels; spell-blue tinted background |
+| `.ica-tabs` | Two-button tab row inside `.item-content-assist` (📖 SRD / ✨ AI Prompt) |
+| `.ica-tab` | One tab button; `.active` styles it spell-blue |
+| `.ica-status` | Status / hint line below the tabs |
+| `.ica-preview` | Scrollable text box showing a SRD description preview before applying |
+| `.ica-btn-row` | Flex row for action buttons (Search SRD, Apply All Fields, Desc Only) |
+| `.ica-copy-notice` | Temporary "✓ Copied!" feedback line in AI Prompt mode |
+| `.ica-paste-area` | Textarea for pasting an AI response in AI Prompt mode |
 
 ---
 
@@ -1362,6 +1375,15 @@ Live search against the [D&D 5e SRD API](https://www.dnd5eapi.co) (2014 SRD, CC-
 | `_mapSrdEquipment(eq)` | Maps an equipment object (from `/equipment/{index}`) to the `equipmentItems` schema; synthesises description from `damage`, `armor_class`, `properties`, and `desc` fields; truncates to 600 characters |
 | `_nameToSrdIdx(name)` | Converts a display name to a SRD index string (lowercase, spaces → hyphens, non-alphanumeric stripped); used by `_enrichEquipDescriptions` |
 | `_enrichEquipDescriptions(items)` | Async; for each item in the array tries `_srdGet('/equipment/' + _nameToSrdIdx(item.name))`; on hit, fills missing `description`, `weight`, `cost`, `category` from `_mapSrdEquipment`; calls `buildEquipmentItems()` + `saveData()` once if anything changed. Called automatically after AI equipment import and after full-character AI import |
+| `toggleIca(p)` | Shows or hides the Item Content Assist block (`#<p>Ica`) inside an edit panel; calls `_icaReset(p)` on open |
+| `_icaReset(p)` | Resets the ICA block to SRD mode, clears preview and apply buttons, empties the paste area, and deletes `_icaCache[p]` |
+| `setIcaMode(p, mode)` | Switches the ICA block between `'srd'` and `'ai'` tabs for panel prefix `p` |
+| `icaSearchSrd(p, type)` | Async; reads the item name from the form, searches `_srdGet('/' + type)` for a matching entry, fetches full details, caches in `_icaCache[p]`, shows a description preview and reveals Apply buttons |
+| `icaApply(p)` | Applies cached SRD data to the edit form: for spells fills all fields via `_mapSrdSpell`; for equipment fills weight/cost/category/description via `_mapSrdEquipment`; for traits/features calls `icaApplyDesc` |
+| `icaApplyDesc(p)` | Writes the cached SRD item's raw `desc` to the description textarea and closes the ICA block |
+| `icaCopyPrompt(p, type)` | Generates a LLM prompt (JSON schema prompt for spells; plain-text description prompt for other types) and writes it to the clipboard |
+| `icaApplyAI(p, type)` | For spells, tries to `JSON.parse` the pasted text (strips optional markdown fences) and fills form fields from the parsed data; falls through to `icaApplyAIDesc` if parsing fails or for non-spell types |
+| `icaApplyAIDesc(p)` | Writes the paste area's raw text to the description textarea and closes the ICA block |
 
 > **2024 SRD note:** `dnd5eapi.co` covers the 2014 SRD. For 2024 SRD content (released under CC-BY 4.0 as SRD 5.2), use the AI Import workflow: the prompt templates are edition-agnostic and work with any LLM that knows the 2024 rules.
 

@@ -2289,6 +2289,21 @@
   #equipItemPanel.edit-mode .eq-view-section { display: none; }
   #equipItemPanel.edit-mode .eq-edit-section { display: block; }
 
+  /* ── Item Content Assist (SRD/AI fill in edit panels) ── */
+  .ica-label-row { display:flex;justify-content:space-between;align-items:center;margin-bottom:4px }
+  .ica-label-row label { margin-bottom:0 }
+  .ica-fill-btn { font-size:0.7rem;padding:2px 8px;background:none;border:1px solid var(--spell);color:var(--spell);border-radius:4px;cursor:pointer;line-height:1.6;font-family:sans-serif }
+  .ica-fill-btn:active { opacity:0.7 }
+  .item-content-assist { background:rgba(var(--spell-rgb),0.06);border:1px solid rgba(var(--spell-rgb),0.25);border-radius:6px;padding:10px;margin-bottom:8px }
+  .ica-tabs { display:flex;gap:6px;margin-bottom:10px }
+  .ica-tab { flex:1;padding:4px 0;font-size:0.73rem;background:none;border:1px solid var(--border);border-radius:4px;color:var(--text-muted);cursor:pointer;font-family:sans-serif }
+  .ica-tab.active { border-color:var(--spell);color:var(--spell);background:rgba(var(--spell-rgb),0.12) }
+  .ica-status { font-size:0.78rem;color:var(--text-muted);margin-bottom:7px;min-height:1.1em }
+  .ica-preview { font-size:0.78rem;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px;margin-bottom:8px;max-height:110px;overflow-y:auto;white-space:pre-wrap;line-height:1.5 }
+  .ica-btn-row { display:flex;gap:6px;flex-wrap:wrap;align-items:center }
+  .ica-copy-notice { font-size:0.73rem;color:var(--spell-light);min-height:1em;margin:4px 0 }
+  .ica-paste-area { width:100%;min-height:72px;resize:vertical;padding:7px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:sans-serif;box-sizing:border-box;margin:6px 0 4px }
+
   .rr-label {
     font-size: 10px;
     color: var(--gold);
@@ -4222,7 +4237,35 @@
         </div>
       </div>
     <div class="sp-edit-field">
-      <label>Description</label>
+      <div class="ica-label-row">
+        <label>Description</label>
+        <button class="ica-fill-btn" onclick="toggleIca('sp')">✨ Fill</button>
+      </div>
+      <div id="spIca" class="item-content-assist" style="display:none">
+        <div class="ica-tabs">
+          <button class="ica-tab active" id="spIcaTabSrd" onclick="setIcaMode('sp','srd')">📖 SRD</button>
+          <button class="ica-tab" id="spIcaTabAi" onclick="setIcaMode('sp','ai')">✨ AI Prompt</button>
+        </div>
+        <div id="spIcaSrd">
+          <div class="ica-status" id="spIcaStatus">Search the SRD or generate an AI prompt for this spell.</div>
+          <div class="ica-preview" id="spIcaPreview" style="display:none"></div>
+          <div class="ica-btn-row">
+            <button class="attack-edit-btn" onclick="icaSearchSrd('sp','spells')">Search SRD</button>
+            <button class="attack-edit-btn" id="spIcaApply" style="display:none;color:var(--spell);border-color:var(--spell)" onclick="icaApply('sp')">Apply All Fields</button>
+            <button class="attack-edit-btn" id="spIcaApplyDesc" style="display:none" onclick="icaApplyDesc('sp')">Desc Only</button>
+          </div>
+        </div>
+        <div id="spIcaAi" style="display:none">
+          <div class="ica-status">Copy this prompt, paste into an AI, then paste the response below.</div>
+          <button class="attack-edit-btn" style="width:100%;margin:4px 0 2px" onclick="icaCopyPrompt('sp','spells')">Copy AI Prompt</button>
+          <div class="ica-copy-notice" id="spIcaCopyNotice"></div>
+          <textarea class="ica-paste-area" id="spIcaPaste" placeholder="Paste AI response (JSON or plain text)…"></textarea>
+          <div class="ica-btn-row">
+            <button class="attack-edit-btn" style="color:var(--spell);border-color:var(--spell)" onclick="icaApplyAI('sp','spells')">Apply All Fields</button>
+            <button class="attack-edit-btn" onclick="icaApplyAIDesc('sp')">Desc Only</button>
+          </div>
+        </div>
+      </div>
       <textarea id="spEditDescription" placeholder="Spell description..."></textarea>
     </div>
     <div class="sp-edit-actions">
@@ -4335,7 +4378,31 @@
       </div>
     </div>
     <div class="sp-edit-field">
-      <label>Description</label>
+      <div class="ica-label-row">
+        <label>Description</label>
+        <button class="ica-fill-btn" onclick="toggleIca('tr')">✨ Fill</button>
+      </div>
+      <div id="trIca" class="item-content-assist" style="display:none">
+        <div class="ica-tabs">
+          <button class="ica-tab active" id="trIcaTabSrd" onclick="setIcaMode('tr','srd')">📖 SRD</button>
+          <button class="ica-tab" id="trIcaTabAi" onclick="setIcaMode('tr','ai')">✨ AI Prompt</button>
+        </div>
+        <div id="trIcaSrd">
+          <div class="ica-status" id="trIcaStatus">Search the SRD or generate an AI prompt for this trait.</div>
+          <div class="ica-preview" id="trIcaPreview" style="display:none"></div>
+          <div class="ica-btn-row">
+            <button class="attack-edit-btn" onclick="icaSearchSrd('tr','traits')">Search SRD</button>
+            <button class="attack-edit-btn" id="trIcaApply" style="display:none;color:var(--spell);border-color:var(--spell)" onclick="icaApplyDesc('tr')">Apply Description</button>
+          </div>
+        </div>
+        <div id="trIcaAi" style="display:none">
+          <div class="ica-status">Copy this prompt, paste into an AI, then paste the response below.</div>
+          <button class="attack-edit-btn" style="width:100%;margin:4px 0 2px" onclick="icaCopyPrompt('tr','traits')">Copy AI Prompt</button>
+          <div class="ica-copy-notice" id="trIcaCopyNotice"></div>
+          <textarea class="ica-paste-area" id="trIcaPaste" placeholder="Paste AI response (plain text)…"></textarea>
+          <button class="attack-edit-btn" style="color:var(--spell);border-color:var(--spell)" onclick="icaApplyAIDesc('tr')">Apply Description</button>
+        </div>
+      </div>
       <textarea id="trEditDescription" placeholder="Describe the feature or trait…" style="min-height:110px"></textarea>
     </div>
     <div class="sp-edit-actions">
@@ -4387,7 +4454,32 @@
       </div>
     </div>
     <div class="sp-edit-field">
-      <label>Description</label>
+      <div class="ica-label-row">
+        <label>Description</label>
+        <button class="ica-fill-btn" onclick="toggleIca('eq')">✨ Fill</button>
+      </div>
+      <div id="eqIca" class="item-content-assist" style="display:none">
+        <div class="ica-tabs">
+          <button class="ica-tab active" id="eqIcaTabSrd" onclick="setIcaMode('eq','srd')">📖 SRD</button>
+          <button class="ica-tab" id="eqIcaTabAi" onclick="setIcaMode('eq','ai')">✨ AI Prompt</button>
+        </div>
+        <div id="eqIcaSrd">
+          <div class="ica-status" id="eqIcaStatus">Search the SRD or generate an AI prompt for this item.</div>
+          <div class="ica-preview" id="eqIcaPreview" style="display:none"></div>
+          <div class="ica-btn-row">
+            <button class="attack-edit-btn" onclick="icaSearchSrd('eq','equipment')">Search SRD</button>
+            <button class="attack-edit-btn" id="eqIcaApply" style="display:none;color:var(--spell);border-color:var(--spell)" onclick="icaApply('eq')">Apply All Fields</button>
+            <button class="attack-edit-btn" id="eqIcaApplyDesc" style="display:none" onclick="icaApplyDesc('eq')">Desc Only</button>
+          </div>
+        </div>
+        <div id="eqIcaAi" style="display:none">
+          <div class="ica-status">Copy this prompt, paste into an AI, then paste the response below.</div>
+          <button class="attack-edit-btn" style="width:100%;margin:4px 0 2px" onclick="icaCopyPrompt('eq','equipment')">Copy AI Prompt</button>
+          <div class="ica-copy-notice" id="eqIcaCopyNotice"></div>
+          <textarea class="ica-paste-area" id="eqIcaPaste" placeholder="Paste AI response (plain text)…"></textarea>
+          <button class="attack-edit-btn" style="color:var(--spell);border-color:var(--spell)" onclick="icaApplyAIDesc('eq')">Apply Description</button>
+        </div>
+      </div>
       <textarea id="eqEditDescription" placeholder="Notes or properties…" style="min-height:90px"></textarea>
     </div>
     <div class="sp-edit-actions">
@@ -4498,7 +4590,31 @@
       </div>
     </div>
     <div class="sp-edit-field">
-      <label>Description</label>
+      <div class="ica-label-row">
+        <label>Description</label>
+        <button class="ica-fill-btn" onclick="toggleIca('fp')">✨ Fill</button>
+      </div>
+      <div id="fpIca" class="item-content-assist" style="display:none">
+        <div class="ica-tabs">
+          <button class="ica-tab active" id="fpIcaTabSrd" onclick="setIcaMode('fp','srd')">📖 SRD</button>
+          <button class="ica-tab" id="fpIcaTabAi" onclick="setIcaMode('fp','ai')">✨ AI Prompt</button>
+        </div>
+        <div id="fpIcaSrd">
+          <div class="ica-status" id="fpIcaStatus">Search the SRD or generate an AI prompt for this feature.</div>
+          <div class="ica-preview" id="fpIcaPreview" style="display:none"></div>
+          <div class="ica-btn-row">
+            <button class="attack-edit-btn" onclick="icaSearchSrd('fp','features')">Search SRD</button>
+            <button class="attack-edit-btn" id="fpIcaApply" style="display:none;color:var(--spell);border-color:var(--spell)" onclick="icaApplyDesc('fp')">Apply Description</button>
+          </div>
+        </div>
+        <div id="fpIcaAi" style="display:none">
+          <div class="ica-status">Copy this prompt, paste into an AI, then paste the response below.</div>
+          <button class="attack-edit-btn" style="width:100%;margin:4px 0 2px" onclick="icaCopyPrompt('fp','features')">Copy AI Prompt</button>
+          <div class="ica-copy-notice" id="fpIcaCopyNotice"></div>
+          <textarea class="ica-paste-area" id="fpIcaPaste" placeholder="Paste AI response (plain text)…"></textarea>
+          <button class="attack-edit-btn" style="color:var(--spell);border-color:var(--spell)" onclick="icaApplyAIDesc('fp')">Apply Description</button>
+        </div>
+      </div>
       <textarea id="fpEditDescription" placeholder="Describe this feature…" style="min-height:100px"></textarea>
     </div>
     <div class="sp-edit-field">
@@ -6770,6 +6886,7 @@ function populateTraitViewPanel(i) {
 }
 
 function populateTraitEditForm(i) {
+  const _icaEl = document.getElementById('trIca'); if (_icaEl) _icaEl.style.display = 'none';
   const t = state.infoTraits[i];
   document.getElementById('trEditName').value               = t ? t.name : '';
   document.getElementById('trEditDamage').value             = t ? (t.damage || '') : '';
@@ -6976,6 +7093,7 @@ function populateEquipItemViewPanel(i) {
 }
 
 function populateEquipItemEditForm(i) {
+  const _icaEl = document.getElementById('eqIca'); if (_icaEl) _icaEl.style.display = 'none';
   const item = i >= 0 ? state.equipmentItems[i] : null;
   document.getElementById('eqEditName').value        = item ? item.name : '';
   document.getElementById('eqEditQuantity').value    = item ? (item.quantity || 1) : 1;
@@ -7115,6 +7233,7 @@ function populateSpellViewPanel(i) {
 }
 
 function populateSpellEditForm(i) {
+  const _icaEl = document.getElementById('spIca'); if (_icaEl) _icaEl.style.display = 'none';
   const sp = i >= 0 ? state.spells[i] : null;
   document.getElementById('spEditName').value        = sp ? sp.name            : '';
   document.getElementById('spEditLevel').value       = sp ? String(sp.level ?? 0) : '0';
@@ -7376,6 +7495,7 @@ function populateFeatureViewPanel(i) {
 }
 
 function populateFeatureEditForm(i) {
+  const _icaEl = document.getElementById('fpIca'); if (_icaEl) _icaEl.style.display = 'none';
   const f = i >= 0 ? state.classFeatures[i] : null;
   document.getElementById('fpEditName').value          = f ? f.name : '';
   document.getElementById('fpEditMax').value           = f ? f.max  : '1';
@@ -10145,6 +10265,167 @@ function _mapSrdEquipment(eq) {
 
 function _nameToSrdIdx(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+// ── Item Content Assist (SRD/AI fill in edit panels) ────────────────────
+const ICA_CFG = {
+  sp: { nameId:'spEditName', descId:'spEditDescription', type:'spells',    label:'spell' },
+  tr: { nameId:'trEditName', descId:'trEditDescription', type:'traits',    label:'trait' },
+  fp: { nameId:'fpEditName', descId:'fpEditDescription', type:'features',  label:'class feature' },
+  eq: { nameId:'eqEditName', descId:'eqEditDescription', type:'equipment', label:'equipment item' },
+};
+const _icaCache = {};
+
+function toggleIca(p) {
+  const el = document.getElementById(p + 'Ica');
+  const opening = el.style.display === 'none';
+  el.style.display = opening ? '' : 'none';
+  if (opening) _icaReset(p);
+}
+
+function _icaReset(p) {
+  setIcaMode(p, 'srd');
+  document.getElementById(p + 'IcaStatus').textContent =
+    `Search the SRD or generate an AI prompt for this ${ICA_CFG[p].label}.`;
+  const prev = document.getElementById(p + 'IcaPreview');
+  if (prev) { prev.style.display = 'none'; prev.textContent = ''; }
+  [p + 'IcaApply', p + 'IcaApplyDesc'].forEach(id => {
+    const b = document.getElementById(id); if (b) b.style.display = 'none';
+  });
+  const paste = document.getElementById(p + 'IcaPaste');
+  if (paste) paste.value = '';
+  delete _icaCache[p];
+}
+
+function setIcaMode(p, mode) {
+  document.getElementById(p + 'IcaSrd').style.display = mode === 'srd' ? '' : 'none';
+  document.getElementById(p + 'IcaAi').style.display  = mode === 'ai'  ? '' : 'none';
+  document.getElementById(p + 'IcaTabSrd').classList.toggle('active', mode === 'srd');
+  document.getElementById(p + 'IcaTabAi').classList.toggle('active',  mode === 'ai');
+}
+
+async function icaSearchSrd(p, type) {
+  const name      = document.getElementById(ICA_CFG[p].nameId).value.trim();
+  const statusEl  = document.getElementById(p + 'IcaStatus');
+  const previewEl = document.getElementById(p + 'IcaPreview');
+  const applyBtn  = document.getElementById(p + 'IcaApply');
+  const applyDesc = document.getElementById(p + 'IcaApplyDesc');
+  if (!name) { statusEl.textContent = 'Enter a name first.'; return; }
+  statusEl.textContent = 'Searching…';
+  if (previewEl) previewEl.style.display = 'none';
+  if (applyBtn)  applyBtn.style.display  = 'none';
+  if (applyDesc) applyDesc.style.display = 'none';
+  delete _icaCache[p];
+  try {
+    const list  = await _srdGet('/' + type);
+    const q     = name.toLowerCase();
+    const match = (list.results || []).find(r => r.name.toLowerCase() === q) ||
+                  (list.results || []).find(r => r.name.toLowerCase().includes(q));
+    if (!match) { statusEl.textContent = `"${name}" not found in SRD.`; return; }
+    const detail = await _srdGet('/' + type + '/' + match.index);
+    _icaCache[p] = detail;
+    const rawDesc = Array.isArray(detail.desc) ? detail.desc.join('\n\n') : (detail.desc || '');
+    const preview = rawDesc.length > 400 ? rawDesc.slice(0, 397) + '…' : rawDesc;
+    if (previewEl) {
+      previewEl.textContent = preview || '(no description in SRD)';
+      previewEl.style.display = '';
+    }
+    statusEl.textContent = `Found: ${match.name}`;
+    if (applyBtn)  applyBtn.style.display  = '';
+    if (applyDesc) applyDesc.style.display = '';
+  } catch(e) {
+    statusEl.textContent = 'SRD error: ' + (e.message || 'network error');
+  }
+}
+
+function icaApply(p) {
+  const detail = _icaCache[p];
+  if (!detail) return;
+  const type = ICA_CFG[p].type;
+  if (type === 'spells') {
+    const m = _mapSrdSpell(detail);
+    document.getElementById('spEditName').value        = m.name          || '';
+    document.getElementById('spEditLevel').value       = String(m.level  ?? 0);
+    document.getElementById('spEditSchool').value      = m.school        || '';
+    document.getElementById('spEditCastTime').value    = m.castingTime   || '';
+    document.getElementById('spEditRange').value       = m.range         || '';
+    document.getElementById('spEditComponents').value  = m.components    || '';
+    document.getElementById('spEditDuration').value    = m.duration      || '';
+    document.getElementById('spEditSaveAbility').value = m.saveAbility   || '';
+    document.getElementById('spEditConc').checked      = m.concentration || false;
+    document.getElementById('spEditRitual').checked    = m.ritual        || false;
+    document.getElementById('spEditAttackRoll').checked= m.attackRoll    || false;
+    document.getElementById('spEditDescription').value = m.description   || '';
+    if (m.rolls && m.rolls.length) renderRollRows('spRollRows', m.rolls);
+  } else if (type === 'equipment') {
+    const m = _mapSrdEquipment(detail);
+    if (m.weight)   document.getElementById('eqEditWeight').value   = m.weight;
+    if (m.cost)     document.getElementById('eqEditCost').value     = m.cost;
+    if (m.category) document.getElementById('eqEditCategory').value = m.category;
+    document.getElementById('eqEditDescription').value = m.description || '';
+  } else {
+    icaApplyDesc(p); return;
+  }
+  document.getElementById(p + 'Ica').style.display = 'none';
+}
+
+function icaApplyDesc(p) {
+  const detail = _icaCache[p];
+  if (!detail) return;
+  const rawDesc = Array.isArray(detail.desc) ? detail.desc.join('\n\n') : (detail.desc || '');
+  document.getElementById(ICA_CFG[p].descId).value = rawDesc;
+  document.getElementById(p + 'Ica').style.display = 'none';
+}
+
+function icaCopyPrompt(p, type) {
+  const name = document.getElementById(ICA_CFG[p].nameId).value.trim() || '[name]';
+  let prompt;
+  if (type === 'spells') {
+    prompt = `I'm building a D&D 5e character sheet. Provide full details for the spell "${name}".\n\nReturn ONLY a JSON object with these exact fields (no markdown, no extra text):\n{\n  "description": "full spell description",\n  "level": 0,\n  "school": "e.g. Evocation",\n  "castingTime": "e.g. 1 action",\n  "range": "e.g. 60 ft",\n  "components": "e.g. V, S, M (material if any)",\n  "duration": "e.g. Instantaneous",\n  "saveAbility": "WIS or empty string if no save",\n  "concentration": false,\n  "ritual": false\n}`;
+  } else {
+    const cfg = ICA_CFG[p];
+    prompt = `I'm building a D&D 5e character sheet. My character has a ${cfg.label} called "${name}".\n\nWrite a concise description (2–4 sentences) explaining what this ${cfg.label} does, including any mechanical effects and relevant flavor text. Return only the description text, no extra commentary.`;
+  }
+  navigator.clipboard.writeText(prompt).then(() => {
+    const el = document.getElementById(p + 'IcaCopyNotice');
+    el.textContent = '✓ Copied!';
+    setTimeout(() => { el.textContent = ''; }, 2000);
+  }).catch(() => {
+    document.getElementById(p + 'IcaCopyNotice').textContent = 'Copy failed — select manually';
+  });
+}
+
+function icaApplyAI(p, type) {
+  const raw = (document.getElementById(p + 'IcaPaste').value || '').trim();
+  if (!raw) return;
+  if (type === 'spells') {
+    try {
+      const cleaned = raw.replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();
+      const data = JSON.parse(cleaned);
+      if (typeof data.description === 'string') {
+        if (data.level     !== undefined) document.getElementById('spEditLevel').value       = String(data.level ?? 0);
+        if (data.school)                  document.getElementById('spEditSchool').value      = data.school;
+        if (data.castingTime)             document.getElementById('spEditCastTime').value    = data.castingTime;
+        if (data.range)                   document.getElementById('spEditRange').value       = data.range;
+        if (data.components)              document.getElementById('spEditComponents').value  = data.components;
+        if (data.duration)                document.getElementById('spEditDuration').value    = data.duration;
+        if (data.saveAbility !== undefined) document.getElementById('spEditSaveAbility').value = data.saveAbility || '';
+        if (data.concentration !== undefined) document.getElementById('spEditConc').checked  = !!data.concentration;
+        if (data.ritual !== undefined)    document.getElementById('spEditRitual').checked    = !!data.ritual;
+        document.getElementById('spEditDescription').value = data.description;
+        document.getElementById(p + 'Ica').style.display = 'none';
+        return;
+      }
+    } catch(e) { /* not JSON — fall through to plain text */ }
+  }
+  icaApplyAIDesc(p);
+}
+
+function icaApplyAIDesc(p) {
+  const text = (document.getElementById(p + 'IcaPaste').value || '').trim();
+  if (!text) return;
+  document.getElementById(ICA_CFG[p].descId).value = text;
+  document.getElementById(p + 'Ica').style.display = 'none';
 }
 
 async function _enrichEquipDescriptions(items) {
