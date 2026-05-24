@@ -34,7 +34,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 | Combat | `combat` | `#panel-combat` | Hit Points, Combat Stats, Hit Dice, Resistances & Vulnerabilities, Inspiration & Death Saves, Turn block, Conditions |
 | Spells | `spells` | `#panel-spells` | Spellcasting ability, Spells Known (collapsible, with prep counter + max), Spell Slots, Spells Prepared |
 | Features | `features` | `#panel-features` | Class Features (dot trackers), Featured Spells |
-| Gear | `inventory` | `#panel-inventory` | Currency, Equipment, Armor/Weapon/Tool Proficiencies (dot list), Languages, Notes |
+| Gear | `inventory` | `#panel-inventory` | Currency, Equipment, All Proficiencies (collapsible dot list), Your Proficiencies (active items with descriptions), Languages, Notes |
 | Dice | `dice` | `#panel-dice` | Free-form Dice Roller |
 | Logs | `rolls` | `#panel-rolls` | Roll Log (session history) |
 
@@ -454,6 +454,10 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.prof-dots` | Flex container with two `.prof-dot`s used in skills (one `.prof-dot` in equipment proficiency rows); tap to cycle prof |
 | `.equip-prof-group-header` | Section divider `<li>` inside `#equipProfList`; small-caps gold-muted text (e.g. "Armor", "Artisan Tools"); no dot or interaction |
 | `.equip-prof-del-btn` | Small × button on the right of custom proficiency rows; red tint on hover; tap calls `deleteCustomEquipProf(name)` |
+| `.equip-prof-active-item` | One row in the "Your Proficiencies" section (`#equipProfActiveBody`); contains `.equip-prof-active-name` and `.equip-prof-active-desc`; tap or hold opens info panel; `.holding` applied during 500 ms press |
+| `.equip-prof-active-name` | Bold gold-light item name inside `.equip-prof-active-item` |
+| `.equip-prof-active-desc` | 2-line clamped muted description preview inside `.equip-prof-active-item` |
+| `.equip-prof-active-empty` | Italic muted placeholder inside `#equipProfActiveBody` shown when no proficiencies are marked |
 | `.hp-display` | Flex center area showing current HP, max, and bar; tap to open HP dialog |
 | `.hp-bar` / `.hp-bar-fill` | Visual HP percentage bar |
 | `.stat-pills` | 3-column grid of combat stat tiles |
@@ -792,6 +796,9 @@ featurePanelEditIdx        // index into state.classFeatures currently being edi
 infoPanelCfg        // object holding the rollFn, simpleRollFn, editFn, actionFn closures for the currently-open #infoPanel
 skillPressTimer / skillPressActive / skillPanelCurrentName  // skill row hold detection + current skill name
 equipProfPressTimer / equipProfPressActive  // equipment proficiency row hold detection (tap = info panel, hold 500 ms = same)
+equipProfAllCollapsed                       // boolean — true when the "All Proficiencies" section body is hidden; default true; not persisted
+equipProfAllTitlePressTimer / equipProfAllTitlePressActive   // "All Proficiencies" title hold detection (tap = toggle collapse, hold 500 ms = info panel)
+equipProfActiveTitlePressTimer / equipProfActiveTitlePressActive  // "Your Proficiencies" title hold detection (hold 500 ms = info panel)
 conditionPressTimer / conditionPressActive / conditionPanelCurrentName  // condition chip hold detection
 abilityPressTimer / abilityPressActive  // ability card hold detection (500 ms → info panel)
 statPillPressTimer / statPillPressActive  // combat stat pill hold detection (500 ms → info panel)
@@ -822,7 +829,7 @@ DOMContentLoaded
        ├─ loadData()          restore state + form fields from localStorage
        ├─ buildAbilityGrid()  inject ability cards (+ saving throw rows) into #abilityGrid
        ├─ buildSkillsList()   inject skill rows into #skillsList
-       ├─ buildEquipProfList() inject proficiency rows into #equipProfList (Inventory tab)
+       ├─ buildEquipProfList() sync chevron + collapse state; inject proficiency rows into #equipProfList; always calls buildEquipProfActiveList()
        ├─ buildConditions()   inject condition chips into #conditionsGrid
        ├─ buildSpellsKnown()   inject spell rows with P/∞ dots into #spellsKnownBody (collapsed by default); levels with max=0 appear only as pills
        ├─ buildSpellsPrepared() inject prepared+always-prepared spell rows into #spellsPreparedBody; calls updatePreparedCount()
@@ -853,7 +860,8 @@ DOMContentLoaded
 | `buildAbilityGrid()` | 6 ability cards in `#abilityGrid`; each card contains the score input, modifier, and a saving throw row with prof dot. Tap card → roll d20+mod; hold 500 ms → open info panel with 3-zone roll button. Tap save row → roll save; tap prof dot → toggle proficiency. | `state.abilities`, `state.saveProficiencies` |
 | `buildDiceRoller()` | Die rows in `#diceRollerBody`; one row per entry in `getDiceRoller()`; default set is d4/d6/d8/d10/d12/d20/d100. Each row has a count tracker and a roll button. Custom dice (non-default sides) show a remove button. | `state.diceRoller` |
 | `buildSkillsList()` | 18 skill rows; tap row → roll; tap prof dots → cycle prof | `state.skillProficiencies`, `state.skillExpertise` |
-| `buildEquipProfList()` | Proficiency list in `#equipProfList`; renders predefined items from `EQUIP_PROF_GROUPS` followed by custom rows from `state.customEquipProfRows`; each row has a single prof dot (gold = proficient, empty = not); group headers use `.equip-prof-group-header`; custom rows include a × delete button; tap dot → toggle proficiency; tap/hold name area → open info panel | `state.equipProficiencies`, `state.customEquipProfRows`, `EQUIP_PROF_GROUPS` |
+| `buildEquipProfList()` | Manages the collapsible "All Proficiencies" section: syncs the chevron and shows/hides `#equipProfAllBody` based on `equipProfAllCollapsed`; if collapsed returns early after calling `buildEquipProfActiveList()`; when expanded renders all predefined items (from `EQUIP_PROF_GROUPS`) plus custom rows into `#equipProfList`; each row has a single prof dot (gold = proficient); group headers use `.equip-prof-group-header`; custom rows include a × delete button | `state.equipProficiencies`, `state.customEquipProfRows`, `EQUIP_PROF_GROUPS` |
+| `buildEquipProfActiveList()` | Renders the "Your Proficiencies" section (`#equipProfActiveBody`): shows only items in `state.equipProficiencies`, ordered to match `EQUIP_PROF_GROUPS` then custom rows; each row is a `.equip-prof-active-item` with a bold name (`.equip-prof-active-name`) and a 2-line description preview (`.equip-prof-active-desc`); tap or hold opens the info panel; shows `.equip-prof-active-empty` placeholder when no proficiencies are set | `state.equipProficiencies`, `state.customEquipProfRows`, `EQUIP_PROF_GROUPS` |
 | `buildConditions()` | 15 condition chips | `state.conditions` |
 | `buildSpellSlots()` | Renders `#spellSlotsBody`: a pill strip of hidden levels (max=0) at the top, then one row per active level (max>0) with dots and mini +/− tracker | `state.spellSlots` |
 | `expandSpellLevel(i)` | Sets `state.spellSlots[i].max` to 1 and rebuilds spell slots (moves that level from the pill strip into the active rows) | `state.spellSlots[i]` |
@@ -946,14 +954,19 @@ DOMContentLoaded
 | `clickSkillItem(e, name)` | `click` on skill row | If timer hadn't fired: calls `rollSkill(name)` |
 | `cancelSkillPress()` | `pointercancel` on skill row | Clears timer |
 | `openSkillPanel(name)` | Internal (fired by hold timer) | Opens info panel for the given skill with roll button |
-| `cycleEquipProf(name, el)` | Tap prof dot on equipment proficiency row | Pushes undo; toggles `name` in `state.equipProficiencies` (None ↔ Proficient); calls `saveData()` |
+| `cycleEquipProf(name, el)` | Tap prof dot on equipment proficiency row | Pushes undo; toggles `name` in `state.equipProficiencies` (None ↔ Proficient); calls `buildEquipProfActiveList()` + `saveData()` |
 | `openEquipProfPanel(name)` | Tap or hold on equipment proficiency row name area | Opens info panel (badge: "Proficiency") with item description from `EQUIP_PROF_GROUPS`; meta line shows "Proficient" or "Not Proficient" |
 | `startEquipProfPress(e, name)` | `pointerdown` on equipment proficiency row name area | Starts 500 ms timer; on fire adds `.holding`, calls `openEquipProfPanel(name)` |
 | `clickEquipProfItem(e, name)` | `click` on equipment proficiency row name area | If hold hadn't fired: calls `openEquipProfPanel(name)`; otherwise clears guard |
-| `cancelEquipProfPress()` | `pointercancel` on equipment proficiency row | Clears timer; removes `.holding` |
-| `showEquipProfAddInput()` | Tap `+ Add custom` button in proficiency section | Reveals `#equipProfAddRow` (text input + Add + ✕ buttons); hides `#equipProfAddBtn` |
+| `cancelEquipProfPress()` | `pointercancel` on equipment proficiency row | Clears timer; removes `.holding` from both `.check-roll-area` and `.equip-prof-active-item` |
+| `startEquipProfAllTitlePress(e)` | `pointerdown` on "All Proficiencies" section title | Adds `.holding`; starts 500 ms timer; on fire opens info panel explaining the proficiency system |
+| `endEquipProfAllTitlePress(e)` | `pointerup` on "All Proficiencies" title | If hold hadn't fired: toggles `equipProfAllCollapsed` and calls `buildEquipProfList()`; always clears timer and removes `.holding` |
+| `cancelEquipProfAllTitlePress()` | `pointercancel` on "All Proficiencies" title | Clears timer; removes `.holding` |
+| `startEquipProfActiveTitlePress(e)` | `pointerdown` on "Your Proficiencies" section title | Adds `.holding`; starts 500 ms timer; on fire opens info panel explaining the active section |
+| `endEquipProfActiveTitlePress(e)` / `cancelEquipProfActiveTitlePress()` | `pointerup` / `pointercancel` on "Your Proficiencies" title | Clears timer; removes `.holding` |
+| `showEquipProfAddInput()` | Tap `+ Add` button in the "All Proficiencies" section title bar | If section is collapsed, expands it first (`equipProfAllCollapsed = false`, calls `buildEquipProfList()`); then reveals `#equipProfAddRow` (text input + Add + ✕ buttons) inside the section body |
 | `confirmAddEquipProf()` | Tap `Add` button or press Enter in add input | Validates name is non-empty and not a duplicate; pushes undo; appends to `state.customEquipProfRows`; calls `buildEquipProfList()` + `saveData()`; calls `cancelEquipProfAdd()` |
-| `cancelEquipProfAdd()` | Tap ✕ or after confirm | Hides `#equipProfAddRow`; shows `#equipProfAddBtn` |
+| `cancelEquipProfAdd()` | Tap ✕ or after confirm | Hides `#equipProfAddRow` |
 | `deleteCustomEquipProf(name)` | Tap × on a custom proficiency row | Pushes undo; removes from `state.customEquipProfRows` and (if present) from `state.equipProficiencies`; calls `buildEquipProfList()` + `saveData()` |
 | `dismissSkillPanel()` | (alias) | Clears `skillPanelCurrentName` and calls `dismissInfoPanel()` |
 | `rollSkill(name, mode='normal')` | Short tap skill row or roll button in info panel | Rolls d20 + skill modifier with given mode; calls `showRoll()` |
