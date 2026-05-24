@@ -3336,7 +3336,7 @@
             <span class="hp-max-label">/ <span id="hpMaxLabel">10</span> HP</span>
           </div>
           <div class="hp-bar"><div class="hp-bar-fill" id="hpBarFill" style="width:100%"></div></div>
-          <div class="hp-temp-display" id="hpTempDisplay" style="display:none">+<span id="hpTempLabel">0</span> temp</div>
+          <div class="hp-temp-display" id="hpTempDisplay" style="visibility:hidden">+<span id="hpTempLabel">0</span> temp</div>
         </div>
         <button class="hp-btn plus"
                 onpointerdown="startHpHold(+1)"
@@ -5903,7 +5903,7 @@ function updateHP() {
   }
   const tempEl  = document.getElementById('hpTempDisplay');
   const tempLbl = document.getElementById('hpTempLabel');
-  if (tempEl)  tempEl.style.display  = temp > 0 ? '' : 'none';
+  if (tempEl)  tempEl.style.visibility = temp > 0 ? 'visible' : 'hidden';
   if (tempLbl) tempLbl.textContent   = temp;
   saveData();
 }
