@@ -1186,7 +1186,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 11px 0 11px calc(var(--roll-border) + 6px);
+    padding: 14px 0 14px calc(var(--roll-border) + 6px);
     border-bottom: 1px solid rgba(var(--border-rgb),0.25);
     margin-bottom: 2px;
     cursor: pointer;
@@ -1250,6 +1250,9 @@
 
   /* ── Spell Known / Prepared split ────────────────────────── */
   .spell-section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
@@ -3473,17 +3476,21 @@
       <span>Spells Known <span id="spellsKnownChevron" class="spell-known-chevron">▾</span></span>
       <div style="display:flex;gap:6px;align-items:center"
            onpointerdown="event.stopPropagation()"
+           onpointerup="event.stopPropagation()"
+           onpointercancel="event.stopPropagation()"
            onclick="event.stopPropagation()">
         <span id="spellPrepCountDisplay" class="spell-prep-count">0 /</span>
         <input type="number" id="maxPreparedInput" min="0" max="99" value="0"
                class="prep-max-input"
                oninput="onMaxPreparedInput(this.value)"
                onpointerdown="event.stopPropagation()"
+               onpointerup="event.stopPropagation()"
                onclick="event.stopPropagation()">
         <span class="turn-hold-hint">hold</span>
         <button class="attack-edit-btn"
                 onclick="event.stopPropagation();addSpell()"
-                onpointerdown="event.stopPropagation()">+ Add</button>
+                onpointerdown="event.stopPropagation()"
+                onpointerup="event.stopPropagation()">+ Add</button>
       </div>
     </div>
     <div class="section-body" id="spellsKnownBody">
@@ -5429,11 +5436,13 @@ function buildSpellsKnown() {
           <button class="spell-prep-dot ${pClass}"
                   title="${sp.prepared ? 'Prepared — tap to unprepare' : 'Not prepared — tap to prepare'}"
                   onclick="event.stopPropagation();toggleSpellPrepared(${i})"
-                  onpointerdown="event.stopPropagation()">P</button>
+                  onpointerdown="event.stopPropagation()"
+                  onpointercancel="event.stopPropagation()">P</button>
           <button class="spell-prep-dot ${aClass}"
                   title="${sp.alwaysPrepared ? 'Always prepared — tap to remove' : 'Not always prepared — tap to set'}"
                   onclick="event.stopPropagation();toggleSpellAlwaysPrepared(${i})"
-                  onpointerdown="event.stopPropagation()">∞</button>
+                  onpointerdown="event.stopPropagation()"
+                  onpointercancel="event.stopPropagation()">∞</button>
         </div>`;
     });
   });
