@@ -114,7 +114,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **Tap** — A short pointer-down + pointer-up on an interactive element (no hold). On rollable elements, tap triggers a dice roll immediately. On non-rollable elements, tap opens the relevant info panel or performs the element's primary action (toggle, adjust, etc.).
 
-**Hold (long press)** — Keeping a finger or cursor pressed on an element for 500 ms before releasing. Hold always opens the info or view panel for the element. Implemented with a `setTimeout` started on `pointerdown` and cleared on `pointerup` / `pointercancel`. The `.holding` CSS class is applied to the element during the hold to give visual press feedback.
+**Hold (long press)** — Keeping a finger or cursor pressed on an element for 500 ms before releasing. Hold always opens the info or view panel for the element. Implemented with a `setTimeout` started on `pointerdown` and cleared on `onclick` / `pointercancel`. The `.holding` CSS class is applied to the element when the timer fires to give visual press feedback.
 
 **Hold hint** — A small visual indicator on elements that support hold. Currently implemented as a `"hold"` badge (`.turn-hold-hint`) on the Turn section title. Other holdable elements (spell rows, skill rows, ability cards, etc.) use the `.holding` class for press feedback but have no persistent pre-hold badge.
 
@@ -278,10 +278,10 @@ Not persisted. Reset on page reload or character switch.
 | `open*()` | Makes a panel or dialog visible and populates it (e.g. `openInfoPanel()`, `openAttackPanel()`) |
 | `dismiss*()` | Hides a panel or dialog and cleans up state (e.g. `dismissInfoPanel()`, `dismissAttackPanel()`) |
 | `populate*()` | Fills in the fields of an already-visible panel from a state entry; called by the matching `open*()` (e.g. `populateSpellViewPanel(i)`) |
-| `start*Press()` | `pointerdown` handler that starts a 500 ms hold timer |
-| `end*Press()` | `pointerup` handler; if the timer hasn't fired, performs the short-tap action; always clears the timer and removes `.holding` |
-| `cancel*Press()` | `pointercancel` handler; clears the timer without performing any action |
-| `click*Item()` | `onclick` handler on list rows that checks whether a hold already fired (via the `*PressActive` guard) before performing the tap action |
+| `start*Press()` | `pointerdown` handler that starts a 500 ms hold timer; captures `e.currentTarget` before the async timeout so `.holding` can be added when the timer fires |
+| `end*Press()` | Legacy `pointerup`-based tap handler; replaced by `click*Item()` on most elements — kept only where noted |
+| `cancel*Press()` | `pointercancel` handler; clears the timer, resets the guard flag, and removes `.holding` |
+| `click*Item()` | `onclick` handler that checks whether a hold already fired (via the `*PressActive` guard) before performing the tap action; used on all rollable elements so `onclick` (not `pointerup`) fires the roll — more reliable on touch devices where `pointercancel` can swallow a quick release |
 | `roll*()` | Performs a dice roll and calls `showRoll()` (e.g. `rollAbility()`, `rollAttack()`, `rollSave()`) |
 | `toggle*()` | Flips a boolean state value and updates the UI (e.g. `toggleInspiration()`, `toggleCondition()`) |
 | `apply*()` | Commits a value from a dialog input to state (e.g. `applyHpDialog()`, `applyStatModDialog()`) |
@@ -893,13 +893,13 @@ DOMContentLoaded
 | Function | Trigger | Effect |
 |---|---|---|
 | `onAbilityInput(ab, val)` | Ability score input | Pushes debounced undo entry; updates `state.abilities[ab]`; calls `recalcAll()` |
-| `startAbilityPress(e, ab)` | `pointerdown` on ability card | Starts 500 ms timer; on fire opens ability info panel via `openInfoPanel()` with roll button |
-| `endAbilityPress(e, ab)` | `pointerup` on ability card | If timer hadn't fired: calls `rollAbility(ab)` directly |
-| `cancelAbilityPress()` | `pointercancel` on ability card | Clears timer |
+| `startAbilityPress(e, ab)` | `pointerdown` on ability card | Starts 500 ms timer; on fire sets `abilityPressActive`, adds `.holding`, opens ability info panel via `openInfoPanel()` with roll button |
+| `clickAbilityItem(e, ab)` | `onclick` on ability card | If guard not set: calls `rollAbility(ab)`; always clears timer and removes `.holding` |
+| `cancelAbilityPress()` | `pointercancel` on ability card | Clears timer; removes `.holding` |
 | `rollAbility(ab, mode='normal')` | Short tap on ability card or roll button in info panel | Rolls d20 + ability modifier with given mode; calls `showRoll()` |
 | `toggleSaveProf(ab, el)` | Tap prof dot on saving throw row | Pushes undo; toggles ability key in `state.saveProficiencies` |
-| `startSavePress(e, ab)` | `pointerdown` on saving throw row (outside dot) | Starts 500 ms timer; on fire opens saving throw info panel via `openInfoPanel()` |
-| `endSavePress(e, ab)` | `pointerup` on saving throw row | If timer hadn't fired: calls `rollSave(ab)` directly |
+| `startSavePress(e, ab)` | `pointerdown` on saving throw row (outside dot) | Starts 500 ms timer; on fire sets `savePressActive`, adds `.holding`, opens saving throw info panel via `openInfoPanel()` |
+| `clickSaveItem(e, ab)` | `onclick` on saving throw row | If guard not set: calls `rollSave(ab)`; always clears timer and removes `.holding` |
 | `cancelSavePress()` | `pointercancel` on saving throw row | Clears timer |
 | `rollSave(ab, mode='normal')` | Short tap on saving throw row or roll button in info panel | Rolls d20 + save modifier with given mode; calls `showRoll()` |
 | `cycleSkillProf(name, el)` | Tap prof dots on skill row | Pushes undo; cycles None → Proficient → Expert → None |
@@ -989,9 +989,9 @@ DOMContentLoaded
 | `infoPanelSimpleRoll()` | Tap `#ipSimpleRollBox` | Calls `infoPanelCfg.simpleRollFn()` |
 | `infoPanelEdit()` | Tap Edit button (`#ipEditBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.editFn()` |
 | `infoPanelAction()` | Tap action button (`#ipActionBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.actionFn()` |
-| `startStatPillPress(e, key)` | `pointerdown` on a combat stat pill | Starts 500 ms timer; on fire calls `openStatPillPanel(key)`. Handlers are now on the whole pill div; input elements stop propagation so typing doesn't trigger hold. |
-| `endStatPillPress(e, key)` | `pointerup` on a combat stat pill | If timer hadn't fired and stat is rollable: rolls directly (`rollInitiative()` / `rollSpellAtk()`); otherwise opens info panel |
-| `cancelStatPillPress()` | `pointercancel` on stat pill | Clears timer |
+| `startStatPillPress(e, key)` | `pointerdown` on a combat stat pill | Starts 500 ms timer; on fire sets `statPillPressActive`, adds `.holding`, calls `openStatPillPanel(key)`. Input elements inside pills stop propagation so typing doesn't trigger hold. |
+| `clickStatPillItem(e, key)` | `onclick` on a combat stat pill | If guard not set and stat is rollable: calls `rollInitiative()` or `rollSpellAtk()`; otherwise opens info panel; always clears timer and removes `.holding` |
+| `cancelStatPillPress()` | `pointercancel` on stat pill | Clears timer; removes `.holding` |
 | `openStatPillPanel(key)` | Internal | Opens `#infoPanel` with data from `STAT_PILL_INFO[key]`; rollable stats show a 3-zone roll button; hit die shows a simple roll button; if a non-zero `statMods[key]` exists its value appears in the meta line; if the info entry has an `editFn` the Edit button appears in the panel header |
 | `_updateStatModBadge(key)` | Called at end of `recalcAll()` | Shows or hides the `.stat-pill-mod` badge inside the pill for `key`; badge reads e.g. "+2 bonus" when non-zero, hidden when zero |
 | `openStatModDialog(key)` | `editFn` inside `STAT_PILL_INFO` entries | Dismisses info panel, opens `#statModDialog` bottom-sheet pre-filled with `state.statMods[key]`; calls `pushModalHistory()` |
@@ -1001,9 +1001,9 @@ DOMContentLoaded
 | `endInspirationPress(e)` | `pointerup` on `#inspirationBtn` | If timer hadn't fired: calls `toggleInspiration()` |
 | `cancelInspirationPress()` | `pointercancel` on inspiration button | Clears timer |
 | `openInspirationPanel()` | Internal (fired by hold timer) | Opens `#infoPanel` with Inspiration description and a "Gain / Remove Inspiration" action button |
-| `startHitDiePress(e)` | `pointerdown` on hit die roll button | Starts 500 ms timer; on fire opens `openStatPillPanel('dietype')` info panel |
-| `endHitDiePress(e)` | `pointerup` on hit die roll button | If timer hadn't fired: calls `rollHitDie()` |
-| `cancelHitDiePress()` | `pointercancel` on hit die roll button | Clears timer |
+| `startHitDiePress(e)` | `pointerdown` on hit die roll button | Starts 500 ms timer; on fire sets `hitDiePressActive`, adds `.holding`, opens `openStatPillPanel('dietype')` info panel |
+| `clickHitDieItem(e)` | `onclick` on hit die roll button | If guard not set: calls `rollHitDie()`; always clears timer and removes `.holding` |
+| `cancelHitDiePress()` | `pointercancel` on hit die roll button | Clears timer; removes `.holding` |
 | `openDeathSavePanel()` | Tap Roll button next to Death Saving Throws | Opens `#infoPanel` with death save description and a 3-zone roll button |
 | `rollDeathSave(mode='normal')` | Roll zone in death save info panel | Rolls d20 (no modifier); interprets nat-1/nat-20 specially; calls `showRoll()` |
 | `openConditionPanel(name)` | Internal (fired by hold timer on condition chip) | Opens `#infoPanel` with condition description and an "Apply / Remove Condition" action button |
