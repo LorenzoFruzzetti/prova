@@ -505,8 +505,13 @@ Each object:
 | `saveDC` | integer | Override DC; if `0` or omitted, the sheet's current Spell Save DC is used |
 | `showInCombat` | boolean | `true` to show this trait as a row in the combat attack block |
 | `combatActionType` | string | `"action"` (default) or `"bonus"` — which sub-section of the combat block it appears in |
+| `showInFeatures` | boolean | `true` to show this trait in the "Featured Traits" block in the Features tab — use for limited-use racial or class traits (e.g. Breath Weapon, Lay on Hands) |
+| `featureMax` | integer | Total number of uses to track when `showInFeatures` is `true`; dot count = `ceil(featureMax / featureStep)` |
+| `featureUsed` | integer | Uses already expended; defaults to `0`; reset to `0` on Long Rest |
+| `featureStep` | integer | How many uses one dot represents (default `1`); set to `5` for resources like Lay on Hands HP pool |
+| `featureRecharge` | string | Recharge label shown next to the restore button (e.g. `"Long Rest"`, `"Short Rest"`); omit or use `""` for no label |
 
-**Tap/hold behaviour on trait rows:** tapping rolls the damage expression directly if `rollDamage` is `true`; otherwise it opens the info panel (description + optional damage roll card + save DC display). Holding (500 ms) always opens the info panel. An **Edit** button in the top-right of the info panel switches to edit mode within the same modal. The same rules apply when a trait appears in the combat attack block via `showInCombat`.
+**Tap/hold behaviour on trait rows:** tapping rolls the damage expression directly if `rollDamage` is `true`; otherwise it opens the info panel (description + optional damage roll card + save DC display). Holding (500 ms) always opens the info panel. An **Edit** button in the top-right of the info panel switches to edit mode within the same modal. The same rules apply when a trait appears in the combat attack block via `showInCombat` or in the Featured Traits block via `showInFeatures`.
 
 ```json
 "infoTraits": [
@@ -514,7 +519,8 @@ Each object:
   { "name": "Fey Ancestry", "description": "Advantage on saves against being charmed; magic cannot put you to sleep." },
   { "name": "Breath Weapon", "description": "Exhale destructive energy (5 ft × 30 ft line).",
     "damage": "2d6 fire", "rollDamage": true, "saveAbility": "DEX", "saveDC": 0,
-    "showInCombat": true, "combatActionType": "action" }
+    "showInCombat": true, "combatActionType": "action",
+    "showInFeatures": true, "featureMax": 1, "featureUsed": 0, "featureStep": 1, "featureRecharge": "Short Rest" }
 ]
 ```
 
@@ -753,7 +759,8 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
     "infoTraits": [
       { "name": "Divine Smite",      "description": "When you hit with a melee weapon, expend a spell slot to deal +2d8 radiant damage per slot level (max 5d8). +1d8 vs undead or fiends." },
       { "name": "Aura of Protection","description": "While conscious, you and friendly creatures within 10 ft add your CHA modifier (min +1) to saving throws." },
-      { "name": "Sacred Weapon",     "description": "As an action, imbue a weapon with your holy symbol for 1 minute. It becomes magical, adds CHA modifier to attack rolls, and sheds light." }
+      { "name": "Sacred Weapon",     "description": "As an action, imbue a weapon with your holy symbol for 1 minute. It becomes magical, adds CHA modifier to attack rolls, and sheds light.",
+        "showInFeatures": true, "featureMax": 1, "featureUsed": 0, "featureStep": 1, "featureRecharge": "Short Rest" }
     ]
   }
 }
