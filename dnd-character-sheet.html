@@ -3135,6 +3135,11 @@
   .srd-hint, .srd-loading {
     padding: 14px; text-align: center; color: var(--text-muted); font-size: 0.8rem;
   }
+  /* Stable upper zone: reserves space equal to the AI-mode content so the panel
+     does not resize when switching between AI and SRD tabs, or between type tabs. */
+  .import-upper { min-height: 360px; }
+  /* All SRD ctrl variants share the same min-height (features ctrl is tallest). */
+  #srdSpellCtrl, #srdTraitCtrl, #srdFeatureCtrl, #srdEquipCtrl { min-height: 115px; }
 
   /* ── AI Character Import modal ── */
   #charImportBackdrop {
@@ -4876,53 +4881,59 @@
     <button class="srd-edition-btn"        id="srdEd2024" onclick="setSrdEdition('2024')">2024</button>
   </div>
 
-  <!-- ── AI mode ── -->
-  <div id="aiModeContent">
-    <div class="ai-step">
-      <div class="ai-step-label">Step 1 — Describe what to add</div>
-      <textarea class="ai-prompt-box" id="aiWhatInput"
-        placeholder="e.g. Fireball, Counterspell, Shield&#10;or: Action Surge (1 use, Short Rest)"></textarea>
+  <!-- ── Upper zone: stable height matching AI-mode content ── -->
+  <div class="import-upper">
+    <!-- ── AI mode ── -->
+    <div id="aiModeContent">
+      <div class="ai-step">
+        <div class="ai-step-label">Step 1 — Describe what to add</div>
+        <textarea class="ai-prompt-box" id="aiWhatInput"
+          placeholder="e.g. Fireball, Counterspell, Shield&#10;or: Action Surge (1 use, Short Rest)"></textarea>
+      </div>
+      <button class="settings-full-btn" style="margin-bottom:14px" onclick="generateAndCopyAIPrompt()">Copy prompt to clipboard</button>
+      <div class="ai-copy-notice" id="aiCopyNotice"></div>
+      <div class="ai-step" style="margin-top:16px">
+        <div class="ai-step-label">Step 2 — Paste the AI's JSON response</div>
+        <textarea class="ai-prompt-box" id="aiResponsePaste"
+          placeholder="Paste the JSON array here…"></textarea>
+      </div>
+      <button class="settings-full-btn" onclick="importAIResponse()" style="margin-bottom:8px">Import</button>
+      <div style="text-align:center;margin-top:2px">
+        <button class="attack-edit-btn" style="padding:5px 14px;font-size:0.8rem" onclick="addCustomFromImport()">+ Create custom</button>
+      </div>
     </div>
-    <button class="settings-full-btn" style="margin-bottom:14px" onclick="generateAndCopyAIPrompt()">Copy prompt to clipboard</button>
-    <div class="ai-copy-notice" id="aiCopyNotice"></div>
-    <div class="ai-step" style="margin-top:16px">
-      <div class="ai-step-label">Step 2 — Paste the AI's JSON response</div>
-      <textarea class="ai-prompt-box" id="aiResponsePaste"
-        placeholder="Paste the JSON array here…"></textarea>
-    </div>
-    <button class="settings-full-btn" onclick="importAIResponse()" style="margin-bottom:8px">Import</button>
-    <div style="text-align:center;margin-top:2px">
-      <button class="attack-edit-btn" style="padding:5px 14px;font-size:0.8rem" onclick="addCustomFromImport()">+ Create custom</button>
+
+    <!-- ── SRD mode controls only (results are below) ── -->
+    <div id="srdModeContent" style="display:none">
+      <!-- Spell search (type = spells) -->
+      <div id="srdSpellCtrl">
+        <input class="ai-prompt-box" id="srdSpellSearch" style="min-height:unset;padding:8px 12px;resize:none"
+          placeholder="Search spells by name…" oninput="_srdSpellSearch()">
+      </div>
+      <!-- Race selector (type = traits) -->
+      <div id="srdTraitCtrl" style="display:none">
+        <select class="ai-select" id="srdRaceSelect"><option value="">— Select a race —</option></select>
+        <button class="attack-edit-btn" style="margin-top:6px;width:100%;padding:6px 0" onclick="_srdLoadRace()">Load Traits</button>
+      </div>
+      <!-- Class selector (type = features) -->
+      <div id="srdFeatureCtrl" style="display:none">
+        <select class="ai-select" id="srdClassSelect"><option value="">— Select a class —</option></select>
+        <div class="srd-level-row">
+          Level <input type="number" id="srdLvMin" class="srd-lv-input" min="1" max="20" value="1">
+          –     <input type="number" id="srdLvMax" class="srd-lv-input" min="1" max="20" value="20">
+        </div>
+        <button class="attack-edit-btn" style="margin-top:6px;width:100%;padding:6px 0" onclick="_srdLoadClass()">Load Features</button>
+      </div>
+      <!-- Equipment search (type = equipment) -->
+      <div id="srdEquipCtrl" style="display:none">
+        <input class="ai-prompt-box" id="srdEquipSearch" style="min-height:unset;padding:8px 12px;resize:none"
+          placeholder="Search equipment by name…" oninput="_srdEquipSearch()">
+      </div>
     </div>
   </div>
 
-  <!-- ── SRD mode ── -->
-  <div id="srdModeContent" style="display:none">
-    <!-- Spell search (type = spells) -->
-    <div id="srdSpellCtrl">
-      <input class="ai-prompt-box" id="srdSpellSearch" style="min-height:unset;padding:8px 12px;resize:none"
-        placeholder="Search spells by name…" oninput="_srdSpellSearch()">
-    </div>
-    <!-- Race selector (type = traits) -->
-    <div id="srdTraitCtrl" style="display:none">
-      <select class="ai-select" id="srdRaceSelect"><option value="">— Select a race —</option></select>
-      <button class="attack-edit-btn" style="margin-top:6px;width:100%;padding:6px 0" onclick="_srdLoadRace()">Load Traits</button>
-    </div>
-    <!-- Class selector (type = features) -->
-    <div id="srdFeatureCtrl" style="display:none">
-      <select class="ai-select" id="srdClassSelect"><option value="">— Select a class —</option></select>
-      <div class="srd-level-row">
-        Level <input type="number" id="srdLvMin" class="srd-lv-input" min="1" max="20" value="1">
-        –     <input type="number" id="srdLvMax" class="srd-lv-input" min="1" max="20" value="20">
-      </div>
-      <button class="attack-edit-btn" style="margin-top:6px;width:100%;padding:6px 0" onclick="_srdLoadClass()">Load Features</button>
-    </div>
-    <!-- Equipment search (type = equipment) -->
-    <div id="srdEquipCtrl" style="display:none">
-      <input class="ai-prompt-box" id="srdEquipSearch" style="min-height:unset;padding:8px 12px;resize:none"
-        placeholder="Search equipment by name…" oninput="_srdEquipSearch()">
-    </div>
-    <!-- Shared results list -->
+  <!-- ── Lower zone: SRD results (allowed to shift) ── -->
+  <div id="srdResultsArea" style="display:none">
     <div id="srdResults" class="srd-results-box">
       <div class="srd-hint">Select a type above to start.</div>
     </div>
@@ -5836,7 +5847,6 @@ function openInfoPanelInlineEdit(cfg) {
     input.value = document.getElementById('statHitDice')?.value || '1d8';
   }
   document.getElementById('ipEditSection').style.display = '';
-  setTimeout(() => { input.focus(); try { input.select(); } catch(e){} }, 80);
 }
 
 function saveInfoPanelEdit() {
@@ -6953,7 +6963,6 @@ function addInfoTrait() {
   document.getElementById('trEditDeleteBtn').style.display = 'none';
   document.getElementById('traitBackdrop').classList.add('show');
   panel.classList.add('show');
-  setTimeout(() => document.getElementById('trEditName').focus(), 250);
 }
 
 function saveTraitEdit() {
@@ -7010,7 +7019,6 @@ function switchToTraitEdit() {
   document.getElementById('traitPanel').classList.add('edit-mode');
   populateTraitEditForm(traitPanelEditIdx);
   document.getElementById('trEditDeleteBtn').style.display = traitPanelEditIdx >= 0 ? '' : 'none';
-  setTimeout(() => document.getElementById('trEditName').focus(), 100);
 }
 
 function dismissTraitPanel() {
@@ -7099,7 +7107,6 @@ function addEquipmentItem() {
   document.getElementById('eqEditDeleteBtn').style.display = 'none';
   document.getElementById('equipItemBackdrop').classList.add('show');
   panel.classList.add('show');
-  setTimeout(() => document.getElementById('eqEditName').focus(), 250);
 }
 
 function populateEquipItemViewPanel(i) {
@@ -7161,7 +7168,6 @@ function switchToEquipEdit() {
   document.getElementById('equipItemPanel').classList.add('edit-mode');
   populateEquipItemEditForm(equipItemPanelIdx);
   document.getElementById('eqEditDeleteBtn').style.display = equipItemPanelIdx >= 0 ? '' : 'none';
-  setTimeout(() => document.getElementById('eqEditName').focus(), 100);
 }
 
 function dismissEquipItemPanel() {
@@ -7201,7 +7207,6 @@ function addSpell() {
   document.getElementById('spEditDeleteBtn').style.display = 'none';
   document.getElementById('spellBackdrop').classList.add('show');
   panel.classList.add('show');
-  setTimeout(() => document.getElementById('spEditName').focus(), 250);
 }
 
 function populateSpellViewPanel(i) {
@@ -7347,7 +7352,6 @@ function switchToSpellEdit() {
   document.getElementById('spellPanel').classList.add('edit-mode');
   populateSpellEditForm(spellPanelEditIdx);
   document.getElementById('spEditDeleteBtn').style.display = spellPanelEditIdx >= 0 ? '' : 'none';
-  setTimeout(() => document.getElementById('spEditName').focus(), 100);
 }
 
 function dismissSpellPanel() {
@@ -7620,7 +7624,6 @@ function switchToFeatureEdit() {
   document.getElementById('featurePanel').classList.add('edit-mode');
   populateFeatureEditForm(featurePanelIdx);
   document.getElementById('fpEditDeleteBtn').style.display = featurePanelIdx >= 0 ? '' : 'none';
-  setTimeout(() => document.getElementById('fpEditName').focus(), 100);
 }
 
 function dismissFeaturePanel() {
@@ -8702,7 +8705,6 @@ function openAttackPanel(i, editMode) {
     panel.classList.add('edit-mode');
     _populateAtkEdit(i);
     document.getElementById('atkEditDeleteBtn').style.display = i < 0 ? 'none' : '';
-    setTimeout(() => document.getElementById('atkEditName').focus(), 250);
   } else {
     panel.classList.remove('edit-mode');
     _populateAtkView(i);
@@ -8767,7 +8769,6 @@ function switchToAtkEdit() {
   document.getElementById('attackPanel').classList.add('edit-mode');
   _populateAtkEdit(attackPanelIdx);
   document.getElementById('atkEditDeleteBtn').style.display = attackPanelIdx < 0 ? 'none' : '';
-  setTimeout(() => document.getElementById('atkEditName').focus(), 100);
 }
 
 function saveAttackPanel() {
@@ -9818,8 +9819,9 @@ function setModalMode(mode) {
   srdModalMode = mode;
   document.getElementById('aiModeAI').classList.toggle('active',  mode === 'ai');
   document.getElementById('aiModeSrd').classList.toggle('active', mode === 'srd');
-  document.getElementById('aiModeContent').style.display  = mode === 'ai'  ? '' : 'none';
-  document.getElementById('srdModeContent').style.display = mode === 'srd' ? '' : 'none';
+  document.getElementById('aiModeContent').style.display    = mode === 'ai'  ? '' : 'none';
+  document.getElementById('srdModeContent').style.display   = mode === 'srd' ? '' : 'none';
+  document.getElementById('srdResultsArea').style.display   = mode === 'srd' ? '' : 'none';
   if (mode === 'srd') _srdInitForType(aiImportType);
 }
 
