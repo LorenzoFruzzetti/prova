@@ -53,6 +53,7 @@
       { "level": "8th", "max": 0, "used": 0 },
       { "level": "9th", "max": 0, "used": 0 }
     ],
+    "maxSpellsPrepared": 0,
     "spells": [
       {
         "name": "Light",
@@ -70,7 +71,9 @@
         "description": "You touch one object. Until the spell ends, the object sheds bright light in a 20-foot radius and dim light for an additional 20 feet.",
         "showInCombat": false,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": false,
+        "alwaysPrepared": false
       },
       {
         "name": "Mage Hand",
@@ -88,7 +91,9 @@
         "description": "A spectral floating hand appears at a point you choose within range. You can use the hand to manipulate an object, open an unlocked door or container, stow or retrieve an item, or pour out a vial.",
         "showInCombat": false,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": false,
+        "alwaysPrepared": false
       },
       {
         "name": "Eldritch Blast",
@@ -106,7 +111,9 @@
         "description": "A beam of crackling energy streaks toward a creature within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 force damage.",
         "showInCombat": true,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": false,
+        "alwaysPrepared": false
       },
       {
         "name": "Ray of Frost",
@@ -124,7 +131,9 @@
         "description": "A frigid beam of blue-white light streaks toward a creature. Make a ranged spell attack. On a hit, it takes 1d8 cold damage and its speed is reduced by 10 feet until the start of your next turn.",
         "showInCombat": true,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": false,
+        "alwaysPrepared": false
       },
       {
         "name": "Minor Illusion",
@@ -142,7 +151,9 @@
         "description": "You create a sound or an image of an object within range that lasts for the duration. The illusion ends if you dismiss it as an action or cast this spell again.",
         "showInCombat": false,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": false,
+        "alwaysPrepared": false
       },
       {
         "name": "Charm Person",
@@ -161,7 +172,9 @@
         "description": "You attempt to charm a humanoid you can see within range. It must make a WIS saving throw (with advantage if you or your companions are fighting it). On a fail, it is charmed by you for the duration.",
         "showInCombat": false,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": false,
+        "alwaysPrepared": true
       },
       {
         "name": "Hex",
@@ -179,7 +192,9 @@
         "description": "You curse a creature within range. Until the spell ends, you deal an extra 1d6 necrotic damage whenever you hit it with an attack. Also choose one ability — the target has disadvantage on checks with that ability.",
         "showInCombat": true,
         "combatActionType": "bonus",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": false,
+        "alwaysPrepared": true
       }
     ],
     "attacks": [],

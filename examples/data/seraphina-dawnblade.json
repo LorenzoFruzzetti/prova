@@ -71,6 +71,8 @@
       { "level": "9th", "max": 0, "used": 0 }
     ],
 
+    "maxSpellsPrepared": 7,
+
     "spells": [
       {
         "name": "Guidance",
@@ -88,7 +90,9 @@
         "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice. It can roll the die before or after making the ability check. The spell then ends.",
         "showInCombat": false,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": false,
+        "alwaysPrepared": false
       },
       {
         "name": "Sacred Flame",
@@ -107,7 +111,9 @@
         "description": "Flame-like radiance descends on a creature that you can see within range. The target must succeed on a Dexterity saving throw or take 1d8 radiant damage. The target gains no benefit from cover for this saving throw. The spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8).",
         "showInCombat": true,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": false,
+        "alwaysPrepared": false
       },
       {
         "name": "Guiding Bolt",
@@ -125,7 +131,9 @@
         "description": "A flash of light streaks toward a creature of your choice within range. Make a ranged spell attack against the target. On a hit, the target takes 4d6 radiant damage, and the next attack roll made against this target before the end of your next turn has advantage, thanks to the mystical dim light glittering on the target until then.\nWhen you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st.",
         "showInCombat": true,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": true,
+        "alwaysPrepared": false
       },
       {
         "name": "Bless",
@@ -143,7 +151,9 @@
         "description": "You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target can roll a d4 and add the number rolled to the attack roll or saving throw. When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.",
         "showInCombat": false,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": false,
+        "alwaysPrepared": true
       },
       {
         "name": "Command",
@@ -162,7 +172,9 @@
         "description": "You speak a one-word command to a creature you can see within range. The target must succeed on a Wisdom saving throw or follow the command on its next turn. The spell has no effect if the target is undead, if it doesn't understand your language, or if your command is directly harmful to it. When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st.",
         "showInCombat": false,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": false,
+        "alwaysPrepared": true
       },
       {
         "name": "Detect Magic",
@@ -180,7 +192,9 @@
         "description": "For the duration, you sense the presence of magic within 30 feet of you. If you sense magic in this way, you can use your action to see a faint aura around any visible creature or object in the area that bears magic, and you learn its school of magic, if any. The spell can penetrate most barriers, but is blocked by 1 foot of stone, 1 inch of common metal, a thin sheet of lead, or 3 feet of wood or dirt.",
         "showInCombat": false,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": true,
+        "alwaysPrepared": false
       },
       {
         "name": "Aid",
@@ -198,7 +212,9 @@
         "description": "Your spell bolsters your allies with toughness and resolve. Choose up to three creatures within range. Each target's hit point maximum and current hit points increase by 5 for the duration. When you cast this spell using a spell slot of 3rd level or higher, a target's hit points increase by an additional 5 for each slot level above 2nd.",
         "showInCombat": false,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": true,
+        "alwaysPrepared": false
       },
       {
         "name": "Hold Person",
@@ -217,7 +233,9 @@
         "description": "Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration. At the end of each of its turns, the target can make another Wisdom saving throw. On a success, the spell ends on the target. When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd.",
         "showInCombat": false,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": false,
+        "alwaysPrepared": true
       },
       {
         "name": "Zone of Truth",
@@ -236,7 +254,9 @@
         "description": "You create a magical zone that guards against deception in a 15-foot-radius sphere centered on a point of your choice within range, for the duration. A creature that enters the spell's area for the first time on a turn or starts its turn there must make a Charisma saving throw. On a failed save, a creature can't speak a deliberate lie while in the radius. You know whether each creature succeeds or fails on its saving throw.",
         "showInCombat": false,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": false,
+        "alwaysPrepared": true
       },
       {
         "name": "Dispel Magic",
@@ -254,7 +274,9 @@
         "description": "Choose one creature, object, or magical effect within range. Any spell of 3rd level or lower on the target ends. For each spell of 4th level or higher on the target, make an ability check using your spellcasting ability. The DC equals 10 + the spell's level. On a successful check, the spell ends. When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell's level is equal to or less than the level of the spell slot you used.",
         "showInCombat": false,
         "combatActionType": "action",
-        "showInFeatures": false
+        "showInFeatures": false,
+        "prepared": true,
+        "alwaysPrepared": false
       }
     ],
 
