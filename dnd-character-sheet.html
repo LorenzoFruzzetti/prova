@@ -565,9 +565,13 @@
     border-radius: var(--radius);
     padding: 7px 8px 0;
     cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
   }
 
-  .ability-card:active { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
+  .ability-card:active,
+  .ability-card.holding { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
 
   .ability-header {
     display: flex;
@@ -618,9 +622,11 @@
     border-top: 1px solid rgba(var(--border-rgb),0.4);
     border-radius: 0 0 var(--radius) var(--radius);
     cursor: pointer;
+    touch-action: manipulation;
   }
 
-  .ability-save:active { background: rgba(var(--accent-rgb),0.1); }
+  .ability-save:active,
+  .ability-save.holding { background: rgba(var(--accent-rgb),0.1); }
 
   .ability-save .save-mod {
     font-size: 17px;
@@ -974,8 +980,10 @@
     transition: border-color 0.15s, background 0.15s;
     -webkit-user-select: none;
     user-select: none;
+    touch-action: manipulation;
   }
-  .hit-die-roll:active { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
+  .hit-die-roll:active,
+  .hit-die-roll.holding { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
 
   /* lefty mode: swap dots and mini-tracker */
   body.lefty .spell-level-row .spell-slots-dots { order: 3; }
@@ -1436,9 +1444,12 @@
   .stat-pill.interactive {
     border-width: var(--roll-border);
     border-color: rgba(var(--accent-rgb),0.5);
+    touch-action: manipulation;
   }
   .stat-pill.rollable:active,
-  .stat-pill.interactive:active { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
+  .stat-pill.rollable.holding,
+  .stat-pill.interactive:active,
+  .stat-pill.interactive.holding { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
 
   /* Mod badge shown inside a stat pill when a custom modifier is active */
   .stat-pill-mod {
@@ -3074,16 +3085,16 @@
       <div class="stat-pills">
         <div class="stat-pill"
              onpointerdown="startStatPillPress(event,'ac')"
-             onpointerup="endStatPillPress(event,'ac')"
+             onclick="clickStatPillItem(event,'ac')"
              onpointercancel="cancelStatPillPress()">
           <input type="number" id="statAC" value="10" oninput="saveData()"
-                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()">
+                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()">
           <div class="stat-pill-mod" id="statMod-ac" style="display:none"></div>
           <div class="stat-pill-label">Armor Class</div>
         </div>
         <div class="stat-pill rollable"
              onpointerdown="startStatPillPress(event,'initiative')"
-             onpointerup="endStatPillPress(event,'initiative')"
+             onclick="clickStatPillItem(event,'initiative')"
              onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statInit">+0</div>
           <div class="stat-pill-mod" id="statMod-initiative" style="display:none"></div>
@@ -3091,10 +3102,10 @@
         </div>
         <div class="stat-pill"
              onpointerdown="startStatPillPress(event,'speed')"
-             onpointerup="endStatPillPress(event,'speed')"
+             onclick="clickStatPillItem(event,'speed')"
              onpointercancel="cancelStatPillPress()">
           <input type="number" id="statSpeed" value="30" oninput="saveData()"
-                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()">
+                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()">
           <div class="stat-pill-mod" id="statMod-speed" style="display:none"></div>
           <div class="stat-pill-label">Speed (ft)</div>
         </div>
@@ -3102,15 +3113,15 @@
       <div class="stat-pills" style="margin-top:8px">
         <div class="stat-pill"
              onpointerdown="startStatPillPress(event,'dietype')"
-             onpointerup="endStatPillPress(event,'dietype')"
+             onclick="clickStatPillItem(event,'dietype')"
              onpointercancel="cancelStatPillPress()">
           <input type="text" id="statHitDice" value="1d8" oninput="saveData(); updateHitDieBadge()" style="font-size:16px"
-                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()">
+                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()">
           <div class="stat-pill-label">Die Type</div>
         </div>
         <div class="stat-pill rollable"
              onpointerdown="startStatPillPress(event,'spellatk')"
-             onpointerup="endStatPillPress(event,'spellatk')"
+             onclick="clickStatPillItem(event,'spellatk')"
              onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statSpellAtk">+2</div>
           <div class="stat-pill-mod" id="statMod-spellatk" style="display:none"></div>
@@ -3118,7 +3129,7 @@
         </div>
         <div class="stat-pill interactive"
              onpointerdown="startStatPillPress(event,'spelldc')"
-             onpointerup="endStatPillPress(event,'spelldc')"
+             onclick="clickStatPillItem(event,'spelldc')"
              onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statSpellDC">12</div>
           <div class="stat-pill-mod" id="statMod-spelldc" style="display:none"></div>
@@ -3149,7 +3160,7 @@
         </div>
         <div class="hit-die-roll" id="hitDiceRollBtn"
              onpointerdown="startHitDiePress(event)"
-             onpointerup="endHitDiePress(event)"
+             onclick="clickHitDieItem(event)"
              onpointercancel="cancelHitDiePress()">d8</div>
       </div>
     </div>
@@ -4330,7 +4341,7 @@ function buildAbilityGrid() {
     return `
     <div class="ability-card"
          onpointerdown="startAbilityPress(event,'${ab}')"
-         onpointerup="endAbilityPress(event,'${ab}')"
+         onclick="clickAbilityItem(event,'${ab}')"
          onpointercancel="cancelAbilityPress()">
       <div class="ability-header">
         <span class="ability-name">${ab}</span>
@@ -4344,7 +4355,7 @@ function buildAbilityGrid() {
       <div class="ability-mod" id="mod-${ab}">+0</div>
       <div class="ability-save ${prof ? 'proficient' : ''}"
            onpointerdown="event.stopPropagation();startSavePress(event,'${ab}')"
-           onpointerup="event.stopPropagation();endSavePress(event,'${ab}')"
+           onclick="event.stopPropagation();clickSaveItem(event,'${ab}')"
            onpointercancel="event.stopPropagation();cancelSavePress()">
         <div class="prof-dot"
              onpointerdown="event.stopPropagation()"
@@ -6271,22 +6282,25 @@ let hitDiePressActive = false;
 function startHitDiePress(e) {
   hitDiePressActive = false;
   clearTimeout(hitDiePressTimer);
+  const el = e.currentTarget;
   hitDiePressTimer = setTimeout(() => {
     hitDiePressActive = true;
+    if (el) el.classList.add('holding');
     openStatPillPanel('dietype');
   }, 500);
 }
 
-function endHitDiePress(e) {
-  const wasLong = hitDiePressActive;
+function clickHitDieItem(e) {
   clearTimeout(hitDiePressTimer);
-  hitDiePressActive = false;
-  if (!wasLong) rollHitDie();
+  document.querySelectorAll('.hit-die-roll.holding').forEach(el => el.classList.remove('holding'));
+  if (hitDiePressActive) { hitDiePressActive = false; return; }
+  rollHitDie();
 }
 
 function cancelHitDiePress() {
   clearTimeout(hitDiePressTimer);
   hitDiePressActive = false;
+  document.querySelectorAll('.hit-die-roll.holding').forEach(el => el.classList.remove('holding'));
 }
 
 // ── Death saves ────────────────────────────────────────────────────────
@@ -6370,30 +6384,31 @@ let statPillPressActive = false;
 function startStatPillPress(e, key) {
   statPillPressActive = false;
   clearTimeout(statPillPressTimer);
+  const el = e.currentTarget;
   statPillPressTimer = setTimeout(() => {
     statPillPressActive = true;
+    if (el) el.classList.add('holding');
     openStatPillPanel(key);
   }, 500);
 }
 
-function endStatPillPress(e, key) {
-  const wasLong = statPillPressActive;
+function clickStatPillItem(e, key) {
   clearTimeout(statPillPressTimer);
-  statPillPressActive = false;
-  if (!wasLong) {
-    const info = STAT_PILL_INFO[key];
-    if (info && info.rollable) {
-      if (key === 'initiative') rollInitiative();
-      else if (key === 'spellatk') rollSpellAtk();
-    } else {
-      openStatPillPanel(key);
-    }
+  document.querySelectorAll('.stat-pill.holding').forEach(el => el.classList.remove('holding'));
+  if (statPillPressActive) { statPillPressActive = false; return; }
+  const info = STAT_PILL_INFO[key];
+  if (info && info.rollable) {
+    if (key === 'initiative') rollInitiative();
+    else if (key === 'spellatk') rollSpellAtk();
+  } else {
+    openStatPillPanel(key);
   }
 }
 
 function cancelStatPillPress() {
   clearTimeout(statPillPressTimer);
   statPillPressActive = false;
+  document.querySelectorAll('.stat-pill.holding').forEach(el => el.classList.remove('holding'));
 }
 
 function openStatPillPanel(key) {
@@ -6518,8 +6533,10 @@ let abilityPressActive = false;
 function startAbilityPress(e, ab) {
   abilityPressActive = false;
   clearTimeout(abilityPressTimer);
+  const el = e.currentTarget;
   abilityPressTimer = setTimeout(() => {
     abilityPressActive = true;
+    if (el) el.classList.add('holding');
     const m = fmtMod(mod(state.abilities[ab]));
     const name = ABILITY_NAMES[ABILITIES.indexOf(ab)];
     openInfoPanel({
@@ -6534,16 +6551,17 @@ function startAbilityPress(e, ab) {
   }, 500);
 }
 
-function endAbilityPress(e, ab) {
-  const wasLong = abilityPressActive;
+function clickAbilityItem(e, ab) {
   clearTimeout(abilityPressTimer);
-  abilityPressActive = false;
-  if (!wasLong) rollAbility(ab);
+  document.querySelectorAll('.ability-card.holding').forEach(el => el.classList.remove('holding'));
+  if (abilityPressActive) { abilityPressActive = false; return; }
+  rollAbility(ab);
 }
 
 function cancelAbilityPress() {
   clearTimeout(abilityPressTimer);
   abilityPressActive = false;
+  document.querySelectorAll('.ability-card.holding').forEach(el => el.classList.remove('holding'));
 }
 
 // ── Saving throw press (tap = roll save, hold = info panel) ───────────
@@ -6553,8 +6571,10 @@ let savePressActive = false;
 function startSavePress(e, ab) {
   savePressActive = false;
   clearTimeout(savePressTimer);
+  const el = e.currentTarget;
   savePressTimer = setTimeout(() => {
     savePressActive = true;
+    if (el) el.classList.add('holding');
     const name = SAVES.find(s => s.ab === ab).name;
     const mEl = document.getElementById(`save-mod-${ab}`);
     const m = mEl ? mEl.textContent : '+0';
@@ -6571,16 +6591,17 @@ function startSavePress(e, ab) {
   }, 500);
 }
 
-function endSavePress(e, ab) {
-  const wasLong = savePressActive;
+function clickSaveItem(e, ab) {
   clearTimeout(savePressTimer);
-  savePressActive = false;
-  if (!wasLong) rollSave(ab);
+  document.querySelectorAll('.ability-save.holding').forEach(el => el.classList.remove('holding'));
+  if (savePressActive) { savePressActive = false; return; }
+  rollSave(ab);
 }
 
 function cancelSavePress() {
   clearTimeout(savePressTimer);
   savePressActive = false;
+  document.querySelectorAll('.ability-save.holding').forEach(el => el.classList.remove('holding'));
 }
 
 function toggleHitDie(j) {
