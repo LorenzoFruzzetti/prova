@@ -318,7 +318,7 @@ These field names appear inside `state.spells`, `state.attacks`, `state.classFea
 | `dice` | `string` | Dice expression (e.g. `"2d6"`, `"1d8"`); required |
 | `type` | `string` | Damage type key from `ROLL_TYPES` (e.g. `'fire'`, `'slashing'`), or `'not_damage'` for non-damage rolls, or `'other'` for custom-labelled rolls |
 | `label` | `string` | Custom display label; only shown when `type === 'other'` |
-| `mod` | `string` | Ability key to add to the roll result: ability key (`'STR'`…`'CHA'`), `'SPELL'` (spell attack bonus), or `''` for none |
+| `mod` | `string` | Modifier to add to the roll result: ability key (`'STR'`…`'CHA'`), `'SPELLMOD'` (spellcasting ability modifier only — for healing/damage), `'SPELL'` (full spell attack bonus = ability mod + proficiency — for attack rolls), or `''` for none |
 
 ---
 
@@ -414,7 +414,7 @@ These are the discrete string values used in state fields. When the code falls b
 | `abilityMod` | `''`, `'STR'`, `'DEX'`, `'CON'`, `'INT'`, `'WIS'`, `'CHA'`, `'SPELL'`, `'manual'` | `''` | `attacks[i].abilityMod` — `''` = no attack roll; `'manual'` = use `bonus` string; otherwise computed |
 | `attackMod` | same set as `abilityMod` | `''` | `classFeatures[i].attackMod` — same semantics |
 | `rolls[].type` | `'slashing'`, `'piercing'`, `'bludgeoning'`, `'fire'`, `'cold'`, `'lightning'`, `'thunder'`, `'acid'`, `'poison'`, `'necrotic'`, `'radiant'`, `'force'`, `'psychic'`, `'healing'`, `'not_damage'`, `'other'` | — | Damage type for a roll entry; `'not_damage'` for non-damage rolls; `'other'` uses `label` field |
-| `rolls[].mod` | `''`, `'STR'`, `'DEX'`, `'CON'`, `'INT'`, `'WIS'`, `'CHA'`, `'SPELL'` | `''` | Ability modifier added to a roll result |
+| `rolls[].mod` | `''`, `'STR'`, `'DEX'`, `'CON'`, `'INT'`, `'WIS'`, `'CHA'`, `'SPELLMOD'`, `'SPELL'` | `''` | Modifier added to a roll result (`'SPELLMOD'` = spellcasting ability mod only; `'SPELL'` = full spell attack bonus) |
 | `spellAbility` (form input) | `'STR'`, `'DEX'`, `'CON'`, `'INT'`, `'WIS'`, `'CHA'`, or blank | blank | Drives spell attack bonus and spell save DC |
 | `DEFAULT_ACTIONS[i].type` | `'action'`, `'bonus'`, `'reaction'`, `'free'` | — | Categorises default D&D actions in the collapsible Default Actions list |
 | `recharge` | `'Long Rest'`, `'Short Rest'`, `'Dawn'`, `'Turn'`, or any custom string | — | `classFeatures[i].recharge` — shown as a label; no mechanical enforcement |
@@ -806,7 +806,7 @@ let state = {
                                                  //     dice:  string — dice expression e.g. "4d6"
                                                  //     type:  damage type key (see ROLL_TYPES) or 'not_damage' or 'other'
                                                  //     label: string — custom label when type='other'
-                                                 //     mod:   ability key to add to roll result ('STR'|…|'SPELL'|'')
+                                                 //     mod:   modifier key ('STR'|…|'CHA'|'SPELLMOD'|'SPELL'|'')
                           description,           //   free text (newlines preserved)
                           saveAbility,           //   ability key for saving throw or ''
                           saveDC,                //   integer override DC; 0 = use character's spell save DC
@@ -1017,7 +1017,7 @@ DOMContentLoaded
 | `modeSuffix(mode)` | Returns `' (Adv)'`, `' (Disadv)'`, or `''`; appended to roll labels |
 | `natMsg(roll)` | Returns `' ★ NAT 20!'`, `' ✦ Nat 1'`, or `''` |
 | `rollDiceExpr(expr)` | Parses and rolls a dice expression (e.g. `"2d6+4"`, `"+2d8 radiant"`); returns integer total or `null` if unparseable |
-| `getRollMod(modKey)` | Returns the numeric modifier for a `modKey` (`'STR'`/`'DEX'`/…/`'SPELL'`/`''`); reads from `state.abilities` or spell attack bonus |
+| `getRollMod(modKey)` | Returns the numeric modifier for a `modKey` (`'STR'`/`'DEX'`/…/`'SPELLMOD'`/`'SPELL'`/`''`); `'SPELLMOD'` reads `state.abilities[spellAbility]` as a modifier; `'SPELL'` reads the full spell attack bonus from `#statSpellAtk` |
 | `computeRollResults(rolls)` | Evaluates each roll in a `rolls` array; returns an array of formatted strings (`"Fire: 8"`, `"Guidance: 3"`) or `null` if no valid rolls |
 | `getRollSummary(rolls)` | Returns a compact display string of all roll dice expressions joined by ` + ` (e.g. `"1d8 + 1d6"`) for list view |
 | `getRollBoxLabel(rolls)` | Returns `'Damage'` if any roll has a standard damage type; otherwise `'Roll'` |
