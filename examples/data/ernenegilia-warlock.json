@@ -19,7 +19,6 @@
     "statHitDice":    "1d8",
     "spellAbility":   "CHA",
     "equipment":      "- Leather Armor",
-    "proficiencies":  "Light armor, simple weapons",
     "languages":      "Common, Celestial",
     "notes":          "",
     "cp": "0",
@@ -40,6 +39,8 @@
     "saveProficiencies": ["WIS", "CHA"],
     "skillProficiencies": ["Deception", "Intimidation"],
     "skillExpertise": [],
+    "equipProficiencies": ["Light Armor", "Simple Weapons"],
+    "customEquipProfRows": [],
     "inspiration": false,
     "hpCurrent": 10,
     "spellSlots": [
