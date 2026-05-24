@@ -270,7 +270,7 @@ Expertise doubles the proficiency bonus for that skill.
 Visual effect: two filled dots instead of one.
 
 #### `equipProficiencies`
-Array of equipment/tool category name strings the character is proficient with. Each entry corresponds to a row in the Inventory tab's "Armor, Weapon & Tool Proficiencies" list. Tap the dot next to an item to toggle it.
+Array of equipment/tool category name strings the character is proficient with. Each entry corresponds to a row in the Inventory tab's collapsible "All Proficiencies" section. Tap the dot next to an item to toggle it; proficient items are also shown in the always-visible "Your Proficiencies" section below.
 
 ```json
 "equipProficiencies": ["Light Armor", "Simple Weapons", "Thieves' Tools"]
