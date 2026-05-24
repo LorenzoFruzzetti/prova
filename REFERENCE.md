@@ -128,6 +128,70 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 ---
 
+### SRD sources and edition terminology
+
+The app integrates two separate D&D 5e SRD sources with different terminology conventions.
+
+**2014 SRD (`dnd5eapi.co`)** — A public REST API (CC-BY). Endpoint base: `https://www.dnd5eapi.co/api/`. Available whenever the device has internet access. Response field names follow the 2014 edition. Cache key prefix: `srd_v1_`.
+
+**2024 SRD (local)** — Static JSON files in `srd2024/`. Available only when the app is served from a web server (not a `file://` URL) and the companion files are present. Cache key prefix: `srd24_v1_`.
+
+**`srd2024/translation.json`** — The single source of truth for every 2014↔2024 difference. Loaded once on the first 2024 SRD request and kept in memory; never re-fetched during a session. If it cannot be fetched, 2024 SRD lookup is silently disabled. Three top-level keys:
+
+| Key | Type | Purpose |
+|---|---|---|
+| `endpoints` | `object` | Maps a 2014 API path prefix (e.g. `"races"`) to the 2024 local file name without extension (e.g. `"species"`) |
+| `fields` | `object` | Maps a 2014 JSON response field name (e.g. `"race"`) to its 2024 equivalent field name (e.g. `"species"`) |
+| `labels` | `object` | Maps a 2014 UI label string (e.g. `"Race"`) to the 2024 display string shown in the app (e.g. `"Species"`) |
+
+Minimal valid `translation.json`:
+```json
+{
+  "endpoints": {
+    "races": "species",
+    "subraces": "subspecies"
+  },
+  "fields": {
+    "race": "species",
+    "subrace": "subspecies",
+    "racial_traits": "species_traits",
+    "subraces": "subspecies"
+  },
+  "labels": {
+    "Race": "Species",
+    "Subrace": "Subspecies",
+    "Racial Traits": "Species Traits"
+  }
+}
+```
+
+---
+
+### 2014 ↔ 2024 terminology reference
+
+Canonical mapping between D&D 5e 2014 and 2024 terms as used throughout the codebase, UI labels, and API field names.
+
+| Concept | 2014 term | 2024 term | Where it appears |
+|---|---|---|---|
+| Character ancestry | Race | Species | `charRace` form field label; `translation.json` `labels.Race` |
+| Sub-ancestry | Subrace | Subspecies | Ancestry detail data; `translation.json` `labels.Subrace` |
+| Ancestry-granted features | Racial traits | Species traits | Trait list inside a Species entry; `translation.json` `labels.Racial Traits` |
+| 2014 API path segment | `races` | `species` | `_srdGet()` endpoint resolution; `translation.json` `endpoints.races` |
+| 2014 API path segment | `subraces` | `subspecies` | `_srdGet()` endpoint resolution; `translation.json` `endpoints.subraces` |
+| 2014 response field | `race` | `species` | `_mapSrdTrait()` / `_mapSrdFeature()` field lookup; `translation.json` `fields.race` |
+| 2014 response field | `subrace` | `subspecies` | Species sub-entry field; `translation.json` `fields.subrace` |
+| 2014 response field | `racial_traits` | `species_traits` | Trait array field on an ancestry object; `translation.json` `fields.racial_traits` |
+
+> The table above reflects only the differences. All other 2014 terms (spell fields, class/feature fields, equipment fields) are **identical** in 2024 and do not require entries in `translation.json`.
+
+**How the translation layer is applied:**
+1. On first 2024 SRD use, `_srdGet()` fetches `translation.json` and caches it in a module-level variable.
+2. When resolving a 2014-style endpoint path (e.g. `"races/elf"`), the path's first segment is looked up in `translation.endpoints`; if a mapping exists the segment is replaced before constructing the local file path.
+3. When reading a field from a 2024 SRD response object, `translation.fields` is checked first; if a mapping exists the translated field name is used instead of the 2014 name.
+4. When rendering a UI label (e.g. the section title above `charRace`), `translation.labels` is checked; if a mapping exists the 2024 string is substituted for display only — the underlying form field ID and state key are never renamed.
+
+---
+
 ## Variable name glossary
 
 This section is the authoritative map from every significant identifier in the codebase to its plain-English meaning. Use it whenever a name is ambiguous or unfamiliar.
