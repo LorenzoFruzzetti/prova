@@ -421,8 +421,12 @@
   }
 
   /* ── Panels ── */
-  .panel { display: none; padding: 16px; touch-action: pan-y; }
+  .panel { display: none; padding: 16px; }
   .panel.active { display: block; }
+  /* Dice panel: restrict browser to vertical-only pan so horizontal swipes
+     always produce touchend (not touchcancel) for tab-switch detection.
+     Safe here because dice rows use onclick, not pointerdown hold timers. */
+  #panel-dice { touch-action: pan-y; }
 
   /* ── Section ── */
   .section {
