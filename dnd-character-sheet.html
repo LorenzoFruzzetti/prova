@@ -2167,6 +2167,128 @@
   #traitPanel.edit-mode .tr-view-section { display: none; }
   #traitPanel.edit-mode .tr-edit-section { display: block; }
 
+  /* ── Equipment item rows ── */
+  .eq-item-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px 8px calc(var(--roll-border) + 6px);
+    border-bottom: 1px solid rgba(var(--border-rgb),0.2);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    transition: background 0.12s;
+    box-shadow: inset var(--roll-border) 0 0 0 rgba(var(--accent-rgb),0.3);
+    background: rgba(var(--accent-rgb),0.03);
+    border-radius: 4px 0 0 4px;
+    margin-bottom: 2px;
+  }
+  .eq-item-row:last-child { border-bottom: none; margin-bottom: 0; }
+  .eq-item-row:active { background: rgba(var(--accent-rgb),0.10); }
+  .eq-item-row.holding { background: rgba(var(--accent-rgb),0.14); }
+  .eq-item-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .eq-item-qty {
+    font-size: 11px;
+    color: var(--gold-light);
+    font-weight: 700;
+    margin-left: 6px;
+    flex-shrink: 0;
+  }
+  .eq-item-tag {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid rgba(var(--border-rgb),0.35);
+    background: rgba(var(--border-rgb),0.07);
+    color: var(--text-muted);
+    margin-left: 5px;
+    flex-shrink: 0;
+    font-family: sans-serif;
+    text-transform: uppercase;
+  }
+  .eq-item-weight {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    margin-left: 6px;
+    flex-shrink: 0;
+  }
+
+  /* ── Equipment item panel ── */
+  #equipItemBackdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 299;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #equipItemBackdrop.show { opacity: 1; pointer-events: auto; }
+  #equipItemPanel {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.88);
+    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
+    border: 2px solid var(--gold);
+    border-radius: 20px;
+    padding: 22px 24px 20px;
+    z-index: 300;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s, border-color 0.25s;
+    pointer-events: none;
+    width: min(92vw, 500px);
+    max-height: 82vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  #equipItemPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  #equipItemPanel.edit-mode { border-color: var(--spell); }
+  #equipItemPanel.edit-mode .eq-mode-badge { color: var(--spell); }
+  .eq-mode-badge {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    font-family: sans-serif;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .eq-panel-name {
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--text);
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .eq-panel-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    margin-bottom: 10px;
+  }
+  .eq-panel-description {
+    font-size: 13px;
+    color: var(--text);
+    font-family: sans-serif;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin-bottom: 14px;
+  }
+  .eq-edit-section { display: none; }
+  #equipItemPanel.edit-mode .eq-view-section { display: none; }
+  #equipItemPanel.edit-mode .eq-edit-section { display: block; }
+
   .rr-label {
     font-size: 10px;
     color: var(--gold);
@@ -3209,7 +3331,7 @@
       Features &amp; Traits
       <div onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center">
         <span class="turn-hold-hint">hold</span>
-        <button class="attack-edit-btn" onclick="addInfoTrait()">+ Add</button>
+        <button class="attack-edit-btn" onclick="openAIImport('traits')">+ Add</button>
       </div>
     </div>
     <div class="section-body" id="infoTraitsBody">
@@ -3623,7 +3745,7 @@
         </div>
         <span class="turn-hold-hint">hold</span>
         <button class="attack-edit-btn"
-                onclick="event.stopPropagation();addSpell()"
+                onclick="event.stopPropagation();openAIImport('spells')"
                 onpointerdown="event.stopPropagation()"
                 onpointerup="event.stopPropagation()">+ Add</button>
       </div>
@@ -3683,7 +3805,7 @@
       <div onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center">
         <span class="turn-hold-hint">hold</span>
         <button class="attack-edit-btn" onclick="restoreAllFeatures()">↺ All</button>
-        <button class="attack-edit-btn" onclick="addFeature()">+ Add</button>
+        <button class="attack-edit-btn" onclick="openAIImport('features')">+ Add</button>
       </div>
     </div>
     <div class="section-body" id="featuresBody">
@@ -3725,9 +3847,19 @@
          onpointerdown="startEquipmentTitlePress(event)"
          onpointerup="endEquipmentTitlePress(event)"
          onpointercancel="cancelEquipmentTitlePress()"
-         oncontextmenu="return false">Equipment &amp; Items <span class="turn-hold-hint">hold</span></div>
-    <div class="section-body">
-      <textarea id="equipment" style="min-height:200px" placeholder="List your equipment...&#10;&#10;- Longsword (1d8 slashing)&#10;- Chain Mail (AC 16)&#10;- Explorer's Pack&#10;- Rope, 50ft&#10;..."></textarea>
+         oncontextmenu="return false"
+         style="display:flex;justify-content:space-between;align-items:center">
+      Equipment &amp; Items
+      <div onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center">
+        <span class="turn-hold-hint">hold</span>
+        <button class="attack-edit-btn"
+                onclick="event.stopPropagation();openAIImport('equipment')"
+                onpointerdown="event.stopPropagation()"
+                onpointerup="event.stopPropagation()">+ Add</button>
+      </div>
+    </div>
+    <div class="section-body" id="equipmentItemsBody">
+      <!-- Generated by JS -->
     </div>
   </div>
 
@@ -4154,6 +4286,58 @@
   </div>
 </div>
 
+<div id="equipItemBackdrop" onclick="dismissEquipItemPanel()"></div>
+<div id="equipItemPanel">
+  <!-- View mode -->
+  <div class="eq-view-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="eq-mode-badge">Equipment</div>
+      <button class="attack-edit-btn" onclick="event.stopPropagation();switchToEquipEdit()">Edit</button>
+    </div>
+    <div class="eq-panel-name" id="eqNameView"></div>
+    <div class="eq-panel-meta" id="eqMetaView"></div>
+    <div class="eq-panel-description" id="eqDescView"></div>
+    <span class="sp-dismiss-hint">tap to dismiss</span>
+  </div>
+  <!-- Edit mode -->
+  <div class="eq-edit-section">
+    <div class="eq-mode-badge">Editing Equipment</div>
+    <div class="sp-edit-field">
+      <label>Name</label>
+      <input type="text" id="eqEditName" placeholder="e.g. Longsword, Explorer's Pack…">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="sp-edit-field">
+        <label>Quantity</label>
+        <input type="number" id="eqEditQuantity" min="1" value="1">
+      </div>
+      <div class="sp-edit-field">
+        <label>Weight</label>
+        <input type="text" id="eqEditWeight" placeholder="e.g. 3 lb">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="sp-edit-field">
+        <label>Cost</label>
+        <input type="text" id="eqEditCost" placeholder="e.g. 15 gp">
+      </div>
+      <div class="sp-edit-field">
+        <label>Category</label>
+        <input type="text" id="eqEditCategory" placeholder="e.g. Weapon, Armor…">
+      </div>
+    </div>
+    <div class="sp-edit-field">
+      <label>Description</label>
+      <textarea id="eqEditDescription" placeholder="Notes or properties…" style="min-height:90px"></textarea>
+    </div>
+    <div class="sp-edit-actions">
+      <button class="sp-edit-delete-btn" id="eqEditDeleteBtn" onclick="deleteCurrentEquipItem()">Delete</button>
+      <button class="sp-edit-cancel-btn" onclick="dismissEquipItemPanel()">Cancel</button>
+      <button class="sp-edit-save-btn" onclick="saveEquipItemEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
 <div id="featurePanelBackdrop" onclick="dismissFeaturePanel()"></div>
 <div id="featurePanel">
   <!-- View mode -->
@@ -4491,9 +4675,10 @@
 
   <!-- Type tabs (shared by both modes) -->
   <div class="ai-type-toggle">
-    <button class="ai-type-btn active" id="aiTypeSpells"   onclick="setAIImportType('spells')">Spells</button>
-    <button class="ai-type-btn"        id="aiTypeFeatures" onclick="setAIImportType('features')">Features</button>
-    <button class="ai-type-btn"        id="aiTypeTraits"   onclick="setAIImportType('traits')">Traits</button>
+    <button class="ai-type-btn active" id="aiTypeSpells"    onclick="setAIImportType('spells')">Spells</button>
+    <button class="ai-type-btn"        id="aiTypeFeatures"  onclick="setAIImportType('features')">Features</button>
+    <button class="ai-type-btn"        id="aiTypeTraits"    onclick="setAIImportType('traits')">Traits</button>
+    <button class="ai-type-btn"        id="aiTypeEquipment" onclick="setAIImportType('equipment')">Items</button>
   </div>
 
   <!-- ── AI mode ── -->
@@ -4511,6 +4696,9 @@
         placeholder="Paste the JSON array here…"></textarea>
     </div>
     <button class="settings-full-btn" onclick="importAIResponse()" style="margin-bottom:8px">Import</button>
+    <div style="text-align:center;margin-top:2px">
+      <button class="attack-edit-btn" style="padding:5px 14px;font-size:0.8rem" onclick="addCustomFromImport()">+ Create custom</button>
+    </div>
   </div>
 
   <!-- ── SRD mode ── -->
@@ -4533,6 +4721,11 @@
         –     <input type="number" id="srdLvMax" class="srd-lv-input" min="1" max="20" value="20">
       </div>
       <button class="attack-edit-btn" style="margin-top:6px;width:100%;padding:6px 0" onclick="_srdLoadClass()">Load Features</button>
+    </div>
+    <!-- Equipment search (type = equipment) -->
+    <div id="srdEquipCtrl" style="display:none">
+      <input class="ai-prompt-box" id="srdEquipSearch" style="min-height:unset;padding:8px 12px;resize:none"
+        placeholder="Search equipment by name…" oninput="_srdEquipSearch()">
     </div>
     <!-- Shared results list -->
     <div id="srdResults" class="srd-results-box">
@@ -4749,6 +4942,7 @@ let state = {
   statMods: { ac: 0, speed: 0, initiative: 0, spellatk: 0, spelldc: 0 },
   damageResistances: {},
   maxSpellsPrepared: 0,
+  equipmentItems: [],
 };
 
 // ── Init ───────────────────────────────────────────────────────────────
@@ -4764,6 +4958,7 @@ function init() {
   buildFeatures();
   buildFeaturedSpells();
   buildInfoTraits();
+  buildEquipmentItems();
   buildDiceRoller();
   renderHitDice();
   buildDamageResistances();
@@ -6576,6 +6771,156 @@ function dismissTraitPanel() {
   popModalHistory();
   document.getElementById('traitBackdrop').classList.remove('show');
   const panel = document.getElementById('traitPanel');
+  panel.classList.remove('show');
+  panel.classList.remove('edit-mode');
+}
+
+// ── Equipment items ────────────────────────────────────────────────────
+function buildEquipmentItems() {
+  const body = document.getElementById('equipmentItemsBody');
+  if (!body) return;
+  if (!state.equipmentItems || !state.equipmentItems.length) {
+    body.innerHTML = '<div style="color:var(--text-muted);font-size:12px;font-style:italic;padding:4px 0">No items yet. Tap + Add.</div>';
+    return;
+  }
+  body.innerHTML = state.equipmentItems.map((item, i) => {
+    const qty = (item.quantity && item.quantity > 1) ? `<span class="eq-item-qty">×${item.quantity}</span>` : '';
+    const cat = item.category ? `<span class="eq-item-tag">${escHtml(item.category)}</span>` : '';
+    const wt  = item.weight   ? `<span class="eq-item-weight">${escHtml(item.weight)}</span>` : '';
+    return `
+    <div class="eq-item-row" data-eq-idx="${i}"
+         onpointerdown="startEquipItemPress(event, ${i})"
+         onclick="clickEquipItem(event, ${i})"
+         onpointercancel="cancelEquipItemPress()"
+         oncontextmenu="return false">
+      <span class="eq-item-name">${escHtml(item.name)}</span>
+      ${qty}${cat}${wt}
+    </div>`;
+  }).join('');
+}
+
+let equipItemPressTimer = null;
+let equipItemPressActive = false;
+
+function startEquipItemPress(e, i) {
+  equipItemPressActive = false;
+  clearTimeout(equipItemPressTimer);
+  const el = e.currentTarget;
+  equipItemPressTimer = setTimeout(() => {
+    equipItemPressActive = true;
+    if (el) el.classList.add('holding');
+    openEquipItemPanel(i, false);
+  }, 500);
+}
+
+function cancelEquipItemPress() {
+  clearTimeout(equipItemPressTimer);
+  equipItemPressActive = false;
+  document.querySelectorAll('.eq-item-row.holding').forEach(el => el.classList.remove('holding'));
+}
+
+function clickEquipItem(e, i) {
+  clearTimeout(equipItemPressTimer);
+  document.querySelectorAll('.eq-item-row.holding').forEach(el => el.classList.remove('holding'));
+  if (equipItemPressActive) { equipItemPressActive = false; return; }
+  openEquipItemPanel(i, false);
+}
+
+let equipItemPanelIdx = -1;
+
+function openEquipItemPanel(i, editMode) {
+  pushModalHistory();
+  const panel = document.getElementById('equipItemPanel');
+  equipItemPanelIdx = i;
+  if (editMode) {
+    panel.classList.add('edit-mode');
+    populateEquipItemEditForm(i);
+    document.getElementById('eqEditDeleteBtn').style.display = i >= 0 ? '' : 'none';
+  } else {
+    panel.classList.remove('edit-mode');
+    populateEquipItemViewPanel(i);
+  }
+  document.getElementById('equipItemBackdrop').classList.add('show');
+  panel.classList.add('show');
+}
+
+function addEquipmentItem() {
+  equipItemPanelIdx = -1;
+  pushModalHistory();
+  const panel = document.getElementById('equipItemPanel');
+  panel.classList.add('edit-mode');
+  populateEquipItemEditForm(-1);
+  document.getElementById('eqEditDeleteBtn').style.display = 'none';
+  document.getElementById('equipItemBackdrop').classList.add('show');
+  panel.classList.add('show');
+  setTimeout(() => document.getElementById('eqEditName').focus(), 250);
+}
+
+function populateEquipItemViewPanel(i) {
+  const item = state.equipmentItems[i];
+  if (!item) return;
+  document.getElementById('eqNameView').textContent = item.name;
+  const parts = [];
+  if (item.quantity && item.quantity > 1) parts.push(`Qty: ${item.quantity}`);
+  if (item.category) parts.push(item.category);
+  if (item.weight)   parts.push(item.weight);
+  if (item.cost)     parts.push(item.cost);
+  document.getElementById('eqMetaView').textContent = parts.join('  ·  ');
+  document.getElementById('eqDescView').textContent = item.description || '';
+}
+
+function populateEquipItemEditForm(i) {
+  const item = i >= 0 ? state.equipmentItems[i] : null;
+  document.getElementById('eqEditName').value        = item ? item.name : '';
+  document.getElementById('eqEditQuantity').value    = item ? (item.quantity || 1) : 1;
+  document.getElementById('eqEditWeight').value      = item ? (item.weight || '') : '';
+  document.getElementById('eqEditCost').value        = item ? (item.cost || '') : '';
+  document.getElementById('eqEditCategory').value    = item ? (item.category || '') : '';
+  document.getElementById('eqEditDescription').value = item ? (item.description || '') : '';
+}
+
+function saveEquipItemEdit() {
+  const name = document.getElementById('eqEditName').value.trim();
+  if (!name) { toast('Name required'); return; }
+  const item = {
+    name,
+    quantity:    parseInt(document.getElementById('eqEditQuantity').value, 10) || 1,
+    weight:      document.getElementById('eqEditWeight').value.trim(),
+    cost:        document.getElementById('eqEditCost').value.trim(),
+    category:    document.getElementById('eqEditCategory').value.trim(),
+    description: document.getElementById('eqEditDescription').value.trim(),
+  };
+  if (equipItemPanelIdx >= 0) {
+    state.equipmentItems[equipItemPanelIdx] = item;
+  } else {
+    state.equipmentItems.push(item);
+  }
+  buildEquipmentItems();
+  saveData();
+  dismissEquipItemPanel();
+  toast('Item saved');
+}
+
+function deleteCurrentEquipItem() {
+  if (equipItemPanelIdx < 0) return;
+  if (!confirm(`Remove "${state.equipmentItems[equipItemPanelIdx].name}"?`)) return;
+  state.equipmentItems.splice(equipItemPanelIdx, 1);
+  buildEquipmentItems();
+  saveData();
+  dismissEquipItemPanel();
+}
+
+function switchToEquipEdit() {
+  document.getElementById('equipItemPanel').classList.add('edit-mode');
+  populateEquipItemEditForm(equipItemPanelIdx);
+  document.getElementById('eqEditDeleteBtn').style.display = equipItemPanelIdx >= 0 ? '' : 'none';
+  setTimeout(() => document.getElementById('eqEditName').focus(), 100);
+}
+
+function dismissEquipItemPanel() {
+  popModalHistory();
+  document.getElementById('equipItemBackdrop').classList.remove('show');
+  const panel = document.getElementById('equipItemPanel');
   panel.classList.remove('show');
   panel.classList.remove('edit-mode');
 }
@@ -8687,7 +9032,7 @@ function removePortrait() {
 function collectFormData() {
   const ids = ['charName','charClass','charSubclass','charRace','charLevel','charBackground',
     'charAlignment','charXP','personality','ideals','bonds','flaws',
-    'hpMax','hpTemp','statAC','statSpeed','statHitDice','equipment',
+    'hpMax','hpTemp','statAC','statSpeed','statHitDice',
     'languages','notes','spellAbility','cp','sp','ep','gp','pp'];
   const data = {};
   ids.forEach(id => { const el = document.getElementById(id); if (el) data[id] = el.value; });
@@ -8718,6 +9063,7 @@ function buildPayload() {
       statMods: state.statMods,
       damageResistances: state.damageResistances,
       maxSpellsPrepared: state.maxSpellsPrepared,
+      equipmentItems: state.equipmentItems,
     }
   };
 }
@@ -8773,7 +9119,7 @@ function clearSheet() {
     inspiration: false, hpCurrent: 10,
     spellSlots: SPELL_SLOTS_DEFAULT.map(s => ({...s, used:0})),
     spells: [], attacks: [], conditions: [], classFeatures: [],
-    infoTraits: [], hitDiceUsed: 0, diceRoller: null, portrait: null,
+    infoTraits: [], equipmentItems: [], hitDiceUsed: 0, diceRoller: null, portrait: null,
     statMods: { ac: 0, speed: 0, initiative: 0, spellatk: 0, spelldc: 0 },
     damageResistances: {},
   });
@@ -8782,7 +9128,7 @@ function clearSheet() {
 function _rebuildAll() {
   buildAbilityGrid(); buildSkillsList(); buildEquipProfList(); buildConditions();
   buildSpellSlots(); buildSpellsKnown(); buildSpellsPrepared(); buildFeatures(); buildFeaturedSpells();
-  buildInfoTraits(); buildDiceRoller(); renderHitDice(); buildDamageResistances(); renderAttacks();
+  buildInfoTraits(); buildEquipmentItems(); buildDiceRoller(); renderHitDice(); buildDamageResistances(); renderAttacks();
   recalcAll(); updateHeader(); updateHP(); applyPortrait();
   document.getElementById('inspirationBtn').classList.toggle('active', state.inspiration);
 }
@@ -9027,6 +9373,7 @@ function _applyPayloadData(payload) {
     }
     if (!Array.isArray(state.equipProficiencies)) state.equipProficiencies = [];
     if (!Array.isArray(state.customEquipProfRows)) state.customEquipProfRows = [];
+    if (!Array.isArray(state.equipmentItems)) state.equipmentItems = [];
   }
 }
 
@@ -9083,6 +9430,14 @@ function dismissAIImport() {
   document.getElementById('aiImportPanel').classList.remove('show');
 }
 
+function addCustomFromImport() {
+  dismissAIImport();
+  if (aiImportType === 'spells')    addSpell();
+  else if (aiImportType === 'features') addFeature();
+  else if (aiImportType === 'traits')   addInfoTrait();
+  else if (aiImportType === 'equipment') addEquipmentItem();
+}
+
 function setModalMode(mode) {
   srdModalMode = mode;
   document.getElementById('aiModeAI').classList.toggle('active',  mode === 'ai');
@@ -9094,17 +9449,19 @@ function setModalMode(mode) {
 
 function setAIImportType(type) {
   aiImportType = type;
-  document.getElementById('aiTypeSpells').classList.toggle('active',   type === 'spells');
-  document.getElementById('aiTypeFeatures').classList.toggle('active', type === 'features');
-  document.getElementById('aiTypeTraits').classList.toggle('active',   type === 'traits');
+  document.getElementById('aiTypeSpells').classList.toggle('active',     type === 'spells');
+  document.getElementById('aiTypeFeatures').classList.toggle('active',   type === 'features');
+  document.getElementById('aiTypeTraits').classList.toggle('active',     type === 'traits');
+  document.getElementById('aiTypeEquipment').classList.toggle('active',  type === 'equipment');
   if (srdModalMode === 'srd') _srdInitForType(type);
 }
 
 function generateAndCopyAIPrompt() {
   const what = document.getElementById('aiWhatInput').value.trim();
   if (!what) { toast('Describe what to add first'); return; }
-  const prompt = aiImportType === 'spells' ? _buildSpellPrompt(what)
-               : aiImportType === 'traits' ? _buildTraitPrompt(what)
+  const prompt = aiImportType === 'spells'     ? _buildSpellPrompt(what)
+               : aiImportType === 'traits'     ? _buildTraitPrompt(what)
+               : aiImportType === 'equipment'  ? _buildEquipmentPrompt(what)
                : _buildFeaturePrompt(what);
   navigator.clipboard.writeText(prompt).then(() => {
     document.getElementById('aiCopyNotice').textContent = 'Copied! Paste into Claude, ChatGPT, or Gemini.';
@@ -9214,7 +9571,8 @@ function importAIResponse() {
 
   // Accept a plain array or an object containing the relevant key
   let items = Array.isArray(parsed) ? parsed
-    : (parsed.spells || parsed.features || parsed.classFeatures || parsed.traits || parsed.infoTraits || null);
+    : (parsed.spells || parsed.features || parsed.classFeatures || parsed.traits || parsed.infoTraits
+       || parsed.equipment || parsed.equipmentItems || null);
   if (!Array.isArray(items)) { toast('Expected a JSON array'); return; }
   if (items.length === 0) { toast('Array is empty'); return; }
 
@@ -9235,6 +9593,13 @@ function importAIResponse() {
     state.infoTraits = (state.infoTraits || []).concat(newItems);
     buildInfoTraits(); saveData();
     toast(`${newItems.length} trait${newItems.length > 1 ? 's' : ''} added`);
+  } else if (aiImportType === 'equipment') {
+    const existingNames = new Set((state.equipmentItems || []).map(e => e.name.toLowerCase()));
+    const newItems = items.filter(e => !existingNames.has(e.name.toLowerCase()));
+    if (!newItems.length) { toast('All items already exist'); return; }
+    state.equipmentItems = (state.equipmentItems || []).concat(newItems);
+    buildEquipmentItems(); saveData();
+    toast(`${newItems.length} item${newItems.length > 1 ? 's' : ''} added`);
   } else {
     const existingNames = new Set((state.classFeatures || []).map(f => f.name.toLowerCase()));
     const newItems = items.filter(f => !existingNames.has(f.name.toLowerCase())).map(_normalizeFeature);
@@ -9262,9 +9627,10 @@ async function _srdGet(path) {
 }
 
 function _srdShowCtrls(type) {
-  document.getElementById('srdSpellCtrl').style.display   = type === 'spells'   ? '' : 'none';
-  document.getElementById('srdTraitCtrl').style.display   = type === 'traits'   ? '' : 'none';
-  document.getElementById('srdFeatureCtrl').style.display = type === 'features' ? '' : 'none';
+  document.getElementById('srdSpellCtrl').style.display    = type === 'spells'    ? '' : 'none';
+  document.getElementById('srdTraitCtrl').style.display    = type === 'traits'    ? '' : 'none';
+  document.getElementById('srdFeatureCtrl').style.display  = type === 'features'  ? '' : 'none';
+  document.getElementById('srdEquipCtrl').style.display    = type === 'equipment' ? '' : 'none';
   document.getElementById('srdStatus').textContent = '';
   srdSelected.clear();
 }
@@ -9287,6 +9653,10 @@ async function _srdInitForType(type) {
     } catch(e) {
       box.innerHTML = '<div class="srd-hint">Could not reach SRD API — check your connection.</div>';
     }
+  } else if (type === 'equipment') {
+    document.getElementById('srdEquipSearch').value = '';
+    box.innerHTML = '<div class="srd-hint">Type at least 2 characters to search.</div>';
+    _srdGet('/equipment').catch(() => {});  // pre-warm cache silently
   } else {
     box.innerHTML = '<div class="srd-loading">Loading classes…</div>';
     try {
@@ -9309,6 +9679,20 @@ async function _srdSpellSearch() {
   try {
     const data    = await _srdGet('/spells');
     const matches = data.results.filter(s => s.name.toLowerCase().includes(q)).slice(0, 40);
+    _srdRenderList(matches);
+  } catch(e) {
+    box.innerHTML = '<div class="srd-hint">Could not reach SRD API — check your connection.</div>';
+  }
+}
+
+async function _srdEquipSearch() {
+  const q   = document.getElementById('srdEquipSearch').value.toLowerCase().trim();
+  const box = document.getElementById('srdResults');
+  if (q.length < 2) { box.innerHTML = '<div class="srd-hint">Type at least 2 characters.</div>'; return; }
+  box.innerHTML = '<div class="srd-loading">Searching…</div>';
+  try {
+    const data    = await _srdGet('/equipment');
+    const matches = data.results.filter(e => e.name.toLowerCase().includes(q)).slice(0, 50);
     _srdRenderList(matches);
   } catch(e) {
     box.innerHTML = '<div class="srd-hint">Could not reach SRD API — check your connection.</div>';
@@ -9420,6 +9804,19 @@ async function addSelectedSRD() {
       state.infoTraits = (state.infoTraits || []).concat(toAdd);
       buildInfoTraits(); saveData();
       toast(`${toAdd.length} trait${toAdd.length > 1 ? 's' : ''} added`);
+    } else if (aiImportType === 'equipment') {
+      const existing = new Set((state.equipmentItems || []).map(e => e.name.toLowerCase()));
+      const toAdd = [];
+      for (let i = 0; i < indices.length; i++) {
+        btn.textContent = `Fetching ${i + 1}/${indices.length}…`;
+        const eq = await _srdGet('/equipment/' + indices[i]);
+        const m  = _mapSrdEquipment(eq);
+        if (!existing.has(m.name.toLowerCase())) toAdd.push(m);
+      }
+      if (!toAdd.length) { toast('All selected items already exist'); return; }
+      state.equipmentItems = (state.equipmentItems || []).concat(toAdd);
+      buildEquipmentItems(); saveData();
+      toast(`${toAdd.length} item${toAdd.length > 1 ? 's' : ''} added`);
     } else {
       const existing = new Set((state.classFeatures || []).map(f => f.name.toLowerCase()));
       const toAdd = [];
@@ -9493,6 +9890,47 @@ function _mapSrdFeature(feat) {
     saveAbility:      '', saveDC: 0,
     description:      desc.length > 600 ? desc.slice(0, 597) + '…' : desc,
   };
+}
+
+function _mapSrdEquipment(eq) {
+  const parts = [];
+  if (eq.weapon_category)   parts.push(eq.weapon_category);
+  else if (eq.armor_category) parts.push(eq.armor_category);
+  else if (eq.equipment_category?.name) parts.push(eq.equipment_category.name);
+  const cat  = parts[0] || '';
+  const cost = eq.cost ? `${eq.cost.quantity} ${eq.cost.unit}` : '';
+  const wt   = eq.weight ? `${eq.weight} lb` : '';
+  const descParts = [];
+  if (eq.damage) descParts.push(`Damage: ${eq.damage.damage_dice}${eq.damage.damage_type?.name ? ' ' + eq.damage.damage_type.name : ''}`);
+  if (eq.armor_class?.base) descParts.push(`AC: ${eq.armor_class.base}${eq.armor_class.dex_bonus ? ' + DEX' : ''}`);
+  if (Array.isArray(eq.properties) && eq.properties.length)
+    descParts.push('Properties: ' + eq.properties.map(p => p.name).join(', '));
+  if (Array.isArray(eq.desc) && eq.desc.length)
+    descParts.push(eq.desc.join(' '));
+  const description = descParts.join('\n').slice(0, 600);
+  return { name: eq.name, quantity: 1, weight: wt, cost, category: cat, description };
+}
+
+function _buildEquipmentPrompt(what) {
+  const existing = (state.equipmentItems || []).map(e => e.name).join(', ') || 'none';
+  return `You are a D&D 5e assistant. Return ONLY a raw JSON array — no markdown fences, no explanation, no trailing text.
+
+Add these equipment items to my character sheet: ${what}
+
+Each item must use this exact JSON structure:
+{
+  "name": string,
+  "quantity": integer (default 1),
+  "weight": string (e.g. "3 lb" or ""),
+  "cost": string (e.g. "15 gp" or ""),
+  "category": string (e.g. "Weapon", "Armor", "Adventuring Gear", "Tool" or ""),
+  "description": string (concise properties, 1-3 sentences or "")
+}
+
+Items already on this sheet (skip these): ${existing}
+
+Output ONLY the JSON array. Example:
+[{"name":"Longsword","quantity":1,"weight":"3 lb","cost":"15 gp","category":"Weapon","description":"Versatile (1d10). Slashing damage."}]`;
 }
 
 // ── Section header hold descriptions ──────────────────────────────────

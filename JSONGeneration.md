@@ -45,7 +45,6 @@ Contains every HTML form field value as a **string**, even when the field holds 
 
   "spellAbility":   "INT",
 
-  "equipment":      "- Rapier (1d8 piercing)\n- Hand Crossbow\n- Thieves' Tools\n- Bag of Holding",
   "languages":      "Common, Elvish, Thieves' Cant",
   "notes":          "Session 12: found the map to the vault.",
 
@@ -79,7 +78,6 @@ Contains every HTML form field value as a **string**, even when the field holds 
 | `statSpeed` | string (int) | Any integer (feet) |
 | `statHitDice` | string | Dice notation e.g. `"7d8"` |
 | `spellAbility` | string | `"INT"`, `"WIS"`, `"CHA"`, or `""` |
-| `equipment` | string | Free text |
 | `languages` | string | Free text |
 | `notes` | string | Free text |
 | `cp` | string (int) | `"0"` or higher (copper pieces) |
@@ -599,6 +597,33 @@ Integer. The daily preparation limit for spells marked with the P dot (`prepared
 ```
 
 Set via the editable number input in the Spells Known section header. Omitting this key defaults to `0` (unlimited).
+
+#### `equipmentItems`
+Array of equipment item objects displayed in the Inventory tab. Can be empty (`[]`). Each row is tappable (opens view panel) and hold-able (500 ms, opens same view panel). The view panel shows description and meta info; an Edit button switches to edit mode.
+
+Each object:
+
+| Key | Type | Description |
+|---|---|---|
+| `name` | string | Item name (required) |
+| `quantity` | integer | How many the character carries (default `1`; not shown in row when `1`) |
+| `weight` | string | Weight string (e.g. `"3 lb"`) — shown in the row and view panel (optional) |
+| `cost` | string | Cost string (e.g. `"15 gp"`) — shown in the view panel only (optional) |
+| `category` | string | Category label (e.g. `"Weapon"`, `"Armor"`, `"Adventuring Gear"`) — shown as a small badge in the row (optional) |
+| `description` | string | Free text shown in the view panel; newlines are preserved (optional) |
+
+```json
+"equipmentItems": [
+  { "name": "Longsword", "quantity": 1, "weight": "3 lb", "cost": "15 gp",
+    "category": "Weapon", "description": "Versatile (1d10). Slashing damage." },
+  { "name": "Chain Mail", "quantity": 1, "weight": "55 lb", "cost": "75 gp",
+    "category": "Armor", "description": "AC 16. Disadvantage on Stealth." },
+  { "name": "Explorer's Pack", "quantity": 1, "weight": "59 lb", "cost": "10 gp",
+    "category": "Adventuring Gear", "description": "Backpack, bedroll, mess kit, tinderbox, 10 torches, 10 days of rations, waterskin, 50 ft of hempen rope." }
+]
+```
+
+Items can be imported from the SRD (`/equipment` endpoint) via the **Items** tab in the Import modal, generated via AI prompt, or created manually via the "+ Create custom" button in the Import modal.
 
 #### `conditions`
 Array of active condition name strings.
