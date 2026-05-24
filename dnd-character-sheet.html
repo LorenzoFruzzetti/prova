@@ -4520,6 +4520,10 @@ function applyUndo(a) {
       renderAttacks(); saveData(); toast('↩ Attack removed'); break;
     case 'hp':
       state.hpCurrent = a.previous;
+      if (a.previousTemp !== undefined) {
+        const tempEl = document.getElementById('hpTemp');
+        if (tempEl) tempEl.value = a.previousTemp;
+      }
       updateHP(); toast('↩ HP restored'); break;
     case 'saveProf': {
       const idx = state.saveProficiencies.indexOf(a.ab);
@@ -5292,11 +5296,39 @@ function cycleSkillProf(name, el) {
 }
 
 // ── HP ─────────────────────────────────────────────────────────────────
-function adjustHP(delta) {
-  pushUndo({type: 'hp', previous: state.hpCurrent});
-  const max = parseInt(document.getElementById('hpMax').value) || 1;
-  state.hpCurrent = Math.max(0, Math.min(max, state.hpCurrent + delta));
+function applyHpDelta(delta) {
+  const max    = parseInt(document.getElementById('hpMax').value) || 1;
+  const tempEl = document.getElementById('hpTemp');
+  if (delta < 0) {
+    // Damage: deplete temp HP first, then regular HP
+    let temp = parseInt(tempEl.value) || 0;
+    const damage = -delta;
+    if (temp > 0) {
+      const tempUsed = Math.min(temp, damage);
+      tempEl.value   = temp - tempUsed;
+      const remaining = damage - tempUsed;
+      state.hpCurrent = Math.max(0, state.hpCurrent - remaining);
+    } else {
+      state.hpCurrent = Math.max(0, state.hpCurrent + delta);
+    }
+  } else {
+    // Healing: overflow above max goes to temp HP
+    const newHp = state.hpCurrent + delta;
+    if (newHp > max) {
+      const excess = newHp - max;
+      state.hpCurrent = max;
+      tempEl.value = (parseInt(tempEl.value) || 0) + excess;
+    } else {
+      state.hpCurrent = newHp;
+    }
+  }
   updateHP();
+}
+
+function adjustHP(delta) {
+  const tempEl = document.getElementById('hpTemp');
+  pushUndo({type: 'hp', previous: state.hpCurrent, previousTemp: parseInt(tempEl.value) || 0});
+  applyHpDelta(delta);
   if (state.hpCurrent === 0) toast('⚠ Unconscious!');
 }
 
@@ -7236,9 +7268,7 @@ function startHpHold(delta) {
     hpHoldPending = null;
     adjustHP(delta);
     hpHoldInterval = setInterval(() => {
-      const max = parseInt(document.getElementById('hpMax').value) || 1;
-      state.hpCurrent = Math.max(0, Math.min(max, state.hpCurrent + delta));
-      updateHP();
+      applyHpDelta(delta);
       if (state.hpCurrent === 0) toast('⚠ Unconscious!');
     }, 80);
   }, 500);

@@ -950,8 +950,9 @@ DOMContentLoaded
 | `dismissAttackPanel()` | Backdrop tap or Cancel in panel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#attackPanel` |
 | `rollFromAttackPanel(mode='normal')` | Tap zone in `.roll-tri` inside attack panel view | Rolls d20 + attack bonus with given mode; rolls damage as secondary; calls `showRoll()` |
 | `addAttack()` | "+ Add Attack" button | Opens attack panel in edit mode with empty form (`attackPanelIdx = -1`) |
-| `adjustHP(delta)` | +/− HP buttons (single tap) | Pushes undo; clamps `state.hpCurrent` to `[0, max]`; calls `updateHP()` |
-| `startHpHold(delta)` / `stopHpHold()` | `pointerdown` / `pointerup` on HP buttons | Calls `adjustHP` immediately, then repeats at 80 ms after a 500 ms delay |
+| `applyHpDelta(delta)` | Core HP mutation (no undo) | Damage (`delta<0`): depletes temp HP first, then current HP. Healing (`delta>0`): if result exceeds max, overflow adds to temp HP. Calls `updateHP()` |
+| `adjustHP(delta)` | +/− HP buttons (single tap) | Pushes undo (saves both `hpCurrent` and `hpTemp`); delegates to `applyHpDelta(delta)` |
+| `startHpHold(delta)` / `stopHpHold()` | `pointerdown` / `pointerup` on HP buttons | Calls `adjustHP` immediately, then calls `applyHpDelta` at 80 ms intervals after a 500 ms delay |
 | `resetHPToFull()` | ↺ Restore HP button | Pushes undo; sets `state.hpCurrent = hpMax`; calls `updateHP()` |
 | `updateHP()` | Max/Temp HP input or any HP adjustment | Refreshes HP display, bar color, and max label |
 | `openHpDialog()` | Tap HP display area | Populates and shows the HP bottom sheet; auto-selects the input after transition |
