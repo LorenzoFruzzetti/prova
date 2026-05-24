@@ -1426,7 +1426,7 @@ The app supports two SRD sources that are used automatically based on what is av
 - **2014 SRD (`dnd5eapi.co`)** — Requires internet. Results cached in `localStorage` under keys prefixed `srd_v1_`. Active when the local 2024 index is not present.
 - **2024 SRD (local index)** — Requires Netlify / server. Static JSON files fetched from `/srd2024/*.json`. Loaded once into the `_srd24Files` in-memory cache; no `localStorage` usage. Active when `/srd2024/translation.json` can be fetched successfully.
 
-Edition is detected automatically on first SRD modal open via `_srd24Detect()`.
+Edition availability is detected automatically on modal open via `_srd24Detect()`. Users can override the edition with the **2014 / 2024 pill toggle** displayed in the import modal (between the type tabs and the content area); preference is stored in `_srdEditionPref`. All edition-dependent code calls `_srdUse24()` rather than `_srd24Detect()` directly.
 
 ##### 2024 local index infrastructure
 
@@ -1436,8 +1436,13 @@ Edition is detected automatically on first SRD modal open via `_srd24Detect()`.
 | `_srd24Translation` | `object\|null` | Parsed `translation.json`; loaded once by `_srd24Detect()` |
 | `_srd24Files` | `{[category]: Array}` | In-memory cache of loaded local JSON files |
 | `_srd24FeatureMap` | `{[key]: object}` | Maps checkbox-value keys → full item objects; populated by `_srdLoadRace()` and `_srdLoadClass()` in 2024 mode |
+| `_srdEditionPref` | `'2014'\|'2024'\|'auto'` | User-selected edition preference; `'2014'` by default |
 | `_srd24Detect()` | async fn | Probes `/srd2024/translation.json`; sets `_srd24Available` and `_srd24Translation`; idempotent |
 | `_srd24Load(category)` | async fn | Fetches `/srd2024/{category}.json` if not already in `_srd24Files`; returns the array |
+| `_srdUse24()` | async fn | Returns `true` if the 2024 edition should be used, honouring `_srdEditionPref`; delegates to `_srd24Detect()` for `'auto'` |
+| `_srdEditionLabel()` | fn | Returns a human-readable string like `"5e (2024 edition)"` for use in AI prompts; reflects current `_srdEditionPref` |
+| `_srdUpdateEditionUI()` | fn | Updates `.active` class on the 2014/2024 pill buttons; disables the 2024 button when `_srd24Available === false` |
+| `setSrdEdition(ed)` | fn | Sets `_srdEditionPref` to `'2014'` or `'2024'`, updates the UI, and re-initialises the current type tab |
 
 ##### Core SRD functions (edition-aware)
 

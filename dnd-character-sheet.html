@@ -3086,6 +3086,17 @@
   .ai-mode-btn.active {
     background: rgba(var(--accent-rgb),0.18); border-color: var(--gold); color: var(--gold);
   }
+  /* ── edition toggle (2014 / 2024) ── */
+  .srd-edition-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .srd-edition-btn {
+    flex: 1; padding: 4px 0; border-radius: 8px; font-size: 0.78rem; font-weight: 600;
+    border: 1.5px solid rgba(255,255,255,0.15); background: transparent;
+    color: var(--text-muted,#aaa); cursor: pointer; transition: background 0.15s, border-color 0.15s;
+  }
+  .srd-edition-btn.active {
+    background: rgba(var(--spell-rgb),0.15); border-color: var(--spell); color: var(--spell-light);
+  }
+  .srd-edition-btn:disabled { opacity: 0.35; cursor: default; }
   /* ── SRD browse section ── */
   .ai-select {
     width: 100%; box-sizing: border-box; font-size: 0.82rem;
@@ -4857,6 +4868,12 @@
     <button class="ai-type-btn"        id="aiTypeFeatures"  onclick="setAIImportType('features')">Features</button>
     <button class="ai-type-btn"        id="aiTypeTraits"    onclick="setAIImportType('traits')">Traits</button>
     <button class="ai-type-btn"        id="aiTypeEquipment" onclick="setAIImportType('equipment')">Items</button>
+  </div>
+
+  <!-- Edition toggle (visible in both modes) -->
+  <div class="srd-edition-row" id="srdEditionRow">
+    <button class="srd-edition-btn active" id="srdEd2014" onclick="setSrdEdition('2014')">2014</button>
+    <button class="srd-edition-btn"        id="srdEd2024" onclick="setSrdEdition('2024')">2024</button>
   </div>
 
   <!-- ── AI mode ── -->
@@ -9775,6 +9792,8 @@ function openAIImport(type) {
   document.getElementById('aiImportBackdrop').classList.add('show');
   document.getElementById('aiImportPanel').classList.add('show');
   setTimeout(() => document.getElementById('aiWhatInput').focus(), 250);
+  // Probe 2024 availability and update edition toggle accordingly
+  _srd24Detect().then(() => _srdUpdateEditionUI());
 }
 
 function dismissAIImport() {
@@ -9829,7 +9848,7 @@ function generateAndCopyAIPrompt() {
 
 function _buildSpellPrompt(what) {
   const existing = (state.spells || []).map(s => s.name).join(', ') || 'none';
-  return `You are a D&D 5e assistant. Return ONLY a raw JSON array — no markdown fences, no explanation, no trailing text.
+  return `You are a D&D ${_srdEditionLabel()} assistant. Return ONLY a raw JSON array — no markdown fences, no explanation, no trailing text.
 
 Add these spells to my character sheet: ${what}
 
@@ -9860,7 +9879,7 @@ Output ONLY the JSON array. Example output format:
 
 function _buildFeaturePrompt(what) {
   const existing = (state.classFeatures || []).map(f => f.name).join(', ') || 'none';
-  return `You are a D&D 5e assistant. Return ONLY a raw JSON array — no markdown fences, no explanation, no trailing text.
+  return `You are a D&D ${_srdEditionLabel()} assistant. Return ONLY a raw JSON array — no markdown fences, no explanation, no trailing text.
 
 Add these class features to my character sheet: ${what}
 
@@ -9886,7 +9905,7 @@ Output ONLY the JSON array. Example output format:
 
 function _buildTraitPrompt(what) {
   const existing = (state.infoTraits || []).map(t => t.name).join(', ') || 'none';
-  return `You are a D&D 5e assistant. Return ONLY a raw JSON array — no markdown fences, no explanation, no trailing text.
+  return `You are a D&D ${_srdEditionLabel()} assistant. Return ONLY a raw JSON array — no markdown fences, no explanation, no trailing text.
 
 Add these features / traits to my character sheet: ${what}
 
@@ -9974,6 +9993,9 @@ let _srd24Translation = null;
 const _srd24Files = {};        // category → loaded array (in-memory cache)
 const _srd24FeatureMap = {};   // checkbox-value key → full item object
 
+// 'auto' = detect from server; '2014' / '2024' = user-forced preference
+let _srdEditionPref = '2014';
+
 async function _srd24Detect() {
   if (_srd24Available !== null) return _srd24Available;
   try {
@@ -9983,6 +10005,40 @@ async function _srd24Detect() {
     _srd24Available = true;
   } catch { _srd24Available = false; }
   return _srd24Available;
+}
+
+// Resolves which edition to use, honouring user preference
+async function _srdUse24() {
+  if (_srdEditionPref === '2024') return await _srd24Detect();
+  if (_srdEditionPref === '2014') return false;
+  return await _srd24Detect(); // 'auto'
+}
+
+// Returns a human-readable edition label for AI prompts
+function _srdEditionLabel() {
+  if (_srdEditionPref === '2024') return '5e (2024 edition)';
+  if (_srdEditionPref === '2014') return '5e (2014 edition)';
+  return '5e';
+}
+
+// Update edition toggle button appearance; disable 2024 btn if unavailable
+function _srdUpdateEditionUI() {
+  const btn14 = document.getElementById('srdEd2014');
+  const btn24 = document.getElementById('srdEd2024');
+  if (!btn14 || !btn24) return;
+  btn14.classList.toggle('active', _srdEditionPref !== '2024');
+  btn24.classList.toggle('active', _srdEditionPref === '2024');
+  // Dim 2024 button if local files are not available
+  btn24.disabled = (_srd24Available === false);
+}
+
+function setSrdEdition(ed) {
+  if (ed === '2024' && _srd24Available === false) return; // unavailable, ignore
+  _srdEditionPref = ed;
+  _srdUpdateEditionUI();
+  // Re-init the current type so results immediately reflect the new edition
+  const activeType = document.querySelector('.ai-type-btn.active');
+  if (activeType) _srdInitForType(aiImportType);
 }
 
 async function _srd24Load(category) {
@@ -10016,7 +10072,7 @@ function _srdShowCtrls(type) {
 async function _srdInitForType(type) {
   _srdShowCtrls(type);
   const box   = document.getElementById('srdResults');
-  const use24 = await _srd24Detect();
+  const use24 = await _srdUse24();
   if (type === 'spells') {
     document.getElementById('srdSpellSearch').value = '';
     box.innerHTML = '<div class="srd-hint">Type at least 2 characters to search.</div>';
@@ -10071,7 +10127,7 @@ async function _srdSpellSearch() {
   if (q.length < 2) { box.innerHTML = '<div class="srd-hint">Type at least 2 characters.</div>'; return; }
   box.innerHTML = '<div class="srd-loading">Searching…</div>';
   try {
-    if (await _srd24Detect()) {
+    if (await _srdUse24()) {
       const data    = await _srd24Load('spells');
       const matches = data.filter(s => s.name.toLowerCase().includes(q)).slice(0, 40);
       _srdRenderList(matches);
@@ -10091,7 +10147,7 @@ async function _srdEquipSearch() {
   if (q.length < 2) { box.innerHTML = '<div class="srd-hint">Type at least 2 characters.</div>'; return; }
   box.innerHTML = '<div class="srd-loading">Searching…</div>';
   try {
-    if (await _srd24Detect()) {
+    if (await _srdUse24()) {
       const data    = await _srd24Load('equipment');
       const matches = data.filter(e => e.name.toLowerCase().includes(q)).slice(0, 50);
       _srdRenderList(matches);
@@ -10112,7 +10168,7 @@ async function _srdLoadRace() {
   box.innerHTML = '<div class="srd-loading">Loading…</div>';
   srdSelected.clear();
   try {
-    if (await _srd24Detect()) {
+    if (await _srdUse24()) {
       const all = await _srd24Load('species');
       const sp  = all.find(s => s.index === idx);
       const traits = sp?.traits || [];
@@ -10139,7 +10195,7 @@ async function _srdLoadClass() {
   box.innerHTML = '<div class="srd-loading">Loading…</div>';
   srdSelected.clear();
   try {
-    if (await _srd24Detect()) {
+    if (await _srdUse24()) {
       const all = await _srd24Load('classes');
       const cls = all.find(c => c.index === idx);
       if (!cls) { box.innerHTML = '<div class="srd-hint">Class not found.</div>'; return; }
@@ -10231,7 +10287,7 @@ async function addSelectedSRD() {
   if (!srdSelected.size) { toast('Select at least one item'); return; }
   const btn   = document.getElementById('srdAddBtn');
   const orig  = btn.textContent;
-  const use24 = await _srd24Detect();
+  const use24 = await _srdUse24();
   btn.disabled = true;
   try {
     const indices = [...srdSelected];
@@ -10513,7 +10569,7 @@ async function icaSearchSrd(p, type) {
   if (applyDesc) applyDesc.style.display = 'none';
   delete _icaCache[p];
   try {
-    const use24 = await _srd24Detect();
+    const use24 = await _srdUse24();
     const q     = name.toLowerCase();
     let match, detail;
     if (use24) {
@@ -10605,10 +10661,10 @@ function icaCopyPrompt(p, type) {
   const name = document.getElementById(ICA_CFG[p].nameId).value.trim() || '[name]';
   let prompt;
   if (type === 'spells') {
-    prompt = `I'm building a D&D 5e character sheet. Provide full details for the spell "${name}".\n\nReturn ONLY a JSON object with these exact fields (no markdown, no extra text):\n{\n  "description": "full spell description",\n  "level": 0,\n  "school": "e.g. Evocation",\n  "castingTime": "e.g. 1 action",\n  "range": "e.g. 60 ft",\n  "components": "e.g. V, S, M (material if any)",\n  "duration": "e.g. Instantaneous",\n  "saveAbility": "WIS or empty string if no save",\n  "concentration": false,\n  "ritual": false\n}`;
+    prompt = `I'm building a D&D ${_srdEditionLabel()} character sheet. Provide full details for the spell "${name}".\n\nReturn ONLY a JSON object with these exact fields (no markdown, no extra text):\n{\n  "description": "full spell description",\n  "level": 0,\n  "school": "e.g. Evocation",\n  "castingTime": "e.g. 1 action",\n  "range": "e.g. 60 ft",\n  "components": "e.g. V, S, M (material if any)",\n  "duration": "e.g. Instantaneous",\n  "saveAbility": "WIS or empty string if no save",\n  "concentration": false,\n  "ritual": false\n}`;
   } else {
     const cfg = ICA_CFG[p];
-    prompt = `I'm building a D&D 5e character sheet. My character has a ${cfg.label} called "${name}".\n\nWrite a concise description (2–4 sentences) explaining what this ${cfg.label} does, including any mechanical effects and relevant flavor text. Return only the description text, no extra commentary.`;
+    prompt = `I'm building a D&D ${_srdEditionLabel()} character sheet. My character has a ${cfg.label} called "${name}".\n\nWrite a concise description (2–4 sentences) explaining what this ${cfg.label} does, including any mechanical effects and relevant flavor text. Return only the description text, no extra commentary.`;
   }
   navigator.clipboard.writeText(prompt).then(() => {
     const el = document.getElementById(p + 'IcaCopyNotice');
@@ -10676,7 +10732,7 @@ async function enrichAllFromSrd() {
   const origText = btn.textContent;
   btn.disabled   = true;
   let updated = 0, fetched = 0;
-  const use24 = await _srd24Detect();
+  const use24 = await _srdUse24();
 
   if (use24) {
     async function _enrich24(items, category, applyFn, getPool) {
@@ -10797,7 +10853,7 @@ async function enrichAllFromSrd() {
 
 function _buildEquipmentPrompt(what) {
   const existing = (state.equipmentItems || []).map(e => e.name).join(', ') || 'none';
-  return `You are a D&D 5e assistant. Return ONLY a raw JSON array — no markdown fences, no explanation, no trailing text.
+  return `You are a D&D ${_srdEditionLabel()} assistant. Return ONLY a raw JSON array — no markdown fences, no explanation, no trailing text.
 
 Add these equipment items to my character sheet: ${what}
 
