@@ -565,9 +565,13 @@
     border-radius: var(--radius);
     padding: 7px 8px 0;
     cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
   }
 
-  .ability-card:active { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
+  .ability-card:active,
+  .ability-card.holding { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
 
   .ability-header {
     display: flex;
@@ -618,9 +622,11 @@
     border-top: 1px solid rgba(var(--border-rgb),0.4);
     border-radius: 0 0 var(--radius) var(--radius);
     cursor: pointer;
+    touch-action: manipulation;
   }
 
-  .ability-save:active { background: rgba(var(--accent-rgb),0.1); }
+  .ability-save:active,
+  .ability-save.holding { background: rgba(var(--accent-rgb),0.1); }
 
   .ability-save .save-mod {
     font-size: 17px;
@@ -778,16 +784,24 @@
     gap: 10px;
     padding: 7px 0;
     border-bottom: 1px solid rgba(var(--border-rgb),0.3);
-    cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
+  }
+
+  .check-item:last-child { border-bottom: none; }
+
+  .check-roll-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    align-self: stretch;
+    cursor: pointer;
     touch-action: manipulation;
   }
 
-  .check-item:active { background: rgba(var(--accent-rgb),0.08); }
-
-  .check-item:last-child { border-bottom: none; }
+  .check-roll-area:active { background: rgba(var(--accent-rgb),0.08); }
 
   .prof-dots {
     display: flex;
@@ -974,8 +988,10 @@
     transition: border-color 0.15s, background 0.15s;
     -webkit-user-select: none;
     user-select: none;
+    touch-action: manipulation;
   }
-  .hit-die-roll:active { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
+  .hit-die-roll:active,
+  .hit-die-roll.holding { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
 
   /* lefty mode: swap dots and mini-tracker */
   body.lefty .spell-level-row .spell-slots-dots { order: 3; }
@@ -1436,9 +1452,12 @@
   .stat-pill.interactive {
     border-width: var(--roll-border);
     border-color: rgba(var(--accent-rgb),0.5);
+    touch-action: manipulation;
   }
   .stat-pill.rollable:active,
-  .stat-pill.interactive:active { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
+  .stat-pill.rollable.holding,
+  .stat-pill.interactive:active,
+  .stat-pill.interactive.holding { border-color: var(--gold); background: rgba(var(--accent-rgb),0.14); }
 
   /* Mod badge shown inside a stat pill when a custom modifier is active */
   .stat-pill-mod {
@@ -1645,7 +1664,7 @@
   }
   #infoPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
 
-  .check-item.holding { background: rgba(var(--accent-rgb),0.08); box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb),0.4); border-radius: var(--radius); }
+  .check-roll-area.holding { background: rgba(var(--accent-rgb),0.08); box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb),0.4); border-radius: var(--radius); }
 
   .sp-mode-badge {
     font-size: 9px;
@@ -3051,7 +3070,7 @@
         <button class="hp-btn minus"
                 onpointerdown="startHpHold(-1)"
                 onpointerup="stopHpHold()"
-                onpointercancel="stopHpHold()">−</button>
+                onpointercancel="cancelHpHold()">−</button>
         <div class="hp-display" onclick="openHpDialog()" title="Tap to set HP">
           <div class="hp-current" id="hpCurrent">10</div>
           <div class="hp-max-label">/ <span id="hpMaxLabel">10</span> HP</div>
@@ -3060,7 +3079,7 @@
         <button class="hp-btn plus"
                 onpointerdown="startHpHold(+1)"
                 onpointerup="stopHpHold()"
-                onpointercancel="stopHpHold()">+</button>
+                onpointercancel="cancelHpHold()">+</button>
       </div>
       <div style="text-align:center;margin-top:10px">
         <button class="attack-edit-btn" onclick="resetHPToFull()">↺ Restore HP</button>
@@ -3074,16 +3093,16 @@
       <div class="stat-pills">
         <div class="stat-pill"
              onpointerdown="startStatPillPress(event,'ac')"
-             onpointerup="endStatPillPress(event,'ac')"
+             onclick="clickStatPillItem(event,'ac')"
              onpointercancel="cancelStatPillPress()">
           <input type="number" id="statAC" value="10" oninput="saveData()"
-                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()">
+                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()">
           <div class="stat-pill-mod" id="statMod-ac" style="display:none"></div>
           <div class="stat-pill-label">Armor Class</div>
         </div>
         <div class="stat-pill rollable"
              onpointerdown="startStatPillPress(event,'initiative')"
-             onpointerup="endStatPillPress(event,'initiative')"
+             onclick="clickStatPillItem(event,'initiative')"
              onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statInit">+0</div>
           <div class="stat-pill-mod" id="statMod-initiative" style="display:none"></div>
@@ -3091,10 +3110,10 @@
         </div>
         <div class="stat-pill"
              onpointerdown="startStatPillPress(event,'speed')"
-             onpointerup="endStatPillPress(event,'speed')"
+             onclick="clickStatPillItem(event,'speed')"
              onpointercancel="cancelStatPillPress()">
           <input type="number" id="statSpeed" value="30" oninput="saveData()"
-                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()">
+                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()">
           <div class="stat-pill-mod" id="statMod-speed" style="display:none"></div>
           <div class="stat-pill-label">Speed (ft)</div>
         </div>
@@ -3102,15 +3121,15 @@
       <div class="stat-pills" style="margin-top:8px">
         <div class="stat-pill"
              onpointerdown="startStatPillPress(event,'dietype')"
-             onpointerup="endStatPillPress(event,'dietype')"
+             onclick="clickStatPillItem(event,'dietype')"
              onpointercancel="cancelStatPillPress()">
           <input type="text" id="statHitDice" value="1d8" oninput="saveData(); updateHitDieBadge()" style="font-size:16px"
-                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()">
+                 onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()">
           <div class="stat-pill-label">Die Type</div>
         </div>
         <div class="stat-pill rollable"
              onpointerdown="startStatPillPress(event,'spellatk')"
-             onpointerup="endStatPillPress(event,'spellatk')"
+             onclick="clickStatPillItem(event,'spellatk')"
              onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statSpellAtk">+2</div>
           <div class="stat-pill-mod" id="statMod-spellatk" style="display:none"></div>
@@ -3118,7 +3137,7 @@
         </div>
         <div class="stat-pill interactive"
              onpointerdown="startStatPillPress(event,'spelldc')"
-             onpointerup="endStatPillPress(event,'spelldc')"
+             onclick="clickStatPillItem(event,'spelldc')"
              onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statSpellDC">12</div>
           <div class="stat-pill-mod" id="statMod-spelldc" style="display:none"></div>
@@ -3140,16 +3159,16 @@
           <button class="mini-btn minus"
                   onpointerdown="startHitDiceHold(1)"
                   onpointerup="stopHitDiceHold()"
-                  onpointercancel="stopHitDiceHold()">−</button>
+                  onpointercancel="cancelHitDiceHold()">−</button>
           <span class="mini-val" id="hitDiceVal"></span>
           <button class="mini-btn plus"
                   onpointerdown="startHitDiceHold(-1)"
                   onpointerup="stopHitDiceHold()"
-                  onpointercancel="stopHitDiceHold()">+</button>
+                  onpointercancel="cancelHitDiceHold()">+</button>
         </div>
         <div class="hit-die-roll" id="hitDiceRollBtn"
              onpointerdown="startHitDiePress(event)"
-             onpointerup="endHitDiePress(event)"
+             onclick="clickHitDieItem(event)"
              onpointercancel="cancelHitDiePress()">d8</div>
       </div>
     </div>
@@ -4330,7 +4349,7 @@ function buildAbilityGrid() {
     return `
     <div class="ability-card"
          onpointerdown="startAbilityPress(event,'${ab}')"
-         onpointerup="endAbilityPress(event,'${ab}')"
+         onclick="clickAbilityItem(event,'${ab}')"
          onpointercancel="cancelAbilityPress()">
       <div class="ability-header">
         <span class="ability-name">${ab}</span>
@@ -4344,7 +4363,7 @@ function buildAbilityGrid() {
       <div class="ability-mod" id="mod-${ab}">+0</div>
       <div class="ability-save ${prof ? 'proficient' : ''}"
            onpointerdown="event.stopPropagation();startSavePress(event,'${ab}')"
-           onpointerup="event.stopPropagation();endSavePress(event,'${ab}')"
+           onclick="event.stopPropagation();clickSaveItem(event,'${ab}')"
            onpointercancel="event.stopPropagation();cancelSavePress()">
         <div class="prof-dot"
              onpointerdown="event.stopPropagation()"
@@ -4365,16 +4384,19 @@ function buildSkillsList() {
     const exp  = state.skillExpertise.includes(s.name);
     return `
     <li class="check-item ${exp ? 'expert' : prof ? 'proficient' : ''}"
-        onpointerdown="startSkillPress(event, '${s.name}')"
-        onclick="clickSkillItem(event, '${s.name}')"
-        onpointercancel="cancelSkillPress()"
         oncontextmenu="return false">
-      <div class="prof-dots" onclick="event.stopPropagation(); cycleSkillProf('${s.name}', this.closest('li'))">
+      <div class="prof-dots"
+           onclick="event.stopPropagation(); cycleSkillProf('${s.name}', this.closest('li'))">
         <div class="prof-dot"></div><div class="prof-dot"></div>
       </div>
-      <span class="check-modifier" id="skill-mod-${s.name.replace(/\s/g,'_')}">+0</span>
-      <span class="check-name">${s.name}</span>
-      <span class="check-ability">${s.ab}</span>
+      <div class="check-roll-area"
+           onpointerdown="startSkillPress(event, '${s.name}')"
+           onclick="clickSkillItem(event, '${s.name}')"
+           onpointercancel="cancelSkillPress()">
+        <span class="check-modifier" id="skill-mod-${s.name.replace(/\s/g,'_')}">+0</span>
+        <span class="check-name">${s.name}</span>
+        <span class="check-ability">${s.ab}</span>
+      </div>
     </li>`;
   }).join('');
 }
@@ -4411,12 +4433,12 @@ function buildSpellSlots() {
           <button class="mini-btn minus"
                   onpointerdown="startSlotHold(${i},1)"
                   onpointerup="stopSlotHold()"
-                  onpointercancel="stopSlotHold()">−</button>
+                  onpointercancel="cancelSlotHold()">−</button>
           <span class="mini-val" id="slot-val-${i}"></span>
           <button class="mini-btn plus"
                   onpointerdown="startSlotHold(${i},-1)"
                   onpointerup="stopSlotHold()"
-                  onpointercancel="stopSlotHold()">+</button>
+                  onpointercancel="cancelSlotHold()">+</button>
         </div>
         <input type="number" min="0" max="9" value="${s.max}"
           style="width:34px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
@@ -4999,13 +5021,16 @@ function recalcAll() {
 // ── Toggle proficiencies ───────────────────────────────────────────────
 function toggleSaveProf(ab, el) {
   pushUndo({type: 'saveProf', ab, wasProficient: state.saveProficiencies.includes(ab)});
+  const saveName = SAVES.find(s => s.ab === ab).name;
   const idx = state.saveProficiencies.indexOf(ab);
   if (idx === -1) {
     state.saveProficiencies.push(ab);
     el.classList.add('proficient');
+    toast('Proficient: ' + saveName + ' Save');
   } else {
     state.saveProficiencies.splice(idx, 1);
     el.classList.remove('proficient');
+    toast('Not Proficient: ' + saveName + ' Save');
   }
   recalcAll();
 }
@@ -5021,16 +5046,18 @@ function cycleSkillProf(name, el) {
     state.skillExpertise.splice(expIdx, 1);
     state.skillProficiencies.splice(state.skillProficiencies.indexOf(name), 1);
     el.classList.remove('expert');
+    toast('Not Proficient: ' + name);
   } else if (profIdx !== -1) {
     // Proficient → Expert
     state.skillExpertise.push(name);
     el.classList.remove('proficient');
     el.classList.add('expert');
-    toast('Expertise!');
+    toast('Expertise: ' + name);
   } else {
     // None → Proficient
     state.skillProficiencies.push(name);
     el.classList.add('proficient');
+    toast('Proficient: ' + name);
   }
   recalcAll();
 }
@@ -5125,18 +5152,26 @@ function slotAdjust(i, delta) {
   saveData();
 }
 
-let slotHoldTimer = null, slotHoldInterval = null;
+let slotHoldTimer = null, slotHoldInterval = null, slotHoldPending = null;
 function startSlotHold(i, delta) {
-  slotAdjust(i, delta);
+  slotHoldPending = {i, delta};
   slotHoldTimer = setTimeout(() => {
+    slotHoldPending = null;
+    slotAdjust(i, delta);
     slotHoldInterval = setInterval(() => slotAdjust(i, delta), 80);
   }, 500);
 }
 function stopSlotHold() {
   clearTimeout(slotHoldTimer);
   clearInterval(slotHoldInterval);
-  slotHoldTimer = null;
-  slotHoldInterval = null;
+  const p = slotHoldPending;
+  slotHoldPending = null; slotHoldTimer = null; slotHoldInterval = null;
+  if (p) slotAdjust(p.i, p.delta);
+}
+function cancelSlotHold() {
+  clearTimeout(slotHoldTimer);
+  clearInterval(slotHoldInterval);
+  slotHoldPending = null; slotHoldTimer = null; slotHoldInterval = null;
 }
 
 // ── Spell list ─────────────────────────────────────────────────────────
@@ -5236,7 +5271,7 @@ function startSkillPress(e, name) {
 
 function clickSkillItem(e, name) {
   clearTimeout(skillPressTimer);
-  document.querySelectorAll('.check-item.holding').forEach(el => el.classList.remove('holding'));
+  document.querySelectorAll('.check-roll-area.holding').forEach(el => el.classList.remove('holding'));
   if (skillPressActive) { skillPressActive = false; return; }
   rollSkill(name);
 }
@@ -5244,7 +5279,7 @@ function clickSkillItem(e, name) {
 function cancelSkillPress() {
   clearTimeout(skillPressTimer);
   skillPressActive = false;
-  document.querySelectorAll('.check-item.holding').forEach(el => el.classList.remove('holding'));
+  document.querySelectorAll('.check-roll-area.holding').forEach(el => el.classList.remove('holding'));
 }
 
 function openSkillPanel(name) {
@@ -5745,12 +5780,12 @@ function buildFeatures() {
             <button class="mini-btn minus"
                     onpointerdown="startFeatureHold(${i},1)"
                     onpointerup="stopFeatureHold()"
-                    onpointercancel="stopFeatureHold()">−</button>
+                    onpointercancel="cancelFeatureHold()">−</button>
             <span class="mini-val" id="feature-val-${i}"></span>
             <button class="mini-btn plus"
                     onpointerdown="startFeatureHold(${i},-1)"
                     onpointerup="stopFeatureHold()"
-                    onpointercancel="stopFeatureHold()">+</button>
+                    onpointercancel="cancelFeatureHold()">+</button>
           </div>
         </div>
       </div>
@@ -6011,12 +6046,12 @@ function buildFeaturedSpells() {
             <button class="mini-btn minus"
                     onpointerdown="startFeatSpellHold(${i},1)"
                     onpointerup="stopFeatSpellHold()"
-                    onpointercancel="stopFeatSpellHold()">−</button>
+                    onpointercancel="cancelFeatSpellHold()">−</button>
             <span class="mini-val" id="feat-spell-val-${i}"></span>
             <button class="mini-btn plus"
                     onpointerdown="startFeatSpellHold(${i},-1)"
                     onpointerup="stopFeatSpellHold()"
-                    onpointercancel="stopFeatSpellHold()">+</button>
+                    onpointercancel="cancelFeatSpellHold()">+</button>
           </div>
         </div>
       </div>`;
@@ -6083,16 +6118,26 @@ function restoreFeatSpell(spellIdx) {
   toast('Uses restored');
 }
 
-let featSpellHoldTimer = null, featSpellHoldInterval = null;
+let featSpellHoldTimer = null, featSpellHoldInterval = null, featSpellHoldPending = null;
 function startFeatSpellHold(spellIdx, delta) {
-  featSpellAdjust(spellIdx, delta);
+  featSpellHoldPending = {spellIdx, delta};
   featSpellHoldTimer = setTimeout(() => {
+    featSpellHoldPending = null;
+    featSpellAdjust(spellIdx, delta);
     featSpellHoldInterval = setInterval(() => featSpellAdjust(spellIdx, delta), 80);
   }, 400);
 }
 function stopFeatSpellHold() {
   clearTimeout(featSpellHoldTimer);
   clearInterval(featSpellHoldInterval);
+  const p = featSpellHoldPending;
+  featSpellHoldPending = null;
+  if (p) featSpellAdjust(p.spellIdx, p.delta);
+}
+function cancelFeatSpellHold() {
+  clearTimeout(featSpellHoldTimer);
+  clearInterval(featSpellHoldInterval);
+  featSpellHoldPending = null;
 }
 
 function escHtml(s) {
@@ -6139,18 +6184,26 @@ function featureAdjust(i, delta) {
   saveData();
 }
 
-let featureHoldTimer = null, featureHoldInterval = null;
+let featureHoldTimer = null, featureHoldInterval = null, featureHoldPending = null;
 function startFeatureHold(i, delta) {
-  featureAdjust(i, delta);
+  featureHoldPending = {i, delta};
   featureHoldTimer = setTimeout(() => {
+    featureHoldPending = null;
+    featureAdjust(i, delta);
     featureHoldInterval = setInterval(() => featureAdjust(i, delta), 80);
   }, 500);
 }
 function stopFeatureHold() {
   clearTimeout(featureHoldTimer);
   clearInterval(featureHoldInterval);
-  featureHoldTimer = null;
-  featureHoldInterval = null;
+  const p = featureHoldPending;
+  featureHoldPending = null; featureHoldTimer = null; featureHoldInterval = null;
+  if (p) featureAdjust(p.i, p.delta);
+}
+function cancelFeatureHold() {
+  clearTimeout(featureHoldTimer);
+  clearInterval(featureHoldInterval);
+  featureHoldPending = null; featureHoldTimer = null; featureHoldInterval = null;
 }
 
 let currentStepMenuIdx = -1;
@@ -6271,22 +6324,25 @@ let hitDiePressActive = false;
 function startHitDiePress(e) {
   hitDiePressActive = false;
   clearTimeout(hitDiePressTimer);
+  const el = e.currentTarget;
   hitDiePressTimer = setTimeout(() => {
     hitDiePressActive = true;
+    if (el) el.classList.add('holding');
     openStatPillPanel('dietype');
   }, 500);
 }
 
-function endHitDiePress(e) {
-  const wasLong = hitDiePressActive;
+function clickHitDieItem(e) {
   clearTimeout(hitDiePressTimer);
-  hitDiePressActive = false;
-  if (!wasLong) rollHitDie();
+  document.querySelectorAll('.hit-die-roll.holding').forEach(el => el.classList.remove('holding'));
+  if (hitDiePressActive) { hitDiePressActive = false; return; }
+  rollHitDie();
 }
 
 function cancelHitDiePress() {
   clearTimeout(hitDiePressTimer);
   hitDiePressActive = false;
+  document.querySelectorAll('.hit-die-roll.holding').forEach(el => el.classList.remove('holding'));
 }
 
 // ── Death saves ────────────────────────────────────────────────────────
@@ -6370,30 +6426,31 @@ let statPillPressActive = false;
 function startStatPillPress(e, key) {
   statPillPressActive = false;
   clearTimeout(statPillPressTimer);
+  const el = e.currentTarget;
   statPillPressTimer = setTimeout(() => {
     statPillPressActive = true;
+    if (el) el.classList.add('holding');
     openStatPillPanel(key);
   }, 500);
 }
 
-function endStatPillPress(e, key) {
-  const wasLong = statPillPressActive;
+function clickStatPillItem(e, key) {
   clearTimeout(statPillPressTimer);
-  statPillPressActive = false;
-  if (!wasLong) {
-    const info = STAT_PILL_INFO[key];
-    if (info && info.rollable) {
-      if (key === 'initiative') rollInitiative();
-      else if (key === 'spellatk') rollSpellAtk();
-    } else {
-      openStatPillPanel(key);
-    }
+  document.querySelectorAll('.stat-pill.holding').forEach(el => el.classList.remove('holding'));
+  if (statPillPressActive) { statPillPressActive = false; return; }
+  const info = STAT_PILL_INFO[key];
+  if (info && info.rollable) {
+    if (key === 'initiative') rollInitiative();
+    else if (key === 'spellatk') rollSpellAtk();
+  } else {
+    openStatPillPanel(key);
   }
 }
 
 function cancelStatPillPress() {
   clearTimeout(statPillPressTimer);
   statPillPressActive = false;
+  document.querySelectorAll('.stat-pill.holding').forEach(el => el.classList.remove('holding'));
 }
 
 function openStatPillPanel(key) {
@@ -6518,8 +6575,10 @@ let abilityPressActive = false;
 function startAbilityPress(e, ab) {
   abilityPressActive = false;
   clearTimeout(abilityPressTimer);
+  const el = e.currentTarget;
   abilityPressTimer = setTimeout(() => {
     abilityPressActive = true;
+    if (el) el.classList.add('holding');
     const m = fmtMod(mod(state.abilities[ab]));
     const name = ABILITY_NAMES[ABILITIES.indexOf(ab)];
     openInfoPanel({
@@ -6534,16 +6593,17 @@ function startAbilityPress(e, ab) {
   }, 500);
 }
 
-function endAbilityPress(e, ab) {
-  const wasLong = abilityPressActive;
+function clickAbilityItem(e, ab) {
   clearTimeout(abilityPressTimer);
-  abilityPressActive = false;
-  if (!wasLong) rollAbility(ab);
+  document.querySelectorAll('.ability-card.holding').forEach(el => el.classList.remove('holding'));
+  if (abilityPressActive) { abilityPressActive = false; return; }
+  rollAbility(ab);
 }
 
 function cancelAbilityPress() {
   clearTimeout(abilityPressTimer);
   abilityPressActive = false;
+  document.querySelectorAll('.ability-card.holding').forEach(el => el.classList.remove('holding'));
 }
 
 // ── Saving throw press (tap = roll save, hold = info panel) ───────────
@@ -6553,8 +6613,10 @@ let savePressActive = false;
 function startSavePress(e, ab) {
   savePressActive = false;
   clearTimeout(savePressTimer);
+  const el = e.currentTarget;
   savePressTimer = setTimeout(() => {
     savePressActive = true;
+    if (el) el.classList.add('holding');
     const name = SAVES.find(s => s.ab === ab).name;
     const mEl = document.getElementById(`save-mod-${ab}`);
     const m = mEl ? mEl.textContent : '+0';
@@ -6571,16 +6633,17 @@ function startSavePress(e, ab) {
   }, 500);
 }
 
-function endSavePress(e, ab) {
-  const wasLong = savePressActive;
+function clickSaveItem(e, ab) {
   clearTimeout(savePressTimer);
-  savePressActive = false;
-  if (!wasLong) rollSave(ab);
+  document.querySelectorAll('.ability-save.holding').forEach(el => el.classList.remove('holding'));
+  if (savePressActive) { savePressActive = false; return; }
+  rollSave(ab);
 }
 
 function cancelSavePress() {
   clearTimeout(savePressTimer);
   savePressActive = false;
+  document.querySelectorAll('.ability-save.holding').forEach(el => el.classList.remove('holding'));
 }
 
 function toggleHitDie(j) {
@@ -6600,18 +6663,26 @@ function hitDiceAdjust(delta) {
   saveData();
 }
 
-let hitDiceHoldTimer = null, hitDiceHoldInterval = null;
+let hitDiceHoldTimer = null, hitDiceHoldInterval = null, hitDiceHoldPending = null;
 function startHitDiceHold(delta) {
-  hitDiceAdjust(delta);
+  hitDiceHoldPending = delta;
   hitDiceHoldTimer = setTimeout(() => {
+    hitDiceHoldPending = null;
+    hitDiceAdjust(delta);
     hitDiceHoldInterval = setInterval(() => hitDiceAdjust(delta), 80);
   }, 500);
 }
 function stopHitDiceHold() {
   clearTimeout(hitDiceHoldTimer);
   clearInterval(hitDiceHoldInterval);
-  hitDiceHoldTimer = null;
-  hitDiceHoldInterval = null;
+  const p = hitDiceHoldPending;
+  hitDiceHoldPending = null; hitDiceHoldTimer = null; hitDiceHoldInterval = null;
+  if (p !== null) hitDiceAdjust(p);
+}
+function cancelHitDiceHold() {
+  clearTimeout(hitDiceHoldTimer);
+  clearInterval(hitDiceHoldInterval);
+  hitDiceHoldPending = null; hitDiceHoldTimer = null; hitDiceHoldInterval = null;
 }
 
 function restoreHitDice() {
@@ -6650,10 +6721,13 @@ function fullLongRest() {
 // ── HP hold-to-repeat ──────────────────────────────────────────────────
 let hpHoldTimer = null;
 let hpHoldInterval = null;
+let hpHoldPending = null;
 
 function startHpHold(delta) {
-  adjustHP(delta);
+  hpHoldPending = delta;
   hpHoldTimer = setTimeout(() => {
+    hpHoldPending = null;
+    adjustHP(delta);
     hpHoldInterval = setInterval(() => {
       const max = parseInt(document.getElementById('hpMax').value) || 1;
       state.hpCurrent = Math.max(0, Math.min(max, state.hpCurrent + delta));
@@ -6666,8 +6740,14 @@ function startHpHold(delta) {
 function stopHpHold() {
   clearTimeout(hpHoldTimer);
   clearInterval(hpHoldInterval);
-  hpHoldTimer = null;
-  hpHoldInterval = null;
+  const p = hpHoldPending;
+  hpHoldPending = null; hpHoldTimer = null; hpHoldInterval = null;
+  if (p !== null) adjustHP(p);
+}
+function cancelHpHold() {
+  clearTimeout(hpHoldTimer);
+  clearInterval(hpHoldInterval);
+  hpHoldPending = null; hpHoldTimer = null; hpHoldInterval = null;
 }
 
 function resetHPToFull() {
@@ -7148,12 +7228,12 @@ function buildDiceRoller() {
             <button class="mini-btn minus"
                     onpointerdown="startDiceHold(${i}, -1)"
                     onpointerup="stopDiceHold()"
-                    onpointercancel="stopDiceHold()">−</button>
+                    onpointercancel="cancelDiceHold()">−</button>
             <span class="mini-val" id="dice-val-${i}">${d.count}</span>
             <button class="mini-btn plus"
                     onpointerdown="startDiceHold(${i}, 1)"
                     onpointerup="stopDiceHold()"
-                    onpointercancel="stopDiceHold()">+</button>
+                    onpointercancel="cancelDiceHold()">+</button>
           </div>
         </div>
       </div>
@@ -7190,10 +7270,13 @@ function adjustDiceCount(i, delta) {
 
 let diceHoldTimer = null;
 let diceHoldInterval = null;
+let diceHoldPending = null;
 
 function startDiceHold(i, delta) {
-  adjustDiceCount(i, delta);
+  diceHoldPending = {i, delta};
   diceHoldTimer = setTimeout(() => {
+    diceHoldPending = null;
+    adjustDiceCount(i, delta);
     diceHoldInterval = setInterval(() => adjustDiceCount(i, delta), 80);
   }, 400);
 }
@@ -7201,8 +7284,14 @@ function startDiceHold(i, delta) {
 function stopDiceHold() {
   clearTimeout(diceHoldTimer);
   clearInterval(diceHoldInterval);
-  diceHoldTimer = null;
-  diceHoldInterval = null;
+  const p = diceHoldPending;
+  diceHoldPending = null; diceHoldTimer = null; diceHoldInterval = null;
+  if (p) adjustDiceCount(p.i, p.delta);
+}
+function cancelDiceHold() {
+  clearTimeout(diceHoldTimer);
+  clearInterval(diceHoldInterval);
+  diceHoldPending = null; diceHoldTimer = null; diceHoldInterval = null;
 }
 
 function removeCustomDie(i) {
