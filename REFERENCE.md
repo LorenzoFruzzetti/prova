@@ -104,6 +104,8 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **AI / SRD Import panel (`#aiImportPanel`)** — Modal opened by the ⇓ Import header button, or by any "+ Add" section button (pre-selected to the matching type tab). Two modes: **AI mode** generates a copy-ready LLM prompt and accepts paste-back JSON, plus a "+ Create custom" button that opens the matching item panel directly; **SRD mode** searches the live D&D 5e SRD API (`dnd5eapi.co`) and imports selected items. Four type tabs: **Spells** / **Features** / **Traits** / **Items** (equipment).
 
+**AI Character Import panel (`#charImportPanel`)** — Modal opened from Settings → 🤖 AI Import Character. Generates a schema-rich LLM prompt intended to be sent with photos of a physical or digital character sheet. Tries to load `JSONGeneration.md` from the same folder via `fetch`; on failure shows a file picker and a "Use built-in schema" fallback. Pasted JSON is validated and fed into `applyPayload()` to replace the current character.
+
 **Character Grid (`#charGridOverlay`)** — Full-screen overlay opened by the 🎭 header button. Displays one card per saved character; supports switching, creating, and deleting characters.
 
 **Toast (`#toast`)** — A small floating pill that appears for 2 seconds to confirm non-roll actions (e.g. "Saved", "Attack deleted", proficiency changes). Not used for roll results — those go to the roll result overlay.
@@ -653,6 +655,9 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.ai-step-label` | Tiny gold uppercase label above each step (e.g. "Step 1 — Describe what to add") |
 | `.ai-prompt-box` | Shared text area / input style used in `#aiImportPanel` for both the "what to add" field and the paste-back area; focus turns border spell-blue |
 | `.ai-copy-notice` | Small feedback line below the "Copy" or "Add Selected" button; spell-light colour |
+| `.ci-schema-status` | Status line inside `#charImportPanel` showing schema load result; `.ok` modifier makes it green |
+| `.ci-file-picker` | Flex column holding the "Select JSONGeneration.md" and "Use built-in schema" fallback buttons; shown only when auto-fetch fails |
+| `.ci-or-divider` | Centred "or" separator between the two fallback buttons in `.ci-file-picker` |
 | `.ai-select` | Full-width `<select>` styled to match the panel's dark palette; used for race / class pickers in SRD mode |
 | `.srd-level-row` | Flex row containing the "Level min – max" number inputs in the class-features SRD control block |
 | `.srd-lv-input` | Small 44 px number input for level bounds in the SRD class-features selector |
@@ -825,6 +830,7 @@ leftyMode           // boolean; persisted separately in localStorage as 'dnd5e_l
 currentTheme        // string — active theme key; persisted in localStorage as 'dnd5e_theme'
 srdModalMode        // 'ai' | 'srd' — which tab is active in #aiImportPanel
 srdSelected         // Set<string> — SRD item indices checked in the current SRD results list
+_charImportSchema   // string | null — schema text loaded for AI character import; null until loaded
 ```
 
 All other values (character name, HP max, AC, etc.) live in HTML form inputs and are read directly via `document.getElementById`.
@@ -1296,6 +1302,21 @@ Generates a copy-ready LLM prompt containing the exact JSON schema and the names
 | `_buildFeaturePrompt(what)` | Returns a prompt string with the classFeature JSON schema and existing feature names |
 | `_buildTraitPrompt(what)` | Returns a prompt string with the infoTrait JSON schema and existing trait names |
 | `importAIResponse()` | Parses the pasted text (strips markdown fences); merges into `state.spells`, `state.classFeatures`, or `state.infoTraits` depending on active type; deduplicates by lowercase name; rebuilds the relevant list |
+
+#### AI Character Import (full sheet from photos)
+Full-character import modal (`#charImportPanel`) opened from Settings → AI Import Character. Loads the JSON schema from `JSONGeneration.md` (via `fetch`), with a file-picker fallback and a compact built-in schema as final fallback. The generated prompt is intended to be sent alongside photos of a physical or digital character sheet.
+
+| Function | Description |
+|---|---|
+| `openCharImport()` | Shows `#charImportPanel`, resets state, triggers `_tryLoadCharSchema()` |
+| `dismissCharImport()` | Hides `#charImportPanel` and its backdrop |
+| `_tryLoadCharSchema()` | Async; `fetch('./JSONGeneration.md')`; on success sets `_charImportSchema`; on failure shows `#ciSchemaFilePicker` |
+| `loadSchemaFromFile(input)` | `FileReader` handler for the manual file picker; loads selected `.md`/`.txt` into `_charImportSchema` |
+| `useBuiltinSchema()` | Sets `_charImportSchema` to the embedded `_BUILTIN_CHAR_SCHEMA` constant |
+| `generateCharImportPrompt()` | Builds and clipboard-copies a prompt embedding `_charImportSchema`; on clipboard failure falls back to showing the prompt in `#ciResponsePaste` |
+| `importCharFromAI()` | Strips markdown fences, parses JSON, validates shape (`{form,state}`), calls `applyPayload()` + `saveData()` |
+| `_BUILTIN_CHAR_SCHEMA` | `const` string — compact but complete schema description used when `JSONGeneration.md` cannot be loaded |
+| `_charImportSchema` | `let` variable — holds the active schema text; `null` until loaded |
 
 #### SRD mode (requires internet)
 Live search against the [D&D 5e SRD API](https://www.dnd5eapi.co) (2014 SRD, CC-BY). Results are cached in `localStorage` under keys prefixed `srd_v1_`. Each fetch goes to `https://www.dnd5eapi.co/api/<path>`.

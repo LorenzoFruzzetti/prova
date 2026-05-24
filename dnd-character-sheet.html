@@ -3110,6 +3110,32 @@
     padding: 14px; text-align: center; color: var(--text-muted); font-size: 0.8rem;
   }
 
+  /* ── AI Character Import modal ── */
+  #charImportBackdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  #charImportBackdrop.show { opacity: 1; pointer-events: auto; }
+  #charImportPanel {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.88);
+    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
+    border: 2px solid var(--spell); border-radius: 20px;
+    padding: 22px 24px 20px; z-index: 301;
+    opacity: 0; transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none; width: min(92vw, 500px);
+    max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  }
+  #charImportPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  .ci-schema-status {
+    font-size: 0.74rem; color: var(--text-muted);
+    margin: 4px 0 10px; min-height: 1.2em;
+  }
+  .ci-schema-status.ok { color: #5cb85c; }
+  .ci-file-picker { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .ci-or-divider { text-align: center; font-size: 0.72rem; color: var(--text-muted); }
+
   /* ── Roll rows (edit panels) ── */
   .roll-row-edit {
     display: flex;
@@ -4467,6 +4493,7 @@
   <div style="height:16px"></div>
   <button class="settings-full-btn" onclick="exportToJSON(); dismissSettings()">&#128190; Save Character</button>
   <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(()=>document.getElementById('jsonFileInput').click(), 100)">&#128194; Load Character</button>
+  <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(openCharImport, 100)">&#129302; AI Import Character</button>
   <hr class="settings-divider">
   <div class="settings-row">
     <div class="settings-row-label">
@@ -4739,6 +4766,37 @@
 </div>
 
 <div id="toast"></div>
+
+<!-- ── AI Character Import Modal ── -->
+<input type="file" id="charSchemaInput" accept=".md,.txt" style="display:none" onchange="loadSchemaFromFile(this)">
+<div id="charImportBackdrop" onclick="dismissCharImport()"></div>
+<div id="charImportPanel">
+  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px">&#129302; AI Character Import</div>
+
+  <div class="ai-step">
+    <div class="ai-step-label">Step 1 &#8212; Copy the prompt</div>
+    <div class="ci-schema-status" id="ciSchemaStatus"></div>
+    <div id="ciSchemaFilePicker" class="ci-file-picker" style="display:none">
+      <button class="attack-edit-btn" style="width:100%;padding:7px 0;font-size:0.82rem"
+              onclick="document.getElementById('charSchemaInput').click()">Select JSONGeneration.md</button>
+      <div class="ci-or-divider">or</div>
+      <button class="attack-edit-btn" style="width:100%;padding:7px 0;font-size:0.82rem"
+              onclick="useBuiltinSchema()">Use built-in schema</button>
+    </div>
+    <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">
+      Send this prompt + photos of your character sheet to Claude, ChatGPT, or Gemini.
+    </div>
+    <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateCharImportPrompt()">Copy prompt to clipboard</button>
+    <div class="ai-copy-notice" id="ciCopyNotice"></div>
+  </div>
+
+  <div class="ai-step" style="margin-top:16px">
+    <div class="ai-step-label">Step 2 &#8212; Paste the AI&#8217;s response</div>
+    <textarea class="ai-prompt-box" id="ciResponsePaste" placeholder="Paste the full character JSON here&#8230;"></textarea>
+  </div>
+  <button class="settings-full-btn" onclick="importCharFromAI()" style="margin-bottom:8px">Import Character</button>
+  <button class="hp-dlg-btn" onclick="dismissCharImport()" style="width:100%;margin-top:8px">Cancel</button>
+</div>
 
 <script>
 // ── State ──────────────────────────────────────────────────────────────
@@ -9931,6 +9989,206 @@ Items already on this sheet (skip these): ${existing}
 
 Output ONLY the JSON array. Example:
 [{"name":"Longsword","quantity":1,"weight":"3 lb","cost":"15 gp","category":"Weapon","description":"Versatile (1d10). Slashing damage."}]`;
+}
+
+// ── AI Character Import (full sheet from photos) ───────────────────────
+
+const _BUILTIN_CHAR_SCHEMA = `COMPLETE CHARACTER JSON FORMAT: { "form": {...}, "state": {...} }
+
+FORM — all values must be strings, even numbers ("18" not 18):
+  charName: character name
+  charClass: Barbarian|Bard|Cleric|Druid|Fighter|Monk|Paladin|Ranger|Rogue|Sorcerer|Warlock|Wizard|Artificer|""
+  charSubclass: subclass name
+  charRace: race or species
+  charLevel: "1"–"20"
+  charBackground: background name
+  charAlignment: e.g. "Lawful Good", "Chaotic Neutral"
+  charXP: total XP as string ("6500")
+  personality, ideals, bonds, flaws: free text strings
+  hpMax: max HP ("47")
+  hpTemp: temp HP ("0")
+  statAC: Armor Class ("18")
+  statSpeed: speed in feet ("30")
+  statHitDice: hit dice ("5d10")
+  spellAbility: "INT"|"WIS"|"CHA"|"" (blank for non-casters)
+  languages: comma-separated ("Common, Elvish")
+  notes: free text
+  cp, sp, ep, gp, pp: currency as strings ("0")
+
+STATE:
+abilities (integers 1–30):
+  { "STR": 18, "DEX": 10, "CON": 16, "INT": 8, "WIS": 12, "CHA": 16 }
+
+saveProficiencies: array of ability keys with saving throw proficiency ["STR","CON"]
+
+skillProficiencies: array of skill names —
+  Acrobatics, Animal Handling, Arcana, Athletics, Deception, History,
+  Insight, Intimidation, Investigation, Medicine, Nature, Perception,
+  Performance, Persuasion, Religion, Sleight of Hand, Stealth, Survival
+
+skillExpertise: subset of skillProficiencies with double proficiency bonus
+
+equipProficiencies: ["Light Armor","Medium Armor","Heavy Armor","Shields","Simple Weapons","Martial Weapons","Thieves' Tools", ...]
+customEquipProfRows: []
+inspiration: false
+hpCurrent: integer (current HP)
+
+spellSlots — exactly 9 objects, one per level:
+[{"level":"1st","max":3,"used":0},{"level":"2nd","max":2,"used":0},{"level":"3rd","max":0,"used":0},
+ {"level":"4th","max":0,"used":0},{"level":"5th","max":0,"used":0},{"level":"6th","max":0,"used":0},
+ {"level":"7th","max":0,"used":0},{"level":"8th","max":0,"used":0},{"level":"9th","max":0,"used":0}]
+
+spells array — each spell object:
+{ "name":"Fireball","level":3,"school":"Evocation","castingTime":"1 action","range":"150 ft",
+  "components":"V, S, M (bat guano)","duration":"Instantaneous","saveAbility":"DEX",
+  "concentration":false,"ritual":false,"attackRoll":false,
+  "rolls":[{"dice":"8d6","type":"fire","mod":""}],
+  "description":"8d6 fire in 20-ft radius, DEX save for half.",
+  "showInCombat":true,"combatActionType":"action","prepared":true,"alwaysPrepared":false }
+school values: Abjuration|Conjuration|Divination|Enchantment|Evocation|Illusion|Necromancy|Transmutation
+rolls type values: slashing|piercing|bludgeoning|fire|cold|lightning|thunder|acid|poison|necrotic|radiant|force|psychic|healing|not_damage|other
+rolls mod values: STR|DEX|CON|INT|WIS|CHA|SPELL|""
+
+attacks array — each weapon/attack object:
+{ "name":"Longsword","abilityMod":"STR","proficient":true,"flatBonus":0,
+  "rolls":[{"dice":"1d8","type":"slashing","mod":"STR"}],
+  "actionType":"action","saveAbility":"","saveDC":0,"description":"" }
+abilityMod values: STR|DEX|CON|INT|WIS|CHA|SPELL|manual|""
+Use "manual" with "bonus":"+7" for fixed modifiers. Use "" for no attack roll.
+
+classFeatures array — limited-use abilities (Rage, Channel Divinity, etc.):
+{ "name":"Channel Divinity","max":1,"used":0,"recharge":"Short Rest","step":1,
+  "attackRoll":false,"attackMod":"","attackBonus":"—","attackProficient":false,
+  "rolls":[],"description":"Sacred Weapon: imbue for 1 minute.",
+  "showInCombat":false,"combatActionType":"action" }
+
+infoTraits array — passive features and racial traits:
+{ "name":"Darkvision","description":"See 60 ft in darkness as dim light.",
+  "showInCombat":false,"combatActionType":"action" }
+
+equipmentItems array:
+{ "name":"Longsword","quantity":1,"weight":"3 lb","cost":"15 gp","category":"Weapon","description":"Versatile (1d10). Slashing." }
+
+conditions: [] (from: Blinded|Charmed|Deafened|Exhausted|Frightened|Grappled|
+  Incapacitated|Invisible|Paralyzed|Petrified|Poisoned|Prone|Restrained|Stunned|Unconscious)
+hitDiceUsed: 0
+statMods: {"ac":0,"speed":0,"initiative":0,"spellatk":0,"spelldc":0}
+damageResistances: {} (e.g. {"fire":1,"necrotic":-1} — 1=resistant, -1=vulnerable)
+maxSpellsPrepared: 0 (daily prep limit for Wizard/Cleric etc.; 0=unlimited)
+diceRoller: null
+portrait: null`;
+
+let _charImportSchema = null;
+
+function openCharImport() {
+  _charImportSchema = null;
+  document.getElementById('ciResponsePaste').value = '';
+  document.getElementById('ciCopyNotice').textContent = '';
+  document.getElementById('ciSchemaFilePicker').style.display = 'none';
+  const status = document.getElementById('ciSchemaStatus');
+  status.textContent = 'Looking for JSONGeneration.md…';
+  status.className = 'ci-schema-status';
+  document.getElementById('charImportBackdrop').classList.add('show');
+  document.getElementById('charImportPanel').classList.add('show');
+  _tryLoadCharSchema();
+}
+
+function dismissCharImport() {
+  document.getElementById('charImportBackdrop').classList.remove('show');
+  document.getElementById('charImportPanel').classList.remove('show');
+}
+
+async function _tryLoadCharSchema() {
+  try {
+    const res = await fetch('./JSONGeneration.md', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    if (text.length < 200) throw new Error('File too short');
+    _charImportSchema = text;
+    const el = document.getElementById('ciSchemaStatus');
+    el.textContent = '✓ JSONGeneration.md loaded';
+    el.className = 'ci-schema-status ok';
+    document.getElementById('ciSchemaFilePicker').style.display = 'none';
+  } catch(e) {
+    const el = document.getElementById('ciSchemaStatus');
+    el.textContent = 'Schema not auto-loaded — select it or use the built-in one.';
+    el.className = 'ci-schema-status';
+    document.getElementById('ciSchemaFilePicker').style.display = '';
+  }
+}
+
+function loadSchemaFromFile(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _charImportSchema = e.target.result;
+    const el = document.getElementById('ciSchemaStatus');
+    el.textContent = '✓ Schema loaded from ' + file.name;
+    el.className = 'ci-schema-status ok';
+    document.getElementById('ciSchemaFilePicker').style.display = 'none';
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function useBuiltinSchema() {
+  _charImportSchema = _BUILTIN_CHAR_SCHEMA;
+  const el = document.getElementById('ciSchemaStatus');
+  el.textContent = '✓ Using built-in schema';
+  el.className = 'ci-schema-status ok';
+  document.getElementById('ciSchemaFilePicker').style.display = 'none';
+}
+
+function generateCharImportPrompt() {
+  if (!_charImportSchema) {
+    toast('Select a schema file or tap “Use built-in schema” first');
+    return;
+  }
+  const prompt = `You are a D&D 5e character sheet parser. I am sharing one or more photos of a D&D 5e character sheet.
+
+Your task: extract ALL information visible in the photos and produce a single JSON object in the exact format documented below.
+
+RULES:
+- Output ONLY raw JSON — no markdown code fences, no explanation, no trailing text.
+- All form.* values must be strings, even numbers ("18" not 18).
+- state.abilities values are integers.
+- If a field is not visible in the photos or not applicable, use the documented default value.
+- Do not invent data that is not present on the sheet.
+- Begin your response with { and end with }
+
+===== JSON FORMAT REFERENCE =====
+${_charImportSchema}
+=================================
+
+Output the complete character JSON now:`;
+
+  navigator.clipboard.writeText(prompt).then(() => {
+    document.getElementById('ciCopyNotice').textContent = '✓ Copied! Paste into Claude, ChatGPT, or Gemini along with your character sheet photos.';
+  }).catch(() => {
+    document.getElementById('ciCopyNotice').textContent = 'Could not auto-copy — the prompt is shown below; copy it manually, then clear and paste the AI response.';
+    document.getElementById('ciResponsePaste').value = prompt;
+    document.getElementById('ciResponsePaste').focus();
+    document.getElementById('ciResponsePaste').select();
+  });
+}
+
+function importCharFromAI() {
+  const raw = document.getElementById('ciResponsePaste').value.trim();
+  if (!raw) { toast('Nothing pasted yet'); return; }
+  let parsed;
+  try {
+    const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+    parsed = JSON.parse(stripped);
+  } catch(e) {
+    toast('Invalid JSON — check the pasted text'); return;
+  }
+  if (typeof parsed !== 'object' || Array.isArray(parsed) || (!parsed.form && !parsed.state)) {
+    toast(‘Expected {"form":{...},"state":{...}} — check the AI response’); return;
+  }
+  applyPayload(parsed);
+  saveData();
+  dismissCharImport();
+  toast('Character imported!');
 }
 
 // ── Section header hold descriptions ──────────────────────────────────
