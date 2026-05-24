@@ -1,6 +1,6 @@
 # CLAUDE.md — Project Instructions for AI Assistants
 
-You are working on a **single-file mobile-first D&D 5e character sheet**. The entire application is `dnd-character-sheet.html` — no build step, no dependencies, no server required.
+You are working on a **mobile-first D&D 5e character sheet**. The core application is `dnd-character-sheet.html` — no build step, no server required. It works as a standalone file, but additional companion files in the same directory unlock optional features when served (e.g. via Netlify).
 
 ---
 
@@ -8,28 +8,36 @@ You are working on a **single-file mobile-first D&D 5e character sheet**. The en
 
 ```
 prova/
-├── dnd-character-sheet.html   ← the entire application
-├── CLAUDE.md                  ← this file (AI instructions)
-├── REFERENCE.md               ← developer reference: CSS tokens, JS functions, state shape
-├── JSONGeneration.md          ← JSON import/export schema specification
-├── README.md                  ← user-facing documentation
+├── dnd-character-sheet.html        ← core app (HTML + CSS + JS, standalone-capable)
+├── CLAUDE.md                       ← this file (AI instructions)
+├── REFERENCE.md                    ← developer reference: CSS tokens, JS functions, state shape
+├── JSONGeneration.md               ← JSON import/export schema specification
+├── README.md                       ← user-facing documentation
+├── srd2024/                        ← optional: 2024 SRD data files (requires serving)
+│   ├── translation.json            ←   terminology map: 2014↔2024 field names and UI labels
+│   ├── spells.json
+│   ├── species.json
+│   ├── classes.json
+│   └── equipment.json
 └── examples/
     └── data/
         ├── ernenegilia-warlock.json   ← sample: Aasimar Warlock lv1
         └── seraphina-dawnblade.json   ← sample: Human Paladin lv8
 ```
 
-There is no build toolchain, no `src/` directory, no `tests/` directory, no `.env/` directory. Everything is in one HTML file.
+There is no build toolchain, no `src/` directory, no `tests/` directory, no `.env/` directory.
 
 ### Key files
 
 | File | Purpose |
 |---|---|
-| `dnd-character-sheet.html` | The complete app: HTML + `<style>` + `<script>` in one file |
+| `dnd-character-sheet.html` | Core app: HTML + `<style>` + `<script>` in one file |
 | `REFERENCE.md` | CSS tokens, component classes, JS constants, state object shape, all functions |
 | `JSONGeneration.md` | JSON field names, types, valid values, full annotated example |
 | `README.md` | User-facing: how to open, features, input/output, directory map |
 | `examples/data/` | Two sample characters for import testing |
+| `srd2024/translation.json` | Terminology map between 2014 API field names and 2024 SRD field names / UI labels |
+| `srd2024/*.json` | 2024 SRD data files fetched at runtime; absent = feature hidden, not an error |
 
 ---
 
@@ -117,8 +125,21 @@ When `REFERENCE.md` or `JSONGeneration.md` describes something that contradicts 
 ### No build step
 Open `dnd-character-sheet.html` directly in a browser. There is no transpilation, bundling, or npm. Test changes by refreshing the page.
 
-### Single-file discipline
-Keep all HTML, CSS, and JS in `dnd-character-sheet.html`. Do not create external `.css`, `.js`, or module files.
+### Progressive enhancement — feature tiers
+
+The app has two tiers:
+
+| Tier | What is required | Features available |
+|---|---|---|
+| **Standalone** | `dnd-character-sheet.html` only | All core sheet functionality: character creation/editing, spells, attacks, features, dice rolls, localStorage save/load, JSON export, JSON file import |
+| **Served** (Netlify / local server) | HTML + companion files in same directory | Everything above, plus: 2024 SRD lookup (requires `srd2024/*.json`), 2014 SRD lookup (requires internet) |
+
+**Rules for companion files:**
+- All companion files are **optional**. The app must start and run fully without them — their absence must degrade gracefully (hide the feature, show a disabled state), never throw an error.
+- Companion files are **data assets** (`.json`), not code modules. Do not create external `.js` files. Logic that loads or interprets companion files lives inside `dnd-character-sheet.html`.
+- The `srd2024/translation.json` file is the single source of truth for 2014↔2024 terminology differences (endpoint aliases, field name aliases, UI label overrides). Do not scatter edition-specific string checks through the main code.
+
+This model is consistent with existing precedent: the SRD tab already requires internet (graceful degradation when offline), and the AI-assisted import workflow already references `JSONGeneration.md` as an external document.
 
 ### State vs form inputs
 - Store structured, typed data in `state` (arrays, booleans, integers).
@@ -148,8 +169,16 @@ Use `pushUndo(action)` before any state mutation that should be undoable. The `u
 | `dnd5e_theme` | Active theme key (string) |
 | `srd_v1_*` | SRD API response cache entries |
 
-### SRD API
-The SRD tab in the Import modal calls `https://www.dnd5eapi.co/api/<path>` with `localStorage` caching. Responses are cached under keys prefixed `srd_v1_`. Requires internet; the rest of the app works fully offline.
+### SRD integration
+
+Two SRD sources are supported:
+
+| Source | Endpoint | Requires | Cache key prefix |
+|---|---|---|---|
+| 2014 SRD (dnd5eapi.co) | `https://www.dnd5eapi.co/api/<path>` | Internet | `srd_v1_` |
+| 2024 SRD (local) | `/srd2024/<file>.json` | Served + companion files present | `srd24_v1_` |
+
+`_srdGet(path)` checks `localStorage` first; on miss it fetches and caches the response. The translation layer (`srd2024/translation.json`) is loaded once on first 2024 SRD use and cached in memory; it maps 2014 endpoint paths and response field names to their 2024 equivalents, and provides UI label overrides (e.g. `"Race" → "Species"`). If `translation.json` cannot be fetched, 2024 SRD lookup is disabled silently.
 
 ---
 
