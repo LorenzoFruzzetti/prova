@@ -32,7 +32,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 | Info | `overview` | `#panel-overview` | Character Info (portrait + form fields), Features & Traits, Personality, Long Rest |
 | Stats | `abilities` | `#panel-abilities` | Ability Scores & Saving Throws, Skills, Passive Perception |
 | Combat | `combat` | `#panel-combat` | Hit Points, Combat Stats, Hit Dice, Resistances & Vulnerabilities, Inspiration & Death Saves, Turn block, Conditions |
-| Spells | `spells` | `#panel-spells` | Spellcasting ability, Spell Slots, Spell List |
+| Spells | `spells` | `#panel-spells` | Spellcasting ability, Spells Known (collapsible, with prep counter + max), Spell Slots, Spells Prepared |
 | Features | `features` | `#panel-features` | Class Features (dot trackers), Featured Spells |
 | Gear | `inventory` | `#panel-inventory` | Currency, Equipment, Proficiencies & Languages, Notes |
 | Dice | `dice` | `#panel-dice` | Free-form Dice Roller |
@@ -116,7 +116,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **Hold (long press)** — Keeping a finger or cursor pressed on an element for 500 ms before releasing. Hold always opens the info or view panel for the element. Implemented with a `setTimeout` started on `pointerdown` and cleared on `onclick` / `pointercancel`. The `.holding` CSS class is applied to the element when the timer fires to give visual press feedback.
 
-**Hold hint** — A small visual indicator on elements that support hold. Currently implemented as a `"hold"` badge (`.turn-hold-hint`) on the Turn section title. Other holdable elements (spell rows, skill rows, ability cards, etc.) use the `.holding` class for press feedback but have no persistent pre-hold badge.
+**Hold hint** — A small visual indicator on elements that support hold. Implemented as a `"hold"` badge (`.turn-hold-hint`) on: the Turn section title, the Spells Known section title, and the Spells Prepared section title. Other holdable elements (spell rows, skill rows, ability cards, etc.) use the `.holding` class for press feedback but have no persistent pre-hold badge.
 
 **3-zone roll button (`.roll-tri`)** — A d20 roll widget split into three tap zones: centre-top for normal roll, bottom-left for disadvantage, bottom-right for advantage. Used inside `#infoPanel` and the dedicated spell and attack panels.
 
@@ -179,7 +179,8 @@ These are the structured, typed values in the `state` object. They are persisted
 | `inspiration` | `boolean` | Whether the character currently has Inspiration |
 | `hpCurrent` | `integer` | Current hit points; clamped to `[0, hpMax]` |
 | `spellSlots` | `object[]` | Nine spell slot levels; each entry: `{level, max, used}` |
-| `spells` | `object[]` | All spells on the sheet (see nested fields below) |
+| `spells` | `object[]` | All spells on the sheet; each entry includes `prepared` and `alwaysPrepared` booleans in addition to the core spell fields (see nested fields below) |
+| `maxSpellsPrepared` | `integer` | Daily preparation limit for P-marked spells; `0` = no limit enforced; always-prepared spells (∞) never count toward this |
 | `attacks` | `object[]` | All weapon / ability attacks in the Turn block (see nested fields below) |
 | `conditions` | `string[]` | Names of active conditions (e.g. `['Poisoned','Frightened']`) |
 | `hitDiceUsed` | `integer` | Number of hit dice expended; max equals `charLevel` |
@@ -222,6 +223,8 @@ These field names appear inside `state.spells`, `state.attacks`, `state.classFea
 | `used` | `classFeatures`, `spellSlots` | `integer` | How many uses / slots have been expended |
 | `step` | `classFeatures` | `integer` | How many "uses" one dot on the tracker represents (default `1`) |
 | `recharge` | `classFeatures` | `string` | When the feature recharges (e.g. `'Long Rest'`, `'Short Rest'`, `'Dawn'`) |
+| `prepared` | `spells` | `boolean` | True if the spell is prepared for the day; prepared spells appear in the Spells Prepared section and count toward `state.maxSpellsPrepared`; mutually exclusive with `alwaysPrepared` |
+| `alwaysPrepared` | `spells` | `boolean` | True if the spell is always prepared (e.g. domain spells); always-prepared spells appear in Spells Prepared but never count toward `maxSpellsPrepared`; mutually exclusive with `prepared` |
 | `level` | `spells`, `spellSlots` | `integer` | Spell level 0–9 (`0` = cantrip) or slot level 1–9 |
 | `school` | `spells` | `string` | Magic school (e.g. `"Evocation"`) |
 | `castingTime` | `spells` | `string` | Casting time string (e.g. `"1 action"`) |
@@ -356,7 +359,7 @@ dnd-character-sheet.html
 │   ├── #panel-abilities   Tab: ability scores + saving throws + passive perception + conditions
 │   ├── #panel-skills      Tab: 18 skills with proficiency/expertise dots
 │   ├── #panel-combat      Tab: HP tracker + combat stats + hit dice tracker + inspiration + death saves + attacks
-│   ├── #panel-spells      Tab: spellcasting ability + spell slots (hidden levels shown as "+ Nth" pills at top; active levels show dot rows) + structured spell list (add; tap = roll or info panel; hold = info panel)
+│   ├── #panel-spells      Tab: Spellcasting ability · Spells Known (collapsible; hold title = info panel; each row has P dot and ∞ dot; header shows prepared-count/max with editable max input) · Spell Slots (hidden levels as "+ Nth" pills; active levels show dot rows) · Spells Prepared (hold title = info panel; lists all prepared + always-prepared spells)
 │   ├── #panel-features    Tab: limited-use class features with dot trackers and +/− controls
 │   ├── #panel-inventory   Tab: currency + equipment + proficiencies + notes
 │   ├── #panel-rolls       Tab: session roll history log with Clear button
@@ -468,12 +471,18 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.spell-slots-add-row` | Flex-wrap pill strip at the top of `#spellSlotsBody`; shown only when one or more levels have `max === 0`; contains one `.spell-slot-add-btn` per hidden level |
 | `.spell-slot-add-btn` | Dashed-border pill chip (e.g. `+ 3rd`); clicking calls `expandSpellLevel(i)` to set that level's max to 1 and make it appear |
 | `.slot-dot` | 18 px circle; `.available` = gold left (remaining), `.used` = grey right (expended) |
-| `.spell-level-divider` | Section header dividing spells by level (e.g. "Cantrips", "1st Level") inside `#spellListBody` |
-| `.spell-item` | One spell row in the list; tap rolls the spell directly (attack or damage) if rollable, otherwise opens spell view panel; hold 500 ms opens spell view panel (with Delete/Cancel/Save footer); `.holding` class added during hold |
+| `.spell-section-title` | Extends `.section-title`; flex layout with `display:flex; justify-content:space-between; align-items:center; cursor:pointer`; used on the Spells Known and Spells Prepared section title bars; supports the hold-to-explain pattern; `.holding` class added on pointer-down |
+| `.spell-level-divider` | Section header dividing spells by level (e.g. "Cantrips", "1st Level") inside `#spellsKnownBody` or `#spellsPreparedBody` |
+| `.spell-item` | One spell row in either the Spells Known or Spells Prepared list; tap rolls the spell (attack or damage) if rollable, otherwise opens spell view panel; hold 500 ms opens spell view panel; `.holding` class added during hold |
 | `.spell-item-name` | Bold spell name inside a `.spell-item` |
 | `.spell-item-school` | Italic muted school label (right side) inside a `.spell-item` |
 | `.spell-item-tag` | Small badge chip on a spell row; `.sp-tag-conc` = blue "C" (Concentration); `.sp-tag-ritual` = gold "R" (Ritual) |
-| `.spell-empty-msg` | Italic placeholder shown in `#spellListBody` when no spells have been added |
+| `.spell-empty-msg` | Italic placeholder shown in `#spellsKnownBody` or `#spellsPreparedBody` when the section has no entries |
+| `.spell-prep-dot` | 20 px circular toggle button on the right of each Spells Known row; two per spell — the P dot (prepared) and the ∞ dot (always prepared); `.prepared` = spell-colour fill; `.always-prepared` = gold fill; `.at-max` = dimmed with `cursor:not-allowed` when the preparation limit is full |
+| `.spell-prep-count` | Small muted label showing the current prepared count (e.g. `"3"`) or the `"/"` separator inside `.spell-prep-count-group` in the Spells Known section header; turns red (`.at-max`) when the prepared count equals `maxSpellsPrepared` |
+| `.spell-prep-count-group` | Flex container (`gap:2px`) wrapping the count label, the `"/"` span, and the max input in the Spells Known header, so they read as a single `"3 / 5"` unit |
+| `.prep-max-input` | 28 px number `<input>` in the Spells Known section header; edits `state.maxSpellsPrepared`; styled to match dark palette with no browser spin buttons |
+| `.spell-known-chevron` | Inline chevron indicator (`▾`) inside the Spells Known section title; rotated −90 ° (via `.collapsed`) when the section is collapsed |
 | `.trait-item` | One Features & Traits row in the Info tab; tap rolls damage directly if `rollDamage` is set, otherwise opens trait view panel; hold 500 ms opens trait view panel (with Delete/Cancel/Save footer); `.holding` class added during hold |
 | `.trait-item-name` | Bold feature/trait name inside a `.trait-item` |
 | `.trait-item-preview` | Truncated first line of the description (muted, small text, `text-overflow:ellipsis`) |
@@ -689,6 +698,8 @@ let state = {
                           showInCombat,          //   boolean — true if spell appears in the combat attack block
                           combatActionType,      //   'action' | 'bonus' | 'other' — sub-section in the combat block (default: 'action')
                           showInFeatures,        //   boolean — true if spell appears in the Featured Spells block in the Features tab
+                          prepared,              //   boolean — true if spell is prepared for the day (counts toward maxSpellsPrepared)
+                          alwaysPrepared,        //   boolean — true if spell is always prepared (does NOT count toward maxSpellsPrepared); mutually exclusive with prepared
                         } ],
   attacks:            [ {
                           name,                  //   string — weapon or ability name
@@ -735,6 +746,7 @@ let state = {
     spellatk: 0,      //   added to prof+spellMod when computing statSpellAtk display & roll
     spelldc: 0,       //   added to 8+prof+spellMod when computing statSpellDC display
   },
+  maxSpellsPrepared:  0,    // daily preparation limit for spells with prepared:true; 0 = no limit enforced
   damageResistances:  {     // damage-type resistance states; absent key = normal (0)
     // slashing: 1,   //   1  = resistant (green dot)
     // fire: -1,      //  -1  = vulnerable (red dot)
@@ -760,6 +772,9 @@ traitPanelEditIdx   // index into state.infoTraits currently being edited; −1 
 attackPanelIdx      // index into state.attacks currently being edited; −1 = new attack
 abilityUndoTimers   // {[ab]: timerId} — debounce timers for ability undo entries
 hpHoldTimer/Interval       // hold-to-repeat timers for HP +/− buttons
+spellsKnownCollapsed       // boolean — true when the Spells Known section body is collapsed; initialised to true on every page load; not persisted
+spellsKnownTitlePressTimer / spellsKnownTitlePressActive   // Spells Known header hold detection (tap = toggle collapse, hold 500 ms = info panel)
+spellsPreparedTitlePressTimer / spellsPreparedTitlePressActive  // Spells Prepared header hold detection (hold 500 ms = info panel)
 slotHoldTimer/Interval     // hold-to-repeat timers for spell slot +/− buttons
 featureHoldTimer/Interval  // hold-to-repeat timers for feature +/− buttons
 hitDiceHoldTimer/Interval  // hold-to-repeat timers for hit dice +/− buttons
@@ -799,8 +814,9 @@ DOMContentLoaded
        ├─ buildAbilityGrid()  inject ability cards (+ saving throw rows) into #abilityGrid
        ├─ buildSkillsList()   inject skill rows into #skillsList
        ├─ buildConditions()   inject condition chips into #conditionsGrid
+       ├─ buildSpellsKnown()   inject spell rows with P/∞ dots into #spellsKnownBody (collapsed by default); levels with max=0 appear only as pills
+       ├─ buildSpellsPrepared() inject prepared+always-prepared spell rows into #spellsPreparedBody; calls updatePreparedCount()
        ├─ buildSpellSlots()   inject pill strip + active rows into #spellSlotsBody; levels with max=0 appear only as pills
-       ├─ buildSpellList()      inject spell rows grouped by level into #spellListBody
        ├─ buildFeatures()       inject class feature rows into #featuresBody
        ├─ buildFeaturedSpells() inject featured spell rows into #featuredSpellsBody (Features tab)
        ├─ buildInfoTraits()         inject features & traits rows into #infoTraitsBody
@@ -831,7 +847,9 @@ DOMContentLoaded
 | `buildSpellSlots()` | Renders `#spellSlotsBody`: a pill strip of hidden levels (max=0) at the top, then one row per active level (max>0) with dots and mini +/− tracker | `state.spellSlots` |
 | `expandSpellLevel(i)` | Sets `state.spellSlots[i].max` to 1 and rebuilds spell slots (moves that level from the pill strip into the active rows) | `state.spellSlots[i]` |
 | `renderSlotDots(i)` | Dot row + counter for one spell level (gold left = available, grey right = used); counter shows `(max − used)/max` | `state.spellSlots[i]` |
-| `buildSpellList()` | Groups `state.spells` by level and renders level dividers + spell rows into `#spellListBody`; shows placeholder when empty | `state.spells` |
+| `buildSpellsKnown()` | Renders all spells grouped by level into `#spellsKnownBody`; each row includes a P dot (prepared toggle) and a ∞ dot (always-prepared toggle); P dots are dimmed with `.at-max` when the preparation limit is full; collapses body and rotates chevron when `spellsKnownCollapsed` is true; shows placeholder when empty | `state.spells`, `state.maxSpellsPrepared` |
+| `buildSpellsPrepared()` | Renders spells with `prepared:true` or `alwaysPrepared:true` into `#spellsPreparedBody`; always-prepared entries show a ∞ badge; calls `updatePreparedCount()`; shows placeholder when no spells are prepared | `state.spells` |
+| `updatePreparedCount()` | Refreshes the `#spellPrepCountDisplay` number and the `#maxPreparedInput` value; applies `.at-max` to the count span when the prepared count equals `state.maxSpellsPrepared` | `state.spells`, `state.maxSpellsPrepared` |
 | `buildFeatures()` | Class feature rows in `#featuresBody`; each row has a left column (clickable name area + dots below) and a right column (recharge label, ⏻ restore, EDIT button, mini tracker); pts/dot hint shown below the name when `step > 1`; empty-state placeholder when no features | `state.classFeatures` |
 | `buildFeaturedSpells()` | "Featured Spells" block in `#featuredSpellsBody`; uses the same two-column layout as `buildFeatures()`; hidden when no spells have `showInFeatures: true` | `state.spells` |
 | `buildInfoTraits()` | Features & Traits rows in `#infoTraitsBody`, or empty-state placeholder | `state.infoTraits` |
@@ -884,7 +902,7 @@ DOMContentLoaded
 | `getRollsFromContainer(containerId)` | Reads all roll rows from the named container and returns a filtered array (rows without dice are dropped) |
 | `onRollTypeChange(sel)` | Shows/hides the custom label input when the type dropdown is changed to/from `'other'` |
 | `toggleAtkBonusFields()` | Shows the manual bonus input or proficient+flat-bonus fields depending on `atkEditAbilityMod` selection |
-| `_normalizeSpell(sp)` | Ensures a spell object has a `rolls` array; migrates legacy `damage` field if needed |
+| `_normalizeSpell(sp)` | Ensures a spell object has a `rolls` array and `prepared`/`alwaysPrepared` booleans; migrates legacy `damage` field if needed |
 | `_normalizeFeature(f)` | Ensures a feature object has `rolls`, `attackRoll`, `attackMod`, `attackProficient`; migrates legacy `rollDamage`/`damage` |
 
 ### Calculation functions
@@ -959,11 +977,21 @@ DOMContentLoaded
 | `deleteCurrentTrait()` | Tap Delete in trait panel (view or edit mode) | `confirm()` dialog → splices `state.infoTraits`; calls `buildInfoTraits()` + `saveData()`; dismisses panel |
 | `dismissTraitPanel()` | Backdrop tap or Cancel in panel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#traitPanel` |
 | `openSpellPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `spellPanelEditIdx = i` in both modes; shows backdrop + panel |
-| `addSpell()` | Tap + Add button in Spells section | Opens spell panel in edit mode with empty form; sets `spellPanelEditIdx = -1` |
+| `toggleSpellPrepared(i)` | Tap P dot on a Spells Known row | If the spell is already prepared: unprepares it. If not: checks `maxSpellsPrepared`; shows toast and briefly pulses `.at-max` on the dot if the limit is full; otherwise sets `prepared:true`, clears `alwaysPrepared`; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `saveData()` |
+| `toggleSpellAlwaysPrepared(i)` | Tap ∞ dot on a Spells Known row | Toggles `alwaysPrepared`; when activating, clears `prepared` (mutually exclusive); calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `saveData()` |
+| `onMaxPreparedInput(val)` | Input event on `#maxPreparedInput` | Updates `state.maxSpellsPrepared`; calls `updatePreparedCount()` + `saveData()` |
+| `startSpellsKnownTitlePress(e)` | `pointerdown` on `#spellsKnownTitle` | Adds `.holding`; starts 500 ms timer; on fire calls `openSpellsKnownInfoPanel()` |
+| `endSpellsKnownTitlePress(e)` | `pointerup` on `#spellsKnownTitle` | Clears timer; removes `.holding`; if hold did NOT fire: toggles `spellsKnownCollapsed` and calls `buildSpellsKnown()` |
+| `cancelSpellsKnownTitlePress()` | `pointercancel` on `#spellsKnownTitle` | Clears timer; removes `.holding` |
+| `openSpellsKnownInfoPanel()` | Internal (fired by hold on Spells Known title) | Opens info panel explaining the P/∞ dot system, preparation rules, and cantrips |
+| `startSpellsPreparedTitlePress(e)` | `pointerdown` on `#spellsPreparedTitle` | Adds `.holding`; starts 500 ms timer; on fire calls `openSpellsPreparedInfoPanel()` |
+| `endSpellsPreparedTitlePress(e)` / `cancelSpellsPreparedTitlePress()` | `pointerup` / `pointercancel` on `#spellsPreparedTitle` | Clears timer; removes `.holding` |
+| `openSpellsPreparedInfoPanel()` | Internal (fired by hold on Spells Prepared title) | Opens info panel explaining spell slots, known vs prepared classes, the max prepared formula, and always-prepared spells |
+| `addSpell()` | Tap + Add button in Spells Known header | Opens spell panel in edit mode with empty form; sets `spellPanelEditIdx = -1` |
 | `populateSpellViewPanel(i)` | Internal | Fills view-mode elements from `state.spells[i]`; shows save DC box if `saveAbility` is set (uses per-spell `saveDC` override when > 0, otherwise character's spell DC); shows attack roll card if `attackRoll` is `true`; shows rolls box if `rolls` is non-empty and `attackRoll` is false |
 | `populateSpellEditForm(i)` | Internal | Fills edit form from `state.spells[i]` including `saveAbility`, `saveDC`, `attackRoll`, `rolls` (rendered via `renderRollRows`), `showInCombat`, `combatActionType`, and `showInFeatures`; blanks all fields when `i = -1` |
-| `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes all fields including `saveAbility`, `saveDC`, `showInCombat`, `combatActionType`, `showInFeatures`; calls `buildSpellList()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
-| `deleteCurrentSpell()` | Tap Delete in spell panel (view or edit mode) | Confirms; splices from `state.spells`; calls `buildSpellList()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
+| `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes all fields including `saveAbility`, `saveDC`, `showInCombat`, `combatActionType`, `showInFeatures`, and preserves `prepared`/`alwaysPrepared` from existing spell when editing; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
+| `deleteCurrentSpell()` | Tap Delete in spell panel (view or edit mode) | Confirms; splices from `state.spells`; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
 | `dismissSpellPanel()` | Backdrop tap or Cancel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#spellPanel` |
 | `renderFeatureDots(i)` | Any feature use/restore | Updates dots and `n/max` counter for feature `i` |
 | `toggleFeatureDot(i, j)` | Tap feature dot | Gold → use dots from here right; grey → restore that dot (respects `step`) |
@@ -1075,6 +1103,14 @@ Weapon attack row
   Hold (500 ms)      → openAttackPanel(i, false)   — opens attack info panel (view mode)
   Tap Edit (top-right) → switchToAtkEdit()          — switches same modal to edit mode
 
+Spells Known section title
+  Tap                → toggle collapse (show/hide #spellsKnownBody)
+  Hold (500 ms)      → openSpellsKnownInfoPanel()  — explains P/∞ dot system and preparation rules
+
+Spells Prepared section title
+  Hold (500 ms)      → openSpellsPreparedInfoPanel() — explains slots, known vs prepared, max formula, ∞ spells
+  (Short tap has no action; the hold hint badge indicates this)
+
 Spell row (spell list, combat list, featured spells)
   Tap                → clickSpellItem(e, i)         — rolls spell attack if attackRoll; rolls damage if rollDamage only; opens info panel if no roll configured
   Hold (500 ms)      → openSpellPanel(i, false)     — opens spell info panel (view mode)
@@ -1135,7 +1171,7 @@ Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled
 | Function | Description |
 |---|---|
 | `collectFormData()` | Reads all 28 form input values by element ID into a plain object |
-| `buildPayload()` | Returns `{ form, state }` — the canonical serialisation format. `form` is from `collectFormData()`; `state` includes all keys: `abilities`, `saveProficiencies`, `skillProficiencies`, `skillExpertise`, `inspiration`, `hpCurrent`, `spellSlots`, `spells`, `attacks`, `conditions`, `classFeatures`, `infoTraits`, `hitDiceUsed`, `diceRoller`, `portrait`, `statMods`, `damageResistances` |
+| `buildPayload()` | Returns `{ form, state }` — the canonical serialisation format. `form` is from `collectFormData()`; `state` includes all keys: `abilities`, `saveProficiencies`, `skillProficiencies`, `skillExpertise`, `inspiration`, `hpCurrent`, `spellSlots`, `spells` (each entry now includes `prepared` and `alwaysPrepared`), `attacks`, `conditions`, `classFeatures`, `infoTraits`, `hitDiceUsed`, `diceRoller`, `portrait`, `statMods`, `damageResistances`, `maxSpellsPrepared` |
 | `saveData()` | Serialises the active character via `buildPayload()` and writes it into the roster entry in `localStorage` (`dnd5e_roster`) |
 | `loadData()` | Reads the roster from `localStorage`; migrates a legacy `dnd5e_sheet` entry if no roster exists; restores form fields and `state` for the active character (no UI rebuild) |
 | `exportToJSON()` | Downloads `buildPayload()` as `<charname>.json` via a temporary `<a>` element |

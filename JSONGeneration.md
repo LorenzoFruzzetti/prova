@@ -322,6 +322,8 @@ Each object:
 | `showInCombat` | boolean | `true` to show the spell as a row in the combat attack block. Use this instead of duplicating the spell in `state.attacks[]` |
 | `combatActionType` | string | `"action"` (default), `"bonus"`, or `"other"` — which sub-section of the combat block the spell appears in when `showInCombat` is `true` |
 | `showInFeatures` | boolean | `true` to show the spell in the "Featured Spells" block inside the Features tab — useful for spells that function like limited-use class features |
+| `prepared` | boolean | `true` if the spell is prepared for the day; prepared spells appear in the Spells Prepared section and count toward `state.maxSpellsPrepared`; mutually exclusive with `alwaysPrepared` (default `false`) |
+| `alwaysPrepared` | boolean | `true` if the spell is always prepared (e.g. domain spells, class feature spells); always-prepared spells appear in Spells Prepared but do **not** count toward `maxSpellsPrepared`; mutually exclusive with `prepared` (default `false`) |
 
 When a spell has a `saveAbility` set, the view panel shows the current **Spell Save DC** prominently. The view panel contains a tappable attack-roll card (when `attackRoll` is `true`) and a tappable rolls card (when `rolls` is non-empty and `attackRoll` is `false`).
 
@@ -340,7 +342,8 @@ Spells with `showInCombat: true` appear in the combat attack block under "Action
     "attackRoll": false,
     "rolls": [{"dice": "8d6", "type": "fire", "mod": ""}],
     "description": "A bright streak flashes from your pointing finger...",
-    "showInCombat": true, "combatActionType": "action", "showInFeatures": false
+    "showInCombat": true, "combatActionType": "action", "showInFeatures": false,
+    "prepared": true, "alwaysPrepared": false
   },
   {
     "name": "Guiding Bolt", "level": 1, "school": "Evocation",
@@ -350,7 +353,8 @@ Spells with `showInCombat: true` appear in the combat attack block under "Action
     "attackRoll": true,
     "rolls": [{"dice": "4d6", "type": "radiant", "mod": ""}],
     "description": "A flash of light streaks toward a creature...",
-    "showInCombat": true, "combatActionType": "action", "showInFeatures": false
+    "showInCombat": true, "combatActionType": "action", "showInFeatures": false,
+    "prepared": true, "alwaysPrepared": false
   },
   {
     "name": "Guidance", "level": 0, "school": "Divination",
@@ -360,7 +364,8 @@ Spells with `showInCombat: true` appear in the combat attack block under "Action
     "attackRoll": false,
     "rolls": [{"dice": "1d4", "type": "not_damage", "mod": ""}],
     "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice.",
-    "showInCombat": false, "combatActionType": "action", "showInFeatures": false
+    "showInCombat": false, "combatActionType": "action", "showInFeatures": false,
+    "prepared": false, "alwaysPrepared": false
   },
   {
     "name": "Healing Word", "level": 1, "school": "Evocation",
@@ -370,7 +375,8 @@ Spells with `showInCombat: true` appear in the combat attack block under "Action
     "attackRoll": false,
     "rolls": [{"dice": "1d4", "type": "healing", "mod": "SPELL"}],
     "description": "A creature of your choice regains HP equal to 1d4 + your spellcasting modifier.",
-    "showInCombat": true, "combatActionType": "bonus", "showInFeatures": false
+    "showInCombat": true, "combatActionType": "bonus", "showInFeatures": false,
+    "prepared": false, "alwaysPrepared": true
   }
 ]
 ```
@@ -553,6 +559,15 @@ Valid damage type keys: `slashing`, `piercing`, `bludgeoning`, `fire`, `cold`, `
 
 Cycled by tapping a dot in the Resistances & Vulnerabilities section of the Combat tab. Undoable.
 
+#### `maxSpellsPrepared`
+Integer. The daily preparation limit for spells marked with the P dot (`prepared: true`). `0` (default) means no limit is enforced. Always-prepared spells (`alwaysPrepared: true`) never count toward this limit.
+
+```json
+"maxSpellsPrepared": 5
+```
+
+Set via the editable number input in the Spells Known section header. Omitting this key defaults to `0` (unlimited).
+
 #### `conditions`
 Array of active condition name strings.
 
@@ -646,7 +661,8 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
         "concentration": true, "ritual": false,
         "attackRoll": false, "damage": "",
         "description": "Up to three creatures of your choice within range add 1d4 to attack rolls and saving throws.",
-        "showInCombat": true, "combatActionType": "action"
+        "showInCombat": true, "combatActionType": "action",
+        "prepared": true, "alwaysPrepared": false
       },
       {
         "name": "Cure Wounds", "level": 1, "school": "Evocation",
@@ -655,7 +671,8 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
         "saveAbility": "", "concentration": false, "ritual": false,
         "attackRoll": false, "damage": "1d8+3",
         "description": "A creature you touch regains 1d8 + spellcasting modifier HP.",
-        "showInCombat": false, "combatActionType": "action"
+        "showInCombat": false, "combatActionType": "action",
+        "prepared": false, "alwaysPrepared": true
       }
     ],
     "attacks": [
@@ -668,6 +685,7 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
     "hitDiceUsed": 0,
     "statMods": { "ac": 0, "speed": 0, "initiative": 0, "spellatk": 0, "spelldc": 0 },
     "damageResistances": { "fire": 1, "necrotic": -1 },
+    "maxSpellsPrepared": 6,
     "diceRoller": null,
     "portrait": null,
     "classFeatures": [
@@ -697,5 +715,7 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
 | `attacks[].actionType` set to `"Action"` (capital A) | Attack appears under "Actions" only if the check is case-insensitive, but may silently fall through | Use lowercase `"action"` or `"bonus"` |
 | Spell in `state.spells` with `showInCombat: true` but no `spellAbility` set in `form` | Spell attack bonus shows as `+0`; roll still works | Set `form.spellAbility` to the correct ability key |
 | Spell duplicated in both `state.spells` and `state.attacks[]` | The spell appears twice in the combat block | Remove the `attacks[]` entry; set `showInCombat: true` on the spell object instead |
+| `prepared: true` and `alwaysPrepared: true` both set on the same spell | Only `alwaysPrepared` is meaningful; the spell shows in Spells Prepared but the P dot renders incorrectly | Set exactly one to `true`; the app enforces mutual exclusivity when toggling via the UI |
+| `maxSpellsPrepared` omitted on a class that uses preparation (Wizard, Cleric, etc.) | The prepared-count display shows `0 / 0` and no limit is enforced | Set `"maxSpellsPrepared"` to the character's daily preparation limit (e.g. `5` for a level 3 Wizard with INT 14) |
 | `attacks[].saveDC` as a string (`"15"`) | DC displays correctly but numeric comparison may fail in future | Use an integer: `15` not `"15"` |
 | `form.features` present in file | Field is silently ignored (the textarea no longer exists); data is lost | Move features to `state.infoTraits` as `{ name, description }` objects |
