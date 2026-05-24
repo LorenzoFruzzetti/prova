@@ -347,7 +347,7 @@ Each object:
 | `concentration` | boolean | `true` if the spell requires concentration |
 | `ritual` | boolean | `true` if the spell can be cast as a ritual |
 | `attackRoll` | boolean | `true` if the spell requires a ranged/melee spell attack roll (shows a tappable d20 roll card in the view panel) |
-| `rolls` | array | Array of roll objects `[{dice, type, label?, mod?}]`. Each entry: `dice` = expression (`"4d6"`); `type` = damage type key or `"not_damage"` or `"other"`; `label` = custom label when `type="other"`; `mod` = ability key to add (`"STR"`/`"DEX"`/…/`"SPELL"` or `""`). |
+| `rolls` | array | Array of roll objects `[{dice, type, label?, mod?}]`. Each entry: `dice` = expression (`"4d6"`); `type` = damage type key or `"not_damage"` or `"other"`; `label` = custom label when `type="other"`; `mod` = modifier to add — ability key (`"STR"`/`"DEX"`/…/`"CHA"`), `"SPELL"` (spellcasting ability modifier), or `""` for none. **Use `"mod":"SPELL"` whenever the spell or feature text says "add your spellcasting ability modifier" or "your spellcasting modifier"** — e.g. Healing Word `"1d4 + your spellcasting ability modifier"` → `{"dice":"1d4","type":"healing","mod":"SPELL"}`. The SRD import mappers detect this phrasing automatically; the AI import prompts enforce it explicitly. |
 | `description` | string | Full spell description; newlines are preserved |
 | `showInCombat` | boolean | `true` to show the spell as a row in the combat attack block. Use this instead of duplicating the spell in `state.attacks[]` |
 | `combatActionType` | string | `"action"` (default), `"bonus"`, or `"other"` — which sub-section of the combat block the spell appears in when `showInCombat` is `true` |
