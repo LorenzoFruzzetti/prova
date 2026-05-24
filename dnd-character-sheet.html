@@ -5570,14 +5570,15 @@ function rollTypeOptions(sel) {
 
 function rollModOptions(sel) {
   const opts = [
-    {value:'',      label:'— No mod'},
-    {value:'STR',   label:'STR'},
-    {value:'DEX',   label:'DEX'},
-    {value:'CON',   label:'CON'},
-    {value:'INT',   label:'INT'},
-    {value:'WIS',   label:'WIS'},
-    {value:'CHA',   label:'CHA'},
-    {value:'SPELL', label:'Spell'},
+    {value:'',         label:'— No mod'},
+    {value:'STR',      label:'STR'},
+    {value:'DEX',      label:'DEX'},
+    {value:'CON',      label:'CON'},
+    {value:'INT',      label:'INT'},
+    {value:'WIS',      label:'WIS'},
+    {value:'CHA',      label:'CHA'},
+    {value:'SPELLMOD', label:'Spell Mod'},
+    {value:'SPELL',    label:'Spell Atk'},
   ];
   return opts.map(o =>
     `<option value="${o.value}"${o.value === sel ? ' selected' : ''}>${o.label}</option>`
@@ -5674,6 +5675,10 @@ function getRollMod(modKey) {
   if (modKey === 'SPELL') {
     const el = document.getElementById('statSpellAtk');
     return (el && el.textContent !== '—') ? (parseInt(el.textContent) || 0) : 0;
+  }
+  if (modKey === 'SPELLMOD') {
+    const ab = document.getElementById('spellAbility')?.value || '';
+    return (ab && state.abilities[ab] !== undefined) ? mod(state.abilities[ab]) : 0;
   }
   return state.abilities[modKey] !== undefined ? mod(state.abilities[modKey]) : 0;
 }
@@ -9867,9 +9872,10 @@ Each spell must use this exact JSON structure:
   "attackRoll": boolean (true if the spell requires a spell attack roll),
   "rolls": array of roll objects, or [] if no roll. Each entry: {"dice":"2d6","type":"fire","mod":""}
     - "type": one of slashing|piercing|bludgeoning|fire|cold|lightning|thunder|acid|poison|necrotic|radiant|force|psychic|healing|not_damage|other
-    - "mod": "" (none) | ability key "STR"/"DEX"/"CON"/"INT"/"WIS"/"CHA" | "SPELL" (spellcasting ability modifier)
-    CRITICAL: set "mod":"SPELL" whenever the spell text says the roll adds "your spellcasting ability modifier" or "your spellcasting modifier"
-    (e.g. "regains 1d4 + your spellcasting ability modifier" → {"dice":"1d4","type":"healing","mod":"SPELL"})
+    - "mod": "" (none) | ability key "STR"/"DEX"/"CON"/"INT"/"WIS"/"CHA" | "SPELLMOD" (spellcasting ability modifier only) | "SPELL" (full spell attack bonus = ability mod + proficiency)
+    CRITICAL: set "mod":"SPELLMOD" whenever the spell text says the roll adds "your spellcasting ability modifier" or "your spellcasting modifier"
+    (e.g. "regains 1d4 + your spellcasting ability modifier" → {"dice":"1d4","type":"healing","mod":"SPELLMOD"})
+    Only use "SPELL" if the roll explicitly adds the full spell attack bonus (rare; most damage/healing rolls use "SPELLMOD" or an ability key)
   "description": string (concise, 1-3 sentences),
   "showInCombat": boolean (true if used in combat),
   "combatActionType": one of "action","bonus","reaction",""
@@ -9878,7 +9884,7 @@ Each spell must use this exact JSON structure:
 Spells already on this sheet (skip these): ${existing}
 
 Output ONLY the JSON array. Example output format:
-[{"name":"Healing Word","level":1,"school":"Evocation","castingTime":"1 bonus action","range":"60 ft","components":"V","duration":"Instantaneous","saveAbility":"","concentration":false,"ritual":false,"attackRoll":false,"rolls":[{"dice":"1d4","type":"healing","mod":"SPELL"}],"description":"A creature you can see regains HP equal to 1d4 + your spellcasting ability modifier.","showInCombat":true,"combatActionType":"bonus"}, ...]`;
+[{"name":"Healing Word","level":1,"school":"Evocation","castingTime":"1 bonus action","range":"60 ft","components":"V","duration":"Instantaneous","saveAbility":"","concentration":false,"ritual":false,"attackRoll":false,"rolls":[{"dice":"1d4","type":"healing","mod":"SPELLMOD"}],"description":"A creature you can see regains HP equal to 1d4 + your spellcasting ability modifier.","showInCombat":true,"combatActionType":"bonus"}, ...]`;
 }
 
 function _buildFeaturePrompt(what) {
@@ -9896,8 +9902,8 @@ Each feature must use this exact JSON structure:
   "step": integer (1 in almost all cases; 5 for Lay on Hands),
   "rolls": array of roll objects, or [] if no roll. Each entry: {"dice":"2d8","type":"radiant","mod":""}
     - "type": one of slashing|piercing|bludgeoning|fire|cold|lightning|thunder|acid|poison|necrotic|radiant|force|psychic|healing|not_damage|other
-    - "mod": "" (none) | ability key "STR"/"DEX"/"CON"/"INT"/"WIS"/"CHA" | "SPELL" (spellcasting ability modifier)
-    CRITICAL: set "mod":"SPELL" whenever the feature text says the roll adds "your spellcasting ability modifier" or "your spellcasting modifier"
+    - "mod": "" (none) | ability key "STR"/"DEX"/"CON"/"INT"/"WIS"/"CHA" | "SPELLMOD" (spellcasting ability modifier only) | "SPELL" (full spell attack bonus)
+    CRITICAL: set "mod":"SPELLMOD" whenever the feature text says the roll adds "your spellcasting ability modifier" or "your spellcasting modifier"
   "saveAbility": one of "STR","DEX","CON","INT","WIS","CHA" or "",
   "saveDC": integer or 0,
   "showInCombat": boolean (true if used in combat),
@@ -10410,7 +10416,7 @@ function _mapSrdSpell(sp) {
     concentration:   toBool(sp.concentration),
     ritual:          toBool(sp.ritual),
     attackRoll:      !!(sp.attack_type),
-    rolls:           rawDmg ? [{dice: rawDmg, type: rawType, mod: hasSpcMod ? 'SPELL' : ''}] : [],
+    rolls:           rawDmg ? [{dice: rawDmg, type: rawType, mod: hasSpcMod ? 'SPELLMOD' : ''}] : [],
     description:     desc.length > 600 ? desc.slice(0, 597) + '…' : desc,
     showInCombat:    true,
     combatActionType: ct.includes('bonus') ? 'bonus' : ct.includes('reaction') ? 'reaction' : 'action',
@@ -10486,7 +10492,7 @@ function _mapSrd24Spell(sp) {
     concentration:    sp.concentration || false,
     ritual:           sp.ritual || false,
     attackRoll:       sp.attack_roll || false,
-    rolls:            sp.damage_roll ? [{ dice: sp.damage_roll, type: dmgType, mod: hasSpcMod ? 'SPELL' : '' }] : [],
+    rolls:            sp.damage_roll ? [{ dice: sp.damage_roll, type: dmgType, mod: hasSpcMod ? 'SPELLMOD' : '' }] : [],
     description:      d.length > 600 ? d.slice(0, 597) + '…' : d,
     showInCombat:     true,
     combatActionType: ct.includes('bonus') ? 'bonus' : ct.includes('reaction') ? 'reaction' : 'action',
@@ -10939,9 +10945,11 @@ spells array — each spell object:
   "showInCombat":true,"combatActionType":"action","prepared":true,"alwaysPrepared":false }
 school values: Abjuration|Conjuration|Divination|Enchantment|Evocation|Illusion|Necromancy|Transmutation
 rolls type values: slashing|piercing|bludgeoning|fire|cold|lightning|thunder|acid|poison|necrotic|radiant|force|psychic|healing|not_damage|other
-rolls mod values: STR|DEX|CON|INT|WIS|CHA|SPELL|""
-  CRITICAL: use "SPELL" when the spell or feature text says "add your spellcasting ability modifier" or "your spellcasting modifier"
-  (e.g. Healing Word "1d4 + your spellcasting ability modifier" → "mod":"SPELL")
+rolls mod values: STR|DEX|CON|INT|WIS|CHA|SPELLMOD|SPELL|""
+  SPELLMOD = spellcasting ability modifier only (no proficiency) — use for healing/damage rolls
+  SPELL    = full spell attack bonus (ability mod + proficiency) — use only for attack rolls
+  CRITICAL: use "SPELLMOD" when the spell or feature text says "add your spellcasting ability modifier"
+  (e.g. Healing Word "1d4 + your spellcasting ability modifier" → "mod":"SPELLMOD")
 
 attacks array — each weapon/attack object:
 { "name":"Longsword","abilityMod":"STR","proficient":true,"flatBonus":0,
