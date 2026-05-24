@@ -921,17 +921,14 @@
 
   /* ── Death Saves ── */
   .death-saves {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
   }
 
   .save-group {
-    padding: 6px 0;
+    padding: 4px 0;
     text-align: center;
-  }
-
-  .save-group + .save-group {
-    border-top: 1px solid var(--border);
   }
 
   .save-group-label {
@@ -939,7 +936,7 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     font-family: sans-serif;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     text-align: center;
   }
 
@@ -948,7 +945,7 @@
 
   .save-dots {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     justify-content: center;
   }
 
