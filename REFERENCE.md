@@ -185,6 +185,7 @@ These are the structured, typed values in the `state` object. They are persisted
 | `hitDiceUsed` | `integer` | Number of hit dice expended; max equals `charLevel` |
 | `classFeatures` | `object[]` | Limited-use class abilities in the Features tab (see nested fields below) |
 | `infoTraits` | `object[]` | Descriptive traits in the Info tab's Features & Traits section (see nested fields below) |
+| `diceRoller` | `{sides,count}[]|null` | Free-form dice roller configuration; `null` means use defaults (d4/d6/d8/d10/d12/d20/d100, count 1 each) |
 | `portrait` | `string|null` | Base64 data URL for the character portrait, or `null` |
 | `statMods` | `{ac,speed,initiative,spellatk,spelldc}` | Custom numeric bonuses added on top of the base stat values |
 | `damageResistances` | `{[damageType]: -1|0|1}` | Per damage-type resistance state: `1` = resistant (green), `-1` = vulnerable (red), `0` or absent = normal |
@@ -649,7 +650,7 @@ STAT_PILL_INFO  // {ac, initiative, speed, dietype, spellatk, spelldc} — metad
 SPELL_SLOTS_DEFAULT  // [{level, max}] — 9 levels, all max:0 except 1st:2
 LEVEL_LABELS    // ['Cantrip','1st','2nd',...,'9th'] — display labels for spell levels 0–9
 DEFAULT_ACTIONS // [{key, name, type, description}] — standard D&D 5e actions; type ∈ 'action'|'bonus'|'reaction'|'free'
-TABS            // ['overview','abilities','skills','combat','spells','features','inventory','rolls']
+TABS            // ['overview','abilities','combat','spells','features','inventory','dice','rolls']
                 //   Order used by swipe navigation and switchTab()
 FONT_SIZES      // [75, 85, 100, 110, 125, 150] — allowed zoom levels in percent
 THEMES          // ['gold', 'dark', 'red', 'forest', 'ocean'] — valid data-theme values
@@ -725,6 +726,7 @@ let state = {
                           showInCombat,          //   boolean — show as row in the combat block
                           combatActionType,      //   'action' | 'bonus' | 'other' (default: 'action')
                         } ],
+  diceRoller:         null, // null = use defaults [{sides:4,count:1},…,{sides:100,count:1}]; array when customised
   portrait:           null, // base64 data URL string (e.g. "data:image/png;base64,...") or null
   statMods:           {     // custom numeric bonuses added on top of each combat stat
     ac: 0,            //   added to AC input value for display (visual badge only)
@@ -794,15 +796,15 @@ DOMContentLoaded
   └─ loadLeftyMode()   restore lefty-mode flag from localStorage; apply body.lefty class
   └─ init()
        ├─ loadData()          restore state + form fields from localStorage
-       ├─ buildAbilityGrid()  inject ability score cards into #abilityGrid
-       ├─ buildSavingThrows() inject saving throw rows into #savingThrowsList
+       ├─ buildAbilityGrid()  inject ability cards (+ saving throw rows) into #abilityGrid
        ├─ buildSkillsList()   inject skill rows into #skillsList
        ├─ buildConditions()   inject condition chips into #conditionsGrid
        ├─ buildSpellSlots()   inject pill strip + active rows into #spellSlotsBody; levels with max=0 appear only as pills
        ├─ buildSpellList()      inject spell rows grouped by level into #spellListBody
        ├─ buildFeatures()       inject class feature rows into #featuresBody
        ├─ buildFeaturedSpells() inject featured spell rows into #featuredSpellsBody (Features tab)
-       ├─ buildInfoTraits()     inject features & traits rows into #infoTraitsBody
+       ├─ buildInfoTraits()         inject features & traits rows into #infoTraitsBody
+       ├─ buildDiceRoller()         inject die rows into #diceRollerBody
        ├─ renderHitDice()           inject hit dice dots into #hitDiceDots
        ├─ buildDamageResistances() inject resistance/vulnerability dots into #dmgResistGrid
        ├─ recalcAll()         compute all derived values (modifiers, DC, etc.)
@@ -822,8 +824,8 @@ DOMContentLoaded
 
 | Function | What it renders | Reads from |
 |---|---|---|
-| `buildAbilityGrid()` | 6 ability cards; tap → roll d20+mod (normal); hold 500 ms → open info panel with description + 3-zone roll button | `state.abilities` |
-| `buildSavingThrows()` | 6 rows; short tap → roll (normal mode); hold 500 ms → open info panel with 3-zone roll button; tap prof dot → toggle proficiency | `state.saveProficiencies` |
+| `buildAbilityGrid()` | 6 ability cards in `#abilityGrid`; each card contains the score input, modifier, and a saving throw row with prof dot. Tap card → roll d20+mod; hold 500 ms → open info panel with 3-zone roll button. Tap save row → roll save; tap prof dot → toggle proficiency. | `state.abilities`, `state.saveProficiencies` |
+| `buildDiceRoller()` | Die rows in `#diceRollerBody`; one row per entry in `getDiceRoller()`; default set is d4/d6/d8/d10/d12/d20/d100. Each row has a count tracker and a roll button. Custom dice (non-default sides) show a remove button. | `state.diceRoller` |
 | `buildSkillsList()` | 18 skill rows; tap row → roll; tap prof dots → cycle prof | `state.skillProficiencies`, `state.skillExpertise` |
 | `buildConditions()` | 15 condition chips | `state.conditions` |
 | `buildSpellSlots()` | Renders `#spellSlotsBody`: a pill strip of hidden levels (max=0) at the top, then one row per active level (max>0) with dots and mini +/− tracker | `state.spellSlots` |
@@ -1133,7 +1135,7 @@ Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled
 | Function | Description |
 |---|---|
 | `collectFormData()` | Reads all 28 form input values by element ID into a plain object |
-| `buildPayload()` | Returns `{ form, state }` — the canonical serialisation format; `state` includes `spellSlots`, `attacks`, `conditions`, `classFeatures`, `infoTraits`, `hitDiceUsed`, `portrait`, and all ability/proficiency data |
+| `buildPayload()` | Returns `{ form, state }` — the canonical serialisation format. `form` is from `collectFormData()`; `state` includes all keys: `abilities`, `saveProficiencies`, `skillProficiencies`, `skillExpertise`, `inspiration`, `hpCurrent`, `spellSlots`, `spells`, `attacks`, `conditions`, `classFeatures`, `infoTraits`, `hitDiceUsed`, `diceRoller`, `portrait`, `statMods`, `damageResistances` |
 | `saveData()` | Serialises the active character via `buildPayload()` and writes it into the roster entry in `localStorage` (`dnd5e_roster`) |
 | `loadData()` | Reads the roster from `localStorage`; migrates a legacy `dnd5e_sheet` entry if no roster exists; restores form fields and `state` for the active character (no UI rebuild) |
 | `exportToJSON()` | Downloads `buildPayload()` as `<charname>.json` via a temporary `<a>` element |
