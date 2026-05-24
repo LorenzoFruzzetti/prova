@@ -205,6 +205,12 @@ Contains structured game data that cannot be expressed as plain form inputs.
 
   "hitDiceUsed": 2,
 
+  "statMods": { "ac": 0, "speed": 0, "initiative": 0, "spellatk": 0, "spelldc": 0 },
+
+  "damageResistances": { "fire": 1, "poison": -1 },
+
+  "diceRoller": null,
+
   "classFeatures": [
     { "name": "Channel Divinity", "max": 2,  "used": 1, "recharge": "Short Rest", "step": 1 },
     { "name": "Lay on Hands",     "max": 25, "used": 5, "recharge": "Long Rest",  "step": 5 }
@@ -485,6 +491,15 @@ Integer. Number of hit dice already expended. Max is equal to the character's le
 
 Omitting this key defaults to `0` (all hit dice available). A Long Rest resets this to `0`.
 
+#### `diceRoller`
+Array or `null`. Defines the dice shown in the Dice tab's free-form roller. `null` means use the default set (d4, d6, d8, d10, d12, d20, d100 — each with count 1). Supply an array to persist custom counts or custom die types.
+
+```json
+"diceRoller": null
+```
+
+Each entry: `{ "sides": <integer>, "count": <integer> }`. Non-default `sides` values render with a remove button. Omitting this key is equivalent to `null`.
+
 #### `portrait`
 String or `null`. A base64-encoded data URL for the character portrait image (e.g. `"data:image/png;base64,..."`). Omitting this key or setting it to `null` leaves the portrait empty.
 
@@ -516,6 +531,27 @@ Object of custom numeric bonuses applied on top of each combat stat. All keys ar
 | `spelldc` | Added to `8 + prof + spellcasting mod` before displaying `statSpellDC` |
 
 Set via hold → Edit on any combat stat pill. Undoable via the Undo button.
+
+#### `damageResistances`
+Object mapping damage type keys to resistance state. Each entry is optional; omitting a key means normal damage for that type.
+
+```json
+"damageResistances": {
+  "fire": 1,
+  "cold": -1,
+  "slashing": 0
+}
+```
+
+| Value | Meaning | Dot colour |
+|---|---|---|
+| `1` | Resistant — half damage | Green |
+| `-1` | Vulnerable — double damage | Red |
+| `0` or absent | Normal | Empty |
+
+Valid damage type keys: `slashing`, `piercing`, `bludgeoning`, `fire`, `cold`, `lightning`, `thunder`, `acid`, `poison`, `necrotic`, `radiant`, `force`, `psychic`.
+
+Cycled by tapping a dot in the Resistances & Vulnerabilities section of the Combat tab. Undoable.
 
 #### `conditions`
 Array of active condition name strings.
@@ -631,6 +667,9 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
     "conditions": [],
     "hitDiceUsed": 0,
     "statMods": { "ac": 0, "speed": 0, "initiative": 0, "spellatk": 0, "spelldc": 0 },
+    "damageResistances": { "fire": 1, "necrotic": -1 },
+    "diceRoller": null,
+    "portrait": null,
     "classFeatures": [
       { "name": "Channel Divinity", "max": 1,  "used": 0, "recharge": "Short Rest", "step": 1 },
       { "name": "Lay on Hands",     "max": 25, "used": 0, "recharge": "Long Rest",  "step": 5 }
