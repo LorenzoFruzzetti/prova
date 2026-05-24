@@ -4380,7 +4380,9 @@ function buildSkillsList() {
         onclick="clickSkillItem(event, '${s.name}')"
         onpointercancel="cancelSkillPress()"
         oncontextmenu="return false">
-      <div class="prof-dots" onclick="event.stopPropagation(); cycleSkillProf('${s.name}', this.closest('li'))">
+      <div class="prof-dots"
+           onpointerdown="event.stopPropagation()"
+           onclick="event.stopPropagation(); cycleSkillProf('${s.name}', this.closest('li'))">
         <div class="prof-dot"></div><div class="prof-dot"></div>
       </div>
       <span class="check-modifier" id="skill-mod-${s.name.replace(/\s/g,'_')}">+0</span>
