@@ -4644,6 +4644,7 @@
   <button class="settings-full-btn" onclick="exportToJSON(); dismissSettings()">&#128190; Save Character</button>
   <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(()=>document.getElementById('jsonFileInput').click(), 100)">&#128194; Load Character</button>
   <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(openCharImport, 100)">&#129302; AI Import Character</button>
+  <button class="settings-full-btn" id="srdEnrichBtn" onclick="enrichAllFromSrd()">&#128218; Fill Descriptions from SRD</button>
   <hr class="settings-divider">
   <div class="settings-row">
     <div class="settings-row-label">
@@ -10445,6 +10446,80 @@ async function _enrichEquipDescriptions(items) {
     } catch(e) { /* SRD miss — keep whatever description the AI provided */ }
   }
   if (updated) { buildEquipmentItems(); saveData(); }
+}
+
+async function enrichAllFromSrd() {
+  const btn = document.getElementById('srdEnrichBtn');
+  const origText = btn.textContent;
+  btn.disabled = true;
+  let updated = 0;
+  let fetched = 0;
+
+  async function _enrich(items, endpoint, applyFn) {
+    if (!items.length) return;
+    let list;
+    try { list = await _srdGet('/' + endpoint); } catch(e) { return; }
+    const results = list.results || [];
+    for (const item of items) {
+      const q = (item.name || '').toLowerCase();
+      const match = results.find(r => r.name.toLowerCase() === q) ||
+                    results.find(r => r.name.toLowerCase().includes(q));
+      if (!match) continue;
+      fetched++;
+      btn.textContent = `Checking ${fetched}…`;
+      try {
+        const detail = await _srdGet('/' + endpoint + '/' + match.index);
+        if (applyFn(item, detail)) updated++;
+      } catch(e) { /* SRD miss */ }
+    }
+  }
+
+  const _rawDesc = d => (Array.isArray(d.desc) ? d.desc : [d.desc || '']).join('\n\n');
+
+  try {
+    await _enrich(state.spells || [], 'spells', (item, d) => {
+      if (item.description) return false;
+      const desc = _rawDesc(d);
+      if (!desc) return false;
+      item.description = desc; return true;
+    });
+    await _enrich(state.infoTraits || [], 'traits', (item, d) => {
+      if (item.description) return false;
+      const desc = _rawDesc(d);
+      if (!desc) return false;
+      item.description = desc; return true;
+    });
+    await _enrich(state.classFeatures || [], 'features', (item, d) => {
+      if (item.description) return false;
+      const desc = _rawDesc(d);
+      if (!desc) return false;
+      item.description = desc; return true;
+    });
+    await _enrich(state.equipmentItems || [], 'equipment', (item, d) => {
+      const m = _mapSrdEquipment(d);
+      let changed = false;
+      if (!item.description && m.description) { item.description = m.description; changed = true; }
+      if (!item.weight   && m.weight)   { item.weight   = m.weight;   changed = true; }
+      if (!item.cost     && m.cost)     { item.cost     = m.cost;     changed = true; }
+      if (!item.category && m.category) { item.category = m.category; changed = true; }
+      return changed;
+    });
+    if (updated > 0) {
+      buildSpellsKnown(); buildSpellsPrepared();
+      buildInfoTraits();
+      buildFeatures();
+      buildEquipmentItems();
+      saveData();
+    }
+  } catch(e) {
+    toast('SRD error: ' + (e.message || 'network error'));
+  }
+  btn.disabled = false;
+  btn.textContent = origText;
+  dismissSettings();
+  toast(updated > 0
+    ? `${updated} item${updated > 1 ? 's' : ''} filled from SRD`
+    : 'No new SRD content found');
 }
 
 function _buildEquipmentPrompt(what) {
