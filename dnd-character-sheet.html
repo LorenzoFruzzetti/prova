@@ -961,6 +961,58 @@
   .save-dot.success-dot.filled { background: var(--green); border-color: var(--green); }
   .save-dot.failure-dot.filled { background: var(--red-light); border-color: var(--red-light); }
 
+  /* ── Damage Resistances & Vulnerabilities ── */
+  .dmg-resist-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 6px;
+    justify-content: center;
+    padding: 2px 0;
+  }
+  .dmg-resist-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+    min-width: 36px;
+  }
+  .dmg-resist-icon {
+    font-size: 14px;
+    line-height: 1;
+  }
+  .dmg-resist-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: none;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  .dmg-resist-dot.resistant {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .dmg-resist-dot.vulnerable {
+    background: var(--red-light);
+    border-color: var(--red-light);
+  }
+  .dmg-resist-label {
+    font-size: 8px;
+    font-family: sans-serif;
+    color: var(--text-muted);
+    text-align: center;
+    letter-spacing: 0.01em;
+    line-height: 1;
+  }
+  .dmg-resist-item:active .dmg-resist-dot {
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.35);
+  }
+
   /* ── Spell Slots ── */
   .spell-level-row {
     display: flex;
@@ -3189,6 +3241,13 @@
   </div>
 
   <div class="section">
+    <div class="section-title">Resistances &amp; Vulnerabilities</div>
+    <div class="section-body">
+      <div class="dmg-resist-grid" id="dmgResistGrid"></div>
+    </div>
+  </div>
+
+  <div class="section">
     <div class="section-body inspiration-death-row">
       <div class="inspiration-block">
         <div class="insp-block-title">Inspiration</div>
@@ -4246,6 +4305,22 @@ const ROLL_TYPES = [
   {value:'other',       label:'Other'},
 ];
 
+const DAMAGE_RESIST_TYPES = [
+  { value: 'slashing',    label: 'Slash',    icon: '⚔️' },
+  { value: 'piercing',    label: 'Pierce',   icon: '🗡️' },
+  { value: 'bludgeoning', label: 'Blunt',    icon: '🔨' },
+  { value: 'fire',        label: 'Fire',     icon: '🔥' },
+  { value: 'cold',        label: 'Cold',     icon: '❄️' },
+  { value: 'lightning',   label: 'Lightn',   icon: '⚡' },
+  { value: 'thunder',     label: 'Thunder',  icon: '🌩️' },
+  { value: 'acid',        label: 'Acid',     icon: '🧪' },
+  { value: 'poison',      label: 'Poison',   icon: '☠️' },
+  { value: 'necrotic',    label: 'Necrotic', icon: '💀' },
+  { value: 'radiant',     label: 'Radiant',  icon: '☀️' },
+  { value: 'force',       label: 'Force',    icon: '💥' },
+  { value: 'psychic',     label: 'Psychic',  icon: '🔮' },
+];
+
 let state = {
   abilities: {STR:10, DEX:10, CON:10, INT:10, WIS:10, CHA:10},
   saveProficiencies: [],
@@ -4263,6 +4338,7 @@ let state = {
   diceRoller: null,
   portrait: null,
   statMods: { ac: 0, speed: 0, initiative: 0, spellatk: 0, spelldc: 0 },
+  damageResistances: {},
 };
 
 // ── Init ───────────────────────────────────────────────────────────────
@@ -4278,6 +4354,7 @@ function init() {
   buildInfoTraits();
   buildDiceRoller();
   renderHitDice();
+  buildDamageResistances();
   recalcAll();
   applyPortrait();
   setupAutoSave();
@@ -4352,6 +4429,10 @@ function applyUndo(a) {
       if (!state.statMods) state.statMods = {};
       state.statMods[a.key] = a.previous;
       recalcAll(); toast('↩ Stat modifier'); break;
+    case 'damageResistance':
+      if (!state.damageResistances) state.damageResistances = {};
+      state.damageResistances[a.dmgType] = a.previous;
+      buildDamageResistances(); saveData(); toast('↩ Damage resistance'); break;
   }
 }
 
@@ -6362,6 +6443,37 @@ function cancelHitDiePress() {
   document.querySelectorAll('.hit-die-roll.holding').forEach(el => el.classList.remove('holding'));
 }
 
+// ── Damage Resistances & Vulnerabilities ───────────────────────────────
+function buildDamageResistances() {
+  const grid = document.getElementById('dmgResistGrid');
+  if (!grid) return;
+  if (!state.damageResistances) state.damageResistances = {};
+  grid.innerHTML = DAMAGE_RESIST_TYPES.map(t => {
+    const r = state.damageResistances[t.value] || 0;
+    const dotCls = r === 1 ? 'resistant' : r === -1 ? 'vulnerable' : '';
+    return `<div class="dmg-resist-item" onclick="cycleDamageResistance('${t.value}')">
+      <span class="dmg-resist-icon">${t.icon}</span>
+      <div class="dmg-resist-dot ${dotCls}"></div>
+      <span class="dmg-resist-label">${t.label}</span>
+    </div>`;
+  }).join('');
+}
+
+function cycleDamageResistance(type) {
+  if (!state.damageResistances) state.damageResistances = {};
+  const cur = state.damageResistances[type] || 0;
+  pushUndo({ type: 'damageResistance', dmgType: type, previous: cur });
+  const next = cur === 0 ? 1 : cur === 1 ? -1 : 0;
+  state.damageResistances[type] = next;
+  buildDamageResistances();
+  const dt = DAMAGE_RESIST_TYPES.find(t => t.value === type);
+  const label = dt ? dt.label : type;
+  if (next === 1)  toast('Resistant: ' + label);
+  else if (next === -1) toast('Vulnerable: ' + label);
+  else             toast('Normal: ' + label);
+  saveData();
+}
+
 // ── Death saves ────────────────────────────────────────────────────────
 function openDeathSavePanel() {
   openInfoPanel({
@@ -7642,6 +7754,7 @@ function buildPayload() {
       diceRoller: state.diceRoller,
       portrait: state.portrait,
       statMods: state.statMods,
+      damageResistances: state.damageResistances,
     }
   };
 }
@@ -7698,13 +7811,14 @@ function clearSheet() {
     spells: [], attacks: [], conditions: [], classFeatures: [],
     infoTraits: [], hitDiceUsed: 0, diceRoller: null, portrait: null,
     statMods: { ac: 0, speed: 0, initiative: 0, spellatk: 0, spelldc: 0 },
+    damageResistances: {},
   });
 }
 
 function _rebuildAll() {
   buildAbilityGrid(); buildSkillsList(); buildConditions();
   buildSpellSlots(); buildSpellList(); buildFeatures(); buildFeaturedSpells();
-  buildInfoTraits(); buildDiceRoller(); renderHitDice(); renderAttacks();
+  buildInfoTraits(); buildDiceRoller(); renderHitDice(); buildDamageResistances(); renderAttacks();
   recalcAll(); updateHeader(); updateHP(); applyPortrait();
   document.getElementById('inspirationBtn').classList.toggle('active', state.inspiration);
 }
@@ -7940,6 +8054,9 @@ function _applyPayloadData(payload) {
     });
     if (!state.statMods || typeof state.statMods !== 'object') {
       state.statMods = { ac: 0, speed: 0, initiative: 0, spellatk: 0, spelldc: 0 };
+    }
+    if (!state.damageResistances || typeof state.damageResistances !== 'object') {
+      state.damageResistances = {};
     }
   }
 }

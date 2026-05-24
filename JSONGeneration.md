@@ -517,6 +517,27 @@ Object of custom numeric bonuses applied on top of each combat stat. All keys ar
 
 Set via hold → Edit on any combat stat pill. Undoable via the Undo button.
 
+#### `damageResistances`
+Object mapping damage type keys to resistance state. Each entry is optional; omitting a key means normal damage for that type.
+
+```json
+"damageResistances": {
+  "fire": 1,
+  "cold": -1,
+  "slashing": 0
+}
+```
+
+| Value | Meaning | Dot colour |
+|---|---|---|
+| `1` | Resistant — half damage | Green |
+| `-1` | Vulnerable — double damage | Red |
+| `0` or absent | Normal | Empty |
+
+Valid damage type keys: `slashing`, `piercing`, `bludgeoning`, `fire`, `cold`, `lightning`, `thunder`, `acid`, `poison`, `necrotic`, `radiant`, `force`, `psychic`.
+
+Cycled by tapping a dot in the Resistances & Vulnerabilities section of the Combat tab. Undoable.
+
 #### `conditions`
 Array of active condition name strings.
 
@@ -631,6 +652,7 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
     "conditions": [],
     "hitDiceUsed": 0,
     "statMods": { "ac": 0, "speed": 0, "initiative": 0, "spellatk": 0, "spelldc": 0 },
+    "damageResistances": { "fire": 1, "necrotic": -1 },
     "classFeatures": [
       { "name": "Channel Divinity", "max": 1,  "used": 0, "recharge": "Short Rest", "step": 1 },
       { "name": "Lay on Hands",     "max": 25, "used": 0, "recharge": "Long Rest",  "step": 5 }
