@@ -454,9 +454,8 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.prof-dots` | Flex container with two `.prof-dot`s used in skills (one `.prof-dot` in equipment proficiency rows); tap to cycle prof |
 | `.equip-prof-group-header` | Section divider `<li>` inside `#equipProfList`; small-caps gold-muted text (e.g. "Armor", "Artisan Tools"); no dot or interaction |
 | `.equip-prof-del-btn` | Small × button on the right of custom proficiency rows; red tint on hover; tap calls `deleteCustomEquipProf(name)` |
-| `.equip-prof-active-item` | One row in the "Your Proficiencies" section (`#equipProfActiveBody`); contains `.equip-prof-active-name` and `.equip-prof-active-desc`; tap or hold opens info panel; `.holding` applied during 500 ms press |
+| `.equip-prof-active-item` | One row in the "Your Proficiencies" section (`#equipProfActiveBody`); contains `.equip-prof-active-name`; tap or hold opens info panel (description visible there only); `.holding` applied during 500 ms press |
 | `.equip-prof-active-name` | Bold gold-light item name inside `.equip-prof-active-item` |
-| `.equip-prof-active-desc` | 2-line clamped muted description preview inside `.equip-prof-active-item` |
 | `.equip-prof-active-empty` | Italic muted placeholder inside `#equipProfActiveBody` shown when no proficiencies are marked |
 | `.hp-display` | Flex center area showing current HP, max, and bar; tap to open HP dialog |
 | `.hp-bar` / `.hp-bar-fill` | Visual HP percentage bar |
@@ -861,7 +860,7 @@ DOMContentLoaded
 | `buildDiceRoller()` | Die rows in `#diceRollerBody`; one row per entry in `getDiceRoller()`; default set is d4/d6/d8/d10/d12/d20/d100. Each row has a count tracker and a roll button. Custom dice (non-default sides) show a remove button. | `state.diceRoller` |
 | `buildSkillsList()` | 18 skill rows; tap row → roll; tap prof dots → cycle prof | `state.skillProficiencies`, `state.skillExpertise` |
 | `buildEquipProfList()` | Manages the collapsible "All Proficiencies" section: syncs the chevron and shows/hides `#equipProfAllBody` based on `equipProfAllCollapsed`; if collapsed returns early after calling `buildEquipProfActiveList()`; when expanded renders all predefined items (from `EQUIP_PROF_GROUPS`) plus custom rows into `#equipProfList`; each row has a single prof dot (gold = proficient); group headers use `.equip-prof-group-header`; custom rows include a × delete button | `state.equipProficiencies`, `state.customEquipProfRows`, `EQUIP_PROF_GROUPS` |
-| `buildEquipProfActiveList()` | Renders the "Your Proficiencies" section (`#equipProfActiveBody`): shows only items in `state.equipProficiencies`, ordered to match `EQUIP_PROF_GROUPS` then custom rows; each row is a `.equip-prof-active-item` with a bold name (`.equip-prof-active-name`) and a 2-line description preview (`.equip-prof-active-desc`); tap or hold opens the info panel; shows `.equip-prof-active-empty` placeholder when no proficiencies are set | `state.equipProficiencies`, `state.customEquipProfRows`, `EQUIP_PROF_GROUPS` |
+| `buildEquipProfActiveList()` | Renders the "Your Proficiencies" section (`#equipProfActiveBody`): shows only items in `state.equipProficiencies`, ordered to match `EQUIP_PROF_GROUPS` then custom rows; each row is a `.equip-prof-active-item` with a bold name only — description is shown in the info panel on hold; shows `.equip-prof-active-empty` placeholder when no proficiencies are set | `state.equipProficiencies`, `state.customEquipProfRows`, `EQUIP_PROF_GROUPS` |
 | `buildConditions()` | 15 condition chips | `state.conditions` |
 | `buildSpellSlots()` | Renders `#spellSlotsBody`: a pill strip of hidden levels (max=0) at the top, then one row per active level (max>0) with dots and mini +/− tracker | `state.spellSlots` |
 | `expandSpellLevel(i)` | Sets `state.spellSlots[i].max` to 1 and rebuilds spell slots (moves that level from the pill strip into the active rows) | `state.spellSlots[i]` |
