@@ -1335,6 +1335,9 @@ Live search against the [D&D 5e SRD API](https://www.dnd5eapi.co) (2014 SRD, CC-
 | `_mapSrdSpell(sp)` | Maps a `dnd5eapi.co` spell object to the sheet's spell schema; infers `combatActionType` from `casting_time`; truncates descriptions longer than 600 characters |
 | `_mapSrdTrait(tr)` | Maps a trait object (from `/traits/{index}`) to the `infoTraits` schema; defaults `showInCombat: false` |
 | `_mapSrdFeature(feat)` | Maps a feature object (from `/features/{index}`) to the `classFeatures` schema; defaults `max: 1`, `recharge: 'Long Rest'` — edit after import if different |
+| `_mapSrdEquipment(eq)` | Maps an equipment object (from `/equipment/{index}`) to the `equipmentItems` schema; synthesises description from `damage`, `armor_class`, `properties`, and `desc` fields; truncates to 600 characters |
+| `_nameToSrdIdx(name)` | Converts a display name to a SRD index string (lowercase, spaces → hyphens, non-alphanumeric stripped); used by `_enrichEquipDescriptions` |
+| `_enrichEquipDescriptions(items)` | Async; for each item in the array tries `_srdGet('/equipment/' + _nameToSrdIdx(item.name))`; on hit, fills missing `description`, `weight`, `cost`, `category` from `_mapSrdEquipment`; calls `buildEquipmentItems()` + `saveData()` once if anything changed. Called automatically after AI equipment import and after full-character AI import |
 
 > **2024 SRD note:** `dnd5eapi.co` covers the 2014 SRD. For 2024 SRD content (released under CC-BY 4.0 as SRD 5.2), use the AI Import workflow: the prompt templates are edition-agnostic and work with any LLM that knows the 2024 rules.
 

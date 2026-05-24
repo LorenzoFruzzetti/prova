@@ -9658,6 +9658,7 @@ function importAIResponse() {
     state.equipmentItems = (state.equipmentItems || []).concat(newItems);
     buildEquipmentItems(); saveData();
     toast(`${newItems.length} item${newItems.length > 1 ? 's' : ''} added`);
+    _enrichEquipDescriptions(newItems);
   } else {
     const existingNames = new Set((state.classFeatures || []).map(f => f.name.toLowerCase()));
     const newItems = items.filter(f => !existingNames.has(f.name.toLowerCase())).map(_normalizeFeature);
@@ -9969,6 +9970,29 @@ function _mapSrdEquipment(eq) {
   return { name: eq.name, quantity: 1, weight: wt, cost, category: cat, description };
 }
 
+function _nameToSrdIdx(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+async function _enrichEquipDescriptions(items) {
+  let updated = 0;
+  for (const item of items) {
+    try {
+      const eq = await _srdGet('/equipment/' + _nameToSrdIdx(item.name));
+      if (!eq || !eq.name) continue;
+      const mapped = _mapSrdEquipment(eq);
+      if (mapped.description && mapped.description.length > (item.description || '').length) {
+        item.description = mapped.description;
+      }
+      if (!item.weight  && mapped.weight)  item.weight  = mapped.weight;
+      if (!item.cost    && mapped.cost)    item.cost    = mapped.cost;
+      if (!item.category && mapped.category) item.category = mapped.category;
+      updated++;
+    } catch(e) { /* SRD miss — keep whatever description the AI provided */ }
+  }
+  if (updated) { buildEquipmentItems(); saveData(); }
+}
+
 function _buildEquipmentPrompt(what) {
   const existing = (state.equipmentItems || []).map(e => e.name).join(', ') || 'none';
   return `You are a D&D 5e assistant. Return ONLY a raw JSON array — no markdown fences, no explanation, no trailing text.
@@ -10189,6 +10213,9 @@ function importCharFromAI() {
   saveData();
   dismissCharImport();
   toast('Character imported!');
+  if (Array.isArray(state.equipmentItems) && state.equipmentItems.length) {
+    _enrichEquipDescriptions(state.equipmentItems);
+  }
 }
 
 // ── Section header hold descriptions ──────────────────────────────────
