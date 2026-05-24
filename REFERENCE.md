@@ -78,6 +78,8 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **Featured Spells** — Spells with `showInFeatures: true` that appear in the Features tab alongside class features, using the same dot-tracker layout. Set per spell in the spell edit panel.
 
+**Featured Traits** — `infoTraits` entries with `showInFeatures: true` that appear in the Features tab in a "Featured Traits" section, using the same dot-tracker layout as Featured Spells. Set per trait in the trait edit panel.
+
 ---
 
 ### Panels and overlays
@@ -103,6 +105,8 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 **Settings sheet (`#settingsMenu`)** — Bottom-sheet opened by the ⚙ header button. Contains Save to file, Load from file, font size control, lefty mode toggle, and theme swatches.
 
 **AI / SRD Import panel (`#aiImportPanel`)** — Modal opened by the ⇓ Import header button, or by any "+ Add" section button (pre-selected to the matching type tab). Two modes: **AI mode** generates a copy-ready LLM prompt and accepts paste-back JSON, plus a "+ Create custom" button that opens the matching item panel directly; **SRD mode** searches the live D&D 5e SRD API (`dnd5eapi.co`) and imports selected items. Four type tabs: **Spells** / **Features** / **Traits** / **Items** (equipment).
+
+**AI Character Import panel (`#charImportPanel`)** — Modal opened from Settings → 🤖 AI Import Character. Generates a schema-rich LLM prompt intended to be sent with photos of a physical or digital character sheet. Tries to load `JSONGeneration.md` from the same folder via `fetch`; on failure shows a file picker and a "Use built-in schema" fallback. Pasted JSON is validated and fed into `applyPayload()` to replace the current character.
 
 **Character Grid (`#charGridOverlay`)** — Full-screen overlay opened by the 🎭 header button. Displays one card per saved character; supports switching, creating, and deleting characters.
 
@@ -205,7 +209,11 @@ These field names appear inside `state.spells`, `state.attacks`, `state.classFea
 | `actionType` | `attacks` | `'action'|'bonus'|'other'` | Which Turn sub-section the attack appears in (default `'action'`) |
 | `combatActionType` | `spells`, `classFeatures`, `infoTraits` | `'action'|'bonus'|'other'` | Which Turn sub-section the item appears in when `showInCombat` is true (default `'action'`) |
 | `showInCombat` | `spells`, `classFeatures`, `infoTraits` | `boolean` | Whether the item appears as a row in the Turn block in the Combat tab |
-| `showInFeatures` | `spells` | `boolean` | Whether the spell appears in the "Featured Spells" block in the Features tab |
+| `showInFeatures` | `spells`, `infoTraits` | `boolean` | Whether the item appears in the "Featured Spells" / "Featured Traits" block in the Features tab |
+| `featureMax` | `spells`, `infoTraits` | `integer` | Maximum number of uses to track in the Featured block (dot count × `featureStep`) |
+| `featureUsed` | `spells`, `infoTraits` | `integer` | Number of uses already expended in the Featured block (runtime state; reset on Long Rest) |
+| `featureStep` | `spells`, `infoTraits` | `integer` | How many uses one dot represents (default `1`); same semantics as `classFeatures[].step` |
+| `featureRecharge` | `spells`, `infoTraits` | `string` | Recharge label shown next to the restore button (e.g. `'Long Rest'`); empty string for none |
 | `rolls` | `spells`, `attacks`, `classFeatures` | `object[]` | Array of roll objects: `{dice, type, label?, mod?}`; `dice` is a string expression like `"2d6"` |
 | `saveAbility` | `spells`, `attacks`, `classFeatures`, `infoTraits` | `string` | Ability key for a saving throw (`'STR'`…`'CHA'`), or empty string for none |
 | `saveDC` | `spells`, `attacks`, `classFeatures`, `infoTraits` | `integer` | Saving throw DC override; `0` means use the character's current Spell Save DC |
@@ -530,6 +538,8 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.fp-edit-section` | Wrapper for all feature panel edit form; hidden by default, shown when `#featurePanel.edit-mode` |
 | `#featuredSpellsSection` | Block in the Features tab showing spells with `showInFeatures: true`; hidden when empty |
 | `#featuredSpellsBody` | Container for spell rows inside `#featuredSpellsSection` |
+| `#featuredTraitsSection` | Block in the Features tab showing `infoTraits` entries with `showInFeatures: true`; hidden when empty |
+| `#featuredTraitsBody` | Container for trait rows inside `#featuredTraitsSection` |
 | `.attack-row` | 3-column grid: name / bonus / damage; `cursor:pointer`; tap to view/roll |
 | `.attack-row.spell-atk` | Spell variant of `.attack-row`; blue left-border tint; tap rolls the spell directly (same logic as spell list rows); hold 500 ms opens info panel |
 | `.attack-row.atk-hidden` | Hidden attack row shown faded (`opacity: 0.4`); always visible in the list |
@@ -653,6 +663,9 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.ai-step-label` | Tiny gold uppercase label above each step (e.g. "Step 1 — Describe what to add") |
 | `.ai-prompt-box` | Shared text area / input style used in `#aiImportPanel` for both the "what to add" field and the paste-back area; focus turns border spell-blue |
 | `.ai-copy-notice` | Small feedback line below the "Copy" or "Add Selected" button; spell-light colour |
+| `.ci-schema-status` | Status line inside `#charImportPanel` showing schema load result; `.ok` modifier makes it green |
+| `.ci-file-picker` | Flex column holding the "Select JSONGeneration.md" and "Use built-in schema" fallback buttons; shown only when auto-fetch fails |
+| `.ci-or-divider` | Centred "or" separator between the two fallback buttons in `.ci-file-picker` |
 | `.ai-select` | Full-width `<select>` styled to match the panel's dark palette; used for race / class pickers in SRD mode |
 | `.srd-level-row` | Flex row containing the "Level min – max" number inputs in the class-features SRD control block |
 | `.srd-lv-input` | Small 44 px number input for level bounds in the SRD class-features selector |
@@ -761,6 +774,11 @@ let state = {
                           saveAbility, saveDC,   //   optional saving throw display
                           showInCombat,          //   boolean — show as row in the combat block
                           combatActionType,      //   'action' | 'bonus' | 'other' (default: 'action')
+                          showInFeatures,        //   boolean — true if trait appears in Featured Traits block in Features tab
+                          featureMax,            //   integer — total uses to track (dot count × featureStep)
+                          featureUsed,           //   integer — uses already expended (reset on Long Rest)
+                          featureStep,           //   integer — uses per dot (default 1)
+                          featureRecharge,       //   string — recharge label (e.g. 'Long Rest') or ''
                         } ],
   diceRoller:         null, // null = use defaults [{sides:4,count:1},…,{sides:100,count:1}]; array when customised
   portrait:           null, // base64 data URL string (e.g. "data:image/png;base64,...") or null
@@ -802,6 +820,8 @@ spellsKnownTitlePressTimer / spellsKnownTitlePressActive   // Spells Known heade
 spellsPreparedTitlePressTimer / spellsPreparedTitlePressActive  // Spells Prepared header hold detection (hold 500 ms = info panel)
 slotHoldTimer/Interval     // hold-to-repeat timers for spell slot +/− buttons
 featureHoldTimer/Interval  // hold-to-repeat timers for feature +/− buttons
+featSpellHoldTimer/featSpellHoldInterval/featSpellHoldPending  // hold-to-repeat timers for featured spell +/− buttons
+featTraitHoldTimer/featTraitHoldInterval/featTraitHoldPending  // hold-to-repeat timers for featured trait +/− buttons
 hitDiceHoldTimer/Interval  // hold-to-repeat timers for hit dice +/− buttons
 featureNamePressTimer      // setTimeout handle for feature name long-press (500 ms → edit mode)
 featureNamePressActive     // boolean — true during and after a held feature name press
@@ -825,6 +845,7 @@ leftyMode           // boolean; persisted separately in localStorage as 'dnd5e_l
 currentTheme        // string — active theme key; persisted in localStorage as 'dnd5e_theme'
 srdModalMode        // 'ai' | 'srd' — which tab is active in #aiImportPanel
 srdSelected         // Set<string> — SRD item indices checked in the current SRD results list
+_charImportSchema   // string | null — schema text loaded for AI character import; null until loaded
 ```
 
 All other values (character name, HP max, AC, etc.) live in HTML form inputs and are read directly via `document.getElementById`.
@@ -849,6 +870,7 @@ DOMContentLoaded
        ├─ buildSpellSlots()   inject pill strip + active rows into #spellSlotsBody; levels with max=0 appear only as pills
        ├─ buildFeatures()       inject class feature rows into #featuresBody
        ├─ buildFeaturedSpells() inject featured spell rows into #featuredSpellsBody (Features tab)
+       ├─ buildFeaturedTraits() inject featured trait rows into #featuredTraitsBody (Features tab)
        ├─ buildInfoTraits()         inject features & traits rows into #infoTraitsBody
        ├─ buildDiceRoller()         inject die rows into #diceRollerBody
        ├─ renderHitDice()           inject hit dice dots into #hitDiceDots
@@ -862,7 +884,7 @@ DOMContentLoaded
   └─ set inspiration button state
 ```
 
-`applyPayload(payload)` runs the same sequence (minus `loadData` and `setupAutoSave`) and is used for JSON import. It calls `buildFeaturedSpells()` and `buildInfoTraits()` as part of that sequence.
+`applyPayload(payload)` runs the same sequence (minus `loadData` and `setupAutoSave`) and is used for JSON import. It calls `buildFeaturedSpells()`, `buildFeaturedTraits()`, and `buildInfoTraits()` as part of that sequence.
 
 ---
 
@@ -884,6 +906,7 @@ DOMContentLoaded
 | `updatePreparedCount()` | Refreshes the `#spellPrepCountDisplay` number and the `#maxPreparedInput` value; applies `.at-max` to the count span when the prepared count equals `state.maxSpellsPrepared` | `state.spells`, `state.maxSpellsPrepared` |
 | `buildFeatures()` | Class feature rows in `#featuresBody`; each row has a left column (clickable name area + dots below) and a right column (recharge label, ⏻ restore, EDIT button, mini tracker); pts/dot hint shown below the name when `step > 1`; empty-state placeholder when no features | `state.classFeatures` |
 | `buildFeaturedSpells()` | "Featured Spells" block in `#featuredSpellsBody`; uses the same two-column layout as `buildFeatures()`; hidden when no spells have `showInFeatures: true` | `state.spells` |
+| `buildFeaturedTraits()` | "Featured Traits" block in `#featuredTraitsBody`; same two-column dot-tracker layout as `buildFeatures()`; hidden when no `infoTraits` entries have `showInFeatures: true` | `state.infoTraits` |
 | `buildInfoTraits()` | Features & Traits rows in `#infoTraitsBody`, or empty-state placeholder | `state.infoTraits` |
 | `renderFeatureDots(i)` | Dot row + counter for one feature, scaled by `step` | `state.classFeatures[i]` |
 | `renderHitDice()` | Hit dice dots in `#hitDiceDots`; max = character level | `state.hitDiceUsed`, `charLevel` input |
@@ -1020,8 +1043,15 @@ DOMContentLoaded
 | `switchToTraitEdit()` | Tap Save button in trait view mode (bottom button row) | Adds `.edit-mode` to `#traitPanel`; populates edit form; focuses the name field |
 | `openTraitPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `traitPanelEditIdx = i`; shows `#traitBackdrop` and `#traitPanel`; `i = -1` means new trait |
 | `addInfoTrait()` | Tap + Add in Features & Traits section header | Opens trait panel in edit mode with empty form; sets `traitPanelEditIdx = -1` |
-| `saveTraitEdit()` | Tap Save in trait panel edit mode | Validates name; writes to `state.infoTraits[idx]` or pushes new entry; calls `buildInfoTraits()` + `saveData()`; dismisses panel |
-| `deleteCurrentTrait()` | Tap Delete in trait panel (view or edit mode) | `confirm()` dialog → splices `state.infoTraits`; calls `buildInfoTraits()` + `saveData()`; dismisses panel |
+| `populateTraitEditForm(i)` | Internal | Fills edit form from `state.infoTraits[i]` including `showInCombat`, `combatActionType`, `showInFeatures`, `featureMax`, `featureStep`, `featureRecharge`; calls `toggleTrFeaturesTrack()`; blanks all fields when `i = -1` |
+| `saveTraitEdit()` | Tap Save in trait panel edit mode | Validates name; writes all fields including `showInFeatures`, `featureMax`, `featureUsed`, `featureStep`, `featureRecharge` to `state.infoTraits[idx]` or pushes new entry; calls `buildInfoTraits()` + `buildFeaturedTraits()` + `saveData()`; dismisses panel |
+| `toggleTrFeaturesTrack(show)` | `onchange` on `#trEditShowInFeatures` checkbox | Shows or hides the `#trEditFeaturesTrack` block (Max Uses / Step / Recharge fields) |
+| `renderFeatTraitDots(traitIdx)` | Any featured trait use/restore | Updates dots and counter for `state.infoTraits[traitIdx]`; reads `featureMax`, `featureUsed`, `featureStep` |
+| `toggleFeatTraitDot(traitIdx, j)` | Tap dot in a featured trait row | Gold → use from here right; grey → restore that dot (respects `featureStep`) |
+| `featTraitAdjust(traitIdx, delta)` | Featured trait mini +/− buttons | Changes `t.featureUsed` by `±featureStep`; rerenders dots |
+| `startFeatTraitHold(traitIdx, delta)` / `stopFeatTraitHold()` / `cancelFeatTraitHold()` | `pointerdown` / `pointerup` / `pointercancel` on featured trait +/− | Hold-to-repeat at 80 ms |
+| `restoreFeatTrait(traitIdx)` | ⏻ button on a featured trait row | Sets `t.featureUsed = 0`; rerenders dots |
+| `deleteCurrentTrait()` | Tap Delete in trait panel (view or edit mode) | `confirm()` dialog → splices `state.infoTraits`; calls `buildInfoTraits()` + `buildFeaturedTraits()` + `saveData()`; dismisses panel |
 | `dismissTraitPanel()` | Backdrop tap or Cancel in panel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#traitPanel` |
 | `openSpellPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `spellPanelEditIdx = i` in both modes; shows backdrop + panel |
 | `toggleSpellPrepared(i)` | Tap P dot on a Spells Known row | If the spell is already prepared: unprepares it. If not: checks `maxSpellsPrepared`; shows toast and briefly pulses `.at-max` on the dot if the limit is full; otherwise sets `prepared:true`, clears `alwaysPrepared`; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `saveData()` |
@@ -1066,7 +1096,7 @@ DOMContentLoaded
 | `hitDiceAdjust(delta)` | Hit dice mini +/− buttons | Changes `state.hitDiceUsed` by ±1; `−` button passes `+1` (use), `+` passes `−1` (restore) |
 | `startHitDiceHold(delta)` / `stopHitDiceHold()` | `pointerdown` / `pointerup` on hit dice +/− | Hold-to-repeat at 80 ms |
 | `restoreHitDice()` | ↺ Restore button in Hit Dice section | Sets `state.hitDiceUsed = 0`; rerenders |
-| `fullLongRest()` | ⟳ Long Rest button in Overview panel | Restores HP to max, resets hit dice, all spell slots, and all class features; saves |
+| `fullLongRest()` | ⟳ Long Rest button in Overview panel | Restores HP to max, resets hit dice, all spell slots, all class features, all featured spell uses, and all featured trait uses; saves |
 | `removeAttack(i)` | Tap Delete button in attack edit panel | Pushes undo; splices `state.attacks`; rerenders |
 | `openInfoPanel(cfg)` | Called by any item that opens the unified info panel | Applies badge, title, meta, description, optional 3-zone roll button, optional simple roll button, optional edit button, optional action button; calls `pushModalHistory()`; stores `rollFn/simpleRollFn/editFn/actionFn` in `infoPanelCfg` |
 | `dismissInfoPanel()` | Backdrop tap or browser back | Calls `popModalHistory()`; hides `#infoPanel` and backdrop; clears `infoPanelCfg` |
@@ -1297,6 +1327,21 @@ Generates a copy-ready LLM prompt containing the exact JSON schema and the names
 | `_buildTraitPrompt(what)` | Returns a prompt string with the infoTrait JSON schema and existing trait names |
 | `importAIResponse()` | Parses the pasted text (strips markdown fences); merges into `state.spells`, `state.classFeatures`, or `state.infoTraits` depending on active type; deduplicates by lowercase name; rebuilds the relevant list |
 
+#### AI Character Import (full sheet from photos)
+Full-character import modal (`#charImportPanel`) opened from Settings → AI Import Character. Loads the JSON schema from `JSONGeneration.md` (via `fetch`), with a file-picker fallback and a compact built-in schema as final fallback. The generated prompt is intended to be sent alongside photos of a physical or digital character sheet.
+
+| Function | Description |
+|---|---|
+| `openCharImport()` | Shows `#charImportPanel`, resets state, triggers `_tryLoadCharSchema()` |
+| `dismissCharImport()` | Hides `#charImportPanel` and its backdrop |
+| `_tryLoadCharSchema()` | Async; `fetch('./JSONGeneration.md')`; on success sets `_charImportSchema`; on failure shows `#ciSchemaFilePicker` |
+| `loadSchemaFromFile(input)` | `FileReader` handler for the manual file picker; loads selected `.md`/`.txt` into `_charImportSchema` |
+| `useBuiltinSchema()` | Sets `_charImportSchema` to the embedded `_BUILTIN_CHAR_SCHEMA` constant |
+| `generateCharImportPrompt()` | Builds and clipboard-copies a prompt embedding `_charImportSchema`; on clipboard failure falls back to showing the prompt in `#ciResponsePaste` |
+| `importCharFromAI()` | Strips markdown fences, parses JSON, validates shape (`{form,state}`), calls `applyPayload()` + `saveData()` |
+| `_BUILTIN_CHAR_SCHEMA` | `const` string — compact but complete schema description used when `JSONGeneration.md` cannot be loaded |
+| `_charImportSchema` | `let` variable — holds the active schema text; `null` until loaded |
+
 #### SRD mode (requires internet)
 Live search against the [D&D 5e SRD API](https://www.dnd5eapi.co) (2014 SRD, CC-BY). Results are cached in `localStorage` under keys prefixed `srd_v1_`. Each fetch goes to `https://www.dnd5eapi.co/api/<path>`.
 
@@ -1314,6 +1359,9 @@ Live search against the [D&D 5e SRD API](https://www.dnd5eapi.co) (2014 SRD, CC-
 | `_mapSrdSpell(sp)` | Maps a `dnd5eapi.co` spell object to the sheet's spell schema; infers `combatActionType` from `casting_time`; truncates descriptions longer than 600 characters |
 | `_mapSrdTrait(tr)` | Maps a trait object (from `/traits/{index}`) to the `infoTraits` schema; defaults `showInCombat: false` |
 | `_mapSrdFeature(feat)` | Maps a feature object (from `/features/{index}`) to the `classFeatures` schema; defaults `max: 1`, `recharge: 'Long Rest'` — edit after import if different |
+| `_mapSrdEquipment(eq)` | Maps an equipment object (from `/equipment/{index}`) to the `equipmentItems` schema; synthesises description from `damage`, `armor_class`, `properties`, and `desc` fields; truncates to 600 characters |
+| `_nameToSrdIdx(name)` | Converts a display name to a SRD index string (lowercase, spaces → hyphens, non-alphanumeric stripped); used by `_enrichEquipDescriptions` |
+| `_enrichEquipDescriptions(items)` | Async; for each item in the array tries `_srdGet('/equipment/' + _nameToSrdIdx(item.name))`; on hit, fills missing `description`, `weight`, `cost`, `category` from `_mapSrdEquipment`; calls `buildEquipmentItems()` + `saveData()` once if anything changed. Called automatically after AI equipment import and after full-character AI import |
 
 > **2024 SRD note:** `dnd5eapi.co` covers the 2014 SRD. For 2024 SRD content (released under CC-BY 4.0 as SRD 5.2), use the AI Import workflow: the prompt templates are edition-agnostic and work with any LLM that knows the 2024 rules.
 
