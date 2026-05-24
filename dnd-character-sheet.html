@@ -423,6 +423,10 @@
   /* ── Panels ── */
   .panel { display: none; padding: 16px; }
   .panel.active { display: block; }
+  /* Dice panel: restrict browser to vertical-only pan so horizontal swipes
+     always produce touchend (not touchcancel) for tab-switch detection.
+     Safe here because dice rows use onclick, not pointerdown hold timers. */
+  #panel-dice { touch-action: pan-y; }
 
   /* ── Section ── */
   .section {
@@ -2179,11 +2183,39 @@
     border-radius: 50%;
     border: 2px solid var(--gold);
     background: var(--gold);
-    cursor: pointer;
-    transition: background 0.12s, transform 0.1s;
+    cursor: default;
     flex-shrink: 0;
   }
-  .dice-dot:active { transform: scale(0.82); background: var(--gold-light); }
+
+  /* ── Info panel inline edit ── */
+  .ip-edit-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: sans-serif;
+    margin-bottom: 8px;
+  }
+  .ip-edit-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--bg);
+    border: 1px solid rgba(var(--accent-rgb),0.4);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 22px;
+    font-family: 'Georgia', serif;
+    text-align: center;
+    padding: 10px;
+    outline: none;
+    -webkit-appearance: none;
+    margin-bottom: 10px;
+  }
+  .ip-edit-input:focus { border-color: var(--gold); }
+  .ip-edit-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 7px;
+  }
 
   #diceRollerBody .feature-row {
     padding: 10px 0;
@@ -2512,9 +2544,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
+    padding: 8px 12px;
     margin-top: 10px;
-    border-top: 1px solid rgba(var(--border-rgb),0.4);
+    border: 1px solid rgba(var(--accent-rgb),0.4);
+    border-radius: var(--radius);
+    background: rgba(var(--accent-rgb),0.07);
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
@@ -2522,10 +2556,10 @@
     letter-spacing: 1.5px;
     text-transform: uppercase;
     font-family: sans-serif;
-    color: var(--text-muted);
+    color: var(--gold);
     touch-action: manipulation;
   }
-  .turn-defaults-header:active { color: var(--gold); }
+  .turn-defaults-header:active { background: rgba(var(--accent-rgb),0.16); }
   .turn-chevron {
     font-size: 9px;
     color: var(--text-muted);
@@ -3999,8 +4033,17 @@
     <div class="sp-atk-bonus" id="ipSimpleRollBonus">—</div>
   </div>
   <div class="sp-description" id="ipDesc"></div>
+  <div id="ipEditSection" style="display:none;margin-top:14px">
+    <div class="ip-edit-label" id="ipEditLabel">Custom modifier</div>
+    <input class="ip-edit-input" id="ipEditInput" onkeydown="if(event.key==='Enter'){event.stopPropagation();saveInfoPanelEdit()}" onclick="event.stopPropagation()">
+    <div class="ip-edit-btns">
+      <button class="hp-dlg-btn" onclick="event.stopPropagation();resetInfoPanelEdit()">Reset</button>
+      <button class="hp-dlg-btn" onclick="event.stopPropagation();cancelInfoPanelEdit()">Cancel</button>
+      <button class="hp-dlg-btn primary" onclick="event.stopPropagation();saveInfoPanelEdit()">Save</button>
+    </div>
+  </div>
   <button class="cond-toggle-btn" id="ipActionBtn" style="display:none" onclick="event.stopPropagation();infoPanelAction()"></button>
-  <span class="sp-dismiss-hint">tap to dismiss</span>
+  <span class="sp-dismiss-hint" id="ipDismissHint">tap to dismiss</span>
 </div>
 
 <!-- ── AI / SRD Import Modal ── -->
@@ -4671,6 +4714,9 @@ function openInfoPanel(cfg) {
   }
 
   document.getElementById('ipEditBtn').style.display = editFn ? '' : 'none';
+  document.getElementById('ipEditSection').style.display = 'none';
+  document.getElementById('ipDesc').style.display = '';
+  document.getElementById('ipDismissHint').style.display = '';
 
   const actionBtn = document.getElementById('ipActionBtn');
   if (actionFn && actionLabel) {
@@ -4691,6 +4737,8 @@ function dismissInfoPanel() {
   document.getElementById('infoPanel').classList.remove('show');
   document.getElementById('infoPanelBackdrop').classList.remove('show');
   infoPanelCfg = {};
+  infoPanelEditCfg = null;
+  document.querySelectorAll('.holding').forEach(el => el.classList.remove('holding'));
 }
 
 function infoPanelRoll(mode) {
@@ -4700,9 +4748,63 @@ function infoPanelSimpleRoll() {
   if (infoPanelCfg.simpleRollFn) infoPanelCfg.simpleRollFn();
 }
 function infoPanelEdit() {
-  const fn = infoPanelCfg.editFn;
+  if (infoPanelCfg.editFn) infoPanelCfg.editFn();
+}
+
+let infoPanelEditCfg = null;
+
+function openInfoPanelInlineEdit(cfg) {
+  infoPanelEditCfg = cfg;
+  const label = document.getElementById('ipEditLabel');
+  const input = document.getElementById('ipEditInput');
+  document.getElementById('ipDesc').style.display = 'none';
+  document.getElementById('ipActionBtn').style.display = 'none';
+  document.getElementById('ipEditBtn').style.display = 'none';
+  document.getElementById('ipDismissHint').style.display = 'none';
+  if (cfg.type === 'modifier') {
+    label.textContent = 'Custom bonus (0 = none)';
+    input.type = 'number';
+    input.value = state.statMods?.[cfg.key] || 0;
+  } else if (cfg.type === 'dietype') {
+    label.textContent = 'Hit die format (e.g. 1d8)';
+    input.type = 'text';
+    input.value = document.getElementById('statHitDice')?.value || '1d8';
+  }
+  document.getElementById('ipEditSection').style.display = '';
+  setTimeout(() => { input.focus(); try { input.select(); } catch(e){} }, 80);
+}
+
+function saveInfoPanelEdit() {
+  if (!infoPanelEditCfg) { dismissInfoPanel(); return; }
+  const val = document.getElementById('ipEditInput').value;
+  if (infoPanelEditCfg.type === 'modifier') {
+    const key = infoPanelEditCfg.key;
+    const numVal = parseInt(val) || 0;
+    if (!state.statMods) state.statMods = {};
+    pushUndo({ type: 'statMod', key, previous: state.statMods[key] || 0 });
+    state.statMods[key] = numVal;
+    recalcAll();
+  } else if (infoPanelEditCfg.type === 'dietype') {
+    const el = document.getElementById('statHitDice');
+    if (el) { el.value = val.trim(); saveData(); updateHitDieBadge(); }
+  }
+  infoPanelEditCfg = null;
   dismissInfoPanel();
-  if (fn) fn();
+}
+
+function resetInfoPanelEdit() {
+  if (!infoPanelEditCfg) return;
+  const input = document.getElementById('ipEditInput');
+  if (infoPanelEditCfg.type === 'modifier') {
+    input.value = 0;
+  } else if (infoPanelEditCfg.type === 'dietype') {
+    input.value = '1d8';
+  }
+}
+
+function cancelInfoPanelEdit() {
+  infoPanelEditCfg = null;
+  dismissInfoPanel();
 }
 function infoPanelAction() {
   const fn = infoPanelCfg.actionFn;
@@ -6218,7 +6320,7 @@ const STAT_PILL_INFO = {
     title: 'Armor Class',
     meta: 'Defense Rating',
     desc: 'Armor Class represents how difficult you are to hit. Attack rolls must equal or exceed your AC to hit. Base AC is 10 + DEX modifier; armor, shields, and class features change this.',
-    editFn: () => openStatModDialog('ac'),
+    editFn: () => openInfoPanelInlineEdit({ type: 'modifier', key: 'ac' }),
   },
   initiative: {
     title: 'Initiative',
@@ -6228,13 +6330,13 @@ const STAT_PILL_INFO = {
     rollLabel: 'Initiative',
     rollFn: mode => rollInitiative(mode),
     bonusId: 'statInit',
-    editFn: () => openStatModDialog('initiative'),
+    editFn: () => openInfoPanelInlineEdit({ type: 'modifier', key: 'initiative' }),
   },
   speed: {
     title: 'Speed',
     meta: 'Movement (feet per turn)',
     desc: 'Speed is how many feet you can move on your turn. Difficult terrain costs double movement. Some conditions reduce speed to 0.',
-    editFn: () => openStatModDialog('speed'),
+    editFn: () => openInfoPanelInlineEdit({ type: 'modifier', key: 'speed' }),
   },
   dietype: {
     title: 'Hit Die',
@@ -6242,6 +6344,7 @@ const STAT_PILL_INFO = {
     desc: 'Spend hit dice during a short rest to regain HP. Roll one or more and add your CON modifier to each. You have one per character level and regain half (rounded up) after a long rest.',
     simpleRollLabel: 'Roll Hit Die',
     simpleRollFn: () => rollHitDie(),
+    editFn: () => openInfoPanelInlineEdit({ type: 'dietype' }),
   },
   spellatk: {
     title: 'Spell Attack',
@@ -6251,13 +6354,13 @@ const STAT_PILL_INFO = {
     rollLabel: 'Spell Attack',
     rollFn: mode => rollSpellAtk(mode),
     bonusId: 'statSpellAtk',
-    editFn: () => openStatModDialog('spellatk'),
+    editFn: () => openInfoPanelInlineEdit({ type: 'modifier', key: 'spellatk' }),
   },
   spelldc: {
     title: 'Spell Save DC',
     meta: '8 + Proficiency + Spellcasting Ability',
     desc: 'Creatures saving against your spells must roll equal to or higher than this DC. Formula: 8 + Proficiency Bonus + Spellcasting Ability Modifier.',
-    editFn: () => openStatModDialog('spelldc'),
+    editFn: () => openInfoPanelInlineEdit({ type: 'modifier', key: 'spelldc' }),
   },
 };
 
@@ -7026,7 +7129,7 @@ function buildDiceRoller() {
   body.innerHTML = dice.map((d, i) => {
     const isCustom = !DICE_DEFAULTS.includes(d.sides);
     const dotsHtml = Array.from({length: d.count}, () =>
-      `<div class="dice-dot" onclick="rollSingleDie(${d.sides})"></div>`
+      `<div class="dice-dot"></div>`
     ).join('');
     return `
       <div class="feature-row">
@@ -7191,16 +7294,24 @@ function switchTab(id) {
 }
 
 function setupSwipe() {
-  let x0 = null, y0 = null;
+  let x0 = null, y0 = null, xLast = null, yLast = null;
   document.body.addEventListener('touchstart', e => {
-    x0 = e.touches[0].clientX;
-    y0 = e.touches[0].clientY;
+    x0    = e.touches[0].clientX;
+    y0    = e.touches[0].clientY;
+    xLast = x0;
+    yLast = y0;
   }, {passive: true});
-  document.body.addEventListener('touchend', e => {
+  document.body.addEventListener('touchmove', e => {
+    if (e.touches.length > 0) {
+      xLast = e.touches[0].clientX;
+      yLast = e.touches[0].clientY;
+    }
+  }, {passive: true});
+  function applySwipe(endX, endY) {
     if (x0 === null) return;
-    const dx = e.changedTouches[0].clientX - x0;
-    const dy = e.changedTouches[0].clientY - y0;
-    x0 = null;
+    const dx = endX - x0;
+    const dy = endY - y0;
+    x0 = null; xLast = null; yLast = null;
     if (document.getElementById('rollResult').classList.contains('show')) return;
     if (document.getElementById('spellPanel')?.classList.contains('show')) return;
     if (document.getElementById('attackPanel')?.classList.contains('show')) return;
@@ -7208,6 +7319,14 @@ function setupSwipe() {
     const cur = TABS.indexOf(document.querySelector('.tab-btn.active')?.dataset.tab ?? TABS[0]);
     const next = Math.max(0, Math.min(TABS.length - 1, cur + (dx < 0 ? 1 : -1)));
     if (next !== cur) switchTab(TABS[next]);
+  }
+  document.body.addEventListener('touchend', e => {
+    applySwipe(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  }, {passive: true});
+  // touchcancel fires when the browser takes over the gesture (e.g. scroll);
+  // use the last tracked position so a nearly-complete horizontal swipe still registers.
+  document.body.addEventListener('touchcancel', () => {
+    applySwipe(xLast ?? x0 ?? 0, yLast ?? y0 ?? 0);
   }, {passive: true});
 }
 
