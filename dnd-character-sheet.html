@@ -3070,7 +3070,7 @@
         <button class="hp-btn minus"
                 onpointerdown="startHpHold(-1)"
                 onpointerup="stopHpHold()"
-                onpointercancel="stopHpHold()">−</button>
+                onpointercancel="cancelHpHold()">−</button>
         <div class="hp-display" onclick="openHpDialog()" title="Tap to set HP">
           <div class="hp-current" id="hpCurrent">10</div>
           <div class="hp-max-label">/ <span id="hpMaxLabel">10</span> HP</div>
@@ -3079,7 +3079,7 @@
         <button class="hp-btn plus"
                 onpointerdown="startHpHold(+1)"
                 onpointerup="stopHpHold()"
-                onpointercancel="stopHpHold()">+</button>
+                onpointercancel="cancelHpHold()">+</button>
       </div>
       <div style="text-align:center;margin-top:10px">
         <button class="attack-edit-btn" onclick="resetHPToFull()">↺ Restore HP</button>
@@ -3159,12 +3159,12 @@
           <button class="mini-btn minus"
                   onpointerdown="startHitDiceHold(1)"
                   onpointerup="stopHitDiceHold()"
-                  onpointercancel="stopHitDiceHold()">−</button>
+                  onpointercancel="cancelHitDiceHold()">−</button>
           <span class="mini-val" id="hitDiceVal"></span>
           <button class="mini-btn plus"
                   onpointerdown="startHitDiceHold(-1)"
                   onpointerup="stopHitDiceHold()"
-                  onpointercancel="stopHitDiceHold()">+</button>
+                  onpointercancel="cancelHitDiceHold()">+</button>
         </div>
         <div class="hit-die-roll" id="hitDiceRollBtn"
              onpointerdown="startHitDiePress(event)"
@@ -4433,12 +4433,12 @@ function buildSpellSlots() {
           <button class="mini-btn minus"
                   onpointerdown="startSlotHold(${i},1)"
                   onpointerup="stopSlotHold()"
-                  onpointercancel="stopSlotHold()">−</button>
+                  onpointercancel="cancelSlotHold()">−</button>
           <span class="mini-val" id="slot-val-${i}"></span>
           <button class="mini-btn plus"
                   onpointerdown="startSlotHold(${i},-1)"
                   onpointerup="stopSlotHold()"
-                  onpointercancel="stopSlotHold()">+</button>
+                  onpointercancel="cancelSlotHold()">+</button>
         </div>
         <input type="number" min="0" max="9" value="${s.max}"
           style="width:34px;text-align:center;font-size:12px;padding:3px;background:var(--bg);
@@ -5152,18 +5152,26 @@ function slotAdjust(i, delta) {
   saveData();
 }
 
-let slotHoldTimer = null, slotHoldInterval = null;
+let slotHoldTimer = null, slotHoldInterval = null, slotHoldPending = null;
 function startSlotHold(i, delta) {
-  slotAdjust(i, delta);
+  slotHoldPending = {i, delta};
   slotHoldTimer = setTimeout(() => {
+    slotHoldPending = null;
+    slotAdjust(i, delta);
     slotHoldInterval = setInterval(() => slotAdjust(i, delta), 80);
   }, 500);
 }
 function stopSlotHold() {
   clearTimeout(slotHoldTimer);
   clearInterval(slotHoldInterval);
-  slotHoldTimer = null;
-  slotHoldInterval = null;
+  const p = slotHoldPending;
+  slotHoldPending = null; slotHoldTimer = null; slotHoldInterval = null;
+  if (p) slotAdjust(p.i, p.delta);
+}
+function cancelSlotHold() {
+  clearTimeout(slotHoldTimer);
+  clearInterval(slotHoldInterval);
+  slotHoldPending = null; slotHoldTimer = null; slotHoldInterval = null;
 }
 
 // ── Spell list ─────────────────────────────────────────────────────────
@@ -5772,12 +5780,12 @@ function buildFeatures() {
             <button class="mini-btn minus"
                     onpointerdown="startFeatureHold(${i},1)"
                     onpointerup="stopFeatureHold()"
-                    onpointercancel="stopFeatureHold()">−</button>
+                    onpointercancel="cancelFeatureHold()">−</button>
             <span class="mini-val" id="feature-val-${i}"></span>
             <button class="mini-btn plus"
                     onpointerdown="startFeatureHold(${i},-1)"
                     onpointerup="stopFeatureHold()"
-                    onpointercancel="stopFeatureHold()">+</button>
+                    onpointercancel="cancelFeatureHold()">+</button>
           </div>
         </div>
       </div>
@@ -6038,12 +6046,12 @@ function buildFeaturedSpells() {
             <button class="mini-btn minus"
                     onpointerdown="startFeatSpellHold(${i},1)"
                     onpointerup="stopFeatSpellHold()"
-                    onpointercancel="stopFeatSpellHold()">−</button>
+                    onpointercancel="cancelFeatSpellHold()">−</button>
             <span class="mini-val" id="feat-spell-val-${i}"></span>
             <button class="mini-btn plus"
                     onpointerdown="startFeatSpellHold(${i},-1)"
                     onpointerup="stopFeatSpellHold()"
-                    onpointercancel="stopFeatSpellHold()">+</button>
+                    onpointercancel="cancelFeatSpellHold()">+</button>
           </div>
         </div>
       </div>`;
@@ -6110,16 +6118,26 @@ function restoreFeatSpell(spellIdx) {
   toast('Uses restored');
 }
 
-let featSpellHoldTimer = null, featSpellHoldInterval = null;
+let featSpellHoldTimer = null, featSpellHoldInterval = null, featSpellHoldPending = null;
 function startFeatSpellHold(spellIdx, delta) {
-  featSpellAdjust(spellIdx, delta);
+  featSpellHoldPending = {spellIdx, delta};
   featSpellHoldTimer = setTimeout(() => {
+    featSpellHoldPending = null;
+    featSpellAdjust(spellIdx, delta);
     featSpellHoldInterval = setInterval(() => featSpellAdjust(spellIdx, delta), 80);
   }, 400);
 }
 function stopFeatSpellHold() {
   clearTimeout(featSpellHoldTimer);
   clearInterval(featSpellHoldInterval);
+  const p = featSpellHoldPending;
+  featSpellHoldPending = null;
+  if (p) featSpellAdjust(p.spellIdx, p.delta);
+}
+function cancelFeatSpellHold() {
+  clearTimeout(featSpellHoldTimer);
+  clearInterval(featSpellHoldInterval);
+  featSpellHoldPending = null;
 }
 
 function escHtml(s) {
@@ -6166,18 +6184,26 @@ function featureAdjust(i, delta) {
   saveData();
 }
 
-let featureHoldTimer = null, featureHoldInterval = null;
+let featureHoldTimer = null, featureHoldInterval = null, featureHoldPending = null;
 function startFeatureHold(i, delta) {
-  featureAdjust(i, delta);
+  featureHoldPending = {i, delta};
   featureHoldTimer = setTimeout(() => {
+    featureHoldPending = null;
+    featureAdjust(i, delta);
     featureHoldInterval = setInterval(() => featureAdjust(i, delta), 80);
   }, 500);
 }
 function stopFeatureHold() {
   clearTimeout(featureHoldTimer);
   clearInterval(featureHoldInterval);
-  featureHoldTimer = null;
-  featureHoldInterval = null;
+  const p = featureHoldPending;
+  featureHoldPending = null; featureHoldTimer = null; featureHoldInterval = null;
+  if (p) featureAdjust(p.i, p.delta);
+}
+function cancelFeatureHold() {
+  clearTimeout(featureHoldTimer);
+  clearInterval(featureHoldInterval);
+  featureHoldPending = null; featureHoldTimer = null; featureHoldInterval = null;
 }
 
 let currentStepMenuIdx = -1;
@@ -6637,18 +6663,26 @@ function hitDiceAdjust(delta) {
   saveData();
 }
 
-let hitDiceHoldTimer = null, hitDiceHoldInterval = null;
+let hitDiceHoldTimer = null, hitDiceHoldInterval = null, hitDiceHoldPending = null;
 function startHitDiceHold(delta) {
-  hitDiceAdjust(delta);
+  hitDiceHoldPending = delta;
   hitDiceHoldTimer = setTimeout(() => {
+    hitDiceHoldPending = null;
+    hitDiceAdjust(delta);
     hitDiceHoldInterval = setInterval(() => hitDiceAdjust(delta), 80);
   }, 500);
 }
 function stopHitDiceHold() {
   clearTimeout(hitDiceHoldTimer);
   clearInterval(hitDiceHoldInterval);
-  hitDiceHoldTimer = null;
-  hitDiceHoldInterval = null;
+  const p = hitDiceHoldPending;
+  hitDiceHoldPending = null; hitDiceHoldTimer = null; hitDiceHoldInterval = null;
+  if (p !== null) hitDiceAdjust(p);
+}
+function cancelHitDiceHold() {
+  clearTimeout(hitDiceHoldTimer);
+  clearInterval(hitDiceHoldInterval);
+  hitDiceHoldPending = null; hitDiceHoldTimer = null; hitDiceHoldInterval = null;
 }
 
 function restoreHitDice() {
@@ -6687,10 +6721,13 @@ function fullLongRest() {
 // ── HP hold-to-repeat ──────────────────────────────────────────────────
 let hpHoldTimer = null;
 let hpHoldInterval = null;
+let hpHoldPending = null;
 
 function startHpHold(delta) {
-  adjustHP(delta);
+  hpHoldPending = delta;
   hpHoldTimer = setTimeout(() => {
+    hpHoldPending = null;
+    adjustHP(delta);
     hpHoldInterval = setInterval(() => {
       const max = parseInt(document.getElementById('hpMax').value) || 1;
       state.hpCurrent = Math.max(0, Math.min(max, state.hpCurrent + delta));
@@ -6703,8 +6740,14 @@ function startHpHold(delta) {
 function stopHpHold() {
   clearTimeout(hpHoldTimer);
   clearInterval(hpHoldInterval);
-  hpHoldTimer = null;
-  hpHoldInterval = null;
+  const p = hpHoldPending;
+  hpHoldPending = null; hpHoldTimer = null; hpHoldInterval = null;
+  if (p !== null) adjustHP(p);
+}
+function cancelHpHold() {
+  clearTimeout(hpHoldTimer);
+  clearInterval(hpHoldInterval);
+  hpHoldPending = null; hpHoldTimer = null; hpHoldInterval = null;
 }
 
 function resetHPToFull() {
@@ -7185,12 +7228,12 @@ function buildDiceRoller() {
             <button class="mini-btn minus"
                     onpointerdown="startDiceHold(${i}, -1)"
                     onpointerup="stopDiceHold()"
-                    onpointercancel="stopDiceHold()">−</button>
+                    onpointercancel="cancelDiceHold()">−</button>
             <span class="mini-val" id="dice-val-${i}">${d.count}</span>
             <button class="mini-btn plus"
                     onpointerdown="startDiceHold(${i}, 1)"
                     onpointerup="stopDiceHold()"
-                    onpointercancel="stopDiceHold()">+</button>
+                    onpointercancel="cancelDiceHold()">+</button>
           </div>
         </div>
       </div>
@@ -7227,10 +7270,13 @@ function adjustDiceCount(i, delta) {
 
 let diceHoldTimer = null;
 let diceHoldInterval = null;
+let diceHoldPending = null;
 
 function startDiceHold(i, delta) {
-  adjustDiceCount(i, delta);
+  diceHoldPending = {i, delta};
   diceHoldTimer = setTimeout(() => {
+    diceHoldPending = null;
+    adjustDiceCount(i, delta);
     diceHoldInterval = setInterval(() => adjustDiceCount(i, delta), 80);
   }, 400);
 }
@@ -7238,8 +7284,14 @@ function startDiceHold(i, delta) {
 function stopDiceHold() {
   clearTimeout(diceHoldTimer);
   clearInterval(diceHoldInterval);
-  diceHoldTimer = null;
-  diceHoldInterval = null;
+  const p = diceHoldPending;
+  diceHoldPending = null; diceHoldTimer = null; diceHoldInterval = null;
+  if (p) adjustDiceCount(p.i, p.delta);
+}
+function cancelDiceHold() {
+  clearTimeout(diceHoldTimer);
+  clearInterval(diceHoldInterval);
+  diceHoldPending = null; diceHoldTimer = null; diceHoldInterval = null;
 }
 
 function removeCustomDie(i) {
