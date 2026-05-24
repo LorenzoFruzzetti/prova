@@ -726,6 +726,7 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.ai-mode-btn` | One of the two mode-toggle pill buttons (✨ AI or 📖 SRD); `.active` styles it gold |
 | `.ai-type-toggle` | Flex row containing the three type-tab buttons (Spells / Features / Traits) inside `#aiImportPanel` |
 | `.ai-type-btn` | One type-tab button; `.active` styles it in spell blue |
+| `.import-upper` | Fixed-height wrapper (`min-height: 360px`) containing both `#aiModeContent` and `#srdModeContent`; prevents the panel from resizing when switching between AI and SRD tabs or between type tabs |
 | `.ai-step` | Labeled step block (step label + input) in the AI mode content area |
 | `.ai-step-label` | Tiny gold uppercase label above each step (e.g. "Step 1 — Describe what to add") |
 | `.ai-prompt-box` | Shared text area / input style used in `#aiImportPanel` for both the "what to add" field and the paste-back area; focus turns border spell-blue |
@@ -1396,7 +1397,7 @@ Generates a copy-ready LLM prompt containing the exact JSON schema and the names
 |---|---|
 | `openAIImport(type)` | Opens `#aiImportPanel` in AI mode, pre-selects the given type tab (`'spells'`, `'features'`, or `'traits'`), resets both text areas and the SRD selection set |
 | `dismissAIImport()` | Hides `#aiImportPanel` and its backdrop |
-| `setModalMode(mode)` | Switches between `'ai'` and `'srd'` content areas; calls `_srdInitForType()` when switching to SRD |
+| `setModalMode(mode)` | Switches between `'ai'` and `'srd'` content areas; also shows/hides `#srdResultsArea` (the detached results section below `.import-upper`); calls `_srdInitForType()` when switching to SRD |
 | `setAIImportType(type)` | Updates active state on type-tab buttons; calls `_srdInitForType()` if currently in SRD mode |
 | `generateAndCopyAIPrompt()` | Builds the prompt for the active type via `_buildSpellPrompt`, `_buildFeaturePrompt`, or `_buildTraitPrompt`; writes to clipboard via `navigator.clipboard` with `execCommand` fallback |
 | `_buildSpellPrompt(what)` | Returns a prompt string with the spell JSON schema (uses `rolls` array, not legacy `damage` field) and the list of already-present spell names; instructs the AI to set `"mod":"SPELL"` when the spell text says "add your spellcasting ability modifier" |
