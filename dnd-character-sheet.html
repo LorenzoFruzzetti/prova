@@ -3241,7 +3241,15 @@
   </div>
 
   <div class="section">
-    <div class="section-title">Resistances &amp; Vulnerabilities</div>
+    <div class="section-title turn-section-title"
+         id="dmgResistTitle"
+         onpointerdown="startDmgResistTitlePress(event)"
+         onpointerup="endDmgResistTitlePress(event)"
+         onpointercancel="cancelDmgResistTitlePress()"
+         oncontextmenu="return false">
+      Resistances &amp; Vulnerabilities
+      <span class="turn-hold-hint">hold</span>
+    </div>
     <div class="section-body">
       <div class="dmg-resist-grid" id="dmgResistGrid"></div>
     </div>
@@ -6472,6 +6480,42 @@ function cycleDamageResistance(type) {
   else if (next === -1) toast('Vulnerable: ' + label);
   else             toast('Normal: ' + label);
   saveData();
+}
+
+let dmgResistTitlePressTimer = null;
+let dmgResistTitlePressActive = false;
+
+function startDmgResistTitlePress(e) {
+  dmgResistTitlePressActive = false;
+  clearTimeout(dmgResistTitlePressTimer);
+  const el = document.getElementById('dmgResistTitle');
+  if (el) el.classList.add('holding');
+  dmgResistTitlePressTimer = setTimeout(() => {
+    dmgResistTitlePressActive = true;
+    openDmgResistInfoPanel();
+  }, 500);
+}
+
+function endDmgResistTitlePress(e) {
+  clearTimeout(dmgResistTitlePressTimer);
+  dmgResistTitlePressActive = false;
+  const el = document.getElementById('dmgResistTitle');
+  if (el) el.classList.remove('holding');
+}
+
+function cancelDmgResistTitlePress() {
+  clearTimeout(dmgResistTitlePressTimer);
+  dmgResistTitlePressActive = false;
+  const el = document.getElementById('dmgResistTitle');
+  if (el) el.classList.remove('holding');
+}
+
+function openDmgResistInfoPanel() {
+  openInfoPanel({
+    badge: 'Combat',
+    title: 'Resistances & Vulnerabilities',
+    description: 'Tap any damage-type dot to cycle its state:\n\n● EMPTY — Normal damage. The creature takes the full rolled amount.\n\n● GREEN — Resistant. The creature takes half damage (rounded down) from this damage type.\n\n● RED — Vulnerable. The creature takes double damage from this damage type.\n\nIf a creature is both resistant and vulnerable to the same damage type, the two cancel out and normal damage is dealt.\n\nDamage types: Slashing, Piercing, Bludgeoning, Fire, Cold, Lightning, Thunder, Acid, Poison, Necrotic, Radiant, Force, Psychic.',
+  });
 }
 
 // ── Death saves ────────────────────────────────────────────────────────

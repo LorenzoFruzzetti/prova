@@ -1021,6 +1021,9 @@ DOMContentLoaded
 | `toggleInspiration()` | Tap inspiration button | Pushes undo; flips `state.inspiration` boolean |
 | `toggleDeathSave(dot, type)` | Tap death save dot | Toggles `.filled` class on the dot element (not tracked by undo) |
 | `cycleDamageResistance(type)` | Tap a damage-type dot in the Resistances & Vulnerabilities section | Pushes undo; cycles Normal → Resistant → Vulnerable → Normal; shows toast feedback |
+| `startDmgResistTitlePress(e)` | `pointerdown` on "Resistances & Vulnerabilities" section title | Adds `.holding` class; starts 500 ms timer; on fire calls `openDmgResistInfoPanel()` |
+| `endDmgResistTitlePress(e)` / `cancelDmgResistTitlePress()` | `pointerup` / `pointercancel` on the section title | Clears timer; removes `.holding` class |
+| `openDmgResistInfoPanel()` | Called on hold of the section title | Opens info panel explaining resistance (half damage), vulnerability (double damage), and how they interact |
 
 #### Skill proficiency cycle detail
 ```
