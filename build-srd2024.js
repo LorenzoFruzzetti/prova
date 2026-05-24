@@ -86,6 +86,7 @@ async function main() {
     creatures:       `${O5E}/Creature.json`,
     creatureTraits:  `${O5E}/CreatureTrait.json`,
     creatureActions: `${O5E}/CreatureAction.json`,
+    classFeatures:   `${O5E}/ClassFeature.json`,
   };
 
   console.log('Downloading source files…');
@@ -179,7 +180,27 @@ async function main() {
   })));
 
   // ── classes ─────────────────────────────────────────────────────────────────
-  // Build lookup: class index → subclasses
+  // The 12 SRD class indices — used to separate class features from subclass features
+  const CLASS_INDICES = new Set([
+    'barbarian','bard','cleric','druid','fighter','monk',
+    'paladin','ranger','rogue','sorcerer','warlock','wizard',
+  ]);
+
+  // Build lookup: class index → base class features (from Open5e ClassFeature.json)
+  const baseFeaturesByClass = {};
+  raw.classFeatures.forEach(({ pk, fields }) => {
+    if (fields.feature_type === 'CORE_TRAITS_TABLE') return;
+    const parent = (fields.parent || '').replace(/^srd-2024_/, '');
+    if (!CLASS_INDICES.has(parent)) return; // skip subclass features
+    if (!baseFeaturesByClass[parent]) baseFeaturesByClass[parent] = [];
+    baseFeaturesByClass[parent].push({
+      index:       pk.replace(/^srd-2024_/, ''),
+      name:        fields.name,
+      description: fields.desc || null,
+    });
+  });
+
+  // Build lookup: class index → subclasses (from 5e-bits, which includes level data)
   const subcsByClass = {};
   raw.subclasses.forEach(sub => {
     const parentIdx = sub.class?.index;
@@ -211,6 +232,7 @@ async function main() {
         .filter(Boolean),
     },
     spellcasting_ability: cls.spellcasting?.spellcasting_ability?.name || null,
+    features:            baseFeaturesByClass[cls.index] || [],
     subclasses:          subcsByClass[cls.index] || [],
   })));
 

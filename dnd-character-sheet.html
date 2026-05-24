@@ -9964,9 +9964,34 @@ function importAIResponse() {
   dismissAIImport();
 }
 
-// ── SRD Browse (dnd5eapi.co) ───────────────────────────────────────────
+// ── SRD Browse (dnd5eapi.co + optional 2024 local index) ─────────────────
 const SRD_API = 'https://www.dnd5eapi.co/api';
 let srdSelected = new Set();
+
+// ── 2024 local SRD index ─────────────────────────────────────────────────
+let _srd24Available = null;   // null = unprobed, true/false after first check
+let _srd24Translation = null;
+const _srd24Files = {};        // category → loaded array (in-memory cache)
+const _srd24FeatureMap = {};   // checkbox-value key → full item object
+
+async function _srd24Detect() {
+  if (_srd24Available !== null) return _srd24Available;
+  try {
+    const r = await fetch('/srd2024/translation.json');
+    if (!r.ok) { _srd24Available = false; return false; }
+    _srd24Translation = await r.json();
+    _srd24Available = true;
+  } catch { _srd24Available = false; }
+  return _srd24Available;
+}
+
+async function _srd24Load(category) {
+  if (_srd24Files[category]) return _srd24Files[category];
+  const r = await fetch(`/srd2024/${category}.json`);
+  if (!r.ok) throw new Error(`2024 SRD ${category}.json unavailable`);
+  _srd24Files[category] = await r.json();
+  return _srd24Files[category];
+}
 
 async function _srdGet(path) {
   const key = 'srd_v1_' + path;
@@ -9990,36 +10015,52 @@ function _srdShowCtrls(type) {
 
 async function _srdInitForType(type) {
   _srdShowCtrls(type);
-  const box = document.getElementById('srdResults');
+  const box   = document.getElementById('srdResults');
+  const use24 = await _srd24Detect();
   if (type === 'spells') {
     document.getElementById('srdSpellSearch').value = '';
     box.innerHTML = '<div class="srd-hint">Type at least 2 characters to search.</div>';
-    _srdGet('/spells').catch(() => {});  // pre-warm cache silently
+    if (use24) _srd24Load('spells').catch(() => {});
+    else       _srdGet('/spells').catch(() => {});
   } else if (type === 'traits') {
-    box.innerHTML = '<div class="srd-loading">Loading races…</div>';
+    const label = use24 ? 'species' : 'race';
+    box.innerHTML = `<div class="srd-loading">Loading ${label}s…</div>`;
     try {
-      const data = await _srdGet('/races');
-      const sel  = document.getElementById('srdRaceSelect');
-      sel.innerHTML = '<option value="">— Select a race —</option>' +
-        data.results.map(r => `<option value="${r.index}">${escHtml(r.name)}</option>`).join('');
-      box.innerHTML = '<div class="srd-hint">Select a race and tap Load Traits.</div>';
+      const sel = document.getElementById('srdRaceSelect');
+      if (use24) {
+        const data = await _srd24Load('species');
+        sel.innerHTML = '<option value="">— Select a species —</option>' +
+          data.map(s => `<option value="${s.index}">${escHtml(s.name)}</option>`).join('');
+      } else {
+        const data = await _srdGet('/races');
+        sel.innerHTML = '<option value="">— Select a race —</option>' +
+          data.results.map(r => `<option value="${r.index}">${escHtml(r.name)}</option>`).join('');
+      }
+      box.innerHTML = `<div class="srd-hint">Select a ${label} and tap Load Traits.</div>`;
     } catch(e) {
-      box.innerHTML = '<div class="srd-hint">Could not reach SRD API — check your connection.</div>';
+      box.innerHTML = '<div class="srd-hint">Could not load species data — check your connection.</div>';
     }
   } else if (type === 'equipment') {
     document.getElementById('srdEquipSearch').value = '';
     box.innerHTML = '<div class="srd-hint">Type at least 2 characters to search.</div>';
-    _srdGet('/equipment').catch(() => {});  // pre-warm cache silently
+    if (use24) _srd24Load('equipment').catch(() => {});
+    else       _srdGet('/equipment').catch(() => {});
   } else {
     box.innerHTML = '<div class="srd-loading">Loading classes…</div>';
     try {
-      const data = await _srdGet('/classes');
-      const sel  = document.getElementById('srdClassSelect');
-      sel.innerHTML = '<option value="">— Select a class —</option>' +
-        data.results.map(c => `<option value="${c.index}">${escHtml(c.name)}</option>`).join('');
+      const sel = document.getElementById('srdClassSelect');
+      if (use24) {
+        const data = await _srd24Load('classes');
+        sel.innerHTML = '<option value="">— Select a class —</option>' +
+          data.map(c => `<option value="${c.index}">${escHtml(c.name)}</option>`).join('');
+      } else {
+        const data = await _srdGet('/classes');
+        sel.innerHTML = '<option value="">— Select a class —</option>' +
+          data.results.map(c => `<option value="${c.index}">${escHtml(c.name)}</option>`).join('');
+      }
       box.innerHTML = '<div class="srd-hint">Select a class and tap Load Features.</div>';
     } catch(e) {
-      box.innerHTML = '<div class="srd-hint">Could not reach SRD API — check your connection.</div>';
+      box.innerHTML = '<div class="srd-hint">Could not load class data — check your connection.</div>';
     }
   }
 }
@@ -10030,11 +10071,17 @@ async function _srdSpellSearch() {
   if (q.length < 2) { box.innerHTML = '<div class="srd-hint">Type at least 2 characters.</div>'; return; }
   box.innerHTML = '<div class="srd-loading">Searching…</div>';
   try {
-    const data    = await _srdGet('/spells');
-    const matches = data.results.filter(s => s.name.toLowerCase().includes(q)).slice(0, 40);
-    _srdRenderList(matches);
+    if (await _srd24Detect()) {
+      const data    = await _srd24Load('spells');
+      const matches = data.filter(s => s.name.toLowerCase().includes(q)).slice(0, 40);
+      _srdRenderList(matches);
+    } else {
+      const data    = await _srdGet('/spells');
+      const matches = data.results.filter(s => s.name.toLowerCase().includes(q)).slice(0, 40);
+      _srdRenderList(matches);
+    }
   } catch(e) {
-    box.innerHTML = '<div class="srd-hint">Could not reach SRD API — check your connection.</div>';
+    box.innerHTML = '<div class="srd-hint">Could not reach SRD — check your connection.</div>';
   }
 }
 
@@ -10044,27 +10091,42 @@ async function _srdEquipSearch() {
   if (q.length < 2) { box.innerHTML = '<div class="srd-hint">Type at least 2 characters.</div>'; return; }
   box.innerHTML = '<div class="srd-loading">Searching…</div>';
   try {
-    const data    = await _srdGet('/equipment');
-    const matches = data.results.filter(e => e.name.toLowerCase().includes(q)).slice(0, 50);
-    _srdRenderList(matches);
+    if (await _srd24Detect()) {
+      const data    = await _srd24Load('equipment');
+      const matches = data.filter(e => e.name.toLowerCase().includes(q)).slice(0, 50);
+      _srdRenderList(matches);
+    } else {
+      const data    = await _srdGet('/equipment');
+      const matches = data.results.filter(e => e.name.toLowerCase().includes(q)).slice(0, 50);
+      _srdRenderList(matches);
+    }
   } catch(e) {
-    box.innerHTML = '<div class="srd-hint">Could not reach SRD API — check your connection.</div>';
+    box.innerHTML = '<div class="srd-hint">Could not reach SRD — check your connection.</div>';
   }
 }
 
 async function _srdLoadRace() {
   const idx = document.getElementById('srdRaceSelect').value;
-  if (!idx) { toast('Select a race first'); return; }
+  if (!idx) { toast('Select a species first'); return; }
   const box = document.getElementById('srdResults');
   box.innerHTML = '<div class="srd-loading">Loading…</div>';
   srdSelected.clear();
   try {
-    const race = await _srdGet('/races/' + idx);
-    _srdRenderList(race.traits || []);
-    if (!(race.traits || []).length)
-      box.innerHTML = '<div class="srd-hint">No traits found for this race.</div>';
+    if (await _srd24Detect()) {
+      const all = await _srd24Load('species');
+      const sp  = all.find(s => s.index === idx);
+      const traits = sp?.traits || [];
+      traits.forEach(t => { _srd24FeatureMap[t.index] = t; });
+      _srdRenderList(traits);
+      if (!traits.length) box.innerHTML = '<div class="srd-hint">No traits found for this species.</div>';
+    } else {
+      const race = await _srdGet('/races/' + idx);
+      _srdRenderList(race.traits || []);
+      if (!(race.traits || []).length)
+        box.innerHTML = '<div class="srd-hint">No traits found for this race.</div>';
+    }
   } catch(e) {
-    box.innerHTML = '<div class="srd-hint">Error loading race data.</div>';
+    box.innerHTML = '<div class="srd-hint">Error loading species data.</div>';
   }
 }
 
@@ -10077,28 +10139,69 @@ async function _srdLoadClass() {
   box.innerHTML = '<div class="srd-loading">Loading…</div>';
   srdSelected.clear();
   try {
-    const levels = await _srdGet('/classes/' + idx + '/levels');
-    const byLv   = {};
-    levels.forEach(lv => {
-      if (lv.level < lvMin || lv.level > lvMax) return;
-      (lv.features || []).forEach(f => {
-        (byLv[lv.level] = byLv[lv.level] || []).push(f);
+    if (await _srd24Detect()) {
+      const all = await _srd24Load('classes');
+      const cls = all.find(c => c.index === idx);
+      if (!cls) { box.innerHTML = '<div class="srd-hint">Class not found.</div>'; return; }
+      let html = '';
+      // Base class features (no level data — show all as a flat group)
+      const base = cls.features || [];
+      if (base.length) {
+        html += `<div class="srd-lv-group">${escHtml(cls.name)} Features</div>`;
+        base.forEach(f => {
+          _srd24FeatureMap[f.index] = f;
+          html += `<label class="srd-result-item">
+            <input type="checkbox" class="srd-cb" value="${escHtml(f.index)}" ${srdSelected.has(f.index) ? 'checked' : ''}>
+            <span>${escHtml(f.name)}</span>
+          </label>`;
+        });
+      }
+      // Subclass features grouped by level (have explicit level data)
+      (cls.subclasses || []).forEach(sub => {
+        const subFeats = (sub.features || []).filter(f => f.level >= lvMin && f.level <= lvMax);
+        if (!subFeats.length) return;
+        html += `<div class="srd-lv-group">${escHtml(sub.name)}</div>`;
+        let lastLv = null;
+        subFeats.sort((a, b) => a.level - b.level).forEach(f => {
+          if (f.level !== lastLv) {
+            html += `<div class="srd-lv-group" style="font-size:0.85em;padding-left:8px">Level ${f.level}</div>`;
+            lastLv = f.level;
+          }
+          const key = `${sub.index}__${f.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+          _srd24FeatureMap[key] = f;
+          html += `<label class="srd-result-item">
+            <input type="checkbox" class="srd-cb" value="${escHtml(key)}" ${srdSelected.has(key) ? 'checked' : ''}>
+            <span>${escHtml(f.name)}</span>
+          </label>`;
+        });
       });
-    });
-    if (!Object.keys(byLv).length) {
-      box.innerHTML = '<div class="srd-hint">No features in that level range.</div>'; return;
+      if (!html) { box.innerHTML = '<div class="srd-hint">No features found.</div>'; return; }
+      box.innerHTML = html;
+      _srdBindCbs();
+    } else {
+      const levels = await _srdGet('/classes/' + idx + '/levels');
+      const byLv   = {};
+      levels.forEach(lv => {
+        if (lv.level < lvMin || lv.level > lvMax) return;
+        (lv.features || []).forEach(f => {
+          (byLv[lv.level] = byLv[lv.level] || []).push(f);
+        });
+      });
+      if (!Object.keys(byLv).length) {
+        box.innerHTML = '<div class="srd-hint">No features in that level range.</div>'; return;
+      }
+      let html = '';
+      Object.keys(byLv).sort((a, b) => a - b).forEach(lv => {
+        html += `<div class="srd-lv-group">Level ${lv}</div>`;
+        html += byLv[lv].map(f => `
+          <label class="srd-result-item">
+            <input type="checkbox" class="srd-cb" value="${f.index}" ${srdSelected.has(f.index) ? 'checked' : ''}>
+            <span>${escHtml(f.name)}</span>
+          </label>`).join('');
+      });
+      box.innerHTML = html;
+      _srdBindCbs();
     }
-    let html = '';
-    Object.keys(byLv).sort((a, b) => a - b).forEach(lv => {
-      html += `<div class="srd-lv-group">Level ${lv}</div>`;
-      html += byLv[lv].map(f => `
-        <label class="srd-result-item">
-          <input type="checkbox" class="srd-cb" value="${f.index}" ${srdSelected.has(f.index) ? 'checked' : ''}>
-          <span>${escHtml(f.name)}</span>
-        </label>`).join('');
-    });
-    box.innerHTML = html;
-    _srdBindCbs();
   } catch(e) {
     box.innerHTML = '<div class="srd-hint">Error loading class data.</div>';
   }
@@ -10126,8 +10229,9 @@ function _srdBindCbs() {
 
 async function addSelectedSRD() {
   if (!srdSelected.size) { toast('Select at least one item'); return; }
-  const btn  = document.getElementById('srdAddBtn');
-  const orig = btn.textContent;
+  const btn   = document.getElementById('srdAddBtn');
+  const orig  = btn.textContent;
+  const use24 = await _srd24Detect();
   btn.disabled = true;
   try {
     const indices = [...srdSelected];
@@ -10135,9 +10239,16 @@ async function addSelectedSRD() {
       const existing = new Set((state.spells || []).map(s => s.name.toLowerCase()));
       const toAdd = [];
       for (let i = 0; i < indices.length; i++) {
-        btn.textContent = `Fetching ${i + 1}/${indices.length}…`;
-        const sp = await _srdGet('/spells/' + indices[i]);
-        const m  = _mapSrdSpell(sp);
+        btn.textContent = `${use24 ? 'Loading' : 'Fetching'} ${i + 1}/${indices.length}…`;
+        let m;
+        if (use24) {
+          const all = await _srd24Load('spells');
+          const sp  = all.find(s => s.index === indices[i]);
+          if (!sp) continue;
+          m = _mapSrd24Spell(sp);
+        } else {
+          m = _mapSrdSpell(await _srdGet('/spells/' + indices[i]));
+        }
         if (!existing.has(m.name.toLowerCase())) toAdd.push(m);
       }
       if (!toAdd.length) { toast('All selected spells already exist'); return; }
@@ -10148,9 +10259,15 @@ async function addSelectedSRD() {
       const existing = new Set((state.infoTraits || []).map(t => t.name.toLowerCase()));
       const toAdd = [];
       for (let i = 0; i < indices.length; i++) {
-        btn.textContent = `Fetching ${i + 1}/${indices.length}…`;
-        const tr = await _srdGet('/traits/' + indices[i]);
-        const m  = _mapSrdTrait(tr);
+        btn.textContent = `${use24 ? 'Loading' : 'Fetching'} ${i + 1}/${indices.length}…`;
+        let m;
+        if (use24) {
+          const tr = _srd24FeatureMap[indices[i]];
+          if (!tr) continue;
+          m = _mapSrd24Trait(tr);
+        } else {
+          m = _mapSrdTrait(await _srdGet('/traits/' + indices[i]));
+        }
         if (!existing.has(m.name.toLowerCase())) toAdd.push(m);
       }
       if (!toAdd.length) { toast('All selected traits already exist'); return; }
@@ -10161,9 +10278,16 @@ async function addSelectedSRD() {
       const existing = new Set((state.equipmentItems || []).map(e => e.name.toLowerCase()));
       const toAdd = [];
       for (let i = 0; i < indices.length; i++) {
-        btn.textContent = `Fetching ${i + 1}/${indices.length}…`;
-        const eq = await _srdGet('/equipment/' + indices[i]);
-        const m  = _mapSrdEquipment(eq);
+        btn.textContent = `${use24 ? 'Loading' : 'Fetching'} ${i + 1}/${indices.length}…`;
+        let m;
+        if (use24) {
+          const all = await _srd24Load('equipment');
+          const eq  = all.find(e => e.index === indices[i]);
+          if (!eq) continue;
+          m = _mapSrd24Equipment(eq);
+        } else {
+          m = _mapSrdEquipment(await _srdGet('/equipment/' + indices[i]));
+        }
         if (!existing.has(m.name.toLowerCase())) toAdd.push(m);
       }
       if (!toAdd.length) { toast('All selected items already exist'); return; }
@@ -10174,9 +10298,15 @@ async function addSelectedSRD() {
       const existing = new Set((state.classFeatures || []).map(f => f.name.toLowerCase()));
       const toAdd = [];
       for (let i = 0; i < indices.length; i++) {
-        btn.textContent = `Fetching ${i + 1}/${indices.length}…`;
-        const feat = await _srdGet('/features/' + indices[i]);
-        const m    = _mapSrdFeature(feat);
+        btn.textContent = `${use24 ? 'Loading' : 'Fetching'} ${i + 1}/${indices.length}…`;
+        let m;
+        if (use24) {
+          const feat = _srd24FeatureMap[indices[i]];
+          if (!feat) continue;
+          m = _mapSrd24Feature(feat);
+        } else {
+          m = _mapSrdFeature(await _srdGet('/features/' + indices[i]));
+        }
         if (!existing.has(m.name.toLowerCase())) toAdd.push(m);
       }
       if (!toAdd.length) { toast('All selected features already exist'); return; }
@@ -10268,6 +10398,71 @@ function _nameToSrdIdx(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+// ── 2024 local SRD mappers ───────────────────────────────────────────────
+function _mapSrd24Spell(sp) {
+  const comps = [sp.verbal ? 'V' : '', sp.somatic ? 'S' : '', sp.material ? 'M' : '']
+    .filter(Boolean).join(', ');
+  const mat = sp.material_specified ? ` (${sp.material_specified})` : '';
+  const ct  = (sp.casting_time || '').toLowerCase();
+  const dmgType = (sp.damage_types?.[0] || '').toLowerCase();
+  const d = sp.desc || '';
+  return {
+    name:             sp.name,
+    level:            typeof sp.level === 'number' ? sp.level : 0,
+    school:           sp.school || '',
+    castingTime:      sp.casting_time || '',
+    range:            sp.range || '',
+    components:       comps + mat,
+    duration:         sp.duration || '',
+    saveAbility:      sp.saving_throw
+                        ? sp.saving_throw.charAt(0).toUpperCase() + sp.saving_throw.slice(1)
+                        : '',
+    concentration:    sp.concentration || false,
+    ritual:           sp.ritual || false,
+    attackRoll:       sp.attack_roll || false,
+    rolls:            sp.damage_roll ? [{ dice: sp.damage_roll, type: dmgType, mod: '' }] : [],
+    description:      d.length > 600 ? d.slice(0, 597) + '…' : d,
+    showInCombat:     true,
+    combatActionType: ct.includes('bonus') ? 'bonus' : ct.includes('reaction') ? 'reaction' : 'action',
+  };
+}
+
+function _mapSrd24Trait(tr) {
+  const d = tr.description || tr.desc || '';
+  return {
+    name:             tr.name,
+    description:      d.length > 600 ? d.slice(0, 597) + '…' : d,
+    damage:           '', rollDamage: false,
+    saveAbility:      '', saveDC: 0,
+    showInCombat:     false, combatActionType: 'action',
+  };
+}
+
+function _mapSrd24Feature(f) {
+  const d = f.description || f.desc || '';
+  return {
+    name:            f.name,
+    max:             1, used: 0, recharge: 'Long Rest', step: 1,
+    attackRoll:      false, attackMod: '', attackProficient: false,
+    rolls:           [],
+    saveAbility:     '', saveDC: 0,
+    description:     d.length > 600 ? d.slice(0, 597) + '…' : d,
+  };
+}
+
+function _mapSrd24Equipment(eq) {
+  const cat = (eq.categories || [])[0] || '';
+  const d   = eq.description || '';
+  return {
+    name:        eq.name,
+    quantity:    1,
+    weight:      eq.weight != null ? `${eq.weight} lb` : '',
+    cost:        eq.cost || '',
+    category:    cat,
+    description: d.length > 600 ? d.slice(0, 597) + '…' : d,
+  };
+}
+
 // ── Item Content Assist (SRD/AI fill in edit panels) ────────────────────
 const ICA_CFG = {
   sp: { nameId:'spEditName', descId:'spEditDescription', type:'spells',    label:'spell' },
@@ -10318,14 +10513,39 @@ async function icaSearchSrd(p, type) {
   if (applyDesc) applyDesc.style.display = 'none';
   delete _icaCache[p];
   try {
-    const list  = await _srdGet('/' + type);
+    const use24 = await _srd24Detect();
     const q     = name.toLowerCase();
-    const match = (list.results || []).find(r => r.name.toLowerCase() === q) ||
-                  (list.results || []).find(r => r.name.toLowerCase().includes(q));
-    if (!match) { statusEl.textContent = `"${name}" not found in SRD.`; return; }
-    const detail = await _srdGet('/' + type + '/' + match.index);
+    let match, detail;
+    if (use24) {
+      let pool;
+      if (type === 'spells') {
+        pool = await _srd24Load('spells');
+      } else if (type === 'traits') {
+        const sp = await _srd24Load('species');
+        pool = sp.flatMap(s => [...(s.traits || []),
+          ...(s.subspecies || []).flatMap(sub => sub.traits || [])]);
+      } else if (type === 'features') {
+        const cls = await _srd24Load('classes');
+        pool = cls.flatMap(c => [...(c.features || []),
+          ...(c.subclasses || []).flatMap(sub => sub.features || [])]);
+      } else {
+        pool = await _srd24Load('equipment');
+      }
+      match = pool.find(r => r.name.toLowerCase() === q) ||
+              pool.find(r => r.name.toLowerCase().includes(q));
+      if (!match) { statusEl.textContent = `"${name}" not found in 2024 SRD.`; return; }
+      detail = { ...match, _srd24: true };
+    } else {
+      const list = await _srdGet('/' + type);
+      match = (list.results || []).find(r => r.name.toLowerCase() === q) ||
+              (list.results || []).find(r => r.name.toLowerCase().includes(q));
+      if (!match) { statusEl.textContent = `"${name}" not found in SRD.`; return; }
+      detail = await _srdGet('/' + type + '/' + match.index);
+    }
     _icaCache[p] = detail;
-    const rawDesc = Array.isArray(detail.desc) ? detail.desc.join('\n\n') : (detail.desc || '');
+    const rawDesc = detail._srd24
+      ? (detail.description || detail.desc || '')
+      : (Array.isArray(detail.desc) ? detail.desc.join('\n\n') : (detail.desc || ''));
     const preview = rawDesc.length > 400 ? rawDesc.slice(0, 397) + '…' : rawDesc;
     if (previewEl) {
       previewEl.textContent = preview || '(no description in SRD)';
@@ -10342,9 +10562,10 @@ async function icaSearchSrd(p, type) {
 function icaApply(p) {
   const detail = _icaCache[p];
   if (!detail) return;
-  const type = ICA_CFG[p].type;
+  const type  = ICA_CFG[p].type;
+  const is24  = !!detail._srd24;
   if (type === 'spells') {
-    const m = _mapSrdSpell(detail);
+    const m = is24 ? _mapSrd24Spell(detail) : _mapSrdSpell(detail);
     document.getElementById('spEditName').value        = m.name          || '';
     document.getElementById('spEditLevel').value       = String(m.level  ?? 0);
     document.getElementById('spEditSchool').value      = m.school        || '';
@@ -10359,7 +10580,7 @@ function icaApply(p) {
     document.getElementById('spEditDescription').value = m.description   || '';
     if (m.rolls && m.rolls.length) renderRollRows('spRollRows', m.rolls);
   } else if (type === 'equipment') {
-    const m = _mapSrdEquipment(detail);
+    const m = is24 ? _mapSrd24Equipment(detail) : _mapSrdEquipment(detail);
     if (m.weight)   document.getElementById('eqEditWeight').value   = m.weight;
     if (m.cost)     document.getElementById('eqEditCost').value     = m.cost;
     if (m.category) document.getElementById('eqEditCategory').value = m.category;
@@ -10373,7 +10594,9 @@ function icaApply(p) {
 function icaApplyDesc(p) {
   const detail = _icaCache[p];
   if (!detail) return;
-  const rawDesc = Array.isArray(detail.desc) ? detail.desc.join('\n\n') : (detail.desc || '');
+  const rawDesc = detail._srd24
+    ? (detail.description || detail.desc || '')
+    : (Array.isArray(detail.desc) ? detail.desc.join('\n\n') : (detail.desc || ''));
   document.getElementById(ICA_CFG[p].descId).value = rawDesc;
   document.getElementById(p + 'Ica').style.display = 'none';
 }
@@ -10449,70 +10672,120 @@ async function _enrichEquipDescriptions(items) {
 }
 
 async function enrichAllFromSrd() {
-  const btn = document.getElementById('srdEnrichBtn');
+  const btn      = document.getElementById('srdEnrichBtn');
   const origText = btn.textContent;
-  btn.disabled = true;
-  let updated = 0;
-  let fetched = 0;
+  btn.disabled   = true;
+  let updated = 0, fetched = 0;
+  const use24 = await _srd24Detect();
 
-  async function _enrich(items, endpoint, applyFn) {
-    if (!items.length) return;
-    let list;
-    try { list = await _srdGet('/' + endpoint); } catch(e) { return; }
-    const results = list.results || [];
-    for (const item of items) {
-      const q = (item.name || '').toLowerCase();
-      const match = results.find(r => r.name.toLowerCase() === q) ||
-                    results.find(r => r.name.toLowerCase().includes(q));
-      if (!match) continue;
-      fetched++;
-      btn.textContent = `Checking ${fetched}…`;
-      try {
-        const detail = await _srdGet('/' + endpoint + '/' + match.index);
-        if (applyFn(item, detail)) updated++;
-      } catch(e) { /* SRD miss */ }
+  if (use24) {
+    async function _enrich24(items, category, applyFn, getPool) {
+      if (!items.length) return;
+      let pool;
+      try { pool = getPool ? await getPool() : await _srd24Load(category); } catch(e) { return; }
+      for (const item of items) {
+        const q = (item.name || '').toLowerCase();
+        const match = pool.find(r => r.name.toLowerCase() === q) ||
+                      pool.find(r => r.name.toLowerCase().includes(q));
+        if (!match) continue;
+        fetched++;
+        btn.textContent = `Checking ${fetched}…`;
+        if (applyFn(item, match)) updated++;
+      }
+    }
+    try {
+      await _enrich24(state.spells || [], 'spells', (item, d) => {
+        if (item.description) return false;
+        const desc = d.desc || '';
+        if (!desc) return false;
+        item.description = desc; return true;
+      });
+      await _enrich24(state.infoTraits || [], null, (item, d) => {
+        if (item.description) return false;
+        const desc = d.description || d.desc || '';
+        if (!desc) return false;
+        item.description = desc; return true;
+      }, async () => {
+        const sp = await _srd24Load('species');
+        return sp.flatMap(s => [...(s.traits || []),
+          ...(s.subspecies || []).flatMap(sub => sub.traits || [])]);
+      });
+      await _enrich24(state.classFeatures || [], null, (item, d) => {
+        if (item.description) return false;
+        const desc = d.description || d.desc || '';
+        if (!desc) return false;
+        item.description = desc; return true;
+      }, async () => {
+        const cls = await _srd24Load('classes');
+        return cls.flatMap(c => [...(c.features || []),
+          ...(c.subclasses || []).flatMap(sub => sub.features || [])]);
+      });
+      await _enrich24(state.equipmentItems || [], 'equipment', (item, d) => {
+        const m = _mapSrd24Equipment(d);
+        let changed = false;
+        if (!item.description && m.description) { item.description = m.description; changed = true; }
+        if (!item.weight   && m.weight)   { item.weight   = m.weight;   changed = true; }
+        if (!item.cost     && m.cost)     { item.cost     = m.cost;     changed = true; }
+        if (!item.category && m.category) { item.category = m.category; changed = true; }
+        return changed;
+      });
+    } catch(e) {
+      toast('SRD error: ' + (e.message || 'network error'));
+    }
+  } else {
+    async function _enrich(items, endpoint, applyFn) {
+      if (!items.length) return;
+      let list;
+      try { list = await _srdGet('/' + endpoint); } catch(e) { return; }
+      const results = list.results || [];
+      for (const item of items) {
+        const q = (item.name || '').toLowerCase();
+        const match = results.find(r => r.name.toLowerCase() === q) ||
+                      results.find(r => r.name.toLowerCase().includes(q));
+        if (!match) continue;
+        fetched++;
+        btn.textContent = `Checking ${fetched}…`;
+        try {
+          const detail = await _srdGet('/' + endpoint + '/' + match.index);
+          if (applyFn(item, detail)) updated++;
+        } catch(e) { /* SRD miss */ }
+      }
+    }
+    const _rawDesc = d => (Array.isArray(d.desc) ? d.desc : [d.desc || '']).join('\n\n');
+    try {
+      await _enrich(state.spells || [], 'spells', (item, d) => {
+        if (item.description) return false;
+        const desc = _rawDesc(d); if (!desc) return false;
+        item.description = desc; return true;
+      });
+      await _enrich(state.infoTraits || [], 'traits', (item, d) => {
+        if (item.description) return false;
+        const desc = _rawDesc(d); if (!desc) return false;
+        item.description = desc; return true;
+      });
+      await _enrich(state.classFeatures || [], 'features', (item, d) => {
+        if (item.description) return false;
+        const desc = _rawDesc(d); if (!desc) return false;
+        item.description = desc; return true;
+      });
+      await _enrich(state.equipmentItems || [], 'equipment', (item, d) => {
+        const m = _mapSrdEquipment(d);
+        let changed = false;
+        if (!item.description && m.description) { item.description = m.description; changed = true; }
+        if (!item.weight   && m.weight)   { item.weight   = m.weight;   changed = true; }
+        if (!item.cost     && m.cost)     { item.cost     = m.cost;     changed = true; }
+        if (!item.category && m.category) { item.category = m.category; changed = true; }
+        return changed;
+      });
+    } catch(e) {
+      toast('SRD error: ' + (e.message || 'network error'));
     }
   }
 
-  const _rawDesc = d => (Array.isArray(d.desc) ? d.desc : [d.desc || '']).join('\n\n');
-
-  try {
-    await _enrich(state.spells || [], 'spells', (item, d) => {
-      if (item.description) return false;
-      const desc = _rawDesc(d);
-      if (!desc) return false;
-      item.description = desc; return true;
-    });
-    await _enrich(state.infoTraits || [], 'traits', (item, d) => {
-      if (item.description) return false;
-      const desc = _rawDesc(d);
-      if (!desc) return false;
-      item.description = desc; return true;
-    });
-    await _enrich(state.classFeatures || [], 'features', (item, d) => {
-      if (item.description) return false;
-      const desc = _rawDesc(d);
-      if (!desc) return false;
-      item.description = desc; return true;
-    });
-    await _enrich(state.equipmentItems || [], 'equipment', (item, d) => {
-      const m = _mapSrdEquipment(d);
-      let changed = false;
-      if (!item.description && m.description) { item.description = m.description; changed = true; }
-      if (!item.weight   && m.weight)   { item.weight   = m.weight;   changed = true; }
-      if (!item.cost     && m.cost)     { item.cost     = m.cost;     changed = true; }
-      if (!item.category && m.category) { item.category = m.category; changed = true; }
-      return changed;
-    });
-    if (updated > 0) {
-      buildSpellsKnown(); buildSpellsPrepared();
-      buildInfoTraits();
-      buildFeatures();
-      buildEquipmentItems();
-      saveData();
-    }
-  } catch(e) {
-    toast('SRD error: ' + (e.message || 'network error'));
+  if (updated > 0) {
+    buildSpellsKnown(); buildSpellsPrepared();
+    buildInfoTraits(); buildFeatures(); buildEquipmentItems();
+    saveData();
   }
   btn.disabled = false;
   btn.textContent = origText;

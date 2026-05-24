@@ -1419,36 +1419,70 @@ Full-character import modal (`#charImportPanel`) opened from Settings → AI Imp
 | `_BUILTIN_CHAR_SCHEMA` | `const` string — compact but complete schema description used when `JSONGeneration.md` cannot be loaded |
 | `_charImportSchema` | `let` variable — holds the active schema text; `null` until loaded |
 
-#### SRD mode (requires internet)
-Live search against the [D&D 5e SRD API](https://www.dnd5eapi.co) (2014 SRD, CC-BY). Results are cached in `localStorage` under keys prefixed `srd_v1_`. Each fetch goes to `https://www.dnd5eapi.co/api/<path>`.
+#### SRD mode
+
+The app supports two SRD sources that are used automatically based on what is available:
+
+- **2014 SRD (`dnd5eapi.co`)** — Requires internet. Results cached in `localStorage` under keys prefixed `srd_v1_`. Active when the local 2024 index is not present.
+- **2024 SRD (local index)** — Requires Netlify / server. Static JSON files fetched from `/srd2024/*.json`. Loaded once into the `_srd24Files` in-memory cache; no `localStorage` usage. Active when `/srd2024/translation.json` can be fetched successfully.
+
+Edition is detected automatically on first SRD modal open via `_srd24Detect()`.
+
+##### 2024 local index infrastructure
+
+| Symbol | Type | Description |
+|---|---|---|
+| `_srd24Available` | `boolean\|null` | `null` until probed; `true`/`false` after `_srd24Detect()` |
+| `_srd24Translation` | `object\|null` | Parsed `translation.json`; loaded once by `_srd24Detect()` |
+| `_srd24Files` | `{[category]: Array}` | In-memory cache of loaded local JSON files |
+| `_srd24FeatureMap` | `{[key]: object}` | Maps checkbox-value keys → full item objects; populated by `_srdLoadRace()` and `_srdLoadClass()` in 2024 mode |
+| `_srd24Detect()` | async fn | Probes `/srd2024/translation.json`; sets `_srd24Available` and `_srd24Translation`; idempotent |
+| `_srd24Load(category)` | async fn | Fetches `/srd2024/{category}.json` if not already in `_srd24Files`; returns the array |
+
+##### Core SRD functions (edition-aware)
 
 | Function | Description |
 |---|---|
-| `_srdGet(path)` | `fetch()` wrapper with `localStorage` caching; throws on non-2xx responses |
-| `_srdShowCtrls(type)` | Shows the correct control block (spell search / race select / class select) for the active type; clears `srdSelected` |
-| `_srdInitForType(type)` | Async; shows the right control, pre-fetches or populates dropdown, sets idle hint text |
-| `_srdSpellSearch()` | Filters the cached `/spells` index by the search input value; renders up to 40 matches via `_srdRenderList()` |
-| `_srdLoadRace()` | Fetches `/races/{index}`; renders the `race.traits` array via `_srdRenderList()` |
-| `_srdLoadClass()` | Fetches `/classes/{index}/levels`; filters by level range; renders features grouped by level with `.srd-lv-group` headers |
+| `_srdGet(path)` | `fetch()` wrapper with `localStorage` caching for 2014 API calls; throws on non-2xx |
+| `_srdShowCtrls(type)` | Shows the correct control block (spell search / species select / class select) for the active type; clears `srdSelected` |
+| `_srdInitForType(type)` | Async; detects edition, populates species/class dropdowns from local data or API, pre-warms spell/equipment caches |
+| `_srdSpellSearch()` | Filters spell list by search input; in 2024 mode searches `_srd24Files.spells`; in 2014 mode searches cached API `/spells` index; renders up to 40 matches |
+| `_srdEquipSearch()` | Same pattern as `_srdSpellSearch()` for equipment; up to 50 matches |
+| `_srdLoadRace()` | In 2024 mode: finds species in `_srd24Files.species`, populates `_srd24FeatureMap` with traits, renders via `_srdRenderList()`. In 2014 mode: fetches `/races/{index}` |
+| `_srdLoadClass()` | In 2024 mode: renders base class features (flat, no level) and subclass features (grouped by level) from `_srd24Files.classes`; populates `_srd24FeatureMap`. In 2014 mode: fetches `/classes/{index}/levels` |
 | `_srdRenderList(items)` | Renders an array of `{index, name}` objects as checkable `.srd-result-item` rows into `#srdResults`; binds change listeners via `_srdBindCbs()` |
 | `_srdBindCbs()` | Attaches `change` listeners to all `.srd-cb` checkboxes; adds/removes indices from `srdSelected` |
-| `addSelectedSRD()` | Async; iterates `srdSelected`, fetches full data per item, maps to sheet format, deduplicates, merges into the correct state array, rebuilds UI; shows progress counter on the button |
-| `_mapSrdSpell(sp)` | Maps a `dnd5eapi.co` spell object to the sheet's spell schema; infers `combatActionType` from `casting_time`; truncates descriptions longer than 600 characters |
-| `_mapSrdTrait(tr)` | Maps a trait object (from `/traits/{index}`) to the `infoTraits` schema; defaults `showInCombat: false` |
-| `_mapSrdFeature(feat)` | Maps a feature object (from `/features/{index}`) to the `classFeatures` schema; defaults `max: 1`, `recharge: 'Long Rest'` — edit after import if different |
-| `_mapSrdEquipment(eq)` | Maps an equipment object (from `/equipment/{index}`) to the `equipmentItems` schema; synthesises description from `damage`, `armor_class`, `properties`, and `desc` fields; truncates to 600 characters |
-| `_nameToSrdIdx(name)` | Converts a display name to a SRD index string (lowercase, spaces → hyphens, non-alphanumeric stripped); used by `_enrichEquipDescriptions` |
-| `_enrichEquipDescriptions(items)` | Async; for each item in the array tries `_srdGet('/equipment/' + _nameToSrdIdx(item.name))`; on hit, fills missing `description`, `weight`, `cost`, `category` from `_mapSrdEquipment`; calls `buildEquipmentItems()` + `saveData()` once if anything changed. Called automatically after AI equipment import and after full-character AI import |
-| `enrichAllFromSrd()` | Async; bulk-fills empty descriptions across all four item arrays (`state.spells`, `state.infoTraits`, `state.classFeatures`, `state.equipmentItems`) by searching the SRD API for each item by name (exact first, then partial). Only overwrites fields that are currently empty; for equipment also fills `weight`, `cost`, `category`. Updates the `#srdEnrichBtn` text to show progress ("Checking N…"), rebuilds all affected lists, saves, then shows a toast with the count of updated items. Triggered from Settings → **📖 Fill Descriptions from SRD** |
-| `toggleIca(p)` | Shows or hides the Item Content Assist block (`#<p>Ica`) inside an edit panel; calls `_icaReset(p)` on open |
-| `_icaReset(p)` | Resets the ICA block to SRD mode, clears preview and apply buttons, empties the paste area, and deletes `_icaCache[p]` |
-| `setIcaMode(p, mode)` | Switches the ICA block between `'srd'` and `'ai'` tabs for panel prefix `p` |
-| `icaSearchSrd(p, type)` | Async; reads the item name from the form, searches `_srdGet('/' + type)` for a matching entry, fetches full details, caches in `_icaCache[p]`, shows a description preview and reveals Apply buttons |
-| `icaApply(p)` | Applies cached SRD data to the edit form: for spells fills all fields via `_mapSrdSpell`; for equipment fills weight/cost/category/description via `_mapSrdEquipment`; for traits/features calls `icaApplyDesc` |
-| `icaApplyDesc(p)` | Writes the cached SRD item's raw `desc` to the description textarea and closes the ICA block |
-| `icaCopyPrompt(p, type)` | Generates a LLM prompt (JSON schema prompt for spells; plain-text description prompt for other types) and writes it to the clipboard |
-| `icaApplyAI(p, type)` | For spells, tries to `JSON.parse` the pasted text (strips optional markdown fences) and fills form fields from the parsed data; falls through to `icaApplyAIDesc` if parsing fails or for non-spell types |
-| `icaApplyAIDesc(p)` | Writes the paste area's raw text to the description textarea and closes the ICA block |
+| `addSelectedSRD()` | Async; iterates `srdSelected`; in 2024 mode resolves items from `_srd24Files` or `_srd24FeatureMap` (no network); in 2014 mode fetches each item from API; maps, deduplicates, merges into state, rebuilds UI |
+
+##### Mappers
+
+| Function | Source format | Target |
+|---|---|---|
+| `_mapSrdSpell(sp)` | 2014 API spell object | `state.spells` entry |
+| `_mapSrdTrait(tr)` | 2014 API trait object | `state.infoTraits` entry |
+| `_mapSrdFeature(feat)` | 2014 API feature object | `state.classFeatures` entry |
+| `_mapSrdEquipment(eq)` | 2014 API equipment object | `state.equipmentItems` entry |
+| `_mapSrd24Spell(sp)` | 2024 local `spells.json` entry | `state.spells` entry |
+| `_mapSrd24Trait(tr)` | 2024 local species trait (`description` field) | `state.infoTraits` entry |
+| `_mapSrd24Feature(f)` | 2024 local class feature (`description` field) | `state.classFeatures` entry |
+| `_mapSrd24Equipment(eq)` | 2024 local `equipment.json` entry | `state.equipmentItems` entry |
+| `_nameToSrdIdx(name)` | Display name | SRD index slug (lowercase, hyphens) |
+
+##### Item Content Assist and enrich
+
+| Function | Description |
+|---|---|
+| `toggleIca(p)` | Shows or hides the Item Content Assist block (`#<p>Ica`); calls `_icaReset(p)` on open |
+| `_icaReset(p)` | Resets ICA to SRD mode, clears preview and apply buttons, empties paste area, deletes `_icaCache[p]` |
+| `setIcaMode(p, mode)` | Switches ICA between `'srd'` and `'ai'` tabs for panel prefix `p` |
+| `icaSearchSrd(p, type)` | Async; in 2024 mode searches the appropriate local file pool (traits flattened from species, features flattened from classes); in 2014 mode fetches from API. Caches detail with `_srd24: true` flag for 2024 results; shows preview and reveals Apply buttons |
+| `icaApply(p)` | Applies cached SRD data: selects `_mapSrd24Spell`/`_mapSrd24Equipment` for 2024 results or `_mapSrdSpell`/`_mapSrdEquipment` for 2014; for traits/features calls `icaApplyDesc` |
+| `icaApplyDesc(p)` | Writes cached item description to the textarea; reads `description` for 2024 results, `desc` for 2014; closes ICA block |
+| `icaCopyPrompt(p, type)` | Generates a LLM prompt and writes it to the clipboard |
+| `icaApplyAI(p, type)` | Parses pasted JSON for spells; falls through to `icaApplyAIDesc` otherwise |
+| `icaApplyAIDesc(p)` | Writes paste area raw text to description textarea and closes ICA block |
+| `_enrichEquipDescriptions(items)` | Async; fills missing equipment fields from SRD (2014 or 2024 path); called after AI import |
+| `enrichAllFromSrd()` | Async; bulk-fills empty descriptions across all four state arrays; in 2024 mode searches local files (no network); in 2014 mode fetches from API. Triggered from Settings → **📖 Fill Descriptions from SRD** |
 
 > **2024 SRD note:** `dnd5eapi.co` covers the 2014 SRD. For 2024 SRD content (released under CC-BY 4.0 as SRD 5.2), use the AI Import workflow: the prompt templates are edition-agnostic and work with any LLM that knows the 2024 rules.
 
