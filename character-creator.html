@@ -391,15 +391,14 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   <div class="sec"><div class="sec-t">Character Summary</div><div class="sec-b" id="review-summary"></div></div>
   <div class="sec"><div class="sec-t">JSON Preview</div><div class="sec-b">
     <div class="json-prev" id="json-prev"></div>
+    <button class="full-btn gold" onclick="openInSheet()">⚔ Open in Character Sheet</button>
     <button class="full-btn green" onclick="downloadJSON()">⬇ Download JSON</button>
     <button class="full-btn blue" onclick="copyJSON()">⎘ Copy to Clipboard</button>
   </div></div>
   <div class="sec"><div class="sec-t">How to Import</div><div class="sec-b">
     <p style="font-size:.82rem;color:var(--text-muted);line-height:1.6">
-      1. Open <b>dnd-character-sheet.html</b> in your browser.<br>
-      2. Tap ⚙ Settings in the top-right corner.<br>
-      3. Choose <b>Load Character</b> and select the downloaded JSON file.<br>
-      4. Your character will be loaded and ready to edit.
+      <b>Direct (recommended):</b> Click <b>Open in Character Sheet</b> above — your character is added automatically.<br><br>
+      <b>Manual:</b> Download the JSON, open <b>dnd-character-sheet.html</b>, tap ⚙ → <b>Load Character</b>, and select the file.
     </p>
   </div></div>
   <div id="review-status"></div>
@@ -1617,6 +1616,17 @@ async function copyJSON() {
   } catch {
     el('review-status').innerHTML = '<div class="status err">Clipboard not available — use Download instead.</div>';
   }
+}
+
+function openInSheet() {
+  const payload = buildPayload();
+  try {
+    localStorage.setItem('dnd5e_pending_import', JSON.stringify(payload));
+  } catch(e) {
+    el('review-status').innerHTML = '<div class="status err">Could not write to storage — use Download instead.</div>';
+    return;
+  }
+  window.location.href = 'dnd-character-sheet.html';
 }
 
 // ── Edition switching ──────────────────────────────────────────────────────
