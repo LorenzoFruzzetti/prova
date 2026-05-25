@@ -5047,6 +5047,7 @@
   <button class="hp-dlg-btn" onclick="dismissDescEnrichPanel()" style="width:100%;margin-top:8px">Cancel</button>
 </div>
 
+<script src="shared.js"></script>
 <script>
 // ── State ──────────────────────────────────────────────────────────────
 const ABILITIES = ['STR','DEX','CON','INT','WIS','CHA'];
@@ -5594,9 +5595,6 @@ function renderSlotDots(i) {
 }
 
 // ── Ability logic ──────────────────────────────────────────────────────
-function mod(score) { return Math.floor((score - 10) / 2); }
-function fmtMod(m)  { return (m >= 0 ? '+' : '') + m; }
-
 const abilityUndoTimers = {};
 function onAbilityInput(ab, val) {
   if (!abilityUndoTimers[ab]) pushUndo({type: 'ability', ab, previous: state.abilities[ab]});
@@ -6068,7 +6066,7 @@ function rollDamageFromSpellPanel() {
 
 function getProfBonus() {
   const lvl = parseInt(document.getElementById('charLevel')?.value) || 1;
-  return Math.ceil(lvl / 4) + 1;
+  return profBonus(lvl);
 }
 
 function recalcAll() {

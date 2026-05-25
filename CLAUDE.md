@@ -10,6 +10,7 @@ You are working on a **mobile-first D&D 5e character sheet**. The core applicati
 prova/
 ├── dnd-character-sheet.html              ← core app (HTML + CSS + JS, standalone-capable)
 ├── character-creator.html                ← character creation wizard (produces JSON for the core app)
+├── shared.js                             ← shared utilities loaded by all HTML pages
 ├── CLAUDE.md                             ← this file (AI instructions)
 ├── REFERENCE.md                          ← developer reference: CSS tokens, JS functions, state shape
 ├── REFERENCE-character-creator.md        ← developer reference for the character creator
@@ -39,6 +40,7 @@ There is no build toolchain, no `src/` directory, no `tests/` directory, no `.en
 | `REFERENCE-character-creator.md` | Developer reference for `character-creator.html`: wizard steps, state shape, all functions |
 | `JSONGeneration.md` | JSON field names, types, valid values, full annotated example |
 | `README.md` | User-facing: how to open, features, input/output, directory map |
+| `shared.js` | Pure utilities shared by all HTML pages: `mod`, `fmtMod`, `profBonus`, spell slot tables |
 | `examples/data/` | Two sample characters for import testing |
 | `srd2024/translation.json` | Terminology map between 2014 API field names and 2024 SRD field names / UI labels |
 | `srd2024/*.json` | 2024 SRD data files fetched at runtime; absent = feature hidden, not an error |
@@ -140,7 +142,7 @@ The app has two tiers:
 
 **Rules for companion files:**
 - All companion files are **optional**. The app must start and run fully without them — their absence must degrade gracefully (hide the feature, show a disabled state), never throw an error.
-- Companion files are **data assets** (`.json`), not code modules. Do not create external `.js` files. Logic that loads or interprets companion files lives inside `dnd-character-sheet.html`.
+- Companion files are primarily **data assets** (`.json`). However, shared utility logic that is needed by more than one HTML file **may** be extracted into an external `.js` file (e.g. `shared.js`) and loaded with `<script src="shared.js">`. Logic that is only used by a single HTML file should remain inline in that file.
 - The `srd2024/translation.json` file is the single source of truth for 2014↔2024 terminology differences (endpoint aliases, field name aliases, UI label overrides). Do not scatter edition-specific string checks through the main code.
 
 This model is consistent with existing precedent: the SRD tab already requires internet (graceful degradation when offline), and the AI-assisted import workflow already references `JSONGeneration.md` as an external document.
