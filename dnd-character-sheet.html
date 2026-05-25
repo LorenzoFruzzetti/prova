@@ -384,6 +384,23 @@
     transition: background 0.15s, border-color 0.15s, color 0.15s;
   }
   .char-menu-new-btn:hover { background: rgba(var(--accent-rgb),0.16); border-color: var(--gold); color: var(--gold); }
+  .char-menu-wizard-btn {
+    display: block;
+    width: 100%;
+    background: rgba(var(--accent-rgb),0.12);
+    border: 1px solid rgba(var(--accent-rgb),0.5);
+    border-radius: 8px;
+    color: var(--gold);
+    font-size: 12px;
+    font-family: sans-serif;
+    padding: 9px 8px;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    margin-bottom: 6px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .char-menu-wizard-btn:hover { background: rgba(var(--accent-rgb),0.22); border-color: var(--gold-light); }
 
   /* ── Tab Bar ── */
   .tab-bar {
@@ -11307,7 +11324,8 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="char-grid" id="charMenuList"></div>
     </div>
     <div class="char-grid-footer">
-      <button class="char-menu-new-btn" onclick="newCharacter()">+ New Character</button>
+      <a class="char-menu-wizard-btn" href="character-import-helper.html" target="_blank" rel="noopener">⚔ Create with Character Wizard</a>
+      <button class="char-menu-new-btn" onclick="newCharacter()">+ New Blank Character</button>
     </div>
   </div>
 </div>
