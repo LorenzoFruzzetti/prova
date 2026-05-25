@@ -9,10 +9,10 @@ You are working on a **mobile-first D&D 5e character sheet**. The core applicati
 ```
 prova/
 ├── dnd-character-sheet.html              ← core app (HTML + CSS + JS, standalone-capable)
-├── character-import-helper.html          ← character creation wizard (produces JSON for the core app)
+├── character-creator.html                ← character creation wizard (produces JSON for the core app)
 ├── CLAUDE.md                             ← this file (AI instructions)
 ├── REFERENCE.md                          ← developer reference: CSS tokens, JS functions, state shape
-├── REFERENCE-character-import-helper.md  ← developer reference for the import helper
+├── REFERENCE-character-creator.md        ← developer reference for the character creator
 ├── JSONGeneration.md                     ← JSON import/export schema specification
 ├── README.md                             ← user-facing documentation
 ├── srd2024/                              ← optional: 2024 SRD data files (requires serving)
@@ -34,9 +34,9 @@ There is no build toolchain, no `src/` directory, no `tests/` directory, no `.en
 | File | Purpose |
 |---|---|
 | `dnd-character-sheet.html` | Core app: HTML + `<style>` + `<script>` in one file |
-| `character-import-helper.html` | Step-by-step character creation wizard; outputs a `{form,state}` JSON loadable in the core app |
+| `character-creator.html` | Step-by-step character creation wizard; outputs a `{form,state}` JSON loadable in the core app, or sends it directly to the sheet via localStorage |
 | `REFERENCE.md` | CSS tokens, component classes, JS constants, state object shape, all functions for the core app |
-| `REFERENCE-character-import-helper.md` | Developer reference for `character-import-helper.html`: wizard steps, state shape, all functions |
+| `REFERENCE-character-creator.md` | Developer reference for `character-creator.html`: wizard steps, state shape, all functions |
 | `JSONGeneration.md` | JSON field names, types, valid values, full annotated example |
 | `README.md` | User-facing: how to open, features, input/output, directory map |
 | `examples/data/` | Two sample characters for import testing |
@@ -172,6 +172,7 @@ Use `pushUndo(action)` before any state mutation that should be undoable. The `u
 | `dnd5e_lefty` | Lefty mode flag (boolean) |
 | `dnd5e_theme` | Active theme key (string) |
 | `srd_v1_*` | SRD API response cache entries |
+| `dnd5e_pending_import` | Transient: payload written by `character-creator.html`; consumed and removed by `dnd-character-sheet.html` on next load |
 
 ### SRD integration
 

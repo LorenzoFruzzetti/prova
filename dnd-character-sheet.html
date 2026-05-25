@@ -9664,6 +9664,24 @@ function saveData() {
 
 function loadData() {
   migrateOldSheet();
+
+  // Handle a character payload written by character-creator.html
+  const pendingRaw = localStorage.getItem('dnd5e_pending_import');
+  if (pendingRaw) {
+    localStorage.removeItem('dnd5e_pending_import');
+    try {
+      const pending = JSON.parse(pendingRaw);
+      const roster = loadRosterData() || { chars: {}, activeId: null };
+      const id = genCharId();
+      roster.chars[id] = { name: pending.form?.charName || 'New Character', payload: pending };
+      roster.activeId = id;
+      rosterActiveId = id;
+      persistRoster(roster);
+      _applyPayloadData(pending);
+      return;
+    } catch(e) { /* fall through to normal load on parse error */ }
+  }
+
   let roster = loadRosterData() || { chars: {}, activeId: null };
   if (!Object.keys(roster.chars).length) {
     const id = genCharId();
@@ -11324,7 +11342,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="char-grid" id="charMenuList"></div>
     </div>
     <div class="char-grid-footer">
-      <a class="char-menu-wizard-btn" href="character-import-helper.html" target="_blank" rel="noopener">⚔ Create with Character Wizard</a>
+      <a class="char-menu-wizard-btn" href="character-creator.html" target="_blank" rel="noopener">⚔ Create with Character Wizard</a>
       <button class="char-menu-new-btn" onclick="newCharacter()">+ New Blank Character</button>
     </div>
   </div>
