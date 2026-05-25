@@ -2859,6 +2859,9 @@
 
   /* ── Theme swatches ── */
   .theme-swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+  .lang-btns { display:flex; gap:8px; }
+  .lang-btn { padding:5px 14px; border:2px solid var(--border); border-radius:20px; background:var(--surface); color:var(--text-muted); font-size:.8rem; font-weight:600; cursor:pointer; letter-spacing:.04em; transition:border-color .15s,background .15s; }
+  .lang-btn.active { border-color:var(--gold); background:var(--surface2); color:var(--gold-light); }
   .theme-swatch {
     width: 30px; height: 30px;
     border-radius: 50%;
@@ -3317,30 +3320,30 @@
          onpointerdown="startCharInfoTitlePress(event)"
          onpointerup="endCharInfoTitlePress(event)"
          onpointercancel="cancelCharInfoTitlePress()"
-         oncontextmenu="return false">Character Info <span class="turn-hold-hint">hold</span></div>
+         oncontextmenu="return false">Character Info <span class="turn-hold-hint" data-i18n="hint.hold">hold</span></div>
     <div class="section-body">
       <div class="portrait-section">
         <div class="portrait-box" onclick="document.getElementById('portraitInput').click()" title="Tap to set portrait">
           <img id="portraitImg" class="portrait-img" src="" alt="Character portrait">
           <div id="portraitPlaceholder" class="portrait-placeholder">
             <div class="portrait-placeholder-icon">&#128100;</div>
-            <span>Tap to add portrait</span>
+            <span data-i18n="btn.tap_portrait">Tap to add portrait</span>
           </div>
         </div>
         <div class="portrait-actions">
-          <button class="portrait-btn" onclick="document.getElementById('portraitInput').click()">Upload Image</button>
-          <button class="portrait-btn portrait-remove-btn" id="portraitRemoveBtn" style="display:none" onclick="removePortrait()">Remove</button>
+          <button class="portrait-btn" onclick="document.getElementById('portraitInput').click()" data-i18n="btn.upload_image">Upload Image</button>
+          <button class="portrait-btn portrait-remove-btn" id="portraitRemoveBtn" style="display:none" onclick="removePortrait()" data-i18n="btn.remove">Remove</button>
         </div>
       </div>
       <div class="field-row">
         <div>
-          <label>Character Name</label>
-          <input type="text" id="charName" placeholder="Enter name" oninput="updateHeader()">
+          <label data-i18n="label.character_name">Character Name</label>
+          <input type="text" id="charName" placeholder="Enter name" data-i18n-ph="ph.enter_name" oninput="updateHeader()">
         </div>
       </div>
       <div class="field-row col-2">
         <div>
-          <label>Class</label>
+          <label data-i18n="label.class">Class</label>
           <select id="charClass" onchange="updateHeader(); recalcAll()">
             <option value="">— Select —</option>
             <option>Barbarian</option><option>Bard</option><option>Cleric</option>
@@ -3351,27 +3354,27 @@
           </select>
         </div>
         <div>
-          <label>Subclass</label>
-          <input type="text" id="charSubclass" placeholder="e.g. Evocation">
+          <label data-i18n="label.subclass">Subclass</label>
+          <input type="text" id="charSubclass" placeholder="e.g. Evocation" data-i18n-ph="ph.eg_evocation">
         </div>
       </div>
       <div class="field-row col-2">
         <div>
-          <label>Race</label>
-          <input type="text" id="charRace" placeholder="e.g. Half-Elf" oninput="updateHeader()">
+          <label data-i18n="label.race">Race</label>
+          <input type="text" id="charRace" placeholder="e.g. Half-Elf" data-i18n-ph="ph.eg_halfelf" oninput="updateHeader()">
         </div>
         <div>
-          <label>Level</label>
+          <label data-i18n="label.level">Level</label>
           <input type="number" id="charLevel" value="1" min="1" max="20" oninput="updateHeader(); recalcAll(); renderHitDice()">
         </div>
       </div>
       <div class="field-row col-2">
         <div>
-          <label>Background</label>
-          <input type="text" id="charBackground" placeholder="e.g. Outlander">
+          <label data-i18n="label.background">Background</label>
+          <input type="text" id="charBackground" placeholder="e.g. Outlander" data-i18n-ph="ph.eg_outlander">
         </div>
         <div>
-          <label>Alignment</label>
+          <label data-i18n="label.alignment">Alignment</label>
           <select id="charAlignment">
             <option value="">—</option>
             <option>Lawful Good</option><option>Neutral Good</option><option>Chaotic Good</option>
@@ -3382,11 +3385,11 @@
       </div>
       <div class="field-row col-2">
         <div>
-          <label>Experience Points</label>
+          <label data-i18n="label.xp">Experience Points</label>
           <input type="number" id="charXP" value="0" min="0">
         </div>
         <div>
-          <label>Proficiency Bonus</label>
+          <label data-i18n="label.prof_bonus">Proficiency Bonus</label>
           <div class="prof-badge" style="margin-top:4px">
             <span>+</span><span class="val" id="profBonusDisplay">2</span>
           </div>
@@ -3404,7 +3407,7 @@
          style="display:flex;justify-content:space-between;align-items:center">
       Features &amp; Traits
       <div onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center">
-        <span class="turn-hold-hint">hold</span>
+        <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
         <button class="attack-edit-btn" onclick="openAIImport('traits')">+ Add</button>
       </div>
     </div>
@@ -3418,23 +3421,23 @@
          onpointerdown="startPersonalityTitlePress(event)"
          onpointerup="endPersonalityTitlePress(event)"
          onpointercancel="cancelPersonalityTitlePress()"
-         oncontextmenu="return false">Personality <span class="turn-hold-hint">hold</span></div>
+         oncontextmenu="return false">Personality <span class="turn-hold-hint" data-i18n="hint.hold">hold</span></div>
     <div class="section-body">
       <div style="margin-bottom:10px">
-        <label>Personality Traits</label>
-        <textarea id="personality" placeholder="How does your character behave?"></textarea>
+        <label data-i18n="label.personality_traits">Personality Traits</label>
+        <textarea id="personality" placeholder="How does your character behave?" data-i18n-ph="ph.personality"></textarea>
       </div>
       <div style="margin-bottom:10px">
-        <label>Ideals</label>
-        <textarea id="ideals" placeholder="What does your character believe?"></textarea>
+        <label data-i18n="label.ideals">Ideals</label>
+        <textarea id="ideals" placeholder="What does your character believe?" data-i18n-ph="ph.ideals"></textarea>
       </div>
       <div style="margin-bottom:10px">
-        <label>Bonds</label>
-        <textarea id="bonds" placeholder="What connects your character to the world?"></textarea>
+        <label data-i18n="label.bonds">Bonds</label>
+        <textarea id="bonds" placeholder="What connects your character to the world?" data-i18n-ph="ph.bonds"></textarea>
       </div>
       <div>
-        <label>Flaws</label>
-        <textarea id="flaws" placeholder="What are your character's weaknesses?"></textarea>
+        <label data-i18n="label.flaws">Flaws</label>
+        <textarea id="flaws" placeholder="What are your character's weaknesses?" data-i18n-ph="ph.flaws"></textarea>
       </div>
     </div>
   </div>
@@ -3444,11 +3447,11 @@
          onpointerdown="startRestTitlePress(event)"
          onpointerup="endRestTitlePress(event)"
          onpointercancel="cancelRestTitlePress()"
-         oncontextmenu="return false">Rest <span class="turn-hold-hint">hold</span></div>
+         oncontextmenu="return false">Rest <span class="turn-hold-hint" data-i18n="hint.hold">hold</span></div>
     <div class="section-body">
       <button class="add-btn" onclick="fullLongRest()"
               style="border-style:solid;border-color:var(--gold);color:var(--gold-light)">
-        ⟳ Long Rest — restore HP, hit dice, spell slots &amp; features
+        <span data-i18n="btn.long_rest">⟳ Long Rest — restore HP, hit dice, spell slots &amp; features</span>
       </button>
     </div>
   </div>
@@ -3463,7 +3466,7 @@
          onpointerdown="startAbilitiesTitlePress(event)"
          onpointerup="endAbilitiesTitlePress(event)"
          onpointercancel="cancelAbilitiesTitlePress()"
-         oncontextmenu="return false">Ability Scores &amp; Saves <span class="turn-hold-hint">hold</span></div>
+         oncontextmenu="return false">Ability Scores &amp; Saves <span class="turn-hold-hint" data-i18n="hint.hold">hold</span></div>
     <div class="section-body">
       <div class="ability-grid" id="abilityGrid">
         <!-- Generated by JS -->
@@ -3476,7 +3479,7 @@
          onpointerdown="startSkillsTitlePress(event)"
          onpointerup="endSkillsTitlePress(event)"
          onpointercancel="cancelSkillsTitlePress()"
-         oncontextmenu="return false">Skills <span class="turn-hold-hint">hold</span></div>
+         oncontextmenu="return false">Skills <span class="turn-hold-hint" data-i18n="hint.hold">hold</span></div>
     <div class="section-body">
       <ul class="check-list" id="skillsList"></ul>
     </div>
@@ -3487,10 +3490,10 @@
          onpointerdown="startPassivePerceptionTitlePress(event)"
          onpointerup="endPassivePerceptionTitlePress(event)"
          onpointercancel="cancelPassivePerceptionTitlePress()"
-         oncontextmenu="return false">Passive Perception <span class="turn-hold-hint">hold</span></div>
+         oncontextmenu="return false">Passive Perception <span class="turn-hold-hint" data-i18n="hint.hold">hold</span></div>
     <div class="section-body">
       <div class="passive-perception">
-        <span>Passive Wisdom (Perception)</span>
+        <span data-i18n="label.passive_wisdom">Passive Wisdom (Perception)</span>
         <span class="val" id="passivePerception">10</span>
       </div>
     </div>
@@ -3506,19 +3509,19 @@
          onpointerdown="startHitPointsTitlePress(event)"
          onpointerup="endHitPointsTitlePress(event)"
          onpointercancel="cancelHitPointsTitlePress()"
-         oncontextmenu="return false">Hit Points <span class="turn-hold-hint">hold</span></div>
+         oncontextmenu="return false">Hit Points <span class="turn-hold-hint" data-i18n="hint.hold">hold</span></div>
     <div class="section-body">
       <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-bottom:12px">
         <div>
-          <label>Max HP</label>
+          <label data-i18n="label.max_hp">Max HP</label>
           <input type="number" id="hpMax" value="10" min="1" oninput="updateHP()">
         </div>
         <div>
-          <label>Temp HP</label>
+          <label data-i18n="label.temp_hp">Temp HP</label>
           <input type="number" id="hpTemp" value="0" min="0" oninput="updateHP()">
         </div>
         <div>
-          <button class="attack-edit-btn" onclick="resetHPToFull()" style="white-space:nowrap">↺ Restore HP</button>
+          <button class="attack-edit-btn" onclick="resetHPToFull()" style="white-space:nowrap" data-i18n="btn.restore_hp">↺ Restore HP</button>
         </div>
       </div>
       <div class="hp-tracker">
@@ -3547,7 +3550,7 @@
          onpointerdown="startCombatStatsTitlePress(event)"
          onpointerup="endCombatStatsTitlePress(event)"
          onpointercancel="cancelCombatStatsTitlePress()"
-         oncontextmenu="return false">Combat Stats <span class="turn-hold-hint">hold</span></div>
+         oncontextmenu="return false">Combat Stats <span class="turn-hold-hint" data-i18n="hint.hold">hold</span></div>
     <div class="section-body">
       <div class="stat-pills">
         <div class="stat-pill"
@@ -3557,7 +3560,7 @@
           <input type="number" id="statAC" value="10" oninput="saveData()"
                  onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()">
           <div class="stat-pill-mod" id="statMod-ac" style="display:none"></div>
-          <div class="stat-pill-label">Armor Class</div>
+          <div class="stat-pill-label" data-i18n="label.armor_class">Armor Class</div>
         </div>
         <div class="stat-pill rollable"
              onpointerdown="startStatPillPress(event,'initiative')"
@@ -3565,7 +3568,7 @@
              onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statInit">+0</div>
           <div class="stat-pill-mod" id="statMod-initiative" style="display:none"></div>
-          <div class="stat-pill-label">Initiative</div>
+          <div class="stat-pill-label" data-i18n="label.initiative">Initiative</div>
         </div>
         <div class="stat-pill"
              onpointerdown="startStatPillPress(event,'speed')"
@@ -3574,7 +3577,7 @@
           <input type="number" id="statSpeed" value="30" oninput="saveData()"
                  onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()">
           <div class="stat-pill-mod" id="statMod-speed" style="display:none"></div>
-          <div class="stat-pill-label">Speed (ft)</div>
+          <div class="stat-pill-label" data-i18n="label.speed">Speed (ft)</div>
         </div>
       </div>
       <div class="stat-pills" style="margin-top:8px">
@@ -3584,7 +3587,7 @@
              onpointercancel="cancelStatPillPress()">
           <input type="text" id="statHitDice" value="1d8" oninput="saveData(); updateHitDieBadge()" style="font-size:16px"
                  onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()">
-          <div class="stat-pill-label">Die Type</div>
+          <div class="stat-pill-label" data-i18n="label.die_type">Die Type</div>
         </div>
         <div class="stat-pill rollable"
              onpointerdown="startStatPillPress(event,'spellatk')"
@@ -3592,7 +3595,7 @@
              onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statSpellAtk">+2</div>
           <div class="stat-pill-mod" id="statMod-spellatk" style="display:none"></div>
-          <div class="stat-pill-label">Spell Atk</div>
+          <div class="stat-pill-label" data-i18n="label.spell_atk">Spell Atk</div>
         </div>
         <div class="stat-pill interactive"
              onpointerdown="startStatPillPress(event,'spelldc')"
@@ -3600,7 +3603,7 @@
              onpointercancel="cancelStatPillPress()">
           <div class="stat-pill-value" id="statSpellDC">12</div>
           <div class="stat-pill-mod" id="statMod-spelldc" style="display:none"></div>
-          <div class="stat-pill-label">Spell DC</div>
+          <div class="stat-pill-label" data-i18n="label.spell_dc">Spell DC</div>
         </div>
       </div>
     </div>
@@ -3615,8 +3618,8 @@
          style="display:flex;justify-content:space-between;align-items:center">
       Hit Dice
       <div onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center">
-        <span class="turn-hold-hint">hold</span>
-        <button class="attack-edit-btn" onclick="restoreHitDice()">↺ Restore</button>
+        <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
+        <button class="attack-edit-btn" onclick="restoreHitDice()" data-i18n="btn.restore">↺ Restore</button>
       </div>
     </div>
     <div class="section-body">
@@ -3649,7 +3652,7 @@
          onpointercancel="cancelDmgResistTitlePress()"
          oncontextmenu="return false">
       Resistances &amp; Vulnerabilities
-      <span class="turn-hold-hint">hold</span>
+      <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
     </div>
     <div class="section-body">
       <div class="dmg-resist-grid" id="dmgResistGrid"></div>
@@ -3659,12 +3662,12 @@
   <div class="section">
     <div class="section-body inspiration-death-row">
       <div class="inspiration-block">
-        <div class="insp-block-title">Inspiration</div>
+        <div class="insp-block-title" data-i18n="game.inspiration_title">Inspiration</div>
         <button class="inspiration-btn" id="inspirationBtn"
                 onpointerdown="startInspirationPress(event)"
                 onpointerup="endInspirationPress(event)"
                 onpointercancel="cancelInspirationPress()">★</button>
-        <span class="turn-hold-hint">hold</span>
+        <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
       </div>
       <div class="death-block">
         <div id="deathSaveTitle"
@@ -3674,17 +3677,17 @@
              onpointercancel="cancelDeathSaveTitlePress()"
              oncontextmenu="return false">
           <div class="death-block-title" style="display:flex;align-items:center;gap:5px">
-            Death Saving Throws <span class="turn-hold-hint">hold</span>
+            Death Saving Throws <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
           </div>
           <button class="attack-edit-btn"
                   onclick="event.stopPropagation();openDeathSavePanel()"
                   onpointerdown="event.stopPropagation()"
                   onpointerup="event.stopPropagation()"
-                  style="font-size:10px">Roll</button>
+                  style="font-size:10px" data-i18n="btn.roll">Roll</button>
         </div>
         <div class="death-saves">
           <div class="save-group">
-            <div class="save-group-label success">Successes</div>
+            <div class="save-group-label success" data-i18n="game.successes">Successes</div>
             <div class="save-dots" id="deathSuccess">
               <div class="save-dot success-dot" onclick="toggleDeathSave(this,'success')"></div>
               <div class="save-dot success-dot" onclick="toggleDeathSave(this,'success')"></div>
@@ -3692,7 +3695,7 @@
             </div>
           </div>
           <div class="save-group">
-            <div class="save-group-label failure">Failures</div>
+            <div class="save-group-label failure" data-i18n="game.failures">Failures</div>
             <div class="save-dots" id="deathFailure">
               <div class="save-dot failure-dot" onclick="toggleDeathSave(this,'failure')"></div>
               <div class="save-dot failure-dot" onclick="toggleDeathSave(this,'failure')"></div>
@@ -3712,7 +3715,7 @@
          onpointercancel="cancelTurnTitlePress()"
          oncontextmenu="return false">
       Turn
-      <span class="turn-hold-hint">hold</span>
+      <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
     </div>
     <div class="section-body">
       <div id="attackList">
@@ -3735,7 +3738,7 @@
         </div>
       </div>
       <div class="turn-defaults-header" onclick="toggleDefaultActions()">
-        <span>Default Actions</span>
+        <span data-i18n="game.default_actions">Default Actions</span>
         <span class="turn-chevron" id="defaultActionsChevron">▶</span>
       </div>
       <div id="defaultActionsList" class="turn-defaults-body" style="display:none"></div>
@@ -3752,8 +3755,8 @@
          style="display:flex;justify-content:space-between;align-items:center">
       Conditions
       <div onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center">
-        <span class="turn-hold-hint">hold</span>
-        <button onclick="clearAllConditions()" style="font-size:10px;font-family:sans-serif;padding:3px 9px;border-radius:8px;border:1px solid rgba(192,57,43,0.5);background:rgba(192,57,43,0.1);color:var(--red-light);cursor:pointer;letter-spacing:0.3px">Clear all</button>
+        <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
+        <button onclick="clearAllConditions()" style="font-size:10px;font-family:sans-serif;padding:3px 9px;border-radius:8px;border:1px solid rgba(192,57,43,0.5);background:rgba(192,57,43,0.1);color:var(--red-light);cursor:pointer;letter-spacing:0.3px" data-i18n="btn.clear_all">Clear all</button>
       </div>
     </div>
     <div class="section-body">
@@ -3771,11 +3774,11 @@
          onpointerdown="startSpellcastingTitlePress(event)"
          onpointerup="endSpellcastingTitlePress(event)"
          onpointercancel="cancelSpellcastingTitlePress()"
-         oncontextmenu="return false">Spellcasting <span class="turn-hold-hint">hold</span></div>
+         oncontextmenu="return false">Spellcasting <span class="turn-hold-hint" data-i18n="hint.hold">hold</span></div>
     <div class="section-body">
       <div class="field-row col-2">
         <div>
-          <label>Spellcasting Ability</label>
+          <label data-i18n="label.spellcasting_ability">Spellcasting Ability</label>
           <select id="spellAbility" onchange="recalcAll()">
             <option value="">—</option>
             <option value="INT">Intelligence</option>
@@ -3784,7 +3787,7 @@
           </select>
         </div>
         <div>
-          <label>Spell Save DC</label>
+          <label data-i18n="label.spell_save_dc">Spell Save DC</label>
           <div class="prof-badge" style="margin-top:4px">
             <span class="val" id="spellDCBadge">—</span>
           </div>
@@ -3817,7 +3820,7 @@
                  onpointerup="event.stopPropagation()"
                  onclick="event.stopPropagation()">
         </div>
-        <span class="turn-hold-hint">hold</span>
+        <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
         <button class="attack-edit-btn"
                 onclick="event.stopPropagation();openAIImport('spells')"
                 onpointerdown="event.stopPropagation()"
@@ -3838,8 +3841,8 @@
          style="display:flex;justify-content:space-between;align-items:center">
       Spell Slots
       <div onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center">
-        <span class="turn-hold-hint">hold</span>
-        <button class="attack-edit-btn" onclick="restoreAllSlots()">↺ All</button>
+        <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
+        <button class="attack-edit-btn" onclick="restoreAllSlots()" data-i18n="btn.restore_all">↺ All</button>
       </div>
     </div>
     <div class="section-body" id="spellSlotsBody">
@@ -3856,7 +3859,7 @@
          onpointercancel="cancelSpellsPreparedTitlePress()"
          oncontextmenu="return false">
       Spells Prepared
-      <span class="turn-hold-hint">hold</span>
+      <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
     </div>
     <div class="section-body" id="spellsPreparedBody">
       <!-- Generated by JS -->
@@ -3877,8 +3880,8 @@
          style="display:flex;justify-content:space-between;align-items:center">
       Class Features
       <div onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center">
-        <span class="turn-hold-hint">hold</span>
-        <button class="attack-edit-btn" onclick="restoreAllFeatures()">↺ All</button>
+        <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
+        <button class="attack-edit-btn" onclick="restoreAllFeatures()" data-i18n="btn.restore_all">↺ All</button>
         <button class="attack-edit-btn" onclick="openAIImport('features')">+ Add</button>
       </div>
     </div>
@@ -3888,14 +3891,14 @@
   </div>
 
   <div class="section" id="featuredSpellsSection" style="display:none">
-    <div class="section-title">Featured Spells</div>
+    <div class="section-title" data-i18n="section.featured_spells">Featured Spells</div>
     <div class="section-body" id="featuredSpellsBody">
       <!-- Generated by JS -->
     </div>
   </div>
 
   <div class="section" id="featuredTraitsSection" style="display:none">
-    <div class="section-title">Featured Traits</div>
+    <div class="section-title" data-i18n="section.featured_traits">Featured Traits</div>
     <div class="section-body" id="featuredTraitsBody">
       <!-- Generated by JS -->
     </div>
@@ -3911,7 +3914,7 @@
          onpointerdown="startCurrencyTitlePress(event)"
          onpointerup="endCurrencyTitlePress(event)"
          onpointercancel="cancelCurrencyTitlePress()"
-         oncontextmenu="return false">Currency <span class="turn-hold-hint">hold</span></div>
+         oncontextmenu="return false">Currency <span class="turn-hold-hint" data-i18n="hint.hold">hold</span></div>
     <div class="section-body">
       <div class="currency-grid">
         <div class="currency-item"><label>CP</label><input type="number" id="cp" value="0" min="0"></div>
@@ -3932,7 +3935,7 @@
          style="display:flex;justify-content:space-between;align-items:center">
       Equipment &amp; Items
       <div onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()" onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center">
-        <span class="turn-hold-hint">hold</span>
+        <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
         <button class="attack-edit-btn"
                 onclick="event.stopPropagation();openAIImport('equipment')"
                 onpointerdown="event.stopPropagation()"
@@ -3955,7 +3958,7 @@
       <span>All Proficiencies <span id="equipProfChevron" class="spell-known-chevron collapsed">▾</span></span>
       <div onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()"
            onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center">
-        <span class="turn-hold-hint">hold</span>
+        <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
         <button class="attack-edit-btn"
                 onclick="event.stopPropagation();showEquipProfAddInput()"
                 onpointerdown="event.stopPropagation()"
@@ -3966,7 +3969,7 @@
     <div class="section-body" id="equipProfAllBody" style="display:none">
       <ul class="check-list" id="equipProfList"></ul>
       <div id="equipProfAddRow" style="display:none;margin-top:8px;gap:6px;align-items:center">
-        <input type="text" id="equipProfAddInput" placeholder="Custom proficiency..." style="flex:1;margin:0"
+        <input type="text" id="equipProfAddInput" placeholder="Custom proficiency..." data-i18n-ph="ph.custom_proficiency" style="flex:1;margin:0"
                onkeydown="if(event.key==='Enter')confirmAddEquipProf();else if(event.key==='Escape')cancelEquipProfAdd()">
         <button class="attack-edit-btn" onclick="confirmAddEquipProf()">Add</button>
         <button class="attack-edit-btn" onclick="cancelEquipProfAdd()" style="padding:4px 8px">✕</button>
@@ -3982,7 +3985,7 @@
          onpointerup="endEquipProfActiveTitlePress(event)"
          onpointercancel="cancelEquipProfActiveTitlePress()"
          oncontextmenu="return false">
-      Your Proficiencies <span class="turn-hold-hint">hold</span>
+      Your Proficiencies <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
     </div>
     <div class="section-body" id="equipProfActiveBody">
       <!-- Generated by JS -->
@@ -3991,16 +3994,16 @@
 
   <!-- Languages -->
   <div class="section">
-    <div class="section-title">Languages</div>
+    <div class="section-title" data-i18n="section.languages">Languages</div>
     <div class="section-body">
-      <textarea id="languages" style="min-height:60px" placeholder="Common, Elvish, Dwarvish..."></textarea>
+      <textarea id="languages" style="min-height:60px" placeholder="Common, Elvish, Dwarvish..." data-i18n-ph="ph.languages"></textarea>
     </div>
   </div>
 
   <div class="section">
-    <div class="section-title">Notes</div>
+    <div class="section-title" data-i18n="section.notes">Notes</div>
     <div class="section-body">
-      <textarea id="notes" style="min-height:150px" placeholder="Campaign notes, quest hooks, NPC names..."></textarea>
+      <textarea id="notes" style="min-height:150px" placeholder="Campaign notes, quest hooks, NPC names..." data-i18n-ph="ph.campaign_notes"></textarea>
     </div>
   </div>
 
@@ -4009,7 +4012,7 @@
 <!-- ════════ DICE ROLLER ════════ -->
 <div id="panel-dice" class="panel">
   <div class="section">
-    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center" data-i18n="section.dice_roller">
       Dice Roller
       <button class="attack-edit-btn" onclick="addCustomDie()">+ Add</button>
     </div>
@@ -4022,25 +4025,25 @@
 <!-- ════════ LOGS ════════ -->
 <div id="panel-rolls" class="panel">
   <div class="section">
-    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center" data-i18n="section.roll_log">
       Roll Log
-      <button class="attack-edit-btn" onclick="clearRollLog()">Clear</button>
+      <button class="attack-edit-btn" onclick="clearRollLog()" data-i18n="btn.clear">Clear</button>
     </div>
     <div class="section-body" id="rollLogList">
-      <div class="roll-log-empty">No rolls yet this session</div>
+      <div class="roll-log-empty" data-i18n="hint.no_rolls">No rolls yet this session</div>
     </div>
   </div>
 </div>
 
 <div id="hpBackdrop" onclick="dismissHpDialog()"></div>
 <div id="hpDialog">
-  <div class="hp-dlg-title">Set Hit Points</div>
+  <div class="hp-dlg-title" data-i18n="modal.set_hp">Set Hit Points</div>
   <div class="hp-dlg-sub" id="hpDlgSub">0 / 10 HP</div>
   <input class="hp-dlg-input" type="number" id="hpDlgInput" min="0"
          onkeydown="if(event.key==='Enter') applyHpDialog()">
   <div class="hp-dlg-btns">
-    <button class="hp-dlg-btn" onclick="dismissHpDialog()">Cancel</button>
-    <button class="hp-dlg-btn primary" onclick="applyHpDialog()">Set HP</button>
+    <button class="hp-dlg-btn" onclick="dismissHpDialog()" data-i18n="btn.cancel">Cancel</button>
+    <button class="hp-dlg-btn primary" onclick="applyHpDialog()" data-i18n="btn.set_hp">Set HP</button>
   </div>
 </div>
 
@@ -4051,8 +4054,8 @@
   <input class="hp-dlg-input" type="number" id="statModInput"
          onkeydown="if(event.key==='Enter') applyStatModDialog()">
   <div class="hp-dlg-btns">
-    <button class="hp-dlg-btn" onclick="dismissStatModDialog()">Cancel</button>
-    <button class="hp-dlg-btn primary" onclick="applyStatModDialog()">Set Modifier</button>
+    <button class="hp-dlg-btn" onclick="dismissStatModDialog()" data-i18n="btn.cancel">Cancel</button>
+    <button class="hp-dlg-btn primary" onclick="applyStatModDialog()" data-i18n="btn.set_modifier">Set Modifier</button>
   </div>
 </div>
 
@@ -4060,43 +4063,43 @@
 <div id="stepMenu">
   <div class="hp-dlg-title" id="stepMenuTitle">Edit Feature</div>
 
-  <label class="fe-label">Name</label>
-  <input class="fe-input" type="text" id="stepMenuName" placeholder="e.g. Channel Divinity"
+  <label class="fe-label" data-i18n="modal.feature_name">Name</label>
+  <input class="fe-input" type="text" id="stepMenuName" placeholder="e.g. Channel Divinity" data-i18n-ph="ph.channel_divinity"
          onkeydown="if(event.key==='Enter') document.getElementById('stepMenuMax').focus()">
 
   <div class="fe-row2">
     <div>
-      <label class="fe-label">Max uses / pool</label>
+      <label class="fe-label" data-i18n="modal.max_uses">Max uses / pool</label>
       <input class="fe-input" type="number" id="stepMenuMax" min="0" max="999"
              onkeydown="if(event.key==='Enter') document.getElementById('stepMenuStep').focus()">
     </div>
     <div>
-      <label class="fe-label">Pts per dot &amp; tap</label>
+      <label class="fe-label" data-i18n="modal.pts_per_dot">Pts per dot &amp; tap</label>
       <input class="fe-input" type="number" id="stepMenuStep" min="1" max="999"
              onkeydown="if(event.key==='Enter') document.getElementById('stepMenuRecharge').focus()">
     </div>
   </div>
 
-  <label class="fe-label">Recharges on</label>
-  <input class="fe-input" type="text" id="stepMenuRecharge" placeholder="e.g. Long Rest"
+  <label class="fe-label" data-i18n="modal.recharges_on">Recharges on</label>
+  <input class="fe-input" type="text" id="stepMenuRecharge" placeholder="e.g. Long Rest" data-i18n-ph="ph.long_rest"
          onkeydown="if(event.key==='Enter') applyStepMenu()">
 
   <div class="hp-dlg-btns">
-    <button class="hp-dlg-btn" onclick="dismissStepMenu()">Cancel</button>
-    <button class="hp-dlg-btn primary" onclick="applyStepMenu()">Save</button>
+    <button class="hp-dlg-btn" onclick="dismissStepMenu()" data-i18n="btn.cancel">Cancel</button>
+    <button class="hp-dlg-btn primary" onclick="applyStepMenu()" data-i18n="btn.save">Save</button>
   </div>
 </div>
 
 <div id="addDiceBackdrop" onclick="dismissAddDiceDialog()"></div>
 <div id="addDiceDialog">
-  <div class="hp-dlg-title">Add Custom Die</div>
-  <div class="hp-dlg-sub">Enter the number of sides</div>
+  <div class="hp-dlg-title" data-i18n="modal.add_custom_die">Add Custom Die</div>
+  <div class="hp-dlg-sub" data-i18n="modal.enter_sides">Enter the number of sides</div>
   <input class="hp-dlg-input" type="number" id="addDiceSides" min="2" max="10000"
-         placeholder="e.g. 3, 30, 120"
+         placeholder="e.g. 3, 30, 120" data-i18n-ph="ph.eg_3_30"
          onkeydown="if(event.key==='Enter') confirmAddDie()">
   <div class="hp-dlg-btns">
-    <button class="hp-dlg-btn" onclick="dismissAddDiceDialog()">Cancel</button>
-    <button class="hp-dlg-btn primary" onclick="confirmAddDie()">Add Die</button>
+    <button class="hp-dlg-btn" onclick="dismissAddDiceDialog()" data-i18n="btn.cancel">Cancel</button>
+    <button class="hp-dlg-btn primary" onclick="confirmAddDie()" data-i18n="btn.add_die">Add Die</button>
   </div>
 </div>
 
@@ -4107,7 +4110,7 @@
   <div class="rr-breakdown" id="rrBreak"></div>
   <div class="rr-secondary" id="rrSecondary"></div>
   <div class="rr-nat" id="rrNat"></div>
-  <span class="rr-dismiss">tap to dismiss</span>
+  <span class="rr-dismiss" data-i18n="hint.tap_to_dismiss">tap to dismiss</span>
 </div>
 
 <!-- ── Spell Description / Edit Panel ── -->
@@ -4123,19 +4126,19 @@
     <div class="sp-meta" id="spMetaView"></div>
     <div class="sp-details-grid" id="spDetailsView"></div>
     <div class="sp-save-dc-box" id="spSaveDcBox" style="display:none">
-      <div class="sp-save-dc-label">Spell Save DC</div>
+      <div class="sp-save-dc-label" data-i18n="game.spell_dc_label">Spell Save DC</div>
       <div class="sp-save-dc-value" id="spSaveDcValue">—</div>
       <div class="sp-save-dc-ability" id="spSaveDcAbility"></div>
     </div>
     <div class="roll-tri" id="spAtkBox" style="display:none">
       <div class="rtz-top" onclick="event.stopPropagation();rollSpellFromPanel('normal')">
-        <div class="rtz-label">Spell Attack</div>
+        <div class="rtz-label" data-i18n="game.spell_attack">Spell Attack</div>
         <div class="rtz-bonus" id="spAtkBonus">—</div>
         <div class="rtz-damage" id="spAtkDamage"></div>
       </div>
       <div class="rtz-bottom">
-        <div class="rtz-dis" onclick="event.stopPropagation();rollSpellFromPanel('dis')">Disadv</div>
-        <div class="rtz-adv" onclick="event.stopPropagation();rollSpellFromPanel('adv')">Adv</div>
+        <div class="rtz-dis" onclick="event.stopPropagation();rollSpellFromPanel('dis')" data-i18n="game.disadv">Disadv</div>
+        <div class="rtz-adv" onclick="event.stopPropagation();rollSpellFromPanel('adv')" data-i18n="game.adv">Adv</div>
       </div>
     </div>
     <div class="sp-atk-box" id="spDmgBox" style="display:none" onclick="rollDamageFromSpellPanel()">
@@ -4143,18 +4146,18 @@
       <div class="sp-atk-bonus" id="spDmgDice"></div>
     </div>
     <div class="sp-description" id="spDescView"></div>
-    <span class="sp-dismiss-hint">tap to dismiss</span>
+    <span class="sp-dismiss-hint" data-i18n="hint.tap_to_dismiss">tap to dismiss</span>
   </div>
   <!-- Edit mode -->
   <div class="sp-edit-section">
-    <div class="sp-mode-badge">Editing Spell</div>
+    <div class="sp-mode-badge" data-i18n="modal.editing_spell">Editing Spell</div>
     <div class="sp-edit-field">
-      <label>Name</label>
-      <input type="text" id="spEditName" placeholder="Spell name">
+      <label data-i18n="modal.spell_name">Name</label>
+      <input type="text" id="spEditName" placeholder="Spell name" data-i18n-ph="ph.spell_name">
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="sp-edit-field">
-        <label>Level</label>
+        <label data-i18n="modal.level">Level</label>
         <select id="spEditLevel">
           <option value="0">Cantrip</option>
           <option value="1">1st</option>
@@ -4169,33 +4172,33 @@
         </select>
       </div>
       <div class="sp-edit-field">
-        <label>School</label>
-        <input type="text" id="spEditSchool" placeholder="Evocation">
+        <label data-i18n="modal.school">School</label>
+        <input type="text" id="spEditSchool" placeholder="Evocation" data-i18n-ph="ph.eg_evocation_school">
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="sp-edit-field">
-        <label>Casting Time</label>
-        <input type="text" id="spEditCastTime" placeholder="1 action">
+        <label data-i18n="modal.casting_time">Casting Time</label>
+        <input type="text" id="spEditCastTime" placeholder="1 action" data-i18n-ph="ph.casting_time">
       </div>
       <div class="sp-edit-field">
-        <label>Range</label>
-        <input type="text" id="spEditRange" placeholder="120 ft">
+        <label data-i18n="modal.range">Range</label>
+        <input type="text" id="spEditRange" placeholder="120 ft" data-i18n-ph="ph.range">
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="sp-edit-field">
-        <label>Components</label>
-        <input type="text" id="spEditComponents" placeholder="V, S">
+        <label data-i18n="modal.components">Components</label>
+        <input type="text" id="spEditComponents" placeholder="V, S" data-i18n-ph="ph.components">
       </div>
       <div class="sp-edit-field">
-        <label>Duration</label>
-        <input type="text" id="spEditDuration" placeholder="Instantaneous">
+        <label data-i18n="modal.duration">Duration</label>
+        <input type="text" id="spEditDuration" placeholder="Instantaneous" data-i18n-ph="ph.duration">
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
       <div class="sp-edit-field">
-        <label>Saving Throw</label>
+        <label data-i18n="modal.saving_throw">Saving Throw</label>
         <select id="spEditSaveAbility">
           <option value="">— No save</option>
           <option value="STR">Strength</option>
@@ -4207,8 +4210,8 @@
         </select>
       </div>
       <div class="sp-edit-field">
-        <label>Save DC <span style="font-size:8px;color:var(--text-muted)">(0 = spell DC)</span></label>
-        <input type="number" id="spEditSaveDC" min="0" max="30" placeholder="e.g. 15">
+        <label><span data-i18n="modal.save_dc_label">Save DC</span> <span style="font-size:8px;color:var(--text-muted)" data-i18n="modal.spell_dc_note">(0 = spell DC)</span></label>
+        <input type="number" id="spEditSaveDC" min="0" max="30" placeholder="e.g. 15" data-i18n-ph="ph.eg_dc">
       </div>
       <div class="sp-edit-field">
         <label>&nbsp;</label>
@@ -4224,14 +4227,14 @@
       </div>
     </div>
     <div class="sp-edit-field">
-      <label>Rolls</label>
+      <label data-i18n="modal.rolls">Rolls</label>
       <div id="spRollRows"></div>
       <button type="button" class="add-roll-btn" onclick="addRollRow('spRollRows')">+ Add Roll</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="sp-edit-field">
-        <label>Combat Panel</label>
-        <div class="sp-edit-checkbox-row"><label><input type="checkbox" id="spEditShowInCombat"> Show in Combat</label></div>
+        <label data-i18n="game.combat_panel">Combat Panel</label>
+        <div class="sp-edit-checkbox-row"><label><input type="checkbox" id="spEditShowInCombat"> <span data-i18n="game.show_in_combat">Show in Combat</span></label></div>
       </div>
       <div class="sp-edit-field">
         <label>Action Type</label>
@@ -4328,7 +4331,7 @@
       <div class="sp-atk-bonus" id="trDmgDice"></div>
     </div>
     <div class="tr-description" id="trDescView"></div>
-    <span class="sp-dismiss-hint">tap to dismiss</span>
+    <span class="sp-dismiss-hint" data-i18n="hint.tap_to_dismiss">tap to dismiss</span>
   </div>
   <!-- Edit mode -->
   <div class="tr-edit-section">
@@ -4457,7 +4460,7 @@
     <div class="eq-panel-name" id="eqNameView"></div>
     <div class="eq-panel-meta" id="eqMetaView"></div>
     <div class="eq-panel-description" id="eqDescView"></div>
-    <span class="sp-dismiss-hint">tap to dismiss</span>
+    <span class="sp-dismiss-hint" data-i18n="hint.tap_to_dismiss">tap to dismiss</span>
   </div>
   <!-- Edit mode -->
   <div class="eq-edit-section">
@@ -4540,12 +4543,12 @@
     </div>
     <div class="roll-tri" id="fpAtkBox" style="display:none">
       <div class="rtz-top" onclick="event.stopPropagation();rollFromFeaturePanel('normal')">
-        <div class="rtz-label">Attack Roll</div>
+        <div class="rtz-label" data-i18n="game.attack_roll">Attack Roll</div>
         <div class="rtz-bonus" id="fpAtkBonus">—</div>
       </div>
       <div class="rtz-bottom">
-        <div class="rtz-dis" onclick="event.stopPropagation();rollFromFeaturePanel('dis')">Disadv</div>
-        <div class="rtz-adv" onclick="event.stopPropagation();rollFromFeaturePanel('adv')">Adv</div>
+        <div class="rtz-dis" onclick="event.stopPropagation();rollFromFeaturePanel('dis')" data-i18n="game.disadv">Disadv</div>
+        <div class="rtz-adv" onclick="event.stopPropagation();rollFromFeaturePanel('adv')" data-i18n="game.adv">Adv</div>
       </div>
     </div>
     <div class="sp-atk-box" id="fpDmgBox" style="display:none" onclick="rollFeatureDamage()">
@@ -4553,7 +4556,7 @@
       <div class="sp-atk-bonus" id="fpDmgDice"></div>
     </div>
     <div class="fp-description" id="fpDescView"></div>
-    <span class="sp-dismiss-hint">tap to dismiss</span>
+    <span class="sp-dismiss-hint" data-i18n="hint.tap_to_dismiss">tap to dismiss</span>
   </div>
   <!-- Edit mode -->
   <div class="fp-edit-section">
@@ -4672,17 +4675,17 @@
 
 <div id="settingsBackdrop" onclick="dismissSettings()"></div>
 <div id="settingsMenu">
-  <div class="hp-dlg-title">Settings</div>
+  <div class="hp-dlg-title" data-i18n="settings.title">Settings</div>
   <div style="height:16px"></div>
-  <button class="settings-full-btn" onclick="exportToJSON(); dismissSettings()">&#128190; Save Character</button>
-  <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(()=>document.getElementById('jsonFileInput').click(), 100)">&#128194; Load Character</button>
-  <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(openCharImport, 100)">&#129302; AI Import Character</button>
-  <button class="settings-full-btn" id="srdEnrichBtn" onclick="enrichAllFromSrd()">&#128218; Fill Descriptions from SRD</button>
+  <button class="settings-full-btn" onclick="exportToJSON(); dismissSettings()" data-i18n="btn.save_character">&#128190; Save Character</button>
+  <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(()=>document.getElementById('jsonFileInput').click(), 100)" data-i18n="btn.load_character">&#128194; Load Character</button>
+  <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(openCharImport, 100)" data-i18n="btn.ai_import">&#129302; AI Import Character</button>
+  <button class="settings-full-btn" id="srdEnrichBtn" onclick="enrichAllFromSrd()" data-i18n="btn.fill_srd">&#128218; Fill Descriptions from SRD</button>
   <hr class="settings-divider">
   <div class="settings-row">
     <div class="settings-row-label">
-      Font Size
-      <small>Adjust text size for the entire sheet</small>
+      <span data-i18n="settings.font_size">Font Size</span>
+      <small data-i18n="settings.font_size_hint">Adjust text size for the entire sheet</small>
     </div>
     <div class="font-ctrl">
       <button class="font-ctrl-btn" onclick="changeFontSize(-1)">−</button>
@@ -4692,15 +4695,15 @@
   </div>
   <div class="settings-row">
     <div class="settings-row-label">
-      Lefty Mode
-      <small>Move +/− buttons to the left of each tracker</small>
+      <span data-i18n="settings.lefty_mode">Lefty Mode</span>
+      <small data-i18n="settings.lefty_mode_hint">Move +/− buttons to the left of each tracker</small>
     </div>
     <button class="settings-toggle" id="leftyToggle" onclick="toggleLeftyMode()">Off</button>
   </div>
   <div class="settings-row" style="align-items:flex-start;flex-direction:column;gap:10px">
     <div class="settings-row-label">
-      Theme
-      <small>Change the colour scheme</small>
+      <span data-i18n="settings.theme">Theme</span>
+      <small data-i18n="settings.theme_hint">Change the colour scheme</small>
     </div>
     <div class="theme-swatches">
       <button class="theme-swatch" data-theme="gold"   title="Gold"   onclick="setTheme('gold')"></button>
@@ -4711,7 +4714,18 @@
     </div>
   </div>
   <hr class="settings-divider">
-  <button class="hp-dlg-btn" onclick="dismissSettings()" style="width:100%">Close</button>
+  <div class="settings-row" style="align-items:flex-start;flex-direction:column;gap:10px">
+    <div class="settings-row-label">
+      <span data-i18n="settings.language">Language</span>
+      <small data-i18n="settings.language_hint">Change interface language</small>
+    </div>
+    <div class="lang-btns">
+      <button class="lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">EN</button>
+      <button class="lang-btn" data-lang="it" onclick="setLanguage('it')" title="Italiano">IT</button>
+    </div>
+  </div>
+  <hr class="settings-divider">
+  <button class="hp-dlg-btn" onclick="dismissSettings()" style="width:100%" data-i18n="btn.close">Close</button>
 </div>
 
 <!-- ── Attack View / Edit Panel ── -->
@@ -4727,13 +4741,13 @@
     <div class="sp-meta" id="atkPanelMeta"></div>
     <div class="roll-tri" id="atkPanelRollBox">
       <div class="rtz-top" onclick="event.stopPropagation();rollFromAttackPanel('normal')">
-        <div class="rtz-label">Attack Roll</div>
+        <div class="rtz-label" data-i18n="game.attack_roll">Attack Roll</div>
         <div class="rtz-bonus" id="atkPanelBonus"></div>
         <div class="rtz-damage" id="atkPanelDamage"></div>
       </div>
       <div class="rtz-bottom">
-        <div class="rtz-dis" onclick="event.stopPropagation();rollFromAttackPanel('dis')">Disadv</div>
-        <div class="rtz-adv" onclick="event.stopPropagation();rollFromAttackPanel('adv')">Adv</div>
+        <div class="rtz-dis" onclick="event.stopPropagation();rollFromAttackPanel('dis')" data-i18n="game.disadv">Disadv</div>
+        <div class="rtz-adv" onclick="event.stopPropagation();rollFromAttackPanel('adv')" data-i18n="game.adv">Adv</div>
       </div>
     </div>
     <div class="sp-save-dc-box" id="atkPanelSaveDcBox" style="display:none">
@@ -4746,7 +4760,7 @@
       <div class="sp-atk-bonus" id="atkPanelRollsSummary"></div>
     </div>
     <div class="sp-description" id="atkPanelDesc"></div>
-    <span class="sp-dismiss-hint">tap to dismiss</span>
+    <span class="sp-dismiss-hint" data-i18n="hint.tap_to_dismiss">tap to dismiss</span>
   </div>
   <!-- Edit mode -->
   <div class="atk-edit-section">
@@ -4850,8 +4864,8 @@
       <div class="rtz-bonus" id="ipRollBonus">+0</div>
     </div>
     <div class="rtz-bottom">
-      <div class="rtz-dis" onclick="event.stopPropagation();infoPanelRoll('dis')">Disadv</div>
-      <div class="rtz-adv" onclick="event.stopPropagation();infoPanelRoll('adv')">Adv</div>
+      <div class="rtz-dis" onclick="event.stopPropagation();infoPanelRoll('dis')" data-i18n="game.disadv">Disadv</div>
+      <div class="rtz-adv" onclick="event.stopPropagation();infoPanelRoll('adv')" data-i18n="game.adv">Adv</div>
     </div>
   </div>
   <!-- Simple roll box (for non-d20 rolls like hit dice) -->
@@ -5349,7 +5363,7 @@ function buildAbilityGrid() {
              onpointerup="event.stopPropagation()"
              onclick="event.stopPropagation(); toggleSaveProf('${ab}', this.closest('.ability-save'))"></div>
         <span class="save-mod" id="save-mod-${ab}">+0</span>
-        <span class="save-label">Save</span>
+        <span class="save-label">${_t('game.save') ?? 'Save'}</span>
       </div>
     </div>`;
   }).join('');
@@ -5373,7 +5387,7 @@ function buildSkillsList() {
            onclick="clickSkillItem(event, '${s.name}')"
            onpointercancel="cancelSkillPress()">
         <span class="check-modifier" id="skill-mod-${s.name.replace(/\s/g,'_')}">+0</span>
-        <span class="check-name">${s.name}</span>
+        <span class="check-name">${_t('skill.' + s.name) ?? s.name}</span>
         <span class="check-ability">${s.ab}</span>
       </div>
     </li>`;
@@ -5439,7 +5453,7 @@ function buildEquipProfActiveList() {
   const body = document.getElementById('equipProfActiveBody');
   if (!body) return;
   if (!state.equipProficiencies.length) {
-    body.innerHTML = '<div class="equip-prof-active-empty">No proficiencies marked yet — expand All Proficiencies above and tap a dot.</div>';
+    body.innerHTML = '<div class="equip-prof-active-empty">' + (_t('hint.no_proficiencies') ?? 'No proficiencies marked yet — expand All Proficiencies above and tap a dot.') + '</div>';
     return;
   }
   // Build ordered list matching EQUIP_PROF_GROUPS order, then custom rows
@@ -5474,7 +5488,7 @@ function buildConditions() {
          onpointerdown="startConditionPress(event, '${c.name}')"
          onclick="clickConditionItem(event, '${c.name}', this)"
          onpointercancel="cancelConditionPress()"
-         oncontextmenu="return false">${c.name}</div>
+         oncontextmenu="return false">${_t('condition.' + c.name) ?? c.name}</div>
   `).join('');
 }
 
@@ -8954,37 +8968,37 @@ function renderAttacks() {
   let html = '';
 
   // Actions — always rendered
-  html += `<div class="attack-section-label">Actions</div>`;
+  html += `<div class="attack-section-label">${_t('game.actions') ?? 'Actions'}</div>`;
   if (hasVisActions) {
     actionAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
     combatSpellActions.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
     combatTraitActions.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
     combatFeatActions.forEach(f  => { html += makeFeatureRow(f, state.classFeatures.indexOf(f)); });
   } else {
-    html += makeEmptyRow('No actions');
+    html += makeEmptyRow(_t('game.no_actions') ?? 'No actions');
   }
 
   // Bonus Actions — always rendered
   html += '<div style="margin-top:8px"></div>';
-  html += `<div class="attack-section-label">Bonus Actions</div>`;
+  html += `<div class="attack-section-label">${_t('game.bonus_actions') ?? 'Bonus Actions'}</div>`;
   if (hasVisBonus) {
     bonusAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
     combatSpellBonus.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
     combatTraitBonus.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
     combatFeatBonus.forEach(f  => { html += makeFeatureRow(f, state.classFeatures.indexOf(f)); });
   } else {
-    html += makeEmptyRow('No bonus actions');
+    html += makeEmptyRow(_t('game.no_bonus_actions') ?? 'No bonus actions');
   }
 
   // Reactions — always rendered (no reaction attack type yet, always shows placeholder)
   html += '<div style="margin-top:8px"></div>';
-  html += `<div class="attack-section-label">Reactions</div>`;
-  html += makeEmptyRow('No reactions');
+  html += `<div class="attack-section-label">${_t('game.reactions') ?? 'Reactions'}</div>`;
+  html += makeEmptyRow(_t('game.no_reactions') ?? 'No reactions');
 
   // Other — only when there are items
   if (hasVisOther) {
     html += '<div style="margin-top:8px"></div>';
-    html += `<div class="attack-section-label">Other</div>`;
+    html += `<div class="attack-section-label">${_t('game.other') ?? 'Other'}</div>`;
     otherAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
     combatSpellOther.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
     combatTraitOther.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
@@ -9365,6 +9379,112 @@ function applyTheme(theme) {
 function setTheme(theme) {
   applyTheme(theme);
   localStorage.setItem('dnd5e_theme', theme);
+}
+
+// ── Language / i18n ────────────────────────────────────────────────
+let _i18nData = {};
+let _currentLang = 'en';
+
+function _t(key) {
+  return _i18nData[key] ?? null;
+}
+
+async function _loadLanguage(code) {
+  _currentLang = code;
+  if (code === 'en') { _i18nData = {}; return; }
+  try {
+    const r = await fetch(`languages/${code}.json`);
+    if (r.ok) _i18nData = await r.json();
+    else _i18nData = {};
+  } catch(e) {
+    _i18nData = {};
+  }
+}
+
+function _applyI18n() {
+  if (!Object.keys(_i18nData).length) return;
+  const T = _i18nData;
+
+  // Helper: replace first text node of el with val (preserves child elements like hold-hints)
+  const setFirstText = (el, val) => {
+    if (!el || !val) return;
+    const node = [...el.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+    if (node) node.textContent = val + ' ';
+    else el.prepend(document.createTextNode(val + ' '));
+  };
+  const byId = (id, key) => setFirstText(document.getElementById(id), T[key]);
+  const all = (sel, key) => { if (T[key]) document.querySelectorAll(sel).forEach(el => el.textContent = T[key]); };
+
+  // Tabs
+  all('[data-tab="overview"]', 'tab.overview');
+  all('[data-tab="abilities"]', 'tab.abilities');
+  all('[data-tab="combat"]', 'tab.combat');
+  all('[data-tab="spells"]', 'tab.spells');
+  all('[data-tab="features"]', 'tab.features');
+  all('[data-tab="inventory"]', 'tab.inventory');
+  all('[data-tab="dice"]', 'tab.dice');
+  all('[data-tab="rolls"]', 'tab.rolls');
+
+  // Section titles (by ID)
+  byId('charInfoTitle', 'section.character_info');
+  byId('featuresTraitsTitle', 'section.features_traits');
+  byId('personalityTitle', 'section.personality');
+  byId('restTitle', 'section.rest');
+  byId('abilitiesTitle', 'section.ability_scores');
+  byId('skillsTitle', 'section.skills');
+  byId('passivePerceptionTitle', 'section.passive_perception');
+  byId('hitPointsTitle', 'section.hit_points');
+  byId('combatStatsTitle', 'section.combat_stats');
+  byId('hitDiceSectionTitle', 'section.hit_dice');
+  byId('dmgResistTitle', 'section.resistances');
+  byId('deathSaveTitle', 'section.death_saves');
+  byId('turnSectionTitle', 'section.turn');
+  byId('conditionsTitle', 'section.conditions');
+  byId('spellcastingTitle', 'section.spellcasting');
+  byId('spellsKnownTitle', 'section.spells_known');
+  byId('spellSlotsTitle', 'section.spell_slots');
+  byId('spellsPreparedTitle', 'section.spells_prepared');
+  byId('classFeaturesTitle', 'section.class_features');
+  byId('currencyTitle', 'section.currency');
+  byId('equipmentTitle', 'section.equipment_items');
+  byId('equipProfAllTitle', 'section.all_proficiencies');
+  byId('equipProfActiveTitle', 'section.your_proficiencies');
+  byId('statModTitle', 'modal.edit_modifier');
+  byId('stepMenuTitle', 'modal.edit_feature');
+
+  // Section titles by data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const val = T[el.dataset.i18n];
+    if (!val) return;
+    const node = [...el.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+    if (node) node.textContent = val;
+    else el.textContent = val;
+  });
+
+  // Placeholders
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const val = T[el.dataset.i18nPh]; if (val) el.placeholder = val;
+  });
+
+  // Language toggle active state
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === _currentLang);
+  });
+
+  // Lefty toggle text
+  const leftyBtn = document.getElementById('leftyToggle');
+  if (leftyBtn && T['settings.on'] && T['settings.off']) {
+    leftyBtn.textContent = leftyMode ? T['settings.on'] : T['settings.off'];
+  }
+}
+
+function setLanguage(code) {
+  localStorage.setItem('dnd5e_lang', code);
+  location.reload();
+}
+
+function loadLangPref() {
+  return localStorage.getItem('dnd5e_lang') || 'en';
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────
@@ -11318,11 +11438,13 @@ function cancelEquipmentTitlePress() { _equipmentHold.cancel(); }
 
 
 // ── Boot ───────────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   loadTheme();
   loadFontSize();
   loadLeftyMode();
+  await _loadLanguage(loadLangPref());
   init();
+  _applyI18n();
   updateHeader();
   updateHP();
   renderAttacks();
