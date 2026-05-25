@@ -3676,7 +3676,7 @@
              onpointerup="endDeathSaveTitlePress(event)"
              onpointercancel="cancelDeathSaveTitlePress()"
              oncontextmenu="return false">
-          <div class="death-block-title" style="display:flex;align-items:center;gap:5px">
+          <div class="death-block-title" style="display:flex;align-items:center;gap:5px" data-i18n="section.death_saves">
             Death Saving Throws <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
           </div>
           <button class="attack-edit-btn"
@@ -3804,7 +3804,7 @@
          onpointerup="endSpellsKnownTitlePress(event)"
          onpointercancel="cancelSpellsKnownTitlePress()"
          oncontextmenu="return false">
-      <span>Spells Known <span id="spellsKnownChevron" class="spell-known-chevron">▾</span></span>
+      <span data-i18n="section.spells_known">Spells Known <span id="spellsKnownChevron" class="spell-known-chevron">▾</span></span>
       <div style="display:flex;gap:6px;align-items:center"
            onpointerdown="event.stopPropagation()"
            onpointerup="event.stopPropagation()"
@@ -3955,7 +3955,7 @@
          onpointerup="endEquipProfAllTitlePress(event)"
          onpointercancel="cancelEquipProfAllTitlePress()"
          oncontextmenu="return false">
-      <span>All Proficiencies <span id="equipProfChevron" class="spell-known-chevron collapsed">▾</span></span>
+      <span data-i18n="section.all_proficiencies">All Proficiencies <span id="equipProfChevron" class="spell-known-chevron collapsed">▾</span></span>
       <div onpointerdown="event.stopPropagation()" onpointerup="event.stopPropagation()"
            onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center">
         <span class="turn-hold-hint" data-i18n="hint.hold">hold</span>
@@ -7988,7 +7988,7 @@ function showStepMenu(i) {
   pushModalHistory();
   currentStepMenuIdx = i;
   const isNew = i < 0;
-  document.getElementById('stepMenuTitle').textContent = isNew ? 'New Feature' : 'Edit Feature';
+  document.getElementById('stepMenuTitle').textContent = isNew ? 'New Feature' : (_t('modal.edit_feature') ?? 'Edit Feature');
   if (isNew) {
     document.getElementById('stepMenuName').value = '';
     document.getElementById('stepMenuMax').value = '1';
@@ -9437,17 +9437,18 @@ function _applyI18n() {
   byId('combatStatsTitle', 'section.combat_stats');
   byId('hitDiceSectionTitle', 'section.hit_dice');
   byId('dmgResistTitle', 'section.resistances');
-  byId('deathSaveTitle', 'section.death_saves');
+  // deathSaveTitle: uses data-i18n on death-block-title child div (has child elements)
   byId('turnSectionTitle', 'section.turn');
   byId('conditionsTitle', 'section.conditions');
+  // deathSaveTitle uses data-i18n on death-block-title child div (has child elements)
   byId('spellcastingTitle', 'section.spellcasting');
-  byId('spellsKnownTitle', 'section.spells_known');
+  // spellsKnownTitle: uses data-i18n on inner span (title div has no direct text node)
   byId('spellSlotsTitle', 'section.spell_slots');
   byId('spellsPreparedTitle', 'section.spells_prepared');
   byId('classFeaturesTitle', 'section.class_features');
   byId('currencyTitle', 'section.currency');
   byId('equipmentTitle', 'section.equipment_items');
-  byId('equipProfAllTitle', 'section.all_proficiencies');
+  // equipProfAllTitle: uses data-i18n on inner span (title div has no direct text node)
   byId('equipProfActiveTitle', 'section.your_proficiencies');
   byId('statModTitle', 'modal.edit_modifier');
   byId('stepMenuTitle', 'modal.edit_feature');
