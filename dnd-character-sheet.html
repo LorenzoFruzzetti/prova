@@ -6174,7 +6174,7 @@ function openEquipProfPanel(name) {
     badge: 'Proficiency',
     title: name,
     meta: isProficient ? 'Proficient' : 'Not Proficient',
-    description: desc,
+    description: _t('equip_desc.' + name) ?? desc,
   });
 }
 
@@ -6780,7 +6780,7 @@ function openSkillPanel(name) {
     badge: 'Skill',
     title: name,
     meta: sk.ab + ' · Skill Check',
-    description: sk.desc,
+    description: _t('skill_desc.' + name) ?? sk.desc,
     rollLabel: 'Skill Check',
     rollBonus: bonus,
     rollFn: mode => rollSkill(name, mode),
@@ -6835,7 +6835,7 @@ function openConditionPanel(name) {
     badge: 'Condition',
     borderColor: 'var(--red-light)',
     title: name,
-    description: cond.desc,
+    description: _t('condition_desc.' + name) ?? cond.desc,
     actionLabel: isActive ? 'Remove Condition' : 'Apply Condition',
     actionClass: isActive ? 'remove' : 'apply',
     actionFn: () => {
