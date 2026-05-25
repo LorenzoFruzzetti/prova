@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>D&amp;D Character Creator</title>
+<style>
+/* ── Design tokens (match main sheet) ── */
+:root {
+  --bg:#1a1410;--surface:#2a2018;--surface2:#352a1e;--border:#5c4a2a;
+  --border-rgb:92,74,42;--gold:#c9a84c;--gold-light:#e8c96a;
+  --red:#c0392b;--red-light:#e74c3c;--green:#27ae60;
+  --text:#e8d9b8;--text-muted:#9a8a6a;
+  --spell:#5baeff;--spell-light:#7ec8ff;
+  --radius:8px;--shadow:0 2px 8px rgba(0,0,0,.5);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding-bottom:90px}
+
+/* ── Header ── */
+.wh{background:linear-gradient(180deg,#2a1a0a 0%,#1a0e05 100%);border-bottom:2px solid var(--border);padding:10px 14px 8px;position:sticky;top:0;z-index:100}
+.wh-top{display:flex;align-items:center;justify-content:space-between}
+.wh-title{font-size:1rem;font-weight:700;color:var(--gold-light);letter-spacing:.06em;text-transform:uppercase}
+.wh-edition{display:flex;gap:6px}
+.ed-btn{padding:4px 10px;border:1px solid var(--border);border-radius:20px;background:var(--surface);color:var(--text-muted);font-size:.75rem;cursor:pointer}
+.ed-btn.active{border-color:var(--gold);background:var(--surface2);color:var(--gold-light);font-weight:600}
+.wh-progress{display:flex;gap:3px;margin-top:8px}
+.wp-seg{flex:1;height:3px;border-radius:2px;background:var(--surface2);transition:background .2s}
+.wp-seg.done{background:var(--gold)}
+.wp-seg.cur{background:var(--gold-light)}
+.wh-label{font-size:.7rem;color:var(--text-muted);margin-top:4px;text-align:center}
+
+/* ── Content ── */
+.wc{padding:14px;max-width:560px;margin:0 auto}
+.ws{display:none}.ws.active{display:block}
+
+/* ── Section card ── */
+.sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px}
+.sec-t{background:var(--surface2);padding:7px 12px;font-size:.7rem;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;border-radius:var(--radius) var(--radius) 0 0}
+.sec-b{padding:12px}
+
+/* ── Form ── */
+.field{margin-bottom:11px}.field:last-child{margin-bottom:0}
+.lbl{display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.inp,.sel,.ta{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:.9rem;padding:7px 10px;outline:none;font-family:inherit}
+.inp:focus,.sel:focus,.ta:focus{border-color:var(--gold)}
+.sel option{background:#2a2018}
+.ta{resize:vertical;min-height:70px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
+/* ── Bonus picker ── */
+.bonus-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bonus-row:last-child{margin-bottom:0}
+.bonus-badge{min-width:38px;text-align:center;font-weight:700;font-size:.85rem;padding:4px 8px;border-radius:6px;border:1px solid var(--gold);color:var(--gold-light);background:var(--surface2)}
+.bonus-badge.sm{border-color:var(--spell);color:var(--spell-light)}
+.bonus-badge.bg-b{border-color:var(--green);color:var(--green)}
+.bonus-label{font-size:.8rem;color:var(--text-muted);flex:0 0 60px}
+.bonus-sel{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 8px;font-size:.85rem}
+.bonus-sel:focus{border-color:var(--gold);outline:none}
+
+/* ── Species info pills ── */
+.pill-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.pill{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:.78rem}
+.pill-k{color:var(--text-muted)}.pill-v{color:var(--gold-light);font-weight:600}
+
+/* ── Trait toggles ── */
+.trait-tog{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(92,74,42,.3);cursor:pointer}
+.trait-tog:last-child{border-bottom:none}
+.tog-box{width:16px;height:16px;border-radius:3px;border:1px solid var(--border);background:var(--bg);flex-shrink:0;margin-top:2px;transition:background .15s}
+.trait-tog.on .tog-box{background:var(--gold);border-color:var(--gold)}
+.tog-name{font-weight:600;font-size:.88rem;color:var(--gold-light)}
+.tog-desc{font-size:.73rem;color:var(--text-muted);margin-top:2px;line-height:1.4}
+
+/* ── Skill grid ── */
+.skill-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.skill-chip{display:flex;align-items:center;gap:7px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);cursor:pointer;font-size:.82rem;user-select:none}
+.skill-chip.on{border-color:var(--gold);background:var(--surface2);color:var(--gold-light)}
+.skill-chip.locked{border-color:var(--green);background:rgba(39,174,96,.1);color:var(--green);cursor:default}
+.skill-dot{width:11px;height:11px;border-radius:50%;border:1px solid var(--border);flex-shrink:0}
+.skill-chip.on .skill-dot{background:var(--gold);border-color:var(--gold)}
+.skill-chip.locked .skill-dot{background:var(--green);border-color:var(--green)}
+
+/* ── Equipment prof chips ── */
+.ep-grid{display:flex;flex-wrap:wrap;gap:5px}
+.ep-chip{padding:4px 10px;border:1px solid var(--border);border-radius:20px;font-size:.76rem;cursor:pointer;background:var(--bg);color:var(--text-muted)}
+.ep-chip.on{border-color:var(--gold);background:var(--surface2);color:var(--gold-light)}
+
+/* ── Ability score table ── */
+.ab-table{width:100%;border-collapse:collapse}
+.ab-table th{font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;padding:3px 4px;text-align:center}
+.ab-table td{padding:4px 4px;text-align:center;vertical-align:middle}
+.ab-name{font-weight:700;color:var(--gold);font-size:.82rem;text-align:left!important;white-space:nowrap}
+.ab-inp{width:50px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:.9rem;padding:4px;text-align:center;outline:none}
+.ab-inp:focus{border-color:var(--gold)}
+.ab-bonus{color:var(--spell-light);font-size:.82rem;font-weight:600}
+.ab-total{font-weight:700;font-size:1rem}
+.ab-mod{color:var(--text-muted);font-size:.8rem}
+
+/* ── Standard array ── */
+.sa-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(92,74,42,.3)}
+.sa-row:last-child{border-bottom:none}
+.sa-label{font-weight:700;color:var(--gold);width:32px;font-size:.82rem}
+.sa-sel{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 6px;font-size:.85rem;outline:none}
+.sa-sel:focus{border-color:var(--gold)}
+.sa-bonus{color:var(--spell-light);font-size:.78rem;width:36px;text-align:center}
+.sa-total{font-weight:700;width:30px;text-align:center}
+.sa-mod{color:var(--text-muted);font-size:.78rem;width:34px;text-align:center}
+
+/* ── Point buy ── */
+.points-disp{text-align:center;font-size:1.1rem;font-weight:700;color:var(--gold-light);margin-bottom:10px}
+.points-disp span{font-size:.8rem;color:var(--text-muted);font-weight:normal}
+.pb-row{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid rgba(92,74,42,.3)}
+.pb-row:last-child{border-bottom:none}
+.pb-label{font-weight:700;color:var(--gold);width:32px;font-size:.82rem}
+.pb-btn{width:26px;height:26px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center}
+.pb-btn:active{background:var(--surface)}
+.pb-val{font-weight:700;font-size:1rem;width:24px;text-align:center}
+.pb-cost{color:var(--text-muted);font-size:.75rem;width:46px;text-align:center}
+.pb-bonus{color:var(--spell-light);font-size:.78rem;width:36px;text-align:center}
+.pb-total{font-weight:700;width:30px;text-align:center}
+.pb-mod{color:var(--text-muted);font-size:.78rem;width:34px;text-align:center}
+
+/* ── Method tabs ── */
+.mtabs{display:flex;gap:5px;margin-bottom:13px}
+.mtab{flex:1;padding:7px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text-muted);font-size:.78rem;cursor:pointer;text-align:center}
+.mtab.active{background:var(--surface2);border-color:var(--gold);color:var(--gold-light);font-weight:600}
+
+/* ── Stat preview ── */
+.stat-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.sp-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:8px;text-align:center}
+.sp-val{font-size:1.4rem;font-weight:700;color:var(--gold-light)}
+.sp-lbl{font-size:.62rem;color:var(--text-muted);text-transform:uppercase;margin-top:1px}
+
+/* ── Summary ── */
+.sum-name{font-size:1.25rem;font-weight:700;color:var(--gold-light);margin-bottom:2px}
+.sum-meta{font-size:.83rem;color:var(--text-muted);margin-bottom:12px}
+.sum-ab-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.sum-ab{background:var(--surface2);border:1px solid var(--border);border-radius:6px;text-align:center;padding:6px 4px}
+.sum-ab-key{font-size:.65rem;color:var(--text-muted);text-transform:uppercase}
+.sum-ab-score{font-size:1.1rem;font-weight:700;color:var(--gold-light)}
+.sum-ab-mod{font-size:.78rem;color:var(--text-muted)}
+
+/* ── JSON preview ── */
+.json-prev{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;font-family:'Courier New',monospace;font-size:.65rem;color:var(--text-muted);max-height:180px;overflow-y:auto;white-space:pre;margin-bottom:12px}
+
+/* ── Buttons ── */
+.full-btn{width:100%;padding:12px;border:none;border-radius:var(--radius);font-size:.9rem;font-weight:600;cursor:pointer;margin-bottom:8px}
+.full-btn:last-child{margin-bottom:0}
+.full-btn.green{background:var(--green);color:#fff}
+.full-btn.blue{background:var(--spell);color:#fff}
+.full-btn.gold{background:var(--gold);color:#1a1410}
+
+/* ── Status ── */
+.status{font-size:.78rem;color:var(--text-muted);padding:8px 12px;background:var(--surface2);border-radius:6px;margin-bottom:10px;text-align:center}
+.status.err{color:var(--red-light);background:rgba(192,57,43,.12)}
+.status.load{color:var(--spell)}
+.hint{font-size:.7rem;color:var(--text-muted);font-style:italic;margin-top:4px}
+.badge-green{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600;background:rgba(39,174,96,.15);border:1px solid var(--green);color:var(--green);margin-right:4px}
+.badge-blue{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600;background:rgba(91,174,255,.12);border:1px solid var(--spell);color:var(--spell-light);margin-right:4px}
+
+/* ── Nav ── */
+.wnav{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(180deg,#1a0e05 0%,#120d08 100%);border-top:1px solid var(--border);padding:10px 14px;display:flex;gap:10px;z-index:100}
+.nav-btn{flex:1;padding:11px;border:none;border-radius:var(--radius);font-size:.9rem;font-weight:600;cursor:pointer}
+.nav-back{background:var(--surface2);border:1px solid var(--border);color:var(--text-muted)}
+.nav-next{background:var(--gold);color:#1a1410}
+.nav-next:disabled{opacity:.4;cursor:default}
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="wh">
+  <div class="wh-top">
+    <div class="wh-title">⚔ D&amp;D Character Creator</div>
+    <div class="wh-edition">
+      <button class="ed-btn active" id="btn2024" onclick="setEdition('2024')">2024 SRD</button>
+      <button class="ed-btn" id="btn2014" onclick="setEdition('2014')">2014 SRD</button>
+    </div>
+  </div>
+  <div class="wh-progress" id="progressBar"></div>
+  <div class="wh-label" id="stepLabel"></div>
+</div>
+
+<div class="wc">
+
+<!-- ── Step 0: Basics ── -->
+<div class="ws active" id="step-0">
+  <div class="sec"><div class="sec-t">Character Info</div><div class="sec-b">
+    <div class="field"><label class="lbl">Character Name</label><input class="inp" id="b-name" type="text" placeholder="Enter name…" oninput="W.basic.name=this.value;updateNav()"></div>
+    <div class="g2">
+      <div class="field"><label class="lbl">Level</label>
+        <select class="sel" id="b-level" onchange="W.basic.level=+this.value">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+          <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+          <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+          <option value="13">13</option><option value="14">14</option><option value="15">15</option>
+          <option value="16">16</option><option value="17">17</option><option value="18">18</option>
+          <option value="19">19</option><option value="20">20</option>
+        </select>
+      </div>
+      <div class="field"><label class="lbl">XP</label><input class="inp" id="b-xp" type="number" min="0" value="0" oninput="W.basic.xp=this.value"></div>
+    </div>
+    <div class="field"><label class="lbl">Alignment</label>
+      <select class="sel" id="b-align" onchange="W.basic.alignment=this.value">
+        <option value="">— Select —</option>
+        <option>Lawful Good</option><option>Neutral Good</option><option>Chaotic Good</option>
+        <option>Lawful Neutral</option><option>True Neutral</option><option>Chaotic Neutral</option>
+        <option>Lawful Evil</option><option>Neutral Evil</option><option>Chaotic Evil</option>
+      </select>
+    </div>
+  </div></div>
+  <div class="status" id="s0-hint">Fill in your character's basic info, then choose an SRD edition above. <b>2024 SRD</b> uses local files (requires a web server). <b>2014 SRD</b> uses the online API (requires internet).</div>
+</div>
+
+<!-- ── Step 1: Species ── -->
+<div class="ws" id="step-1">
+  <div class="sec"><div class="sec-t">Species / Race</div><div class="sec-b">
+    <div class="field">
+      <label class="lbl">Select Species</label>
+      <select class="sel" id="sp-sel" onchange="onSpeciesChange(this.value)">
+        <option value="">— Loading… —</option>
+      </select>
+    </div>
+    <div id="sp-subrace-wrap" style="display:none" class="field">
+      <label class="lbl">Subspecies</label>
+      <select class="sel" id="sp-sub-sel" onchange="onSubspeciesChange(this.value)">
+        <option value="">— None —</option>
+      </select>
+    </div>
+  </div></div>
+
+  <div id="sp-detail" style="display:none">
+    <!-- Bonus allocation -->
+    <div class="sec"><div class="sec-t">Ability Score Bonuses</div><div class="sec-b">
+      <p class="hint" style="margin-bottom:10px" id="sp-bonus-hint"></p>
+      <div id="sp-bonus-ui"></div>
+    </div></div>
+    <!-- Species info -->
+    <div class="sec"><div class="sec-t">Species Info</div><div class="sec-b" id="sp-info-body"></div></div>
+    <!-- Traits -->
+    <div class="sec" id="sp-traits-sec"><div class="sec-t">Species Traits (select to import)</div><div class="sec-b" id="sp-traits-body"></div></div>
+  </div>
+  <div id="sp-status"></div>
+</div>
+
+<!-- ── Step 2: Class ── -->
+<div class="ws" id="step-2">
+  <div class="sec"><div class="sec-t">Class</div><div class="sec-b">
+    <div class="field">
+      <label class="lbl">Select Class</label>
+      <select class="sel" id="cl-sel" onchange="onClassChange(this.value)">
+        <option value="">— Loading… —</option>
+      </select>
+    </div>
+    <div id="cl-subclass-wrap" style="display:none" class="field">
+      <label class="lbl">Subclass (optional)</label>
+      <select class="sel" id="cl-sub-sel" onchange="W.cls.subclass=this.options[this.selectedIndex].text;W.cls.subclassIndex=this.value">
+        <option value="">— None selected —</option>
+      </select>
+    </div>
+  </div></div>
+
+  <div id="cl-detail" style="display:none">
+    <div class="sec"><div class="sec-t">Class Info</div><div class="sec-b" id="cl-info-body"></div></div>
+    <div class="sec"><div class="sec-t" id="cl-skill-title">Skill Proficiencies</div><div class="sec-b"><div class="skill-grid" id="cl-skill-grid"></div></div></div>
+    <div class="sec"><div class="sec-t">Equipment Proficiencies</div><div class="sec-b"><div class="ep-grid" id="cl-equip-grid"></div></div></div>
+  </div>
+  <div id="cl-status"></div>
+</div>
+
+<!-- ── Step 3: Background ── -->
+<div class="ws" id="step-3">
+  <div class="sec"><div class="sec-t">Background</div><div class="sec-b">
+    <div class="field">
+      <label class="lbl">Select Background</label>
+      <select class="sel" id="bg-sel" onchange="onBackgroundChange(this.value)">
+        <option value="">— Loading… —</option>
+      </select>
+    </div>
+  </div></div>
+
+  <div id="bg-detail" style="display:none">
+    <div class="sec" id="bg-bonus-sec"><div class="sec-t">Ability Score Bonuses</div><div class="sec-b">
+      <p class="hint" style="margin-bottom:10px" id="bg-bonus-hint"></p>
+      <div id="bg-bonus-ui"></div>
+    </div></div>
+    <div class="sec"><div class="sec-t">Background Proficiencies</div><div class="sec-b" id="bg-profs-body"></div></div>
+  </div>
+  <div class="status" id="bg-status-none" style="display:none">No background selected — skills from background will be skipped.</div>
+  <div id="bg-status"></div>
+</div>
+
+<!-- ── Step 4: Ability Scores ── -->
+<div class="ws" id="step-4">
+  <div class="mtabs">
+    <div class="mtab active" onclick="setScoreMethod('manual')">Manual</div>
+    <div class="mtab" onclick="setScoreMethod('standard')">Standard Array</div>
+    <div class="mtab" onclick="setScoreMethod('pointbuy')">Point Buy</div>
+  </div>
+  <div id="score-manual">
+    <div class="sec"><div class="sec-t">Base Scores</div><div class="sec-b">
+      <table class="ab-table">
+        <thead><tr><th></th><th>Base</th><th>Bonus</th><th>Total</th><th>Mod</th></tr></thead>
+        <tbody id="manual-tbody"></tbody>
+      </table>
+    </div></div>
+  </div>
+  <div id="score-standard" style="display:none">
+    <div class="sec"><div class="sec-t">Standard Array — assign 15,14,13,12,10,8</div><div class="sec-b">
+      <div id="sa-body"></div>
+    </div></div>
+  </div>
+  <div id="score-pointbuy" style="display:none">
+    <div class="sec"><div class="sec-t">Point Buy (27 points)</div><div class="sec-b">
+      <div class="points-disp" id="pb-points">27 <span>points remaining</span></div>
+      <div id="pb-body"></div>
+    </div></div>
+  </div>
+  <div class="stat-preview" id="stat-preview">
+    <div class="sp-card"><div class="sp-val" id="prev-hp">—</div><div class="sp-lbl">HP (avg)</div></div>
+    <div class="sp-card"><div class="sp-val" id="prev-ac">—</div><div class="sp-lbl">AC (base)</div></div>
+    <div class="sp-card"><div class="sp-val" id="prev-prof">+2</div><div class="sp-lbl">Prof Bonus</div></div>
+  </div>
+  <div class="hint" style="text-align:center;margin-bottom:6px">HP uses average per level; AC = 10 + DEX mod. Both can be adjusted in the character sheet.</div>
+</div>
+
+<!-- ── Step 5: Personality ── -->
+<div class="ws" id="step-5">
+  <div class="sec"><div class="sec-t">Languages</div><div class="sec-b">
+    <div class="field"><label class="lbl">Languages (free text)</label>
+      <input class="inp" id="p-langs" type="text" placeholder="Common, Elvish…" oninput="W.personality.languages=this.value">
+    </div>
+    <p class="hint">Common is standard. Add languages granted by species, background, or class.</p>
+  </div></div>
+  <div class="sec"><div class="sec-t">Personality</div><div class="sec-b">
+    <div class="field"><label class="lbl">Personality Traits</label><textarea class="ta" id="p-personality" oninput="W.personality.personality=this.value"></textarea></div>
+    <div class="field"><label class="lbl">Ideals</label><textarea class="ta" id="p-ideals" oninput="W.personality.ideals=this.value"></textarea></div>
+    <div class="field"><label class="lbl">Bonds</label><textarea class="ta" id="p-bonds" oninput="W.personality.bonds=this.value"></textarea></div>
+    <div class="field"><label class="lbl">Flaws</label><textarea class="ta" id="p-flaws" oninput="W.personality.flaws=this.value"></textarea></div>
+  </div></div>
+  <div class="sec"><div class="sec-t">Notes</div><div class="sec-b">
+    <div class="field"><textarea class="ta" id="p-notes" placeholder="Campaign notes…" oninput="W.personality.notes=this.value"></textarea></div>
+  </div></div>
+</div>
+
+<!-- ── Step 6: Review & Export ── -->
+<div class="ws" id="step-6">
+  <div class="sec"><div class="sec-t">Character Summary</div><div class="sec-b" id="review-summary"></div></div>
+  <div class="sec"><div class="sec-t">JSON Preview</div><div class="sec-b">
+    <div class="json-prev" id="json-prev"></div>
+    <button class="full-btn green" onclick="downloadJSON()">⬇ Download JSON</button>
+    <button class="full-btn blue" onclick="copyJSON()">⎘ Copy to Clipboard</button>
+  </div></div>
+  <div class="sec"><div class="sec-t">How to Import</div><div class="sec-b">
+    <p style="font-size:.82rem;color:var(--text-muted);line-height:1.6">
+      1. Open <b>dnd-character-sheet.html</b> in your browser.<br>
+      2. Tap ⚙ Settings in the top-right corner.<br>
+      3. Choose <b>Load Character</b> and select the downloaded JSON file.<br>
+      4. Your character will be loaded and ready to edit.
+    </p>
+  </div></div>
+  <div id="review-status"></div>
+</div>
+
+</div><!-- /wc -->
+
+<!-- ── Bottom nav ── -->
+<div class="wnav">
+  <button class="nav-btn nav-back" id="btnBack" onclick="goBack()">← Back</button>
+  <button class="nav-btn nav-next" id="btnNext" onclick="goNext()">Next →</button>
+</div>
+
+<script>
+'use strict';
+
+// ── Constants ──────────────────────────────────────────────────────────────
+
+const STEPS = ['Basics','Species','Class','Background','Ability Scores','Personality','Review'];
+const ABILITY_KEYS = ['STR','DEX','CON','INT','WIS','CHA'];
+const ABILITY_NAMES = {STR:'Strength',DEX:'Dexterity',CON:'Constitution',INT:'Intelligence',WIS:'Wisdom',CHA:'Charisma'};
+
+const ALL_SKILLS = ['Acrobatics','Animal Handling','Arcana','Athletics','Deception','History',
+  'Insight','Intimidation','Investigation','Medicine','Nature','Perception',
+  'Performance','Persuasion','Religion','Sleight of Hand','Stealth','Survival'];
+
+const SLOT_LABELS = ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
+
+// Spell slot tables — index 0 = level 1, each entry = [1st…9th slots]
+const SLOTS_FULL = [
+  [2,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0],[4,2,0,0,0,0,0,0,0],[4,3,0,0,0,0,0,0,0],
+  [4,3,2,0,0,0,0,0,0],[4,3,3,0,0,0,0,0,0],[4,3,3,1,0,0,0,0,0],[4,3,3,2,0,0,0,0,0],
+  [4,3,3,3,1,0,0,0,0],[4,3,3,3,2,0,0,0,0],[4,3,3,3,2,1,0,0,0],[4,3,3,3,2,1,0,0,0],
+  [4,3,3,3,2,1,1,0,0],[4,3,3,3,2,1,1,0,0],[4,3,3,3,2,1,1,1,0],[4,3,3,3,2,1,1,1,0],
+  [4,3,3,3,2,1,1,1,1],[4,3,3,3,3,1,1,1,1],[4,3,3,3,3,2,1,1,1],[4,3,3,3,3,2,2,1,1]
+];
+const SLOTS_HALF_2024 = [
+  [2,0,0,0,0,0,0,0,0],[2,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0],
+  [4,2,0,0,0,0,0,0,0],[4,2,0,0,0,0,0,0,0],[4,3,0,0,0,0,0,0,0],[4,3,0,0,0,0,0,0,0],
+  [4,3,2,0,0,0,0,0,0],[4,3,2,0,0,0,0,0,0],[4,3,3,0,0,0,0,0,0],[4,3,3,0,0,0,0,0,0],
+  [4,3,3,1,0,0,0,0,0],[4,3,3,1,0,0,0,0,0],[4,3,3,2,0,0,0,0,0],[4,3,3,2,0,0,0,0,0],
+  [4,3,3,3,1,0,0,0,0],[4,3,3,3,1,0,0,0,0],[4,3,3,3,2,0,0,0,0],[4,3,3,3,2,0,0,0,0]
+];
+const SLOTS_HALF_2014 = [
+  [0,0,0,0,0,0,0,0,0],[2,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0],
+  [4,2,0,0,0,0,0,0,0],[4,2,0,0,0,0,0,0,0],[4,3,0,0,0,0,0,0,0],[4,3,0,0,0,0,0,0,0],
+  [4,3,2,0,0,0,0,0,0],[4,3,2,0,0,0,0,0,0],[4,3,3,0,0,0,0,0,0],[4,3,3,0,0,0,0,0,0],
+  [4,3,3,1,0,0,0,0,0],[4,3,3,1,0,0,0,0,0],[4,3,3,2,0,0,0,0,0],[4,3,3,2,0,0,0,0,0],
+  [4,3,3,3,1,0,0,0,0],[4,3,3,3,1,0,0,0,0],[4,3,3,3,2,0,0,0,0],[4,3,3,3,2,0,0,0,0]
+];
+const SLOTS_WARLOCK = [
+  [1,0,0,0,0,0,0,0,0],[2,0,0,0,0,0,0,0,0],[0,2,0,0,0,0,0,0,0],[0,2,0,0,0,0,0,0,0],
+  [0,0,2,0,0,0,0,0,0],[0,0,2,0,0,0,0,0,0],[0,0,0,2,0,0,0,0,0],[0,0,0,2,0,0,0,0,0],
+  [0,0,0,0,2,0,0,0,0],[0,0,0,0,2,0,0,0,0],[0,0,0,0,3,0,0,0,0],[0,0,0,0,3,0,0,0,0],
+  [0,0,0,0,3,0,0,0,0],[0,0,0,0,3,0,0,0,0],[0,0,0,0,3,0,0,0,0],[0,0,0,0,3,0,0,0,0],
+  [0,0,0,0,4,0,0,0,0],[0,0,0,0,4,0,0,0,0],[0,0,0,0,4,0,0,0,0],[0,0,0,0,4,0,0,0,0]
+];
+const SLOTS_NONE = Array.from({length:20},()=>[0,0,0,0,0,0,0,0,0]);
+
+function classSlotTable(idx, edition) {
+  if (['bard','cleric','druid','sorcerer','wizard'].includes(idx)) return SLOTS_FULL;
+  if (idx === 'warlock') return SLOTS_WARLOCK;
+  if (['paladin','ranger'].includes(idx)) return edition==='2024'?SLOTS_HALF_2024:SLOTS_HALF_2014;
+  return SLOTS_NONE;
+}
+
+// Equipment proficiencies by class index
+const CLASS_EQUIP = {
+  barbarian:{groups:['Light Armor','Medium Armor','Shields','Simple Weapons','Martial Weapons'],custom:[]},
+  bard:     {groups:['Light Armor','Simple Weapons'],custom:['Hand Crossbow','Longsword','Rapier','Shortsword']},
+  cleric:   {groups:['Light Armor','Medium Armor','Shields','Simple Weapons'],custom:[]},
+  druid:    {groups:['Light Armor','Medium Armor','Shields','Simple Weapons'],custom:[]},
+  fighter:  {groups:['Light Armor','Medium Armor','Heavy Armor','Shields','Simple Weapons','Martial Weapons'],custom:[]},
+  monk:     {groups:['Simple Weapons'],custom:['Shortsword']},
+  paladin:  {groups:['Light Armor','Medium Armor','Heavy Armor','Shields','Simple Weapons','Martial Weapons'],custom:[]},
+  ranger:   {groups:['Light Armor','Medium Armor','Shields','Simple Weapons','Martial Weapons'],custom:[]},
+  rogue:    {groups:['Light Armor','Simple Weapons'],custom:['Hand Crossbow','Longsword','Rapier','Shortsword']},
+  sorcerer: {groups:[],custom:['Dagger','Light Crossbow','Quarterstaff','Dart','Sling']},
+  warlock:  {groups:['Light Armor','Simple Weapons'],custom:[]},
+  wizard:   {groups:[],custom:['Dagger','Light Crossbow','Quarterstaff','Dart','Sling']},
+};
+
+// Point buy costs (index = score - 8)
+const PB_COST = [0,1,2,3,4,5,0,7,0,9];
+const PB_TOTAL = 27;
+
+// ── State ──────────────────────────────────────────────────────────────────
+
+const W = {
+  edition: '2024',
+  step: 0,
+  basic: { name:'', level:1, alignment:'', xp:'0' },
+
+  // species
+  speciesIndex: '',
+  speciesData: null,      // normalized species object
+  subspeciesIndex: '',
+  subspeciesData: null,
+  speciesBonus: {big:'', small:''},       // '+2' and '+1' ability keys
+  speciesBonusCustom: {},                 // for 2014: override map {original_key: new_key}
+  selectedTraits: [],                     // indices of traits selected to import
+
+  // class
+  classIndex: '',
+  classData: null,
+  subclassIndex: '',
+  subclassName: '',
+  chosenSkills: [],
+  equipProfs: [],                         // array of group names (from CLASS_EQUIP)
+  equipCustom: [],                        // extra custom prof names
+
+  // background
+  bgIndex: '',
+  bgData: null,
+  bgBonus: {big:'', small:''},
+
+  // ability scores
+  scoreMethod: 'manual',
+  baseScores: {STR:10,DEX:10,CON:10,INT:10,WIS:10,CHA:10},
+  stdAssign: {STR:'',DEX:'',CON:'',INT:'',WIS:'',CHA:''},  // value assigned for std array
+  pbScores: {STR:8,DEX:8,CON:8,INT:8,WIS:8,CHA:8},
+
+  // personality
+  personality: {personality:'',ideals:'',bonds:'',flaws:'',languages:'',notes:''},
+
+  // cache
+  _cache: {},
+  _srdLoaded: {species:false,classes:false,backgrounds:false},
+};
+
+// ── Utilities ──────────────────────────────────────────────────────────────
+
+const abilityMod = s => Math.floor((s-10)/2);
+const modStr = m => (m>=0?'+':'')+m;
+const profBonus = lvl => Math.ceil(lvl/4)+1;
+const el = id => document.getElementById(id);
+
+function totalScores() {
+  const base = W.scoreMethod==='manual' ? W.baseScores :
+               W.scoreMethod==='standard' ? stdArrayTotals() : W.pbScores;
+  const bonus = totalBonuses();
+  const out = {};
+  for (const k of ABILITY_KEYS) out[k] = (base[k]||0) + (bonus[k]||0);
+  return out;
+}
+
+function totalBonuses() {
+  const b = {STR:0,DEX:0,CON:0,INT:0,WIS:0,CHA:0};
+  // species bonus
+  if (W.edition==='2024') {
+    if (W.speciesBonus.big) b[W.speciesBonus.big] += 2;
+    if (W.speciesBonus.small) b[W.speciesBonus.small] += 1;
+  } else {
+    // 2014: fixed bonuses with optional override
+    const raw = W.speciesData?.abilityBonuses || {};
+    for (const [origKey, val] of Object.entries(raw)) {
+      const target = W.speciesBonusCustom[origKey] || origKey;
+      if (target && ABILITY_KEYS.includes(target)) b[target] = (b[target]||0) + val;
+    }
+  }
+  // subspecies bonus
+  const subRaw = W.subspeciesData?.abilityBonuses || {};
+  for (const [origKey, val] of Object.entries(subRaw)) {
+    const target = W.speciesBonusCustom['sub_'+origKey] || origKey;
+    if (target && ABILITY_KEYS.includes(target)) b[target] = (b[target]||0) + val;
+  }
+  // background bonus (2024 only)
+  if (W.edition==='2024' && W.bgData) {
+    if (W.bgBonus.big) b[W.bgBonus.big] = (b[W.bgBonus.big]||0) + 2;
+    if (W.bgBonus.small) b[W.bgBonus.small] = (b[W.bgBonus.small]||0) + 1;
+  }
+  return b;
+}
+
+function stdArrayTotals() {
+  const base = {STR:0,DEX:0,CON:0,INT:0,WIS:0,CHA:0};
+  for (const k of ABILITY_KEYS) {
+    const v = parseInt(W.stdAssign[k]);
+    if (!isNaN(v)) base[k] = v;
+  }
+  return base;
+}
+
+// ── SRD fetching ──────────────────────────────────────────────────────────
+
+const BASE_2014 = 'https://www.dnd5eapi.co/api/';
+const BASE_2024 = '/srd2024/';
+
+async function srdGet(path) {
+  const key = W.edition + '|' + path;
+  if (W._cache[key]) return W._cache[key];
+  let url;
+  if (W.edition === '2024') {
+    url = BASE_2024 + path;
+  } else {
+    url = BASE_2014 + path;
+  }
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
+  const data = await r.json();
+  W._cache[key] = data;
+  return data;
+}
+
+// ── Normalize species data ─────────────────────────────────────────────────
+
+function normalizeSpecies2024(raw) {
+  return {
+    index: raw.index,
+    name: raw.name,
+    speed: raw.speed || 30,
+    size: raw.size || 'Medium',
+    traits: (raw.traits||[]).map(t=>({name:t.name, description:t.description||''})),
+    abilityBonuses: {},   // 2024 = free choice
+    subspecies: (raw.subspecies||[]).map(s=>({
+      index: s.index,
+      name: s.name,
+      traits: (s.traits||[]).map(t=>({name:t.name, description:t.description||''})),
+      abilityBonuses: {},
+    })),
+    languages: '',
+  };
+}
+
+function normalizeSpecies2014(raw, traitDescMap) {
+  // Parse ability bonuses: {STR:2, DEX:1, ...}
+  const ab = {};
+  for (const entry of (raw.ability_bonuses||[])) {
+    const k = entry.ability_score.index.toUpperCase();
+    if (ABILITY_KEYS.includes(k)) ab[k] = (ab[k]||0) + entry.bonus;
+  }
+  const traits = (raw.traits||[]).map(t=>({
+    name: t.name,
+    description: (traitDescMap[t.index]||[]).join('\n\n'),
+  }));
+  // Languages
+  const langs = (raw.languages||[]).map(l=>l.name).join(', ');
+  return {
+    index: raw.index,
+    name: raw.name,
+    speed: raw.speed || 30,
+    size: (raw.size||'Medium').charAt(0).toUpperCase()+(raw.size||'Medium').slice(1).toLowerCase(),
+    traits,
+    abilityBonuses: ab,
+    subspecies: (raw.subraces||[]).map(s=>({index:s.index, name:s.name})),
+    languages: langs,
+  };
+}
+
+function normalizeClass2024(raw) {
+  return {
+    index: raw.index,
+    name: raw.name,
+    hitDie: raw.hit_die,
+    spellcasting: raw.spellcasting_ability,
+    savingThrows: raw.saving_throws || [],
+    skillChoices: raw.skill_choices || {choose:2,from:[]},
+    subclasses: (raw.subclasses||[]).map(s=>({index:s.index, name:s.name})),
+  };
+}
+
+function normalizeClass2014(raw) {
+  // Parse skill choices from proficiency_choices
+  const skillChoices = {choose:2, from:[]};
+  for (const pc of (raw.proficiency_choices||[])) {
+    const opts = (pc.from?.options||[]).filter(o=>o.item?.name?.startsWith('Skill:'));
+    if (opts.length > 0) {
+      skillChoices.choose = pc.choose;
+      skillChoices.from = opts.map(o=>o.item.name.replace('Skill: ',''));
+    }
+  }
+  return {
+    index: raw.index,
+    name: raw.name,
+    hitDie: raw.hit_die,
+    spellcasting: raw.spellcasting_ability?.index?.toUpperCase().slice(0,3) || null,
+    savingThrows: (raw.saving_throws||[]).map(s=>s.index.toUpperCase()),
+    skillChoices,
+    subclasses: (raw.subclasses||[]).map(s=>({index:s.index, name:s.name})),
+  };
+}
+
+function normalizeBackground2024(raw) {
+  const skillProfs = [], toolProfs = [];
+  for (const p of (raw.proficiencies||[])) {
+    if (p.startsWith('Skill: ')) skillProfs.push(p.replace('Skill: ',''));
+    else if (p.startsWith('Tool: ')) toolProfs.push(p.replace('Tool: ',''));
+    else toolProfs.push(p);
+  }
+  return {
+    index: raw.index,
+    name: raw.name,
+    skillProfs,
+    toolProfs,
+    abilityScores: raw.ability_scores || null,  // eligible abilities for bonuses
+    feat: raw.feat || '',
+  };
+}
+
+function normalizeBackground2014(raw) {
+  const skillProfs = [], toolProfs = [];
+  for (const p of (raw.starting_proficiencies||[])) {
+    if (p.name.startsWith('Skill: ')) skillProfs.push(p.name.replace('Skill: ',''));
+    else toolProfs.push(p.name);
+  }
+  return {
+    index: raw.index,
+    name: raw.name,
+    skillProfs,
+    toolProfs,
+    abilityScores: null,
+    feat: '',
+  };
+}
+
+// ── Species step ───────────────────────────────────────────────────────────
+
+async function loadSpeciesList() {
+  const statusEl = el('sp-status');
+  statusEl.innerHTML = '<div class="status load">Loading species…</div>';
+  try {
+    let list = [];
+    if (W.edition === '2024') {
+      const data = await srdGet('species.json');
+      list = data.map(s=>({index:s.index, name:s.name}));
+      W._cache['2024|species_full'] = data;
+    } else {
+      const data = await srdGet('races');
+      list = (data.results||[]).map(r=>({index:r.index, name:r.name}));
+    }
+    const sel = el('sp-sel');
+    sel.innerHTML = '<option value="">— Select species —</option>' +
+      list.map(s=>`<option value="${s.index}">${s.name}</option>`).join('');
+    statusEl.innerHTML = '';
+    W._srdLoaded.species = true;
+  } catch(e) {
+    statusEl.innerHTML = `<div class="status err">Failed to load species: ${e.message}. ${W.edition==='2024'?'2024 SRD requires a web server (not file://).':''}</div>`;
+  }
+}
+
+async function onSpeciesChange(idx) {
+  W.speciesIndex = idx;
+  W.speciesData = null;
+  W.subspeciesData = null;
+  W.subspeciesIndex = '';
+  W.selectedTraits = [];
+  el('sp-detail').style.display = 'none';
+  el('sp-subrace-wrap').style.display = 'none';
+  if (!idx) { updateNav(); return; }
+
+  const statusEl = el('sp-status');
+  statusEl.innerHTML = '<div class="status load">Loading species details…</div>';
+  try {
+    let normalized;
+    if (W.edition === '2024') {
+      const full = W._cache['2024|species_full'] || [];
+      const raw = full.find(s=>s.index===idx);
+      if (!raw) throw new Error('Species not found in local data.');
+      normalized = normalizeSpecies2024(raw);
+    } else {
+      const raw = await srdGet(`races/${idx}`);
+      // Batch-fetch trait descriptions
+      const traitDescs = {};
+      await Promise.all((raw.traits||[]).map(async t=>{
+        try {
+          const td = await srdGet(`traits/${t.index}`);
+          traitDescs[t.index] = td.desc || [];
+        } catch { traitDescs[t.index] = []; }
+      }));
+      normalized = normalizeSpecies2014(raw, traitDescs);
+    }
+    W.speciesData = normalized;
+    W.selectedTraits = normalized.traits.map((_,i)=>i); // all selected by default
+    statusEl.innerHTML = '';
+    renderSpeciesDetail(normalized);
+    updateNav();
+  } catch(e) {
+    statusEl.innerHTML = `<div class="status err">Error: ${e.message}</div>`;
+  }
+}
+
+async function onSubspeciesChange(idx) {
+  W.subspeciesIndex = idx;
+  W.subspeciesData = null;
+  if (!idx) { renderBonusUI(); return; }
+
+  try {
+    let subData;
+    if (W.edition === '2024') {
+      const sub = W.speciesData.subspecies.find(s=>s.index===idx);
+      subData = sub ? {index:sub.index, name:sub.name, traits:sub.traits, abilityBonuses:{}} : null;
+    } else {
+      const raw = await srdGet(`subraces/${idx}`);
+      const ab = {};
+      for (const entry of (raw.ability_bonuses||[])) {
+        const k = entry.ability_score.index.toUpperCase();
+        if (ABILITY_KEYS.includes(k)) ab[k] = (ab[k]||0) + entry.bonus;
+      }
+      const traitDescs = {};
+      await Promise.all((raw.racial_traits||[]).map(async t=>{
+        try {
+          const td = await srdGet(`traits/${t.index}`);
+          traitDescs[t.index] = td.desc || [];
+        } catch { traitDescs[t.index] = []; }
+      }));
+      subData = {
+        index: raw.index, name: raw.name,
+        abilityBonuses: ab,
+        traits: (raw.racial_traits||[]).map(t=>({
+          name: t.name,
+          description: (traitDescs[t.index]||[]).join('\n\n'),
+        })),
+      };
+    }
+    W.subspeciesData = subData;
+    if (subData?.traits?.length) {
+      const startIdx = W.speciesData.traits.length;
+      for (let i = 0; i < subData.traits.length; i++) {
+        if (!W.selectedTraits.includes(startIdx + i)) W.selectedTraits.push(startIdx + i);
+      }
+    }
+    renderBonusUI();
+    if (subData?.traits?.length) renderTraitList();
+  } catch(e) {
+    el('sp-status').innerHTML = `<div class="status err">Subspecies error: ${e.message}</div>`;
+  }
+}
+
+function renderSpeciesDetail(sp) {
+  // Info pills
+  el('sp-info-body').innerHTML = `<div class="pill-row">
+    <span class="pill"><span class="pill-k">Size</span><span class="pill-v">${sp.size}</span></span>
+    <span class="pill"><span class="pill-k">Speed</span><span class="pill-v">${sp.speed} ft</span></span>
+  </div>`;
+
+  // Subspecies dropdown
+  if (sp.subspecies?.length) {
+    const subSel = el('sp-sub-sel');
+    subSel.innerHTML = '<option value="">— None —</option>' +
+      sp.subspecies.map(s=>`<option value="${s.index}">${s.name}</option>`).join('');
+    el('sp-subrace-wrap').style.display = '';
+  }
+
+  renderBonusUI();
+  renderTraitList();
+  el('sp-detail').style.display = '';
+}
+
+function renderBonusUI() {
+  const sp = W.speciesData;
+  if (!sp) return;
+  const bonusHint = el('sp-bonus-hint');
+  const bonusUI = el('sp-bonus-ui');
+
+  if (W.edition === '2024') {
+    // Free +2 and +1 to any abilities (2024 rules)
+    bonusHint.textContent = '2024 rules: choose any +2 and any different +1 for your species.';
+    bonusUI.innerHTML = buildBonusPicker('sp-big','sp-small','+2 Bonus','+1 Bonus','',W.speciesBonus.big,W.speciesBonus.small);
+    el('sp-big').addEventListener('change', e=>{W.speciesBonus.big=e.target.value;validateBonusConflict('sp-big','sp-small');updateStatPreview();});
+    el('sp-small').addEventListener('change', e=>{W.speciesBonus.small=e.target.value;validateBonusConflict('sp-small','sp-big');updateStatPreview();});
+
+    // Subspecies bonus
+    if (W.subspeciesData && W.edition==='2024') {
+      bonusUI.insertAdjacentHTML('beforeend','<p class="hint" style="margin:8px 0 6px">Subspecies also grants +2/+1:</p>'+
+        buildBonusPicker('sp-sub-big','sp-sub-small','+2 (Subspecies)','+1 (Subspecies)','bg-b',W.speciesBonus.subBig||'',W.speciesBonus.subSmall||''));
+      el('sp-sub-big').addEventListener('change', e=>{W.speciesBonus.subBig=e.target.value;updateStatPreview();});
+      el('sp-sub-small').addEventListener('change', e=>{W.speciesBonus.subSmall=e.target.value;updateStatPreview();});
+    }
+  } else {
+    // 2014: show fixed bonuses but allow override per bonus
+    const ab = {...(sp.abilityBonuses||{})};
+    // Add subspecies bonuses
+    for (const [k,v] of Object.entries(W.subspeciesData?.abilityBonuses||{})) {
+      ab['sub_'+k] = v;
+    }
+    if (Object.keys(ab).length === 0) {
+      bonusHint.textContent = 'This race grants no standard ability score bonuses.';
+      bonusUI.innerHTML = '';
+      return;
+    }
+    bonusHint.textContent = 'Standard bonuses shown. Use the dropdowns to reassign each bonus to a different ability.';
+    const rows = Object.entries(ab).map(([origKey, val])=>{
+      const label = origKey.startsWith('sub_') ? origKey.slice(4)+' (subrace)' : origKey;
+      const currentTarget = W.speciesBonusCustom[origKey] || (origKey.startsWith('sub_')?origKey.slice(4):origKey);
+      return `<div class="bonus-row">
+        <span class="bonus-badge sm">${val>0?'+':''}${val}</span>
+        <span class="bonus-label">${label}</span>
+        <select class="bonus-sel" data-orig="${origKey}" onchange="W.speciesBonusCustom[this.dataset.orig]=this.value;updateStatPreview()">
+          ${ABILITY_KEYS.map(k=>`<option value="${k}"${k===currentTarget?' selected':''}>${k} — ${ABILITY_NAMES[k]}</option>`).join('')}
+        </select>
+      </div>`;
+    });
+    bonusUI.innerHTML = rows.join('');
+  }
+}
+
+function buildBonusPicker(idBig, idSmall, labelBig, labelSmall, badgeClass, valBig, valSmall) {
+  const opts = `<option value="">— None —</option>`+ABILITY_KEYS.map(k=>`<option value="${k}">${k} — ${ABILITY_NAMES[k]}</option>`).join('');
+  const setSelected = (opts, val) => opts.replace(`value="${val}"`,`value="${val}" selected`);
+  return `<div class="bonus-row">
+    <span class="bonus-badge ${badgeClass}">+2</span>
+    <span class="bonus-label">${labelBig}</span>
+    <select class="bonus-sel" id="${idBig}">${setSelected(opts,valBig)}</select>
+  </div>
+  <div class="bonus-row">
+    <span class="bonus-badge sm ${badgeClass}">+1</span>
+    <span class="bonus-label">${labelSmall}</span>
+    <select class="bonus-sel" id="${idSmall}">${setSelected(opts,valSmall)}</select>
+  </div>`;
+}
+
+function validateBonusConflict(changed, other) {
+  const cv = el(changed).value, ov = el(other).value;
+  if (cv && cv === ov) el(other).value = '';
+  if (changed === 'sp-big') W.speciesBonus.big = el('sp-big').value;
+  if (changed === 'sp-small') W.speciesBonus.small = el('sp-small').value;
+  if (changed === 'sp-big' && el('sp-small').value === el('sp-big').value) {
+    W.speciesBonus.small = ''; el('sp-small').value = '';
+  }
+  if (changed === 'sp-small' && el('sp-big').value === el('sp-small').value) {
+    W.speciesBonus.big = ''; el('sp-big').value = '';
+  }
+}
+
+function renderTraitList() {
+  const allTraits = [...(W.speciesData?.traits||[]), ...(W.subspeciesData?.traits||[])];
+  if (!allTraits.length) {
+    el('sp-traits-sec').style.display = 'none';
+    return;
+  }
+  el('sp-traits-sec').style.display = '';
+  el('sp-traits-body').innerHTML = allTraits.map((t,i)=>`
+    <div class="trait-tog${W.selectedTraits.includes(i)?' on':''}" onclick="toggleTrait(${i})">
+      <div class="tog-box"></div>
+      <div>
+        <div class="tog-name">${t.name}</div>
+        ${t.description?`<div class="tog-desc">${t.description.slice(0,160)}${t.description.length>160?'…':''}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function toggleTrait(i) {
+  const idx = W.selectedTraits.indexOf(i);
+  if (idx>=0) W.selectedTraits.splice(idx,1);
+  else W.selectedTraits.push(i);
+  renderTraitList();
+}
+
+// ── Class step ─────────────────────────────────────────────────────────────
+
+async function loadClassList() {
+  const statusEl = el('cl-status');
+  statusEl.innerHTML = '<div class="status load">Loading classes…</div>';
+  try {
+    let list = [];
+    if (W.edition === '2024') {
+      const data = await srdGet('classes.json');
+      list = data.map(c=>({index:c.index, name:c.name}));
+      W._cache['2024|classes_full'] = data;
+    } else {
+      const data = await srdGet('classes');
+      list = (data.results||[]).map(c=>({index:c.index, name:c.name}));
+    }
+    const sel = el('cl-sel');
+    sel.innerHTML = '<option value="">— Select class —</option>' +
+      list.map(c=>`<option value="${c.index}">${c.name}</option>`).join('');
+    statusEl.innerHTML = '';
+    W._srdLoaded.classes = true;
+  } catch(e) {
+    statusEl.innerHTML = `<div class="status err">Failed to load classes: ${e.message}</div>`;
+  }
+}
+
+async function onClassChange(idx) {
+  W.classIndex = idx;
+  W.classData = null;
+  W.subclassIndex = '';
+  W.subclassName = '';
+  W.chosenSkills = [];
+  el('cl-detail').style.display = 'none';
+  el('cl-subclass-wrap').style.display = 'none';
+  if (!idx) { updateNav(); return; }
+
+  const statusEl = el('cl-status');
+  statusEl.innerHTML = '<div class="status load">Loading class details…</div>';
+  try {
+    let normalized;
+    if (W.edition === '2024') {
+      const full = W._cache['2024|classes_full'] || [];
+      const raw = full.find(c=>c.index===idx);
+      if (!raw) throw new Error('Class not found.');
+      normalized = normalizeClass2024(raw);
+    } else {
+      const raw = await srdGet(`classes/${idx}`);
+      normalized = normalizeClass2014(raw);
+    }
+    W.classData = normalized;
+    // Init equipment profs from hardcoded table
+    const eq = CLASS_EQUIP[idx] || {groups:[], custom:[]};
+    W.equipProfs = [...eq.groups];
+    W.equipCustom = [...eq.custom];
+    statusEl.innerHTML = '';
+    renderClassDetail(normalized);
+    updateNav();
+  } catch(e) {
+    statusEl.innerHTML = `<div class="status err">Error: ${e.message}</div>`;
+  }
+}
+
+function renderClassDetail(cls) {
+  // Info
+  const spellInfo = cls.spellcasting ? `<span class="badge-blue">Spellcasting: ${cls.spellcasting}</span>` : '<span style="color:var(--text-muted);font-size:.8rem">No spellcasting</span>';
+  el('cl-info-body').innerHTML = `<div class="pill-row">
+    <span class="pill"><span class="pill-k">Hit Die</span><span class="pill-v">d${cls.hitDie}</span></span>
+    <span class="pill"><span class="pill-k">Saves</span><span class="pill-v">${cls.savingThrows.join(', ')}</span></span>
+  </div><div>${spellInfo}</div>`;
+
+  // Subclasses
+  if (cls.subclasses?.length) {
+    const ss = el('cl-sub-sel');
+    ss.innerHTML = '<option value="">— None —</option>' +
+      cls.subclasses.map(s=>`<option value="${s.index}">${s.name}</option>`).join('');
+    ss.onchange = ()=>{ W.subclassIndex=ss.value; W.subclassName=ss.options[ss.selectedIndex].text; };
+    el('cl-subclass-wrap').style.display = '';
+  }
+
+  // Skills
+  const sc = cls.skillChoices;
+  el('cl-skill-title').textContent = `Skill Proficiencies (choose ${sc.choose})`;
+  const skillFrom = sc.from.length ? sc.from : ALL_SKILLS;
+  el('cl-skill-grid').innerHTML = skillFrom.map(s=>`
+    <div class="skill-chip" data-skill="${s}" onclick="toggleSkill(this,'${s}',${sc.choose})">
+      <div class="skill-dot"></div>${s}
+    </div>`).join('');
+
+  // Equipment
+  const allEq = [...W.equipProfs, ...W.equipCustom];
+  el('cl-equip-grid').innerHTML = allEq.map(p=>`
+    <div class="ep-chip on" data-prof="${p}" onclick="toggleEquipProf(this,'${p}')">${p}</div>`).join('');
+
+  el('cl-detail').style.display = '';
+}
+
+function toggleSkill(chipEl, skill, max) {
+  const isOn = chipEl.classList.contains('on');
+  if (!isOn && W.chosenSkills.length >= max) return; // limit reached
+  chipEl.classList.toggle('on');
+  if (isOn) W.chosenSkills = W.chosenSkills.filter(s=>s!==skill);
+  else W.chosenSkills.push(skill);
+}
+
+function toggleEquipProf(chipEl, prof) {
+  chipEl.classList.toggle('on');
+  if (W.equipProfs.includes(prof)) W.equipProfs = W.equipProfs.filter(p=>p!==prof);
+  else if (W.equipCustom.includes(prof)) W.equipCustom = W.equipCustom.filter(p=>p!==prof);
+  // if re-adding
+  else {
+    const eq = CLASS_EQUIP[W.classIndex] || {groups:[], custom:[]};
+    if (eq.groups.includes(prof)) W.equipProfs.push(prof);
+    else W.equipCustom.push(prof);
+  }
+}
+
+// ── Background step ────────────────────────────────────────────────────────
+
+async function loadBackgroundList() {
+  const statusEl = el('bg-status');
+  statusEl.innerHTML = '<div class="status load">Loading backgrounds…</div>';
+  try {
+    let list = [];
+    if (W.edition === '2024') {
+      const data = await srdGet('backgrounds.json');
+      list = data.map(b=>({index:b.index, name:b.name}));
+      W._cache['2024|bg_full'] = data;
+    } else {
+      const data = await srdGet('backgrounds');
+      list = (data.results||[]).map(b=>({index:b.index, name:b.name}));
+    }
+    const sel = el('bg-sel');
+    sel.innerHTML = '<option value="">— None (skip) —</option>' +
+      list.map(b=>`<option value="${b.index}">${b.name}</option>`).join('');
+    statusEl.innerHTML = '';
+    W._srdLoaded.backgrounds = true;
+  } catch(e) {
+    statusEl.innerHTML = `<div class="status err">Failed to load backgrounds: ${e.message}</div>`;
+  }
+}
+
+async function onBackgroundChange(idx) {
+  W.bgIndex = idx;
+  W.bgData = null;
+  W.bgBonus = {big:'',small:''};
+  el('bg-detail').style.display = 'none';
+  el('bg-status-none').style.display = idx ? 'none' : '';
+  if (!idx) { updateNav(); return; }
+
+  const statusEl = el('bg-status');
+  statusEl.innerHTML = '<div class="status load">Loading background…</div>';
+  try {
+    let normalized;
+    if (W.edition === '2024') {
+      const full = W._cache['2024|bg_full'] || [];
+      const raw = full.find(b=>b.index===idx);
+      if (!raw) throw new Error('Background not found.');
+      normalized = normalizeBackground2024(raw);
+    } else {
+      const raw = await srdGet(`backgrounds/${idx}`);
+      normalized = normalizeBackground2014(raw);
+    }
+    W.bgData = normalized;
+    statusEl.innerHTML = '';
+    renderBackgroundDetail(normalized);
+    updateNav();
+  } catch(e) {
+    statusEl.innerHTML = `<div class="status err">Error: ${e.message}</div>`;
+  }
+}
+
+function renderBackgroundDetail(bg) {
+  // Bonus UI (2024 only — 2014 backgrounds don't have standardized ability bonuses)
+  const bonusSec = el('bg-bonus-sec');
+  if (W.edition === '2024' && bg.abilityScores?.length) {
+    bonusSec.style.display = '';
+    el('bg-bonus-hint').textContent = `Choose +2 and +1 from: ${bg.abilityScores.join(', ')}.`;
+    const opts = `<option value="">— None —</option>` +
+      bg.abilityScores.map(k=>`<option value="${k}">${k} — ${ABILITY_NAMES[k]}</option>`).join('') +
+      `<optgroup label="────────"><option value="CUSTOM_STR">Custom: STR</option><option value="CUSTOM_DEX">Custom: DEX</option><option value="CUSTOM_CON">Custom: CON</option><option value="CUSTOM_INT">Custom: INT</option><option value="CUSTOM_WIS">Custom: WIS</option><option value="CUSTOM_CHA">Custom: CHA</option></optgroup>`;
+    el('bg-bonus-ui').innerHTML = `<div class="bonus-row">
+        <span class="bonus-badge">+2</span>
+        <span class="bonus-label">+2 Bonus</span>
+        <select class="bonus-sel" id="bg-big" onchange="W.bgBonus.big=this.value.replace('CUSTOM_','');updateStatPreview()">${opts}</select>
+      </div>
+      <div class="bonus-row">
+        <span class="bonus-badge sm">+1</span>
+        <span class="bonus-label">+1 Bonus</span>
+        <select class="bonus-sel" id="bg-small" onchange="W.bgBonus.small=this.value.replace('CUSTOM_','');updateStatPreview()">${opts}</select>
+      </div>
+      <p class="hint" style="margin-top:6px">Suggested abilities listed first; Custom options allow any ability (house rule).</p>`;
+  } else {
+    bonusSec.style.display = 'none';
+  }
+
+  // Proficiencies
+  let profsHtml = '';
+  if (bg.skillProfs.length) profsHtml += '<p style="margin-bottom:6px">' + bg.skillProfs.map(s=>`<span class="badge-green">Skill: ${s}</span>`).join('') + '</p>';
+  if (bg.toolProfs.length) profsHtml += '<p>' + bg.toolProfs.map(t=>`<span class="badge-blue">${t}</span>`).join('') + '</p>';
+  if (bg.feat) profsHtml += `<p class="hint" style="margin-top:6px">Origin Feat: <b>${bg.feat}</b> (add manually in the character sheet)</p>`;
+  el('bg-profs-body').innerHTML = profsHtml || '<p class="hint">No listed proficiencies.</p>';
+  el('bg-detail').style.display = '';
+}
+
+// ── Ability Scores step ────────────────────────────────────────────────────
+
+function setScoreMethod(method) {
+  W.scoreMethod = method;
+  document.querySelectorAll('.mtab').forEach((t,i)=>{
+    t.classList.toggle('active', ['manual','standard','pointbuy'][i]===method);
+  });
+  el('score-manual').style.display   = method==='manual'   ? '' : 'none';
+  el('score-standard').style.display = method==='standard' ? '' : 'none';
+  el('score-pointbuy').style.display = method==='pointbuy' ? '' : 'none';
+  if (method==='standard') renderStandardArray();
+  if (method==='pointbuy') renderPointBuy();
+  updateStatPreview();
+}
+
+function initManualScores() {
+  const bonus = totalBonuses();
+  el('manual-tbody').innerHTML = ABILITY_KEYS.map(k=>{
+    const b = bonus[k]||0;
+    const base = W.baseScores[k]||10;
+    const total = base+b;
+    const mod = abilityMod(total);
+    return `<tr>
+      <td class="ab-name">${k}</td>
+      <td><input class="ab-inp" type="number" min="1" max="30" value="${base}"
+          oninput="W.baseScores['${k}']=Math.min(30,Math.max(1,+this.value||1));updateManualRow('${k}')"></td>
+      <td class="ab-bonus" id="mb-bonus-${k}">${b>=0?'+':''}${b}</td>
+      <td class="ab-total" id="mb-total-${k}">${total}</td>
+      <td class="ab-mod" id="mb-mod-${k}">${modStr(mod)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateManualRow(k) {
+  const bonus = totalBonuses();
+  const b = bonus[k]||0;
+  const base = W.baseScores[k]||10;
+  const total = base+b;
+  const mod = abilityMod(total);
+  el(`mb-bonus-${k}`).textContent = (b>=0?'+':'')+b;
+  el(`mb-total-${k}`).textContent = total;
+  el(`mb-mod-${k}`).textContent = modStr(mod);
+  updateStatPreview();
+}
+
+function refreshManualBonuses() {
+  const bonus = totalBonuses();
+  for (const k of ABILITY_KEYS) {
+    const b = bonus[k]||0;
+    const total = (W.baseScores[k]||10)+b;
+    const bEl = el(`mb-bonus-${k}`);
+    if (bEl) {
+      bEl.textContent = (b>=0?'+':'')+b;
+      el(`mb-total-${k}`).textContent = total;
+      el(`mb-mod-${k}`).textContent = modStr(abilityMod(total));
+    }
+  }
+}
+
+function renderStandardArray() {
+  const usedVals = Object.values(W.stdAssign).filter(v=>v!=='');
+  const bonus = totalBonuses();
+  el('sa-body').innerHTML = ABILITY_KEYS.map(k=>{
+    const assigned = W.stdAssign[k]||'';
+    const b = bonus[k]||0;
+    const total = (assigned?parseInt(assigned):0)+b;
+    const mod = assigned?abilityMod(total):0;
+    const opts = `<option value="">— assign —</option>`+
+      [15,14,13,12,10,8].map(v=>`<option value="${v}"${parseInt(assigned)===v?' selected':''}>${v}</option>`).join('');
+    return `<div class="sa-row">
+      <span class="sa-label">${k}</span>
+      <select class="sa-sel" onchange="W.stdAssign['${k}']=this.value;renderStandardArray();updateStatPreview()">${opts}</select>
+      <span class="sa-bonus">${b>=0?'+':''}${b}</span>
+      <span class="sa-total">${assigned?total:'—'}</span>
+      <span class="sa-mod">${assigned?modStr(mod):'—'}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderPointBuy() {
+  const bonus = totalBonuses();
+  const spent = ABILITY_KEYS.reduce((s,k)=>s+(PB_COST[(W.pbScores[k]||8)-8]||0),0);
+  const left = PB_TOTAL - spent;
+  el('pb-points').innerHTML = `${left} <span>points remaining</span>`;
+  el('pb-body').innerHTML = ABILITY_KEYS.map(k=>{
+    const v = W.pbScores[k]||8;
+    const cost = PB_COST[v-8]||0;
+    const b = bonus[k]||0;
+    const total = v+b;
+    const mod = abilityMod(total);
+    return `<div class="pb-row">
+      <span class="pb-label">${k}</span>
+      <button class="pb-btn" onclick="pbAdj('${k}',-1)">−</button>
+      <span class="pb-val">${v}</span>
+      <button class="pb-btn" onclick="pbAdj('${k}',1)">+</button>
+      <span class="pb-cost">${cost} pts</span>
+      <span class="pb-bonus">${b>=0?'+':''}${b}</span>
+      <span class="pb-total">${total}</span>
+      <span class="pb-mod">${modStr(mod)}</span>
+    </div>`;
+  }).join('');
+}
+
+function pbAdj(k, delta) {
+  const cur = W.pbScores[k]||8;
+  const nv = Math.max(8, Math.min(15, cur+delta));
+  const newCost = PB_COST[nv-8]||0;
+  const oldCost = PB_COST[cur-8]||0;
+  const spent = ABILITY_KEYS.reduce((s,ak)=>s+(PB_COST[(W.pbScores[ak]||8)-8]||0),0);
+  if (delta>0 && spent - oldCost + newCost > PB_TOTAL) return;
+  W.pbScores[k] = nv;
+  renderPointBuy();
+  updateStatPreview();
+}
+
+function updateStatPreview() {
+  const tot = totalScores();
+  const level = W.basic.level||1;
+  const cls = W.classData;
+  const hitDie = cls?.hitDie||8;
+  const conMod = abilityMod(tot.CON||10);
+  const hpMax = hitDie + conMod + (level-1) * (Math.floor(hitDie/2)+1+conMod);
+  const ac = 10 + abilityMod(tot.DEX||10);
+  const prof = profBonus(level);
+  const hpEl = el('prev-hp'); if (hpEl) hpEl.textContent = hpMax;
+  const acEl = el('prev-ac'); if (acEl) acEl.textContent = ac;
+  const pfEl = el('prev-prof'); if (pfEl) pfEl.textContent = '+'+prof;
+  if (W.scoreMethod==='manual') refreshManualBonuses();
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+
+function showStep(n) {
+  document.querySelectorAll('.ws').forEach((s,i)=>s.classList.toggle('active',i===n));
+  W.step = n;
+  // Update progress
+  const bar = el('progressBar');
+  bar.innerHTML = STEPS.map((_,i)=>`<div class="wp-seg${i<n?' done':i===n?' cur':''}"></div>`).join('');
+  el('stepLabel').textContent = `Step ${n+1} of ${STEPS.length}: ${STEPS[n]}`;
+  // Load SRD data on first visit
+  if (n===1 && !W._srdLoaded.species) loadSpeciesList();
+  if (n===2 && !W._srdLoaded.classes) loadClassList();
+  if (n===3 && !W._srdLoaded.backgrounds) loadBackgroundList();
+  if (n===4) { initManualScores(); updateStatPreview(); }
+  if (n===6) renderReview();
+  updateNav();
+}
+
+function updateNav() {
+  const n = W.step;
+  el('btnBack').style.display = n===0 ? 'none' : '';
+  const nextBtn = el('btnNext');
+  nextBtn.textContent = n === STEPS.length-1 ? 'Export' : 'Next →';
+  nextBtn.disabled = !canProceed();
+}
+
+function canProceed() {
+  if (W.step===0) return W.basic.name.trim().length > 0;
+  return true; // all other steps are optional (SRD data enhances but isn't required)
+}
+
+function goNext() {
+  if (W.step < STEPS.length-1) showStep(W.step+1);
+}
+
+function goBack() {
+  if (W.step > 0) showStep(W.step-1);
+}
+
+// ── Review & Export ────────────────────────────────────────────────────────
+
+function renderReview() {
+  const scores = totalScores();
+  const lvl = W.basic.level||1;
+  const cls = W.classData;
+  const sp = W.speciesData;
+  const hitDie = cls?.hitDie||8;
+  const conMod = abilityMod(scores.CON||10);
+  const hpMax = hitDie + conMod + (lvl-1)*(Math.floor(hitDie/2)+1+conMod);
+  const ac = 10 + abilityMod(scores.DEX||10);
+  const prof = profBonus(lvl);
+
+  const clsName = cls?.name || '—';
+  const subName = W.subclassName ? ` (${W.subclassName})` : '';
+  const spName = sp?.name || '—';
+
+  el('review-summary').innerHTML = `
+    <div class="sum-name">${W.basic.name||'Unnamed'}</div>
+    <div class="sum-meta">${clsName}${subName} ${lvl} · ${spName}${W.bgData?` · ${W.bgData.name}`:''}</div>
+    <div class="stat-preview" style="margin-bottom:12px">
+      <div class="sp-card"><div class="sp-val">${hpMax}</div><div class="sp-lbl">HP (avg)</div></div>
+      <div class="sp-card"><div class="sp-val">${ac}</div><div class="sp-lbl">AC</div></div>
+      <div class="sp-card"><div class="sp-val">+${prof}</div><div class="sp-lbl">Prof</div></div>
+    </div>
+    <div class="sum-ab-grid">${ABILITY_KEYS.map(k=>{
+      const s=scores[k]||10; const m=abilityMod(s);
+      return `<div class="sum-ab"><div class="sum-ab-key">${k}</div><div class="sum-ab-score">${s}</div><div class="sum-ab-mod">${modStr(m)}</div></div>`;
+    }).join('')}</div>
+    ${cls?`<p style="font-size:.8rem;color:var(--text-muted);margin-top:8px">Saves: ${cls.savingThrows.join(', ')} · Skills: ${[...W.chosenSkills,...(W.bgData?.skillProfs||[])].join(', ')||'none'}</p>`:''}
+  `;
+
+  const payload = buildPayload();
+  el('json-prev').textContent = JSON.stringify(payload, null, 2).slice(0, 3000) + '\n…(truncated for preview)';
+}
+
+function buildPayload() {
+  const scores = totalScores();
+  const lvl = W.basic.level||1;
+  const cls = W.classData;
+  const sp = W.speciesData;
+  const hitDie = cls?.hitDie||8;
+  const conMod = abilityMod(scores.CON||10);
+  const hpMax = Math.max(1, hitDie + conMod + (lvl-1)*(Math.floor(hitDie/2)+1+conMod));
+  const ac = 10 + abilityMod(scores.DEX||10);
+  const spd = sp?.speed||30;
+
+  // Spell slots
+  const slotTable = cls ? classSlotTable(cls.index, W.edition) : SLOTS_NONE;
+  const slotRow = slotTable[Math.min(lvl,20)-1] || [0,0,0,0,0,0,0,0,0];
+  const spellSlots = SLOT_LABELS.map((lbl,i)=>({level:lbl,max:slotRow[i]||0,used:0}));
+
+  // Saving throw proficiencies
+  const saveProficiencies = cls?.savingThrows || [];
+
+  // Skill proficiencies (class + background, deduplicated)
+  const skillProficiencies = [...new Set([...W.chosenSkills,...(W.bgData?.skillProfs||[])])];
+
+  // Equipment proficiencies
+  const equipProficiencies = [...W.equipProfs];
+  const customEquipProfRows = [...W.equipCustom];
+
+  // Info traits from selected species traits
+  const allTraits = [...(sp?.traits||[]),...(W.subspeciesData?.traits||[])];
+  const infoTraits = W.selectedTraits.sort((a,b)=>a-b).map(i=>allTraits[i]).filter(Boolean)
+    .map(t=>({name:t.name, description:t.description||''}));
+
+  const form = {
+    charName: W.basic.name.trim(),
+    charClass: cls?.name||'',
+    charSubclass: W.subclassName||'',
+    charRace: sp?.name||'',
+    charLevel: String(lvl),
+    charBackground: W.bgData?.name||'',
+    charAlignment: W.basic.alignment||'',
+    charXP: String(W.basic.xp||'0'),
+    personality: W.personality.personality,
+    ideals: W.personality.ideals,
+    bonds: W.personality.bonds,
+    flaws: W.personality.flaws,
+    hpMax: String(hpMax),
+    hpTemp: '0',
+    statAC: String(ac),
+    statSpeed: String(spd),
+    statHitDice: `${lvl}d${hitDie}`,
+    spellAbility: cls?.spellcasting||'',
+    languages: W.personality.languages,
+    notes: W.personality.notes,
+    cp:'0', sp:'0', ep:'0', gp:'0', pp:'0',
+  };
+
+  const state = {
+    abilities: {
+      STR: scores.STR||10, DEX: scores.DEX||10, CON: scores.CON||10,
+      INT: scores.INT||10, WIS: scores.WIS||10, CHA: scores.CHA||10,
+    },
+    saveProficiencies,
+    skillProficiencies,
+    skillExpertise: [],
+    equipProficiencies,
+    customEquipProfRows,
+    inspiration: false,
+    hpCurrent: hpMax,
+    spellSlots,
+    spells: [],
+    attacks: [],
+    conditions: [],
+    hitDiceUsed: 0,
+    classFeatures: [],
+    infoTraits,
+    diceRoller: null,
+    portrait: null,
+    statMods: {ac:0,speed:0,initiative:0,spellatk:0,spelldc:0},
+    damageResistances: {},
+    maxSpellsPrepared: 0,
+    equipmentItems: [],
+  };
+
+  return {form, state};
+}
+
+function downloadJSON() {
+  const payload = buildPayload();
+  const name = (W.basic.name.trim()||'character').toLowerCase().replace(/\s+/g,'-');
+  const blob = new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${name}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function copyJSON() {
+  const payload = buildPayload();
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(payload,null,2));
+    el('review-status').innerHTML = '<div class="status">Copied to clipboard!</div>';
+    setTimeout(()=>{ el('review-status').innerHTML=''; }, 2000);
+  } catch {
+    el('review-status').innerHTML = '<div class="status err">Clipboard not available — use Download instead.</div>';
+  }
+}
+
+// ── Edition switching ──────────────────────────────────────────────────────
+
+function setEdition(ed) {
+  if (W.edition === ed) return;
+  W.edition = ed;
+  el('btn2024').classList.toggle('active', ed==='2024');
+  el('btn2014').classList.toggle('active', ed==='2014');
+  // Reset SRD-dependent state
+  W._srdLoaded = {species:false,classes:false,backgrounds:false};
+  W.speciesData=null; W.speciesIndex=''; W.subspeciesData=null; W.subspeciesIndex='';
+  W.classData=null; W.classIndex=''; W.bgData=null; W.bgIndex='';
+  W.chosenSkills=[]; W.selectedTraits=[]; W.speciesBonus={big:'',small:''};
+  W.bgBonus={big:'',small:''};
+  // Reset selects
+  ['sp-sel','cl-sel','bg-sel'].forEach(id=>{ const s=el(id); if(s) s.innerHTML='<option>— Loading… —</option>'; });
+  el('sp-detail').style.display='none';
+  el('cl-detail').style.display='none';
+  el('bg-detail').style.display='none';
+  el('sp-subrace-wrap').style.display='none';
+  el('cl-subclass-wrap').style.display='none';
+  // If on a step that needs SRD data, reload
+  if (W.step===1) loadSpeciesList();
+  if (W.step===2) loadClassList();
+  if (W.step===3) loadBackgroundList();
+  updateStatPreview();
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+
+function init() {
+  showStep(0);
+  // Set default manual scores UI (bonuses aren't loaded yet, just init display)
+  initManualScores();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
