@@ -187,6 +187,41 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .feat-card{background:var(--surface2);border:1px solid var(--gold);border-radius:var(--radius);padding:8px 10px;margin-top:8px}
 .feat-card-name{font-weight:700;font-size:.88rem;color:var(--gold-light);margin-bottom:3px}
 .feat-card-desc{font-size:.73rem;color:var(--text-muted);line-height:1.45}
+
+/* ── AI Create modal ── */
+#aiCreateBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;opacity:0;pointer-events:none;transition:opacity .2s}
+#aiCreateBackdrop.show{opacity:1;pointer-events:auto}
+#aiCreatePanel{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(.88);
+  background:linear-gradient(160deg,var(--surface),var(--bg));
+  border:2px solid var(--spell);border-radius:20px;
+  padding:22px 24px 20px;z-index:301;
+  opacity:0;transition:opacity .2s,transform .2s;
+  pointer-events:none;width:min(92vw,500px);
+  max-height:85vh;overflow-y:auto;
+  box-shadow:0 8px 32px rgba(0,0,0,.7)
+}
+#aiCreatePanel.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+.aic-title{font-size:.85rem;font-weight:700;color:var(--spell-light);margin-bottom:14px;letter-spacing:.04em}
+.aic-step-lbl{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.aic-schema-status{font-size:.74rem;color:var(--text-muted);margin:4px 0 10px;min-height:1.2em}
+.aic-schema-status.ok{color:#5cb85c}
+.aic-file-picker{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.aic-or{text-align:center;font-size:.72rem;color:var(--text-muted);margin:6px 0}
+.aic-textarea{
+  width:100%;box-sizing:border-box;font-size:.78rem;
+  background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;color:var(--text);padding:10px 12px;
+  font-family:inherit;resize:vertical;min-height:80px
+}
+.aic-textarea:focus{outline:none;border-color:var(--spell)}
+.aic-notice{font-size:.72rem;color:var(--spell-light);margin-top:5px;min-height:1.1em;text-align:center}
+.aic-btn{width:100%;padding:11px;border:none;border-radius:var(--radius);font-size:.88rem;font-weight:700;cursor:pointer;margin-bottom:8px}
+.aic-btn.spell{background:var(--spell);color:#fff}
+.aic-btn.gold{background:var(--gold);color:#1a1410}
+.aic-btn.muted{background:var(--surface2);border:1px solid var(--border);color:var(--text-muted)}
+.aic-file-btn{width:100%;padding:7px 0;font-size:.82rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);cursor:pointer}
 </style>
 </head>
 <body>
@@ -196,6 +231,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   <div class="wh-top">
     <div class="wh-title">⚔ D&amp;D Character Creator</div>
     <div class="wh-edition">
+      <button class="ed-btn" onclick="openAICreate()" style="border-color:var(--spell);color:var(--spell-light)">&#129302; AI</button>
       <button class="ed-btn active" id="btn2024" onclick="setEdition('2024')">2024 SRD</button>
       <button class="ed-btn" id="btn2014" onclick="setEdition('2014')">2014 SRD</button>
     </div>
@@ -406,6 +442,43 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
 </div><!-- /wc -->
 
+<!-- ── AI Create modal ── -->
+<input type="file" id="aiSchemaInput" accept=".md,.txt" style="display:none" onchange="aiLoadSchemaFromFile(this)">
+<input type="file" id="aiJsonFileInput" accept=".json" style="display:none" onchange="importAIFromFile(this)">
+<div id="aiCreateBackdrop" onclick="dismissAICreate()"></div>
+<div id="aiCreatePanel">
+  <div class="aic-title">&#129302; AI Character Generator</div>
+
+  <div style="margin-bottom:14px">
+    <div class="aic-step-lbl">Step 1 &#8212; Describe your character (optional)</div>
+    <textarea class="aic-textarea" id="aiCharDesc" placeholder="e.g. A gruff dwarven fighter who lost his clan and seeks redemption…" style="min-height:68px"></textarea>
+  </div>
+
+  <div style="margin-bottom:14px">
+    <div class="aic-step-lbl">Step 2 &#8212; Copy the prompt</div>
+    <div class="aic-schema-status" id="aiSchemaStatus"></div>
+    <div id="aiSchemaFilePicker" class="aic-file-picker" style="display:none">
+      <button class="aic-file-btn" onclick="el('aiSchemaInput').click()">Select JSONGeneration.md</button>
+      <div class="aic-or">or</div>
+      <button class="aic-file-btn" onclick="aiUseBuiltinSchema()">Use built-in schema</button>
+    </div>
+    <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:10px">Paste this prompt into Claude, ChatGPT, or Gemini. Save the response as a <b>.json</b> file.</div>
+    <button class="aic-btn spell" onclick="generateAICreatePrompt()">Copy prompt to clipboard</button>
+    <div class="aic-notice" id="aiCopyNotice"></div>
+  </div>
+
+  <div style="margin-bottom:14px">
+    <div class="aic-step-lbl">Step 3 &#8212; Load the AI&#8217;s JSON</div>
+    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:8px">Load the saved <b>.json</b> file, or paste the AI response directly.</div>
+    <button class="aic-btn gold" onclick="el('aiJsonFileInput').click()">&#128196; Load JSON File</button>
+    <div class="aic-or">or paste below</div>
+    <textarea class="aic-textarea" id="aiJsonPaste" placeholder="Paste the full character JSON here…"></textarea>
+    <button class="aic-btn spell" style="margin-top:8px" onclick="importAIFromPaste()">Apply Character</button>
+  </div>
+
+  <button class="aic-btn muted" onclick="dismissAICreate()">Cancel</button>
+</div>
+
 <!-- ── Bottom nav ── -->
 <div class="wnav">
   <button class="nav-btn nav-back" id="btnBack" onclick="goBack()">← Back</button>
@@ -549,6 +622,9 @@ const W = {
   // cache
   _cache: {},
   _srdLoaded: {species:false,classes:false,backgrounds:false},
+
+  // stashed payload from AI import; when set, buildPayload() returns it as-is
+  _aiPayload: null,
 };
 
 // ── Utilities ──────────────────────────────────────────────────────────────
@@ -1496,6 +1572,7 @@ function renderReview() {
 }
 
 function buildPayload() {
+  if (W._aiPayload) return W._aiPayload;
   const scores = totalScores();
   const lvl = W.basic.level||1;
   const cls = W.classData;
@@ -1627,6 +1704,232 @@ function openInSheet() {
     return;
   }
   window.location.href = 'dnd-character-sheet.html';
+}
+
+// ── AI Character Create ────────────────────────────────────────────────────
+
+let _aiSchema = null;
+
+const _BUILTIN_AI_SCHEMA = `COMPLETE CHARACTER JSON FORMAT: { "form": {...}, "state": {...} }
+
+FORM — all values must be strings, even numbers ("18" not 18):
+  charName: character name
+  charClass: Barbarian|Bard|Cleric|Druid|Fighter|Monk|Paladin|Ranger|Rogue|Sorcerer|Warlock|Wizard|Artificer|""
+  charSubclass: subclass name
+  charRace: race or species name
+  charLevel: "1"–"20"
+  charBackground: background name
+  charAlignment: e.g. "Lawful Good", "Chaotic Neutral"
+  charXP: total XP as string ("6500")
+  personality, ideals, bonds, flaws: free text strings
+  hpMax: max HP ("47")
+  hpTemp: temp HP ("0")
+  statAC: Armor Class ("16")
+  statSpeed: speed in feet ("30")
+  statHitDice: hit dice ("5d10")
+  spellAbility: "INT"|"WIS"|"CHA"|"" (blank for non-casters)
+  languages: comma-separated ("Common, Elvish")
+  notes: free text
+  cp, sp, ep, gp, pp: currency as strings ("0")
+
+STATE:
+abilities (integers 1–30):
+  { "STR": 18, "DEX": 10, "CON": 16, "INT": 8, "WIS": 12, "CHA": 16 }
+
+saveProficiencies: array of ability keys ["STR","CON"]
+skillProficiencies: array of skill names (Acrobatics, Athletics, Perception, etc.)
+skillExpertise: subset of skillProficiencies with double proficiency
+equipProficiencies: ["Light Armor","Medium Armor","Shields","Simple Weapons",...]
+customEquipProfRows: []
+inspiration: false
+hpCurrent: integer (current HP, usually same as hpMax for new character)
+
+spellSlots — exactly 9 objects:
+[{"level":"1st","max":2,"used":0},{"level":"2nd","max":0,"used":0},{"level":"3rd","max":0,"used":0},
+ {"level":"4th","max":0,"used":0},{"level":"5th","max":0,"used":0},{"level":"6th","max":0,"used":0},
+ {"level":"7th","max":0,"used":0},{"level":"8th","max":0,"used":0},{"level":"9th","max":0,"used":0}]
+
+spells array — each spell:
+{ "name":"Fireball","level":3,"school":"Evocation","castingTime":"1 action","range":"150 ft",
+  "components":"V, S, M","duration":"Instantaneous","saveAbility":"DEX",
+  "concentration":false,"ritual":false,"attackRoll":false,
+  "rolls":[{"dice":"8d6","type":"fire","mod":""}],
+  "description":"8d6 fire damage, DEX save for half.",
+  "showInCombat":true,"combatActionType":"action","prepared":true,"alwaysPrepared":false }
+school: Abjuration|Conjuration|Divination|Enchantment|Evocation|Illusion|Necromancy|Transmutation
+rolls.type: slashing|piercing|bludgeoning|fire|cold|lightning|thunder|acid|poison|necrotic|radiant|force|psychic|healing|other
+rolls.mod: STR|DEX|CON|INT|WIS|CHA|SPELLMOD|SPELL|""
+
+attacks array — each weapon:
+{ "name":"Longsword","abilityMod":"STR","proficient":true,"flatBonus":0,
+  "rolls":[{"dice":"1d8","type":"slashing","mod":"STR"}],
+  "actionType":"action","saveAbility":"","saveDC":0,"description":"" }
+
+classFeatures array — limited-use abilities:
+{ "name":"Rage","max":2,"used":0,"recharge":"Long Rest","step":1,
+  "attackRoll":false,"attackMod":"","attackBonus":"—","attackProficient":false,
+  "rolls":[],"description":"Bonus damage and resistance while raging.",
+  "showInCombat":true,"combatActionType":"bonus action" }
+
+infoTraits array — passive traits and species features:
+{ "name":"Darkvision","description":"See 60 ft in darkness as dim light.",
+  "showInCombat":false,"combatActionType":"action" }
+
+equipmentItems array:
+{ "name":"Longsword","quantity":1,"weight":"3 lb","cost":"15 gp","category":"Weapon","description":"" }
+
+conditions: []
+hitDiceUsed: 0
+statMods: {"ac":0,"speed":0,"initiative":0,"spellatk":0,"spelldc":0}
+damageResistances: {}
+maxSpellsPrepared: 0
+diceRoller: null
+portrait: null`;
+
+function openAICreate() {
+  _aiSchema = null;
+  el('aiCharDesc').value = '';
+  el('aiJsonPaste').value = '';
+  el('aiCopyNotice').textContent = '';
+  el('aiSchemaStatus').textContent = 'Looking for JSONGeneration.md…';
+  el('aiSchemaStatus').className = 'aic-schema-status';
+  el('aiSchemaFilePicker').style.display = 'none';
+  el('aiCreateBackdrop').classList.add('show');
+  el('aiCreatePanel').classList.add('show');
+  _tryLoadAISchema();
+}
+
+function dismissAICreate() {
+  el('aiCreateBackdrop').classList.remove('show');
+  el('aiCreatePanel').classList.remove('show');
+}
+
+async function _tryLoadAISchema() {
+  try {
+    const res = await fetch('./JSONGeneration.md', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    if (text.length < 200) throw new Error('too short');
+    _aiSchema = text;
+    el('aiSchemaStatus').textContent = '✓ JSONGeneration.md loaded';
+    el('aiSchemaStatus').className = 'aic-schema-status ok';
+    el('aiSchemaFilePicker').style.display = 'none';
+  } catch(e) {
+    el('aiSchemaStatus').textContent = 'Schema not auto-loaded — select it or use the built-in one.';
+    el('aiSchemaStatus').className = 'aic-schema-status';
+    el('aiSchemaFilePicker').style.display = '';
+  }
+}
+
+function aiLoadSchemaFromFile(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _aiSchema = e.target.result;
+    el('aiSchemaStatus').textContent = '✓ Schema loaded from ' + file.name;
+    el('aiSchemaStatus').className = 'aic-schema-status ok';
+    el('aiSchemaFilePicker').style.display = 'none';
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function aiUseBuiltinSchema() {
+  _aiSchema = _BUILTIN_AI_SCHEMA;
+  el('aiSchemaStatus').textContent = '✓ Using built-in schema';
+  el('aiSchemaStatus').className = 'aic-schema-status ok';
+  el('aiSchemaFilePicker').style.display = 'none';
+}
+
+function generateAICreatePrompt() {
+  if (!_aiSchema) {
+    el('aiCopyNotice').textContent = 'Select a schema file or tap "Use built-in schema" first.';
+    return;
+  }
+  const desc = el('aiCharDesc').value.trim();
+  const concept = desc
+    ? `Create a complete D&D 5e character based on this concept:\n${desc}`
+    : 'Create a complete, interesting D&D 5e character of your choosing.';
+  const prompt = `You are a D&D 5e character sheet generator.
+
+${concept}
+
+Output a single JSON object in the exact format documented below.
+
+RULES:
+- Output ONLY raw JSON — no markdown code fences, no explanation, no trailing text.
+- All form.* values must be strings, even numbers ("18" not 18).
+- state.abilities values are integers.
+- Fill in sensible, lore-consistent D&D 5e defaults for any unspecified details.
+- Begin your response with { and end with }
+
+===== JSON FORMAT REFERENCE =====
+${_aiSchema}
+=================================
+
+Output the complete character JSON now:`;
+
+  navigator.clipboard.writeText(prompt).then(() => {
+    el('aiCopyNotice').textContent = '✓ Copied! Paste into Claude, ChatGPT, or Gemini. Save the response as a .json file, then load it in Step 3.';
+  }).catch(() => {
+    el('aiCopyNotice').textContent = 'Auto-copy failed — paste the prompt manually, then load the response file in Step 3.';
+  });
+}
+
+function importAIFromFile(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _parseAndApplyAI(e.target.result, 'file "' + file.name + '"');
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function importAIFromPaste() {
+  const raw = el('aiJsonPaste').value.trim();
+  if (!raw) { el('aiCopyNotice').textContent = 'Nothing pasted yet.'; return; }
+  _parseAndApplyAI(raw, 'pasted text');
+}
+
+function _parseAndApplyAI(raw, source) {
+  let payload;
+  try {
+    const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '');
+    payload = JSON.parse(stripped);
+  } catch(e) {
+    el('aiCopyNotice').textContent = 'Invalid JSON in ' + source + ' — check its contents.';
+    return;
+  }
+  if (typeof payload !== 'object' || Array.isArray(payload) || (!payload.form && !payload.state)) {
+    el('aiCopyNotice').textContent = 'Expected {"form":{…},"state":{…}} — check the AI response.';
+    return;
+  }
+  // Populate W from the payload so the wizard summary is coherent
+  if (payload.form) {
+    W.basic.name      = payload.form.charName || '';
+    W.basic.level     = parseInt(payload.form.charLevel) || 1;
+    W.basic.alignment = payload.form.charAlignment || 'No Alignment';
+    W.basic.xp        = payload.form.charXP || '0';
+    W.personality.personality = payload.form.personality || '';
+    W.personality.ideals      = payload.form.ideals || '';
+    W.personality.bonds       = payload.form.bonds || '';
+    W.personality.flaws       = payload.form.flaws || '';
+    W.personality.languages   = payload.form.languages || '';
+    W.personality.notes       = payload.form.notes || '';
+    // Sync visible form inputs for Step 0
+    if (el('b-name'))  el('b-name').value  = W.basic.name;
+    if (el('b-level')) el('b-level').value = String(W.basic.level);
+    if (el('b-align')) el('b-align').value = W.basic.alignment;
+    if (el('b-xp'))    el('b-xp').value    = W.basic.xp;
+  }
+  if (payload.state?.abilities) {
+    W.scoreMethod = 'manual';
+    for (const k of ABILITY_KEYS) W.baseScores[k] = payload.state.abilities[k] || 10;
+  }
+  W._aiPayload = payload;
+  dismissAICreate();
+  showStep(6);
 }
 
 // ── Edition switching ──────────────────────────────────────────────────────

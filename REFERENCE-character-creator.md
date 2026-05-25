@@ -9,6 +9,8 @@ A standalone, single-file character creation wizard that produces a `{form, stat
 
 Guides the user step-by-step through character creation (species, class, background, ability scores, personality), pulling data from either the **2024 SRD** (local JSON files) or the **2014 SRD** (live dnd5eapi.co API). On the final step the user can click **Open in Character Sheet** to load the character directly, or download/copy the JSON for manual import.
 
+The header also exposes an **AI Character Generator** button (🤖 AI) that generates a prompt for Claude, ChatGPT, or Gemini to produce a complete `{form, state}` JSON. The user loads the saved `.json` file (or pastes the response) directly into the creator, which skips to the Review step with the full character ready to send to the sheet.
+
 No build step. Open `character-creator.html` in a browser. For 2024 SRD data the file must be **served** (same requirement as the main sheet companion files).
 
 ---
@@ -119,6 +121,7 @@ All wizard state lives in the module-level `W` object. It is not persisted.
 | `personality` | `{personality, ideals, bonds, flaws, languages, notes}` | Step 5 text fields |
 | `_cache` | `object` | Keyed by `"edition|path"` → parsed JSON response; prevents duplicate fetches |
 | `_srdLoaded` | `{species, classes, backgrounds}` | Booleans tracking whether the list fetch for each section has completed |
+| `_aiPayload` | `object\|null` | Full `{form,state}` payload from the AI generator; when set, `buildPayload()` returns it instead of building from wizard state |
 
 ---
 
@@ -251,6 +254,14 @@ All SRD data is normalized to a common internal shape immediately after fetching
 | `openInSheet()` | Writes the payload to `localStorage` key `dnd5e_pending_import`, then navigates to `dnd-character-sheet.html`; the sheet picks it up on load and adds it as a new roster character |
 | `downloadJSON()` | Triggers a browser file download of the payload as `<name>.json` |
 | `copyJSON()` | Copies the payload JSON string to the clipboard via the Clipboard API |
+| `openAICreate()` | Opens the AI Character Generator modal; auto-fetches `JSONGeneration.md` for the schema |
+| `dismissAICreate()` | Closes the AI modal |
+| `generateAICreatePrompt()` | Builds an LLM prompt from the schema + optional character description; copies to clipboard |
+| `importAIFromFile(input)` | Reads a `.json` file chosen by the user and calls `_parseAndApplyAI()` |
+| `importAIFromPaste()` | Reads the pasted textarea and calls `_parseAndApplyAI()` |
+| `_parseAndApplyAI(raw, source)` | Strips code fences, parses JSON, populates `W` basic fields and ability scores, stores full payload in `W._aiPayload`, then navigates to step 6 |
+| `aiLoadSchemaFromFile(input)` | Loads a manually selected schema file into `_aiSchema` |
+| `aiUseBuiltinSchema()` | Sets `_aiSchema` to `_BUILTIN_AI_SCHEMA` |
 
 ### Utility
 
