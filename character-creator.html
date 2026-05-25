@@ -222,6 +222,9 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .aic-btn.gold{background:var(--gold);color:#1a1410}
 .aic-btn.muted{background:var(--surface2);border:1px solid var(--border);color:var(--text-muted)}
 .aic-file-btn{width:100%;padding:7px 0;font-size:.82rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);cursor:pointer}
+.lang-btns{display:flex;gap:6px;margin-left:6px}
+.lang-btn{padding:3px 9px;border:1.5px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text-muted);font-size:.72rem;font-weight:600;cursor:pointer;letter-spacing:.04em;transition:border-color .15s,background .15s}
+.lang-btn.active{border-color:var(--gold);background:var(--surface2);color:var(--gold-light)}
 </style>
 </head>
 <body>
@@ -229,11 +232,17 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 <!-- ── Header ── -->
 <div class="wh">
   <div class="wh-top">
-    <div class="wh-title">⚔ D&amp;D Character Creator</div>
-    <div class="wh-edition">
-      <button class="ed-btn" onclick="openAICreate()" style="border-color:var(--spell);color:var(--spell-light)">&#129302; AI</button>
-      <button class="ed-btn active" id="btn2024" onclick="setEdition('2024')">2024 SRD</button>
-      <button class="ed-btn" id="btn2014" onclick="setEdition('2014')">2014 SRD</button>
+    <div class="wh-title" data-i18n="creator.title">⚔ D&amp;D Character Creator</div>
+    <div style="display:flex;align-items:center">
+      <div class="wh-edition">
+        <button class="ed-btn" onclick="openAICreate()" style="border-color:var(--spell);color:var(--spell-light)">&#129302; AI</button>
+        <button class="ed-btn active" id="btn2024" onclick="setEdition('2024')">2024 SRD</button>
+        <button class="ed-btn" id="btn2014" onclick="setEdition('2014')">2014 SRD</button>
+      </div>
+      <div class="lang-btns">
+        <button class="lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">EN</button>
+        <button class="lang-btn" data-lang="it" onclick="setLanguage('it')" title="Italiano">IT</button>
+      </div>
     </div>
   </div>
   <div class="wh-progress" id="progressBar"></div>
@@ -244,10 +253,10 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
 <!-- ── Step 0: Basics ── -->
 <div class="ws active" id="step-0">
-  <div class="sec"><div class="sec-t">Character Info</div><div class="sec-b">
-    <div class="field"><label class="lbl">Character Name</label><input class="inp" id="b-name" type="text" placeholder="Enter name…" oninput="W.basic.name=this.value;updateNav()"></div>
+  <div class="sec"><div class="sec-t" data-i18n="creator.char_info">Character Info</div><div class="sec-b">
+    <div class="field"><label class="lbl" data-i18n="creator.label.name">Character Name</label><input class="inp" id="b-name" type="text" placeholder="Enter name…" oninput="W.basic.name=this.value;updateNav()"></div>
     <div class="g2">
-      <div class="field"><label class="lbl">Level</label>
+      <div class="field"><label class="lbl" data-i18n="creator.label.level">Level</label>
         <select class="sel" id="b-level" onchange="W.basic.level=+this.value">
           <option value="1">1</option><option value="2">2</option><option value="3">3</option>
           <option value="4">4</option><option value="5">5</option><option value="6">6</option>
@@ -258,9 +267,9 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
           <option value="19">19</option><option value="20">20</option>
         </select>
       </div>
-      <div class="field"><label class="lbl">XP</label><input class="inp" id="b-xp" type="number" min="0" value="0" oninput="W.basic.xp=this.value"></div>
+      <div class="field"><label class="lbl" data-i18n="creator.label.xp">XP</label><input class="inp" id="b-xp" type="number" min="0" value="0" oninput="W.basic.xp=this.value"></div>
     </div>
-    <div class="field"><label class="lbl">Alignment</label>
+    <div class="field"><label class="lbl" data-i18n="creator.label.alignment">Alignment</label>
       <select class="sel" id="b-align" onchange="W.basic.alignment=this.value">
         <option value="No Alignment" selected>No Alignment</option>
         <option>Lawful Good</option><option>Neutral Good</option><option>Chaotic Good</option>
@@ -291,14 +300,14 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
   <div id="sp-detail" style="display:none">
     <!-- Bonus allocation -->
-    <div class="sec"><div class="sec-t">Ability Score Bonuses</div><div class="sec-b">
+    <div class="sec"><div class="sec-t" data-i18n="creator.ability_bonuses">Ability Score Bonuses</div><div class="sec-b">
       <p class="hint" style="margin-bottom:10px" id="sp-bonus-hint"></p>
       <div id="sp-bonus-ui"></div>
     </div></div>
     <!-- Species info -->
-    <div class="sec"><div class="sec-t">Species Info</div><div class="sec-b" id="sp-info-body"></div></div>
+    <div class="sec"><div class="sec-t" data-i18n="creator.species_info">Species Info</div><div class="sec-b" id="sp-info-body"></div></div>
     <!-- Traits -->
-    <div class="sec" id="sp-traits-sec"><div class="sec-t">Species Traits (select to import)</div><div class="sec-b" id="sp-traits-body"></div></div>
+    <div class="sec" id="sp-traits-sec"><div class="sec-t" data-i18n="creator.species_traits">Species Traits (select to import)</div><div class="sec-b" id="sp-traits-body"></div></div>
   </div>
   <div id="sp-status"></div>
 </div>
@@ -322,17 +331,17 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
   <div id="cl-detail" style="display:none">
     <div class="sec"><div class="sec-t">Class Info</div><div class="sec-b" id="cl-info-body"></div></div>
-    <div class="sec"><div class="sec-t" id="cl-skill-title">Skill Proficiencies</div><div class="sec-b">
+    <div class="sec"><div class="sec-t" id="cl-skill-title" data-i18n="creator.skill_profs">Skill Proficiencies</div><div class="sec-b">
       <div class="skill-mode-tog">
-        <div class="smt active" id="smt-class" onclick="setSkillMode('class')">Class Skills</div>
-        <div class="smt" id="smt-free" onclick="setSkillMode('free')">Any Skill</div>
+        <div class="smt active" id="smt-class" onclick="setSkillMode('class')" data-i18n="creator.class_skills">Class Skills</div>
+        <div class="smt" id="smt-free" onclick="setSkillMode('free')" data-i18n="creator.any_skill">Any Skill</div>
       </div>
       <div class="skill-grid" id="cl-skill-grid"></div>
-      <p class="hint" id="cl-skill-hint" style="margin-top:6px;display:none">Non-class skills shown in blue. Same pick limit applies.</p>
+      <p class="hint" id="cl-skill-hint" style="margin-top:6px;display:none" data-i18n="creator.non_class_hint">Non-class skills shown in blue. Same pick limit applies.</p>
     </div></div>
-    <div class="sec"><div class="sec-t">Equipment Proficiencies</div><div class="sec-b"><div class="ep-grid" id="cl-equip-grid"></div></div></div>
+    <div class="sec"><div class="sec-t" data-i18n="creator.equip_profs">Equipment Proficiencies</div><div class="sec-b"><div class="ep-grid" id="cl-equip-grid"></div></div></div>
     <div class="sec" id="cl-start-equip-sec" style="display:none">
-      <div class="sec-t">Starting Equipment</div>
+      <div class="sec-t" data-i18n="creator.starting_equip">Starting Equipment</div>
       <div class="sec-b" id="cl-start-equip-body"></div>
     </div>
   </div>
@@ -351,7 +360,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   </div></div>
 
   <div id="bg-detail" style="display:none">
-    <div class="sec" id="bg-bonus-sec"><div class="sec-t">Ability Score Bonuses</div><div class="sec-b">
+    <div class="sec" id="bg-bonus-sec"><div class="sec-t" data-i18n="creator.bg_ability_bonuses">Ability Score Bonuses</div><div class="sec-b">
       <p class="hint" style="margin-bottom:10px" id="bg-bonus-hint"></p>
       <div id="bg-bonus-ui"></div>
     </div></div>
@@ -359,65 +368,65 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
       <div class="sec-t">Origin Feat</div>
       <div class="sec-b" id="bg-feat-body"></div>
     </div>
-    <div class="sec"><div class="sec-t">Background Proficiencies</div><div class="sec-b" id="bg-profs-body"></div></div>
+    <div class="sec"><div class="sec-t" data-i18n="creator.bg_proficiencies">Background Proficiencies</div><div class="sec-b" id="bg-profs-body"></div></div>
     <div class="sec" id="bg-start-equip-sec" style="display:none">
       <div class="sec-t">Starting Equipment</div>
       <div class="sec-b" id="bg-start-equip-body"></div>
     </div>
   </div>
-  <div class="status" id="bg-status-none" style="display:none">No background selected — skills from background will be skipped.</div>
+  <div class="status" id="bg-status-none" style="display:none" data-i18n="creator.no_bg">No background selected — skills from background will be skipped.</div>
   <div id="bg-status"></div>
 </div>
 
 <!-- ── Step 4: Ability Scores ── -->
 <div class="ws" id="step-4">
   <div class="mtabs">
-    <div class="mtab active" onclick="setScoreMethod('manual')">Manual</div>
-    <div class="mtab" onclick="setScoreMethod('standard')">Standard Array</div>
-    <div class="mtab" onclick="setScoreMethod('pointbuy')">Point Buy</div>
+    <div class="mtab active" onclick="setScoreMethod('manual')" data-i18n="creator.method.manual">Manual</div>
+    <div class="mtab" onclick="setScoreMethod('standard')" data-i18n="creator.method.standard">Standard Array</div>
+    <div class="mtab" onclick="setScoreMethod('pointbuy')" data-i18n="creator.method.pointbuy">Point Buy</div>
   </div>
   <div id="score-manual">
-    <div class="sec"><div class="sec-t">Base Scores</div><div class="sec-b">
+    <div class="sec"><div class="sec-t" data-i18n="creator.base_scores">Base Scores</div><div class="sec-b">
       <table class="ab-table">
-        <thead><tr><th></th><th>Base</th><th>Bonus</th><th>Total</th><th>Mod</th></tr></thead>
+        <thead><tr><th></th><th data-i18n="creator.table.base">Base</th><th data-i18n="creator.table.bonus">Bonus</th><th data-i18n="creator.table.total">Total</th><th data-i18n="creator.table.mod">Mod</th></tr></thead>
         <tbody id="manual-tbody"></tbody>
       </table>
     </div></div>
   </div>
   <div id="score-standard" style="display:none">
-    <div class="sec"><div class="sec-t">Standard Array — assign 15,14,13,12,10,8</div><div class="sec-b">
+    <div class="sec"><div class="sec-t" data-i18n="creator.standard_array">Standard Array — assign 15,14,13,12,10,8</div><div class="sec-b">
       <div id="sa-body"></div>
     </div></div>
   </div>
   <div id="score-pointbuy" style="display:none">
-    <div class="sec"><div class="sec-t">Point Buy (27 points)</div><div class="sec-b">
-      <div class="points-disp" id="pb-points">27 <span>points remaining</span></div>
+    <div class="sec"><div class="sec-t" data-i18n="creator.point_buy">Point Buy (27 points)</div><div class="sec-b">
+      <div class="points-disp" id="pb-points">27 <span data-i18n="creator.points_remaining">points remaining</span></div>
       <div id="pb-body"></div>
     </div></div>
   </div>
   <div class="stat-preview" id="stat-preview">
-    <div class="sp-card"><div class="sp-val" id="prev-hp">—</div><div class="sp-lbl">HP (avg)</div></div>
-    <div class="sp-card"><div class="sp-val" id="prev-ac">—</div><div class="sp-lbl">AC (base)</div></div>
-    <div class="sp-card"><div class="sp-val" id="prev-prof">+2</div><div class="sp-lbl">Prof Bonus</div></div>
+    <div class="sp-card"><div class="sp-val" id="prev-hp">—</div><div class="sp-lbl" data-i18n="creator.hp_avg">HP (avg)</div></div>
+    <div class="sp-card"><div class="sp-val" id="prev-ac">—</div><div class="sp-lbl" data-i18n="creator.base_ac">AC (base)</div></div>
+    <div class="sp-card"><div class="sp-val" id="prev-prof">+2</div><div class="sp-lbl" data-i18n="creator.prof_bonus">Prof Bonus</div></div>
   </div>
   <div class="hint" style="text-align:center;margin-bottom:6px">HP uses average per level; AC = 10 + DEX mod. Both can be adjusted in the character sheet.</div>
 </div>
 
 <!-- ── Step 5: Personality ── -->
 <div class="ws" id="step-5">
-  <div class="sec"><div class="sec-t">Languages</div><div class="sec-b">
-    <div class="field"><label class="lbl">Languages (free text)</label>
+  <div class="sec"><div class="sec-t" data-i18n="section.languages">Languages</div><div class="sec-b">
+    <div class="field"><label class="lbl" data-i18n="creator.label.languages">Languages (free text)</label>
       <input class="inp" id="p-langs" type="text" placeholder="Common, Elvish…" oninput="W.personality.languages=this.value">
     </div>
     <p class="hint">Common is standard. Add languages granted by species, background, or class.</p>
   </div></div>
-  <div class="sec"><div class="sec-t">Personality</div><div class="sec-b">
-    <div class="field"><label class="lbl">Personality Traits</label><textarea class="ta" id="p-personality" oninput="W.personality.personality=this.value"></textarea></div>
-    <div class="field"><label class="lbl">Ideals</label><textarea class="ta" id="p-ideals" oninput="W.personality.ideals=this.value"></textarea></div>
-    <div class="field"><label class="lbl">Bonds</label><textarea class="ta" id="p-bonds" oninput="W.personality.bonds=this.value"></textarea></div>
-    <div class="field"><label class="lbl">Flaws</label><textarea class="ta" id="p-flaws" oninput="W.personality.flaws=this.value"></textarea></div>
+  <div class="sec"><div class="sec-t" data-i18n="section.personality">Personality</div><div class="sec-b">
+    <div class="field"><label class="lbl" data-i18n="creator.label.personality">Personality Traits</label><textarea class="ta" id="p-personality" oninput="W.personality.personality=this.value"></textarea></div>
+    <div class="field"><label class="lbl" data-i18n="creator.label.ideals">Ideals</label><textarea class="ta" id="p-ideals" oninput="W.personality.ideals=this.value"></textarea></div>
+    <div class="field"><label class="lbl" data-i18n="creator.label.bonds">Bonds</label><textarea class="ta" id="p-bonds" oninput="W.personality.bonds=this.value"></textarea></div>
+    <div class="field"><label class="lbl" data-i18n="creator.label.flaws">Flaws</label><textarea class="ta" id="p-flaws" oninput="W.personality.flaws=this.value"></textarea></div>
   </div></div>
-  <div class="sec"><div class="sec-t">Notes</div><div class="sec-b">
+  <div class="sec"><div class="sec-t" data-i18n="section.notes">Notes</div><div class="sec-b">
     <div class="field"><textarea class="ta" id="p-notes" placeholder="Campaign notes…" oninput="W.personality.notes=this.value"></textarea></div>
   </div></div>
 </div>
@@ -427,9 +436,9 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   <div class="sec"><div class="sec-t">Character Summary</div><div class="sec-b" id="review-summary"></div></div>
   <div class="sec"><div class="sec-t">JSON Preview</div><div class="sec-b">
     <div class="json-prev" id="json-prev"></div>
-    <button class="full-btn gold" onclick="openInSheet()">⚔ Open in Character Sheet</button>
-    <button class="full-btn green" onclick="downloadJSON()">⬇ Download JSON</button>
-    <button class="full-btn blue" onclick="copyJSON()">⎘ Copy to Clipboard</button>
+    <button class="full-btn gold" onclick="openInSheet()" data-i18n="creator.btn.open_sheet">⚔ Open in Character Sheet</button>
+    <button class="full-btn green" onclick="downloadJSON()" data-i18n="creator.btn.download">⬇ Download JSON</button>
+    <button class="full-btn blue" onclick="copyJSON()" data-i18n="creator.btn.copy">⎘ Copy to Clipboard</button>
   </div></div>
   <div class="sec"><div class="sec-t">How to Import</div><div class="sec-b">
     <p style="font-size:.82rem;color:var(--text-muted);line-height:1.6">
@@ -481,7 +490,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
 <!-- ── Bottom nav ── -->
 <div class="wnav">
-  <button class="nav-btn nav-back" id="btnBack" onclick="goBack()">← Back</button>
+  <button class="nav-btn nav-back" id="btnBack" onclick="goBack()" data-i18n="creator.btn.back">← Back</button>
   <button class="nav-btn nav-next" id="btnNext" onclick="goNext()">Next →</button>
 </div>
 
@@ -1504,7 +1513,7 @@ function showStep(n) {
   // Update progress
   const bar = el('progressBar');
   bar.innerHTML = STEPS.map((_,i)=>`<div class="wp-seg${i<n?' done':i===n?' cur':''}"></div>`).join('');
-  el('stepLabel').textContent = `Step ${n+1} of ${STEPS.length}: ${STEPS[n]}`;
+  el('stepLabel').textContent = `Step ${n+1} of ${STEPS.length}: ${_t('creator.step.' + n) ?? STEPS[n]}`;
   // Load SRD data on first visit
   if (n===1 && !W._srdLoaded.species) loadSpeciesList();
   if (n===2 && !W._srdLoaded.classes) loadClassList();
@@ -1518,7 +1527,7 @@ function updateNav() {
   const n = W.step;
   el('btnBack').style.display = n===0 ? 'none' : '';
   const nextBtn = el('btnNext');
-  nextBtn.textContent = n === STEPS.length-1 ? 'Export' : 'Next →';
+  nextBtn.textContent = n === STEPS.length-1 ? 'Export' : (_t('creator.btn.next') ?? 'Next →');
   nextBtn.disabled = !canProceed();
 }
 
@@ -1959,6 +1968,66 @@ function setEdition(ed) {
   updateStatPreview();
 }
 
+// ── Language / i18n ────────────────────────────────────────────────
+let _i18nData = {};
+let _currentLang = 'en';
+
+function _t(key) { return _i18nData[key] ?? null; }
+
+async function _loadLanguage(code) {
+  _currentLang = code;
+  if (code === 'en') { _i18nData = {}; return; }
+  try {
+    const r = await fetch(`languages/${code}.json`);
+    if (r.ok) _i18nData = await r.json();
+    else _i18nData = {};
+  } catch(e) { _i18nData = {}; }
+}
+
+function _applyI18n() {
+  if (!Object.keys(_i18nData).length) return;
+  const T = _i18nData;
+
+  // Helper
+  const setText = (id, key) => {
+    const el = document.getElementById(id);
+    if (!el || !T[key]) return;
+    const node = [...el.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+    if (node) node.textContent = T[key];
+    else el.textContent = T[key];
+  };
+
+  // Process data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const val = T[el.dataset.i18n];
+    if (!val) return;
+    const node = [...el.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+    if (node) node.textContent = val;
+    else el.textContent = val;
+  });
+
+  // Placeholders
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const val = T[el.dataset.i18nPh]; if (val) el.placeholder = val;
+  });
+
+  // Language buttons
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === _currentLang);
+  });
+
+  // Update step label and nav button (Next might say 'Next →' or 'Export')
+  if (T['creator.btn.back']) {
+    const backBtn = document.getElementById('btnBack');
+    if (backBtn) backBtn.textContent = T['creator.btn.back'];
+  }
+}
+
+function setLanguage(code) {
+  localStorage.setItem('dnd5e_lang', code);
+  location.reload();
+}
+
 // ── Init ───────────────────────────────────────────────────────────────────
 
 function init() {
@@ -1967,7 +2036,11 @@ function init() {
   initManualScores();
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', async () => {
+  await _loadLanguage(localStorage.getItem('dnd5e_lang') || 'en');
+  init();
+  _applyI18n();
+});
 </script>
 </body>
 </html>
