@@ -482,6 +482,33 @@ label.settings-full-btn{cursor:pointer}
   opacity:0;transition:opacity 0.2s;white-space:nowrap;
 }
 #toast.show{opacity:1}
+
+/* ── Inline editable field ── */
+.cs-inline-input{
+  background:none;border:none;border-bottom:1px solid rgba(var(--border-rgb),0.5);
+  color:var(--text);font-family:sans-serif;font-size:12px;outline:none;
+  padding:1px 4px;flex:1;min-width:60px;
+}
+.cs-inline-input:focus{border-bottom-color:var(--gold)}
+.cs-inline-input::placeholder{color:var(--text-muted);opacity:0.7}
+
+/* ── Detail tab bar ── */
+.detail-tab-bar{
+  position:fixed;top:52px;left:0;right:0;max-width:600px;margin:0 auto;
+  display:flex;background:var(--surface);border-bottom:2px solid var(--border);z-index:98;
+}
+.detail-tab-btn{
+  flex:1;padding:9px 4px;text-align:center;
+  font-size:11px;font-family:sans-serif;font-weight:600;letter-spacing:0.5px;
+  background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--text-muted);cursor:pointer;
+  transition:color 0.15s,border-color 0.15s;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  margin-bottom:-2px;
+}
+.detail-tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+.detail-tab-btn:active{color:var(--gold-light)}
+#detailView .page-content{padding-top:100px}
 </style>
 </head>
 <body data-theme="dark">
@@ -511,6 +538,11 @@ label.settings-full-btn{cursor:pointer}
       <button class="icon-btn" onclick="openImportModal()">Import ▾</button>
       <button class="icon-btn" onclick="openCreatureSettings()">⚙</button>
     </div>
+  </div>
+  <div id="detailTabBar" class="detail-tab-bar">
+    <button class="detail-tab-btn" data-tab="info" onclick="switchDetailTab('info')">📋 Info</button>
+    <button class="detail-tab-btn" data-tab="combat" onclick="switchDetailTab('combat')">⚔️ Combat</button>
+    <button class="detail-tab-btn" data-tab="lair" onclick="switchDetailTab('lair')">🏰 Lair</button>
   </div>
   <div class="page-content">
     <div id="statBlock" class="stat-block"></div>
@@ -749,6 +781,10 @@ function defaultCreature() {
     bonusActions: [],
     legendaryActions: [],
     lairActions: [],
+    initiative: '',
+    habitat: '',
+    treasure: '',
+    lairDescription: '',
   };
 }
 
@@ -868,6 +904,21 @@ function goBackToCharacter() {
   else { window.location.href = 'dnd-character-sheet.html'; }
 }
 
+// ── Detail tab management ──────────────────────────────────────────────
+let _activeDetailTab = 'combat'; // Combat is the default — most useful during encounters
+
+function switchDetailTab(tab) {
+  _activeDetailTab = tab;
+  document.querySelectorAll('#detailTabBar .detail-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  ['info','combat','lair'].forEach(t => {
+    const el = document.getElementById('sbPanel-' + t);
+    if (el) el.style.display = t === tab ? '' : 'none';
+  });
+  window.scrollTo(0, 0);
+}
+
 // ── Grid rendering ─────────────────────────────────────────────────────
 function renderGrid() {
   const grid   = document.getElementById('creatureGrid');
@@ -974,7 +1025,7 @@ function renderCreatureDetail() {
 
   sb.innerHTML = '';
 
-  // Name (holdable → description/notes info panel)
+  // Creature name — always visible above the tab panels
   const nameDiv = document.createElement('div');
   nameDiv.className = 'stat-block-name';
   nameDiv.id = 'creatureNameEl';
@@ -991,18 +1042,65 @@ function renderCreatureDetail() {
   nameDiv.addEventListener('contextmenu', e => e.preventDefault());
   sb.appendChild(nameDiv);
 
-  // Subtitle
   const subDiv = document.createElement('div');
   subDiv.className = 'stat-sub';
   const sub = [c.size, c.type + (c.subtype ? ` (${c.subtype})` : '')].filter(Boolean).join(' ');
   subDiv.textContent = (sub ? sub.charAt(0).toUpperCase() + sub.slice(1) : 'Unknown') + (c.alignment ? ' · ' + c.alignment : '');
   sb.appendChild(subDiv);
 
-  // Divider
-  sb.appendChild(_divider());
+  // Three tab panels
+  const infoPanel   = document.createElement('div'); infoPanel.id   = 'sbPanel-info';
+  const combatPanel = document.createElement('div'); combatPanel.id = 'sbPanel-combat';
+  const lairPanel   = document.createElement('div'); lairPanel.id   = 'sbPanel-lair';
 
-  // Defences row
+  _buildInfoPanel(infoPanel, c, pb, xp);
+  _buildCombatPanel(combatPanel, c, pb, xp);
+  _buildLairPanel(lairPanel, c);
+
+  sb.appendChild(infoPanel);
+  sb.appendChild(combatPanel);
+  sb.appendChild(lairPanel);
+
+  // Show the active tab (also sets button active classes)
+  switchDetailTab(_activeDetailTab);
+
+  // Render dots — panels are in the DOM even when hidden, so IDs are reachable
+  const _dotSections = ['specialAbilities','actions','bonusActions','reactions','legendaryActions','lairActions'];
+  _dotSections.forEach(sec => (c[sec] || []).forEach((_, i) => renderDots(sec, i)));
+}
+
+// ── Panel builders ─────────────────────────────────────────────────────
+function _buildInfoPanel(panel, c, pb, xp) {
+  // Description / notes textarea
+  panel.appendChild(_divider());
+  panel.appendChild(_sectionTitle('Description', 'notes'));
+  const notesArea = document.createElement('textarea');
+  notesArea.style.cssText = 'width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:sans-serif;font-size:13px;padding:10px;resize:vertical;min-height:100px;outline:none;box-sizing:border-box;margin:0 0 4px';
+  notesArea.value = c.notes || '';
+  notesArea.placeholder = 'Description, lore, encounter tips…';
+  notesArea.addEventListener('input', () => { creature.notes = notesArea.value; saveRoster(); });
+  panel.appendChild(notesArea);
+
+  // Stat details
+  panel.appendChild(_divider());
+  const rowsDiv = document.createElement('div');
+  rowsDiv.className = 'cs-rows';
+  panel.appendChild(rowsDiv);
+
+  _addRow(rowsDiv, 'Challenge', `${crDisplay(c.cr)} (${(xp||0).toLocaleString()} XP)`);
+  _addEditableRow(rowsDiv, 'Habitat',  c.habitat || '', v => { creature.habitat  = v; saveRoster(); }, 'e.g. Swamp, Forest, Desert');
+  _addEditableRow(rowsDiv, 'Treasure', c.treasure || '', v => { creature.treasure = v; saveRoster(); }, 'e.g. Relics, Coins, Art Objects');
+  _addEditableRow(rowsDiv, 'Languages', c.languages || '', v => { creature.languages = v; saveRoster(); }, 'Languages spoken');
+
+  // Senses
+  _buildSensesRows(rowsDiv, c);
+}
+
+function _buildCombatPanel(panel, c, pb, xp) {
   const speedStr = _speedStr(c.speed);
+
+  // Defence pills
+  panel.appendChild(_divider());
   const pillsDiv = document.createElement('div');
   pillsDiv.className = 'defence-pills';
   pillsDiv.innerHTML = `
@@ -1011,7 +1109,13 @@ function renderCreatureDetail() {
     ${_pill('Speed', speedStr, '')}
     ${_pill('CR', crDisplay(c.cr), `XP ${(xp||0).toLocaleString()}`)}
   `;
-  sb.appendChild(pillsDiv);
+  panel.appendChild(pillsDiv);
+
+  // Initiative (editable row)
+  const initDiv = document.createElement('div');
+  initDiv.className = 'cs-rows';
+  _addEditableRow(initDiv, 'Initiative', c.initiative || '', v => { creature.initiative = v; saveRoster(); }, '+0');
+  panel.appendChild(initDiv);
 
   // Ability grid
   const abDiv = document.createElement('div');
@@ -1029,104 +1133,96 @@ function renderCreatureDetail() {
         ${svTxt ? `<div class="save-badge">${escHtml(svTxt)}</div>` : ''}
       </div>`;
   });
-  sb.appendChild(abDiv);
+  panel.appendChild(abDiv);
 
-  // Stat rows (saves, skills, damage types, senses, languages, PB)
+  // Stat rows (saves, skills, damage types, condition immunities, proficiency bonus)
   const rowsDiv = document.createElement('div');
   rowsDiv.className = 'cs-rows';
-  sb.appendChild(rowsDiv);
+  panel.appendChild(rowsDiv);
 
-  // Saving Throws
   const savesArr = Object.entries(c.savingThrows).map(([ab, val]) => `${ab} ${fmtMod(val)}`);
   if (savesArr.length) _addRow(rowsDiv, 'Saving Throws', savesArr.join(', '));
 
-  // Skills — individual rows, collapsible to show all
   _buildSkillsRows(rowsDiv, c);
 
-  // Damage interactions — pill style
   _buildDamageTypeBlock(rowsDiv, 'Immunities',      c.damageImmunities      || []);
   _buildDamageTypeBlock(rowsDiv, 'Resistances',     c.damageResistances     || []);
   _buildDamageTypeBlock(rowsDiv, 'Vulnerabilities', c.damageVulnerabilities || []);
   if (c.conditionImmunities?.length) _addRow(rowsDiv, 'Condition Immunities', c.conditionImmunities.join(', '));
-
-  // Senses — individual rows
-  _buildSensesRows(rowsDiv, c);
-
-  if (c.languages) _addRow(rowsDiv, 'Languages', c.languages);
   _addRow(rowsDiv, 'Proficiency Bonus', fmtMod(pb));
 
-  // Traits (special abilities) — always shown
-  sb.appendChild(_divider());
-  sb.appendChild(_sectionTitle('Traits', 'specialAbilities'));
+  // Traits (special abilities)
+  panel.appendChild(_divider());
+  panel.appendChild(_sectionTitle('Traits', 'specialAbilities'));
   if (c.specialAbilities?.length) {
-    c.specialAbilities.forEach((sa, i) => sb.appendChild(_actionRow('specialAbilities', i, sa)));
+    c.specialAbilities.forEach((sa, i) => panel.appendChild(_actionRow('specialAbilities', i, sa)));
   } else {
-    sb.appendChild(_emptyHint('No traits. Tap ＋ to add.'));
+    panel.appendChild(_emptyHint('No traits. Tap ＋ to add.'));
   }
 
-  // Actions — always shown
-  sb.appendChild(_divider());
-  sb.appendChild(_sectionTitle('Actions', 'actions'));
+  // Actions
+  panel.appendChild(_divider());
+  panel.appendChild(_sectionTitle('Actions', 'actions'));
   if (c.actions?.length) {
-    c.actions.forEach((a, i) => sb.appendChild(_actionRow('actions', i, a)));
+    c.actions.forEach((a, i) => panel.appendChild(_actionRow('actions', i, a)));
   } else {
-    sb.appendChild(_emptyHint('No actions. Tap ＋ to add.'));
+    panel.appendChild(_emptyHint('No actions. Tap ＋ to add.'));
   }
 
-  // Bonus Actions — always shown
-  sb.appendChild(_divider());
-  sb.appendChild(_sectionTitle('Bonus Actions', 'bonusActions'));
+  // Bonus Actions
+  panel.appendChild(_divider());
+  panel.appendChild(_sectionTitle('Bonus Actions', 'bonusActions'));
   if (c.bonusActions?.length) {
-    c.bonusActions.forEach((ba, i) => sb.appendChild(_actionRow('bonusActions', i, ba)));
+    c.bonusActions.forEach((ba, i) => panel.appendChild(_actionRow('bonusActions', i, ba)));
   } else {
-    sb.appendChild(_emptyHint('No bonus actions.'));
+    panel.appendChild(_emptyHint('No bonus actions.'));
   }
 
-  // Reactions — always shown
-  sb.appendChild(_divider());
-  sb.appendChild(_sectionTitle('Reactions', 'reactions'));
+  // Reactions
+  panel.appendChild(_divider());
+  panel.appendChild(_sectionTitle('Reactions', 'reactions'));
   if (c.reactions?.length) {
-    c.reactions.forEach((r, i) => sb.appendChild(_actionRow('reactions', i, r)));
+    c.reactions.forEach((r, i) => panel.appendChild(_actionRow('reactions', i, r)));
   } else {
-    sb.appendChild(_emptyHint('No reactions.'));
+    panel.appendChild(_emptyHint('No reactions.'));
   }
 
   // Legendary Actions
   if (c.legendaryActions?.length || c.legendaryActionsMax > 0) {
-    sb.appendChild(_divider());
-    sb.appendChild(_sectionTitle('Legendary Actions', 'legendaryActions'));
+    panel.appendChild(_divider());
+    panel.appendChild(_sectionTitle('Legendary Actions', 'legendaryActions'));
     if (c.legendaryActionsMax > 0) {
       const poolDiv = document.createElement('div');
       poolDiv.className = 'legendary-pool';
       poolDiv.innerHTML = `<span class="legendary-pool-label">Pool</span>
         <div class="legendary-pool-dots" id="legendaryPoolDots"></div>
         <button class="legendary-restore-btn" onclick="restoreLegendaryPool()">⏻</button>`;
-      sb.appendChild(poolDiv);
+      panel.appendChild(poolDiv);
       renderLegendaryPool();
     }
-    c.legendaryActions.forEach((la, i) => sb.appendChild(_actionRow('legendaryActions', i, la)));
+    c.legendaryActions.forEach((la, i) => panel.appendChild(_actionRow('legendaryActions', i, la)));
   }
+}
+
+function _buildLairPanel(panel, c) {
+  // Lair description textarea
+  panel.appendChild(_divider());
+  panel.appendChild(_sectionTitle('Lair Description', 'notes'));
+  const lairDescArea = document.createElement('textarea');
+  lairDescArea.style.cssText = 'width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:sans-serif;font-size:13px;padding:10px;resize:vertical;min-height:80px;outline:none;box-sizing:border-box;margin:0 0 4px';
+  lairDescArea.value = c.lairDescription || '';
+  lairDescArea.placeholder = 'Describe the lair, its region, and any environmental effects…';
+  lairDescArea.addEventListener('input', () => { creature.lairDescription = lairDescArea.value; saveRoster(); });
+  panel.appendChild(lairDescArea);
 
   // Lair Actions
+  panel.appendChild(_divider());
+  panel.appendChild(_sectionTitle('Lair Actions', 'lairActions'));
   if (c.lairActions?.length) {
-    sb.appendChild(_divider());
-    sb.appendChild(_sectionTitle('Lair Actions', 'lairActions'));
-    c.lairActions.forEach((la, i) => sb.appendChild(_actionRow('lairActions', i, la)));
+    c.lairActions.forEach((la, i) => panel.appendChild(_actionRow('lairActions', i, la)));
+  } else {
+    panel.appendChild(_emptyHint('No lair actions. Tap ＋ to add.'));
   }
-
-  // Notes
-  sb.appendChild(_divider());
-  sb.appendChild(_sectionTitle('Notes', 'notes'));
-  const notesArea = document.createElement('textarea');
-  notesArea.style.cssText = 'width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:sans-serif;font-size:13px;padding:10px;resize:vertical;min-height:80px;outline:none;box-sizing:border-box;margin:0 0 4px';
-  notesArea.value = c.notes || '';
-  notesArea.placeholder = 'Notes, encounter tips, lore…';
-  notesArea.addEventListener('input', () => { creature.notes = notesArea.value; saveRoster(); });
-  sb.appendChild(notesArea);
-
-  // Render all dots
-  const _dotSections = ['specialAbilities','actions','bonusActions','reactions','legendaryActions','lairActions'];
-  _dotSections.forEach(sec => (c[sec] || []).forEach((_, i) => renderDots(sec, i)));
 }
 
 // ── Section/row helpers ────────────────────────────────────────────────
@@ -1177,6 +1273,22 @@ function _emptyHint(text) {
   div.style.cssText = 'padding:8px 12px;font-size:12px;color:var(--text-muted);font-family:sans-serif;font-style:italic';
   div.textContent = text;
   return div;
+}
+function _addEditableRow(container, label, value, onchange, placeholder) {
+  const div = document.createElement('div');
+  div.className = 'cs-row';
+  div.style.cssText = 'display:flex;align-items:baseline;gap:4px';
+  const labelEl = document.createElement('span');
+  labelEl.className = 'cs-row-label';
+  labelEl.textContent = label + ':';
+  const input = document.createElement('input');
+  input.className = 'cs-inline-input';
+  input.value = value;
+  if (placeholder) input.placeholder = placeholder;
+  input.addEventListener('input', () => onchange(input.value));
+  div.appendChild(labelEl);
+  div.appendChild(input);
+  container.appendChild(div);
 }
 
 // ── Skill rows (individual, collapsible) ──────────────────────────────
@@ -1637,7 +1749,7 @@ function openCreatureInfoPanel() {
   document.getElementById('ipRollBox').style.display    = 'none';
   document.getElementById('ipSaveDcBox').style.display  = 'none';
   document.getElementById('ipDmgBox').style.display     = 'none';
-  document.getElementById('ipDesc').textContent = creature.notes || '(No notes yet. Edit via ⚙ → Set Portrait to add a portrait, or type in the Notes section.)';
+  document.getElementById('ipDesc').textContent = creature.notes || '(No description yet. Add it in the Info tab.)';
   document.getElementById('ipEditBtn').style.display = 'none';
   document.getElementById('infoPanel').classList.add('show');
   document.getElementById('infoPanelBackdrop').classList.add('show');
@@ -2000,6 +2112,10 @@ Use this exact JSON structure:
     }
   ],
   "lairActions": [ { "name":string,"desc":string } ],
+  "initiative": string (e.g. "+5" or "+12 (22)", or "" if not specified),
+  "habitat": string (e.g. "Swamp", "Underdark", "Forest", or ""),
+  "treasure": string (e.g. "Relics", "Coins", "Art Objects", or ""),
+  "lairDescription": string (narrative description of the lair and its regional effects, or ""),
   "notes": ""
 }
 
@@ -2251,6 +2367,11 @@ function parseSrd2024Monster(d) {
   c.languages = d.languages || '';
   // Legendary pool
   c.legendaryActionsMax = d.legendary_actions_per_round || 0;
+  // New metadata fields
+  c.habitat        = d.habitat || '';
+  c.treasure       = d.treasure || '';
+  c.initiative     = d.initiative || '';
+  c.lairDescription = d.lair_description || d.lairDescription || '';
   // Actions — 2024 may mix all action types in one array using action_type field
   const allActions = d.actions || [];
   const legTypes = ['LEGENDARY_ACTION','LEGENDARY'];
