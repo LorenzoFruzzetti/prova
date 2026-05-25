@@ -10032,7 +10032,7 @@ let _srdEditionPref = '2014';
 async function _srd24Detect() {
   if (_srd24Available !== null) return _srd24Available;
   try {
-    const r = await fetch('/srd2024/translation.json');
+    const r = await fetch('srd2024/translation.json');
     if (!r.ok) { _srd24Available = false; return false; }
     _srd24Translation = await r.json();
     _srd24Available = true;
@@ -10076,7 +10076,7 @@ function setSrdEdition(ed) {
 
 async function _srd24Load(category) {
   if (_srd24Files[category]) return _srd24Files[category];
-  const r = await fetch(`/srd2024/${category}.json`);
+  const r = await fetch(`srd2024/${category}.json`);
   if (!r.ok) throw new Error(`2024 SRD ${category}.json unavailable`);
   _srd24Files[category] = await r.json();
   return _srd24Files[category];
