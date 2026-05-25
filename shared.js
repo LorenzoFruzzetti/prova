@@ -77,3 +77,62 @@ function classSlotTable(idx, edition) {
   if (['paladin','ranger'].includes(idx)) return edition === '2024' ? SLOTS_HALF_2024 : SLOTS_HALF_2014;
   return SLOTS_NONE;
 }
+
+// ── Dice rolling utilities ────────────────────────────────────────────────────
+
+/** Rolls a single d20. */
+function d20() { return Math.floor(Math.random() * 20) + 1; }
+
+/** Returns a descriptive string for a natural 20 or natural 1. */
+function natMsg(roll) { return roll === 20 ? ' ★ NAT 20!' : roll === 1 ? ' ✦ Nat 1' : ''; }
+
+/**
+ * Parses and rolls a dice expression such as "2d6+3" or "1d8-1".
+ * Returns the integer total, or null if the expression is invalid/empty.
+ */
+function rollDiceExpr(expr) {
+  if (!expr || expr === '—') return null;
+  let total = 0;
+  let s = expr.replace(/([+-]?)(\d+)d(\d+)/gi, (_, sign, n, y) => {
+    const sides = parseInt(y);
+    let sum = 0;
+    for (let i = 0; i < parseInt(n); i++) sum += Math.floor(Math.random() * sides) + 1;
+    return (sign === '-' ? -sum : ('+' + sum)).toString();
+  });
+  const parts = s.match(/[+-]?\d+/g);
+  if (!parts) return null;
+  parts.forEach(p => { total += parseInt(p); });
+  return total;
+}
+
+/**
+ * Rolls a d20 with optional advantage or disadvantage.
+ * @param {'normal'|'adv'|'dis'} mode
+ * @returns {{roll: number, breakdown: string}}
+ */
+function d20Roll(mode) {
+  if (mode === 'adv') {
+    const r1 = d20(), r2 = d20();
+    return { roll: Math.max(r1, r2), breakdown: `d20(${r1},${r2})` };
+  }
+  if (mode === 'dis') {
+    const r1 = d20(), r2 = d20();
+    return { roll: Math.min(r1, r2), breakdown: `d20(${r1},${r2})` };
+  }
+  const roll = d20();
+  return { roll, breakdown: `d20(${roll})` };
+}
+
+// ── ID generation ─────────────────────────────────────────────────────────────
+
+/** Generates a unique short ID using timestamp + random characters. */
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// ── HTML escaping ─────────────────────────────────────────────────────────────
+
+/** Escapes special HTML characters in a string to prevent XSS. */
+function escHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}

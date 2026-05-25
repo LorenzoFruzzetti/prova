@@ -1,0 +1,2392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>Creature Stat Block</title>
+<style>
+/* ── Theme variables (same tokens as character sheet) ── */
+:root {
+  --bg:#1a1410;--surface:#2a2018;--surface2:#352a1e;--border:#5c4a2a;--border-rgb:92,74,42;
+  --gold:#c9a84c;--gold-light:#e8c96a;--accent-rgb:201,168,76;
+  --red:#c0392b;--red-light:#e74c3c;--green:#27ae60;
+  --text:#e8d9b8;--text-muted:#9a8a6a;
+  --tab-active:#3d2e1a;--header-bg-1:#2a1a0a;--header-bg-2:#1a0e05;
+  --panel-bg-1:#2a1e0e;--panel-bg-2:#1a1206;
+  --spell:#5baeff;--spell-light:#7ec8ff;--spell-rgb:91,174,255;--spell-dark:#3d8fe0;
+  --radius:8px;--shadow:0 2px 8px rgba(0,0,0,0.5);--roll-border:2px;
+}
+:root[data-theme="dark"] {
+  --bg:#0f0f12;--surface:#1a1a20;--surface2:#222228;--border:#38383f;--border-rgb:56,56,63;
+  --gold:#9090b0;--gold-light:#b0b0d0;--accent-rgb:144,144,176;
+  --text:#d8d8e8;--text-muted:#686878;
+  --tab-active:#252530;--header-bg-1:#151518;--header-bg-2:#0a0a0e;
+  --panel-bg-1:#1e1e26;--panel-bg-2:#14141c;
+  --spell:#b07fff;--spell-light:#c8a0ff;--spell-rgb:176,127,255;--spell-dark:#8855d0;
+}
+:root[data-theme="red"] {
+  --bg:#150808;--surface:#201010;--surface2:#2c1414;--border:#5c2828;--border-rgb:92,40,40;
+  --gold:#c94c4c;--gold-light:#e87070;--accent-rgb:201,76,76;
+  --text:#e8d0d0;--text-muted:#9a6a6a;
+  --tab-active:#2e1818;--header-bg-1:#2a1010;--header-bg-2:#1a0808;
+  --panel-bg-1:#2a1414;--panel-bg-2:#1a0c0c;
+  --spell:#ffad50;--spell-light:#ffc87a;--spell-rgb:255,173,80;--spell-dark:#e08820;
+}
+:root[data-theme="forest"] {
+  --bg:#08130a;--surface:#101e12;--surface2:#162816;--border:#2a5c30;--border-rgb:42,92,48;
+  --gold:#4caa60;--gold-light:#6ec87a;--accent-rgb:76,170,96;
+  --text:#d0e8d2;--text-muted:#6a9a70;
+  --tab-active:#182a1a;--header-bg-1:#0c2010;--header-bg-2:#081408;
+  --panel-bg-1:#122018;--panel-bg-2:#0c160e;
+  --spell:#40c8c0;--spell-light:#70e0da;--spell-rgb:64,200,192;--spell-dark:#28a09a;
+}
+:root[data-theme="ocean"] {
+  --bg:#080e18;--surface:#101828;--surface2:#182030;--border:#28405c;--border-rgb:40,64,92;
+  --gold:#4a80c8;--gold-light:#6aa0e0;--accent-rgb:74,128,200;
+  --text:#d0dce8;--text-muted:#6a7a90;
+  --tab-active:#182030;--header-bg-1:#0c1824;--header-bg-2:#080e18;
+  --panel-bg-1:#182030;--panel-bg-2:#101828;
+  --spell:#50d890;--spell-light:#78e8a8;--spell-rgb:80,216,144;--spell-dark:#30b070;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overscroll-behavior:none}
+body{background:var(--bg);color:var(--text);font-family:Georgia,serif;-webkit-tap-highlight-color:transparent}
+
+/* ── Header toolbar ── */
+.app-header{
+  position:fixed;top:0;left:0;right:0;max-width:600px;margin:0 auto;
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;
+  background:linear-gradient(180deg,var(--header-bg-1),var(--header-bg-2));
+  border-bottom:1px solid var(--border);
+  z-index:100;min-height:52px;
+}
+.header-title{flex:1;font-size:17px;font-weight:bold;color:var(--gold-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon-btn{
+  background:none;border:1px solid var(--border);border-radius:6px;
+  color:var(--text-muted);font-family:sans-serif;font-size:12px;padding:5px 9px;
+  cursor:pointer;white-space:nowrap;transition:color 0.15s,border-color 0.15s;
+  user-select:none;-webkit-user-select:none;
+}
+.icon-btn:active{color:var(--gold);border-color:var(--gold)}
+
+/* ── Page content (below fixed header) ── */
+.page-content{max-width:600px;margin:0 auto;padding:64px 0 40px}
+
+/* ── Creature grid view ── */
+#gridView{max-width:600px;margin:0 auto;padding:64px 14px 40px}
+.creature-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;padding-top:8px}
+.creature-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  overflow:hidden;cursor:pointer;transition:border-color 0.15s,transform 0.1s;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;
+}
+.creature-card:active{transform:scale(0.97);border-color:var(--gold)}
+.creature-card.active-card{border-color:var(--gold)}
+.creature-card-img{
+  width:100%;aspect-ratio:1;background:var(--surface2);display:flex;align-items:center;justify-content:center;
+  font-size:40px;overflow:hidden;position:relative;
+}
+.creature-card-img img{width:100%;height:100%;object-fit:cover}
+.creature-card-body{padding:8px 10px 10px}
+.creature-card-name{font-size:13px;font-weight:bold;color:var(--text);line-height:1.2;margin-bottom:3px}
+.creature-card-meta{font-size:10px;color:var(--text-muted);font-family:sans-serif}
+.creature-card-cr{
+  position:absolute;top:6px;right:6px;
+  background:rgba(0,0,0,0.72);border:1px solid var(--gold);border-radius:4px;
+  font-size:10px;font-family:sans-serif;font-weight:bold;color:var(--gold);padding:1px 5px;
+}
+.creature-add-card{
+  background:none;border:1px dashed var(--border);border-radius:10px;
+  aspect-ratio:auto;min-height:100px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  color:var(--text-muted);font-family:sans-serif;font-size:12px;
+  transition:border-color 0.15s,color 0.15s;touch-action:manipulation;
+}
+.creature-add-card:active{border-color:var(--gold);color:var(--gold)}
+.search-bar{padding:0 0 10px}
+.search-bar input{
+  width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:sans-serif;font-size:14px;padding:9px 12px;outline:none;
+}
+.search-bar input:focus{border-color:var(--gold)}
+
+/* ── Stat block detail ── */
+.stat-block{padding:14px 14px 24px}
+.stat-block-name{
+  font-size:24px;font-weight:bold;color:var(--gold-light);line-height:1.15;
+  padding:8px 8px 8px calc(var(--roll-border) + 8px);
+  box-shadow:inset var(--roll-border) 0 0 0 rgba(var(--accent-rgb),0.5);
+  cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  border-radius:4px 0 0 4px;transition:background 0.12s;
+}
+.stat-block-name:active,.stat-block-name.holding{background:rgba(var(--accent-rgb),0.13)}
+.stat-block-name input{
+  background:none;border:none;outline:none;color:inherit;font:inherit;width:100%;
+}
+.stat-sub{font-size:13px;color:var(--text-muted);font-family:sans-serif;font-style:italic;padding:3px 8px 10px}
+.stat-divider{border:none;border-top:1px solid var(--border);margin:10px 0}
+.cr-pill{
+  display:inline-block;background:rgba(var(--accent-rgb),0.15);
+  border:1px solid rgba(var(--accent-rgb),0.5);border-radius:4px;
+  font-size:12px;font-family:sans-serif;font-weight:bold;color:var(--gold);padding:1px 7px;
+}
+
+/* ── Defence pills ── */
+.defence-pills{display:flex;flex-wrap:wrap;gap:8px;padding:6px 8px}
+.defence-pill{
+  flex:1;min-width:60px;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;text-align:center;font-family:sans-serif;
+}
+.defence-pill-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:2px}
+.defence-pill-value{font-size:16px;font-weight:bold;color:var(--text)}
+.defence-pill-sub{font-size:10px;color:var(--text-muted)}
+
+/* ── Ability grid ── */
+.ability-grid{display:flex;gap:4px;padding:8px 6px;justify-content:space-between}
+.ability-col{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 4px;
+  min-width:0;
+}
+.ability-key{font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--gold);font-family:sans-serif;font-weight:bold}
+.ability-score{font-size:18px;font-weight:bold;color:var(--text);line-height:1}
+.ability-mod-badge{
+  font-size:12px;font-weight:bold;font-family:sans-serif;color:var(--gold-light);
+  background:rgba(var(--accent-rgb),0.12);border-radius:4px;padding:1px 5px;
+}
+.save-badge{font-size:9px;color:var(--text-muted);font-family:sans-serif}
+
+/* ── Stat rows ── */
+.cs-rows{padding:0 8px}
+.cs-row{font-family:sans-serif;font-size:12px;padding:4px 0;color:var(--text)}
+.cs-row-label{display:inline;font-weight:bold;color:var(--gold);margin-right:4px}
+.cs-row-value{display:inline;color:var(--text)}
+
+/* ── Individual sense/skill rows ── */
+.detail-sub-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:3px 10px;font-family:sans-serif;font-size:12px;color:var(--text);
+  border-bottom:1px solid rgba(var(--border-rgb),0.12);
+}
+.detail-sub-row:last-child{border-bottom:none}
+.detail-sub-label{color:var(--gold);font-size:11px;font-weight:600;min-width:90px}
+.detail-sub-value{color:var(--text);text-align:right;font-size:12px}
+.detail-sub-section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:4px 10px 2px;
+}
+.skill-expand-btn{
+  font-size:9px;color:var(--gold);font-family:sans-serif;letter-spacing:1px;
+  background:none;border:1px solid rgba(var(--accent-rgb),0.4);border-radius:4px;
+  padding:1px 6px;cursor:pointer;user-select:none;-webkit-user-select:none;
+}
+.skill-expand-btn:active{border-color:var(--gold);background:rgba(var(--accent-rgb),0.12)}
+/* ── Damage type pills ── */
+.dmg-type-pills{display:flex;flex-wrap:wrap;gap:4px;padding:2px 0 4px}
+.dmg-type-pill{
+  font-size:10px;font-family:sans-serif;font-weight:600;
+  border:1px solid currentColor;border-radius:4px;padding:1px 7px;
+  text-transform:capitalize;
+}
+/* ── Section title row with info/add buttons ── */
+.section-title-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 8px 6px;
+}
+.section-title-text{
+  font-size:9px;font-family:sans-serif;font-weight:bold;letter-spacing:2px;
+  text-transform:uppercase;color:var(--gold);
+}
+.section-info-btn,.section-add-btn{
+  font-size:10px;font-family:sans-serif;color:var(--text-muted);
+  background:none;border:1px solid rgba(var(--border-rgb),0.5);border-radius:4px;
+  padding:1px 6px;cursor:pointer;user-select:none;-webkit-user-select:none;
+}
+.section-info-btn:active,.section-add-btn:active{color:var(--gold);border-color:var(--gold)}
+/* ── Edit Panel ── */
+#editPanelBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:402;opacity:0;pointer-events:none;transition:opacity 0.2s}
+#editPanelBackdrop.show{opacity:1;pointer-events:auto}
+#editPanel{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0.88);
+  background:linear-gradient(160deg,var(--panel-bg-1),var(--panel-bg-2));
+  border:2px solid var(--gold);border-radius:20px;
+  padding:22px 22px 18px;z-index:403;opacity:0;
+  transition:opacity 0.2s,transform 0.2s;pointer-events:none;
+  width:min(92vw,500px);max-height:88vh;overflow-y:auto;
+  box-shadow:0 8px 32px rgba(0,0,0,0.7);
+}
+#editPanel.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+.ep-field{margin-bottom:10px}
+.ep-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-family:sans-serif}
+.ep-input{
+  width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:sans-serif;font-size:13px;padding:9px 12px;outline:none;
+  box-sizing:border-box;
+}
+.ep-input:focus{border-color:var(--gold)}
+select.ep-input{cursor:pointer}
+.ep-textarea{min-height:80px;resize:vertical}
+.ep-row{display:flex;gap:8px}
+.ep-row .ep-field{flex:1}
+
+/* ── Legendary actions pool ── */
+.legendary-pool{
+  display:flex;align-items:center;gap:10px;padding:8px 8px 4px;
+  font-family:sans-serif;font-size:12px;
+}
+.legendary-pool-label{color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:1px}
+.legendary-pool-dots{display:flex;gap:4px;align-items:center;flex:1}
+.legendary-restore-btn{
+  background:none;border:1px solid var(--border);border-radius:4px;
+  color:var(--text-muted);font-size:11px;padding:2px 7px;cursor:pointer;font-family:sans-serif;
+}
+.legendary-restore-btn:active{border-color:var(--gold);color:var(--gold)}
+
+/* ── Section title ── */
+.section-title{
+  font-size:9px;font-family:sans-serif;font-weight:bold;letter-spacing:2px;
+  text-transform:uppercase;color:var(--gold);
+  padding:12px 8px 6px;
+}
+
+/* ── Feature/action rows (same pattern as character sheet) ── */
+.feature-row{
+  display:flex;align-items:stretch;gap:0;
+  border-bottom:1px solid rgba(var(--border-rgb),0.35);
+}
+.feature-row:last-child{border-bottom:none}
+.feature-left-col{flex:1;min-width:0;display:flex;flex-direction:column}
+.feature-name-area{
+  padding:8px 8px 8px calc(var(--roll-border) + 6px);
+  box-shadow:inset var(--roll-border) 0 0 0 rgba(var(--accent-rgb),0.35);
+  background:rgba(var(--accent-rgb),0.04);
+  border-radius:4px 0 0 4px;
+  cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  transition:background 0.12s;display:flex;flex-direction:column;justify-content:flex-start;
+}
+.feature-name-area:active,.feature-name-area.holding{background:rgba(var(--accent-rgb),0.13)}
+.feature-name{font-size:13px;color:var(--gold-light);font-family:sans-serif;font-weight:600}
+.feature-recharge{font-size:10px;color:var(--text-muted);font-family:sans-serif;font-style:italic}
+.feature-step-hint{font-size:9px;color:var(--text-muted);font-family:sans-serif}
+.feature-dots{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.feature-dots-col{display:flex;flex-direction:column;gap:5px;padding:8px;justify-content:center;flex-shrink:0}
+.feature-right-col{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:6px 6px 4px 8px;flex-shrink:0;
+}
+.feature-ctrl-top{display:flex;align-items:center;gap:4px}
+.feature-restore-btn{
+  background:none;border:1px solid var(--border);border-radius:4px;
+  color:var(--text-muted);font-size:12px;padding:2px 6px;cursor:pointer;
+}
+.feature-restore-btn:active{border-color:var(--gold);color:var(--gold)}
+.mini-tracker{display:flex;align-items:center;gap:3px}
+.mini-btn{
+  background:none;border:1px solid var(--border);border-radius:4px;
+  color:var(--text-muted);font-size:14px;width:26px;height:26px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  user-select:none;-webkit-user-select:none;
+}
+.mini-btn:active{border-color:var(--gold);color:var(--gold)}
+.mini-val{font-size:11px;color:var(--text-muted);font-family:sans-serif;min-width:30px;text-align:center}
+
+/* ── Slot dots ── */
+.slot-dot{
+  width:16px;height:16px;border-radius:50%;border:2px solid var(--gold);
+  cursor:pointer;transition:background 0.15s;flex-shrink:0;
+}
+.slot-dot.available{background:var(--gold)}
+.slot-dot.used{background:rgba(var(--accent-rgb),0.15);border-color:var(--border)}
+
+/* ── Attack/roll tags ── */
+.spell-item-tag{
+  font-size:9px;font-family:sans-serif;font-weight:bold;
+  border:1px solid currentColor;border-radius:3px;padding:0 4px;opacity:0.85;
+}
+.action-bonus-tag{
+  font-size:10px;font-family:sans-serif;color:var(--gold);white-space:nowrap;
+}
+
+/* ── 3-zone roll widget ── */
+.roll-tri{
+  border:var(--roll-border) solid var(--gold);border-radius:10px;
+  overflow:hidden;margin:10px 0;user-select:none;-webkit-user-select:none;
+}
+.rtz-top{
+  padding:12px 12px 9px;text-align:center;cursor:pointer;
+  background:rgba(var(--accent-rgb),0.08);
+  border-bottom:1px solid rgba(var(--border-rgb),0.4);transition:background 0.15s;
+}
+.rtz-top:active{background:rgba(var(--accent-rgb),0.18)}
+.rtz-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);font-family:sans-serif;margin-bottom:3px}
+.rtz-bonus{font-size:26px;font-weight:bold;color:var(--gold-light);line-height:1.1}
+.rtz-damage{font-size:11px;color:var(--text-muted);margin-top:2px}
+.rtz-bottom{display:flex}
+.rtz-dis,.rtz-adv{
+  flex:1;padding:8px 4px;text-align:center;cursor:pointer;
+  font-size:10px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;font-family:sans-serif;
+  transition:background 0.15s;
+}
+.rtz-dis{background:rgba(192,57,43,0.07);color:var(--red-light);border-right:1px solid rgba(var(--border-rgb),0.4)}
+.rtz-dis:active{background:rgba(192,57,43,0.20)}
+.rtz-adv{background:rgba(39,174,96,0.07);color:var(--green)}
+.rtz-adv:active{background:rgba(39,174,96,0.20)}
+
+/* ── Save DC box ── */
+.sp-save-dc-box{
+  background:rgba(var(--accent-rgb),0.08);border:1px solid rgba(var(--accent-rgb),0.35);
+  border-radius:10px;padding:10px 14px;text-align:center;margin-bottom:12px;font-family:sans-serif;
+}
+.sp-save-dc-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.sp-save-dc-value{font-size:32px;font-weight:bold;color:var(--gold-light);line-height:1.1}
+.sp-save-dc-ability{font-size:11px;color:var(--text-muted)}
+
+/* ── Damage roll button ── */
+.sp-atk-box{
+  background:rgba(var(--spell-rgb),0.08);border:1px solid rgba(var(--spell-rgb),0.35);
+  border-radius:10px;padding:10px 14px;text-align:center;margin-bottom:12px;
+  font-family:sans-serif;cursor:pointer;user-select:none;-webkit-user-select:none;
+  transition:background 0.15s;
+}
+.sp-atk-box:active{background:rgba(var(--spell-rgb),0.18)}
+.sp-atk-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.sp-atk-bonus{font-size:30px;font-weight:bold;color:var(--spell);line-height:1.1}
+
+/* ── Roll overlay ── */
+#rollBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:350;opacity:0;pointer-events:none;transition:opacity 0.2s}
+#rollBackdrop.show{opacity:1;pointer-events:auto}
+#rollResult{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0.85);
+  background:linear-gradient(160deg,var(--panel-bg-1),var(--panel-bg-2));
+  border:2px solid var(--gold);border-radius:20px;
+  padding:26px 34px 22px;text-align:center;
+  z-index:351;opacity:0;transition:opacity 0.2s,transform 0.2s;pointer-events:none;
+  min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,0.7);
+}
+#rollResult.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+.rr-label{font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:2px;font-family:sans-serif;margin-bottom:6px}
+.rr-total{font-size:72px;font-weight:bold;color:var(--text);line-height:1;margin:4px 0}
+.rr-breakdown{font-size:13px;color:var(--text-muted);font-family:sans-serif;margin-top:4px}
+.rr-secondary{font-size:13px;color:var(--red-light);font-family:sans-serif;margin-top:4px;min-height:18px;white-space:pre-line}
+.rr-nat{font-size:14px;color:var(--gold-light);margin-top:8px;min-height:18px;font-family:sans-serif}
+.rr-dismiss{display:block;margin-top:14px;font-size:9px;color:var(--text-muted);font-family:sans-serif;letter-spacing:1px;text-transform:uppercase}
+
+/* ── Info panel ── */
+#infoPanelBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;opacity:0;pointer-events:none;transition:opacity 0.2s}
+#infoPanelBackdrop.show{opacity:1;pointer-events:auto}
+#infoPanel{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0.88);
+  background:linear-gradient(160deg,var(--panel-bg-1),var(--panel-bg-2));
+  border:2px solid var(--gold);border-radius:20px;
+  padding:22px 22px 18px;z-index:301;opacity:0;
+  transition:opacity 0.2s,transform 0.2s,border-color 0.25s;pointer-events:none;
+  width:min(92vw,500px);max-height:82vh;overflow-y:auto;
+  box-shadow:0 8px 32px rgba(0,0,0,0.7);
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+#infoPanel.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+.sp-mode-badge{font-size:9px;letter-spacing:2.5px;text-transform:uppercase;font-family:sans-serif;color:var(--gold);margin-bottom:6px}
+.sp-name{font-size:20px;font-weight:bold;color:var(--text);margin-bottom:3px;line-height:1.2}
+.sp-meta{font-size:12px;color:var(--text-muted);font-family:sans-serif;font-style:italic;margin-bottom:12px}
+.sp-description{font-size:13px;color:var(--text);font-family:sans-serif;line-height:1.6;white-space:pre-wrap;margin-bottom:12px}
+.sp-dismiss-hint{display:block;font-size:9px;color:var(--text-muted);font-family:sans-serif;letter-spacing:1px;text-transform:uppercase;text-align:center;margin-top:4px}
+
+/* ── Creature settings sheet ── */
+#settingsBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;opacity:0;pointer-events:none;transition:opacity 0.2s}
+#settingsBackdrop.show{opacity:1;pointer-events:auto}
+#settingsSheet{
+  position:fixed;bottom:0;left:0;right:0;max-width:600px;margin:0 auto;
+  background:var(--surface);border:1px solid var(--border);
+  border-top:2px solid var(--gold);border-radius:20px 20px 0 0;
+  padding:22px 20px 40px;z-index:401;
+  transform:translateY(100%);transition:transform 0.28s cubic-bezier(0.32,0.72,0,1);
+}
+#settingsSheet.show{transform:translateY(0)}
+.hp-dlg-title{text-align:center;font-size:14px;font-family:sans-serif;font-weight:600;color:var(--gold-light);text-transform:uppercase;letter-spacing:1.5px}
+
+/* ── Import modal ── */
+#importBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:400;opacity:0;pointer-events:none;transition:opacity 0.2s}
+#importBackdrop.show{opacity:1;pointer-events:auto}
+#importModal{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0.88);
+  background:linear-gradient(160deg,var(--panel-bg-1),var(--panel-bg-2));
+  border:2px solid var(--gold);border-radius:20px;
+  padding:22px 22px 18px;z-index:401;opacity:0;
+  transition:opacity 0.2s,transform 0.2s;pointer-events:none;
+  width:min(92vw,500px);max-height:88vh;overflow-y:auto;
+  box-shadow:0 8px 32px rgba(0,0,0,0.7);
+}
+#importModal.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+.import-tab-row{display:flex;gap:6px;margin-bottom:14px}
+.import-tab-btn{
+  flex:1;padding:7px 4px;font-size:11px;font-family:sans-serif;font-weight:600;
+  background:none;border:1px solid var(--border);border-radius:6px;
+  color:var(--text-muted);cursor:pointer;transition:color 0.15s,border-color 0.15s,background 0.15s;
+}
+.import-tab-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(var(--accent-rgb),0.1)}
+.ai-prompt-box{
+  width:100%;min-height:72px;resize:vertical;padding:9px 12px;
+  font-size:13px;font-family:sans-serif;background:var(--surface2);
+  border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;
+  box-sizing:border-box;margin-bottom:10px;
+}
+.ai-prompt-box:focus{border-color:var(--gold)}
+.ai-copy-notice{font-size:11px;color:var(--spell-light);min-height:1em;margin-bottom:8px;font-family:sans-serif}
+.srd-results-box{
+  max-height:220px;overflow-y:auto;
+  border:1px solid var(--border);border-radius:8px;background:var(--surface);margin-bottom:4px;
+}
+.srd-result-item{
+  padding:9px 12px;border-bottom:1px solid rgba(var(--border-rgb),0.35);
+  cursor:pointer;font-family:sans-serif;font-size:13px;color:var(--text);
+  transition:background 0.1s;
+}
+.srd-result-item:last-child{border-bottom:none}
+.srd-result-item:active,.srd-result-item:hover{background:rgba(var(--accent-rgb),0.1);color:var(--gold)}
+.srd-hint{padding:14px 12px;color:var(--text-muted);font-family:sans-serif;font-size:12px;text-align:center}
+
+/* ── Buttons ── */
+.hp-dlg-btn{
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:sans-serif;font-size:13px;padding:10px 16px;
+  cursor:pointer;transition:border-color 0.15s,color 0.15s;
+}
+.hp-dlg-btn:active{border-color:var(--gold);color:var(--gold)}
+.attack-edit-btn{
+  background:none;border:1px solid var(--border);border-radius:4px;
+  color:var(--text-muted);font-family:sans-serif;font-size:10px;
+  font-weight:600;letter-spacing:0.5px;text-transform:uppercase;
+  padding:3px 8px;cursor:pointer;transition:color 0.15s,border-color 0.15s;
+}
+.attack-edit-btn:active{border-color:var(--gold);color:var(--gold)}
+.settings-full-btn{
+  display:block;width:100%;padding:12px 16px;margin-bottom:8px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  color:var(--text);font-family:sans-serif;font-size:13px;text-align:left;
+  cursor:pointer;transition:border-color 0.15s,color 0.15s;
+}
+.settings-full-btn:active{border-color:var(--gold);color:var(--gold-light)}
+label.settings-full-btn{cursor:pointer}
+
+/* ── Toast ── */
+#toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,0.85);color:#fff;font-family:sans-serif;font-size:13px;
+  padding:9px 18px;border-radius:20px;z-index:9999;pointer-events:none;
+  opacity:0;transition:opacity 0.2s;white-space:nowrap;
+}
+#toast.show{opacity:1}
+</style>
+</head>
+<body data-theme="dark">
+
+<!-- ── GRID VIEW ── -->
+<div id="gridView">
+  <div class="app-header">
+    <button class="icon-btn" id="backBtn" style="display:none" onclick="goBackToCharacter()">← Back</button>
+    <div class="header-title">🐉 Creatures</div>
+    <div style="display:flex;gap:6px">
+      <button class="icon-btn" onclick="openImportModal()">Import ▾</button>
+    </div>
+  </div>
+  <div class="search-bar">
+    <input type="search" id="creatureSearch" placeholder="Search by name, type, CR…" oninput="filterCreatures()">
+  </div>
+  <div id="creatureGrid" class="creature-grid"></div>
+</div>
+
+<!-- ── DETAIL VIEW ── -->
+<div id="detailView" style="display:none">
+  <div class="app-header">
+    <button class="icon-btn" onclick="showGrid()">← All</button>
+    <div class="header-title" id="detailHeaderTitle" style="flex:1"></div>
+    <div style="display:flex;gap:6px">
+      <button class="icon-btn" id="detailBackBtn" style="display:none" onclick="goBackToCharacter()">← Char</button>
+      <button class="icon-btn" onclick="openImportModal()">Import ▾</button>
+      <button class="icon-btn" onclick="openCreatureSettings()">⚙</button>
+    </div>
+  </div>
+  <div class="page-content">
+    <div id="statBlock" class="stat-block"></div>
+  </div>
+</div>
+
+<!-- ── ROLL OVERLAY ── -->
+<div id="rollBackdrop" onclick="dismissRollResult()"></div>
+<div id="rollResult" onclick="dismissRollResult()">
+  <div class="rr-label" id="rrLabel">—</div>
+  <div class="rr-total" id="rrTotal">—</div>
+  <div class="rr-breakdown" id="rrBreak"></div>
+  <div class="rr-secondary" id="rrSecondary"></div>
+  <div class="rr-nat" id="rrNat"></div>
+  <span class="rr-dismiss">tap to dismiss</span>
+</div>
+
+<!-- ── INFO PANEL ── -->
+<div id="infoPanelBackdrop" onclick="dismissInfoPanel()"></div>
+<div id="infoPanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <div class="sp-mode-badge" id="ipBadge">Info</div>
+    <button class="attack-edit-btn" id="ipEditBtn" style="display:none" onclick="openEditPanel(infoPanelCfg.section,infoPanelCfg.index)">Edit</button>
+  </div>
+  <div class="sp-name" id="ipTitle"></div>
+  <div class="sp-meta" id="ipMeta" style="display:none"></div>
+  <div class="roll-tri" id="ipRollBox" style="display:none">
+    <div class="rtz-top" onclick="event.stopPropagation();infoPanelRoll('normal')">
+      <div class="rtz-label" id="ipRollLabel">Attack Roll</div>
+      <div class="rtz-bonus" id="ipRollBonus">+0</div>
+      <div class="rtz-damage" id="ipRollDamage"></div>
+    </div>
+    <div class="rtz-bottom">
+      <div class="rtz-dis" onclick="event.stopPropagation();infoPanelRoll('dis')">Disadv</div>
+      <div class="rtz-adv" onclick="event.stopPropagation();infoPanelRoll('adv')">Adv</div>
+    </div>
+  </div>
+  <div class="sp-save-dc-box" id="ipSaveDcBox" style="display:none">
+    <div class="sp-save-dc-label">Save DC</div>
+    <div class="sp-save-dc-value" id="ipSaveDcValue">—</div>
+    <div class="sp-save-dc-ability" id="ipSaveDcAbility"></div>
+  </div>
+  <div class="sp-atk-box" id="ipDmgBox" style="display:none" onclick="event.stopPropagation();infoPanelDmg()">
+    <div class="sp-atk-label" id="ipDmgLabel">Damage — tap to roll</div>
+    <div class="sp-atk-bonus" id="ipDmgDice"></div>
+  </div>
+  <div class="sp-description" id="ipDesc"></div>
+  <span class="sp-dismiss-hint">tap to dismiss</span>
+</div>
+
+<!-- ── CREATURE SETTINGS SHEET ── -->
+<div id="settingsBackdrop" onclick="dismissCreatureSettings()"></div>
+<div id="settingsSheet">
+  <div class="hp-dlg-title">Creature Options</div>
+  <div style="height:10px"></div>
+  <button class="settings-full-btn" onclick="exportCreatureJSON();dismissCreatureSettings()">💾 Export JSON</button>
+  <label class="settings-full-btn">📂 Import from JSON
+    <input type="file" accept=".json" style="display:none" onchange="importCreatureFromJSON(this)">
+  </label>
+  <button class="settings-full-btn" onclick="openPortraitPicker()">🖼 Set Portrait</button>
+  <input type="file" id="portraitInput" accept="image/*" style="display:none" onchange="handlePortraitFile(this)">
+  <hr style="border-color:var(--border);margin:10px 0">
+  <button class="settings-full-btn" style="color:var(--red-light)" onclick="deleteCurrentCreature()">🗑 Delete Creature</button>
+  <button class="hp-dlg-btn" onclick="dismissCreatureSettings()" style="width:100%;margin-top:6px">Close</button>
+</div>
+
+<!-- ── IMPORT MODAL ── -->
+<div id="importBackdrop" onclick="dismissImportModal()"></div>
+<div id="importModal">
+  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:12px">Import Creature</div>
+  <div class="import-tab-row">
+    <button class="import-tab-btn active" id="tabAI"    onclick="setImportTab('ai')">✨ AI</button>
+    <button class="import-tab-btn"        id="tabSrd14" onclick="setImportTab('srd14')">📖 2014</button>
+    <button class="import-tab-btn"        id="tabSrd24" onclick="setImportTab('srd24')">📗 2024</button>
+  </div>
+
+  <!-- AI tab -->
+  <div id="aiTabContent">
+    <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Creature name or description</div>
+    <textarea class="ai-prompt-box" id="aiWhatInput" placeholder="e.g. Ancient Red Dragon, Goblin Boss, Aboleth…"></textarea>
+    <button class="settings-full-btn" style="margin-bottom:10px" onclick="generateAndCopyCreaturePrompt()">Copy prompt to clipboard</button>
+    <div class="ai-copy-notice" id="aiCopyNotice"></div>
+    <div style="font-size:10px;color:var(--text-muted);margin:6px 0;text-transform:uppercase;letter-spacing:1px">Paste AI JSON response</div>
+    <textarea class="ai-prompt-box" id="aiResponsePaste" placeholder="Paste the AI's JSON here…"></textarea>
+    <button class="settings-full-btn" onclick="importAICreatureResponse()">Import</button>
+  </div>
+
+  <!-- SRD 2014 tab -->
+  <div id="srd14TabContent" style="display:none">
+    <input type="search" id="srd14SearchInput" class="ai-prompt-box" style="min-height:unset;padding:9px 12px;resize:none" placeholder="Search monsters (2014 SRD)…" oninput="onSrd14Search()">
+    <div id="srd14Status" style="font-size:11px;color:var(--text-muted);min-height:16px;margin-bottom:6px;font-family:sans-serif"></div>
+    <div id="srd14Results" class="srd-results-box"><div class="srd-hint">Type to search monsters.</div></div>
+  </div>
+
+  <!-- SRD 2024 tab -->
+  <div id="srd24TabContent" style="display:none">
+    <input type="search" id="srd24SearchInput" class="ai-prompt-box" style="min-height:unset;padding:9px 12px;resize:none" placeholder="Search monsters (2024 SRD)…" oninput="onSrd24Search()">
+    <div id="srd24Status" style="font-size:11px;color:var(--text-muted);min-height:16px;margin-bottom:6px;font-family:sans-serif"></div>
+    <div id="srd24Results" class="srd-results-box"><div class="srd-hint">Type to search monsters.</div></div>
+  </div>
+
+  <button class="hp-dlg-btn" onclick="dismissImportModal()" style="width:100%;margin-top:10px">Cancel</button>
+</div>
+
+<div id="toast"></div>
+
+<!-- ── EDIT PANEL ── -->
+<div id="editPanelBackdrop" onclick="dismissEditPanel()"></div>
+<div id="editPanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div class="sp-mode-badge" id="epBadge" style="color:var(--spell-light)">Edit</div>
+    <button class="attack-edit-btn" id="epDeleteBtn" onclick="deleteFromEditPanel()" style="color:var(--red-light);border-color:var(--red-light)">Delete</button>
+  </div>
+  <div id="epForm"></div>
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="hp-dlg-btn" onclick="dismissEditPanel()" style="flex:1">Cancel</button>
+    <button class="hp-dlg-btn" onclick="saveEditPanel()" style="flex:1;border-color:var(--gold);color:var(--gold)">Save</button>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+'use strict';
+
+// ── Constants ──────────────────────────────────────────────────────────
+const CREATURE_KEY  = 'dnd5e_creatures';
+const CONTEXT_KEY   = 'dnd5e_creature_context';
+const OPEN_KEY      = 'dnd5e_creature_open';
+const SRD_API       = 'https://www.dnd5eapi.co/api';
+const ABILITIES     = ['STR','DEX','CON','INT','WIS','CHA'];
+
+const CR_XP = {
+  0:10, 0.125:25, 0.25:50, 0.5:100,
+  1:200,2:450,3:700,4:1100,5:1800,6:2300,7:2900,8:3900,9:5000,10:5900,
+  11:7200,12:8400,13:10000,14:11500,15:13000,16:15000,17:18000,18:20000,
+  19:22000,20:25000,21:33000,22:41000,23:50000,24:62000,25:75000,
+  26:90000,27:105000,28:120000,29:135000,30:155000
+};
+
+const ALL_CREATURE_SKILLS = [
+  {name:'Athletics',        ability:'STR', key:'athletics'},
+  {name:'Acrobatics',       ability:'DEX', key:'acrobatics'},
+  {name:'Sleight of Hand',  ability:'DEX', key:'sleight of hand'},
+  {name:'Stealth',          ability:'DEX', key:'stealth'},
+  {name:'Arcana',           ability:'INT', key:'arcana'},
+  {name:'History',          ability:'INT', key:'history'},
+  {name:'Investigation',    ability:'INT', key:'investigation'},
+  {name:'Nature',           ability:'INT', key:'nature'},
+  {name:'Religion',         ability:'INT', key:'religion'},
+  {name:'Animal Handling',  ability:'WIS', key:'animal handling'},
+  {name:'Insight',          ability:'WIS', key:'insight'},
+  {name:'Medicine',         ability:'WIS', key:'medicine'},
+  {name:'Perception',       ability:'WIS', key:'perception'},
+  {name:'Survival',         ability:'WIS', key:'survival'},
+  {name:'Deception',        ability:'CHA', key:'deception'},
+  {name:'Intimidation',     ability:'CHA', key:'intimidation'},
+  {name:'Performance',      ability:'CHA', key:'performance'},
+  {name:'Persuasion',       ability:'CHA', key:'persuasion'},
+];
+
+const SECTION_DESCRIPTIONS = {
+  specialAbilities: 'Traits are persistent abilities or limited-use powers. Some have charges (e.g. Legendary Resistance 3/Day) that reset after a rest. Hold an item to view its details, or tap ⊕ to add a new trait.',
+  actions: 'Actions are used on the creature\'s turn. Some have limited uses or require a recharge roll (e.g. "Recharge 5-6": at the start of the creature\'s turn it rolls a d6; on 5–6 the action recharges).',
+  bonusActions: 'Bonus actions are extra actions taken on the creature\'s turn in addition to its main action. A creature can normally use only one bonus action per turn.',
+  reactions: 'Reactions occur instantly in response to a trigger, even outside the creature\'s own turn. A creature can use only one reaction per round, regaining it at the start of its next turn.',
+  legendaryActions: 'Legendary actions can be taken at the end of another creature\'s turn by spending points from the legendary action pool. The pool resets at the start of the creature\'s turn. Each action costs 1 or more points.',
+  lairActions: 'Lair actions occur on initiative count 20 (losing all ties) while the creature is in its lair. The environment itself acts, imposing hazards or granting advantages.',
+};
+
+// ── Local SRD helpers (same pattern as character sheet) ────────────────
+async function _srdGet(path) {
+  const key = 'srd_v1_' + path;
+  const hit = localStorage.getItem(key);
+  if (hit) return JSON.parse(hit);
+  const res = await fetch(SRD_API + path);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+  return data;
+}
+
+let _srd24Available = null;
+let _srd24Translation = null;
+const _srd24Files = {};
+
+async function _srd24Detect() {
+  if (_srd24Available !== null) return _srd24Available;
+  try {
+    const r = await fetch('srd2024/translation.json');
+    if (!r.ok) { _srd24Available = false; return false; }
+    _srd24Translation = await r.json();
+    _srd24Available = true;
+  } catch { _srd24Available = false; }
+  return _srd24Available;
+}
+
+async function _srd24Load(category) {
+  if (_srd24Files[category]) return _srd24Files[category];
+  const r = await fetch(`srd2024/${category}.json`);
+  if (!r.ok) throw new Error(`2024 SRD ${category}.json unavailable`);
+  _srd24Files[category] = await r.json();
+  return _srd24Files[category];
+}
+
+// ── Creature state ─────────────────────────────────────────────────────
+function defaultCreature() {
+  return {
+    name: 'New Creature',
+    source: 'manual',
+    portrait: null,
+    notes: '',
+    size: 'Medium',
+    type: '',
+    subtype: '',
+    alignment: '',
+    cr: 1,
+    xp: 200,
+    ac: 10, acDetail: '',
+    hp: 10, hitDice: '',
+    speed: { walk:30, fly:0, swim:0, climb:0, burrow:0, hover:false },
+    abilities: { STR:10, DEX:10, CON:10, INT:10, WIS:10, CHA:10 },
+    savingThrows: {},
+    skills: {},
+    damageImmunities: [],
+    damageResistances: [],
+    damageVulnerabilities: [],
+    conditionImmunities: [],
+    senses: { darkvision:0, blindsight:0, truesight:0, tremorsense:0, passivePerception:10 },
+    telepathy: 0,
+    languages: '',
+    legendaryActionsMax: 0,
+    legendaryActionsUsed: 0,
+    specialAbilities: [],
+    actions: [],
+    reactions: [],
+    bonusActions: [],
+    legendaryActions: [],
+    lairActions: [],
+  };
+}
+
+// ── Roster management ──────────────────────────────────────────────────
+let rosterData = { creatures: {}, activeId: null };
+let activeId   = null;
+let creature   = defaultCreature();
+
+function loadRoster() {
+  try {
+    const raw = localStorage.getItem(CREATURE_KEY);
+    rosterData = raw ? JSON.parse(raw) : { creatures: {}, activeId: null };
+    if (!rosterData.creatures) rosterData.creatures = {};
+  } catch(e) { rosterData = { creatures: {}, activeId: null }; }
+}
+
+function saveRoster() {
+  if (activeId) {
+    rosterData.creatures[activeId] = { name: creature.name, portrait: creature.portrait, payload: creature };
+    rosterData.activeId = activeId;
+  }
+  try { localStorage.setItem(CREATURE_KEY, JSON.stringify(rosterData)); } catch(e) {}
+}
+
+function newCreature() {
+  saveRoster();
+  const id = genId();
+  activeId = id;
+  creature = defaultCreature();
+  rosterData.creatures[id] = { name: creature.name, portrait: null, payload: creature };
+  rosterData.activeId = id;
+  saveRoster();
+  renderCreatureDetail();
+  showDetail();
+  toast('New creature created');
+}
+
+function switchCreature(id) {
+  saveRoster();
+  activeId = id;
+  const entry = rosterData.creatures[id];
+  creature = entry?.payload ? JSON.parse(JSON.stringify(entry.payload)) : defaultCreature();
+  rosterData.activeId = id;
+  saveRoster();
+  renderCreatureDetail();
+  showDetail();
+}
+
+function deleteCurrentCreature() {
+  dismissCreatureSettings();
+  const ids = Object.keys(rosterData.creatures);
+  if (ids.length <= 1) {
+    toast('Cannot delete the only creature');
+    return;
+  }
+  const name = creature.name;
+  delete rosterData.creatures[activeId];
+  const newId = Object.keys(rosterData.creatures)[0];
+  activeId = newId;
+  rosterData.activeId = newId;
+  creature = rosterData.creatures[newId]?.payload ? JSON.parse(JSON.stringify(rosterData.creatures[newId].payload)) : defaultCreature();
+  saveRoster();
+  renderGrid();
+  showGrid();
+  toast(`${name} deleted`);
+}
+
+// ── CR helpers ─────────────────────────────────────────────────────────
+function crDisplay(cr) {
+  if (cr === 0.125) return '1/8';
+  if (cr === 0.25)  return '1/4';
+  if (cr === 0.5)   return '1/2';
+  return String(cr);
+}
+
+function crProfBonus(cr) {
+  if (cr <= 4)  return 2;
+  if (cr <= 8)  return 3;
+  if (cr <= 12) return 4;
+  if (cr <= 16) return 5;
+  if (cr <= 20) return 6;
+  if (cr <= 24) return 7;
+  if (cr <= 28) return 8;
+  return 9;
+}
+
+function crXP(cr) {
+  return CR_XP[cr] ?? CR_XP[Math.round(cr)] ?? 0;
+}
+
+// ── View management ────────────────────────────────────────────────────
+function showGrid() {
+  document.getElementById('gridView').style.display = '';
+  document.getElementById('detailView').style.display = 'none';
+  renderGrid();
+}
+
+function showDetail() {
+  document.getElementById('gridView').style.display = 'none';
+  document.getElementById('detailView').style.display = '';
+  document.getElementById('detailHeaderTitle').textContent = creature.name || 'Creature';
+  // Show "← Char" button if navigated from character sheet
+  const ctx = _getContext();
+  document.getElementById('detailBackBtn').style.display = ctx ? '' : 'none';
+  if (ctx) document.getElementById('detailBackBtn').textContent = `← ${ctx.charName || 'Char'}`;
+}
+
+function _getContext() {
+  try { return JSON.parse(localStorage.getItem(CONTEXT_KEY)); } catch { return null; }
+}
+
+function goBackToCharacter() {
+  const ctx = _getContext();
+  localStorage.removeItem(CONTEXT_KEY);
+  localStorage.removeItem(OPEN_KEY);
+  if (ctx?.url) { window.location.href = ctx.url; }
+  else { window.location.href = 'dnd-character-sheet.html'; }
+}
+
+// ── Grid rendering ─────────────────────────────────────────────────────
+function renderGrid() {
+  const grid   = document.getElementById('creatureGrid');
+  const search = (document.getElementById('creatureSearch')?.value || '').toLowerCase();
+  grid.innerHTML = '';
+
+  // "Back to character" header if context set
+  const ctx = _getContext();
+  const backBtn = document.getElementById('backBtn');
+  if (ctx) {
+    backBtn.style.display = '';
+    backBtn.textContent = `← ${ctx.charName || 'Character'}`;
+  } else {
+    backBtn.style.display = 'none';
+  }
+
+  Object.entries(rosterData.creatures).forEach(([id, entry]) => {
+    const p = entry.payload || {};
+    const name = p.name || entry.name || 'Unnamed';
+    const type = p.type || '';
+    const cr   = p.cr !== undefined ? crDisplay(p.cr) : '?';
+    const searchStr = (name + ' ' + type + ' cr' + cr).toLowerCase();
+    if (search && !searchStr.includes(search)) return;
+
+    const card = document.createElement('div');
+    card.className = 'creature-card' + (id === activeId ? ' active-card' : '');
+
+    const imgEl = document.createElement('div');
+    imgEl.className = 'creature-card-img';
+    if (entry.portrait || p.portrait) {
+      const img = document.createElement('img');
+      img.src = entry.portrait || p.portrait;
+      img.alt = name;
+      imgEl.appendChild(img);
+    } else {
+      imgEl.textContent = '🐉';
+    }
+    const crDiv = document.createElement('div');
+    crDiv.className = 'creature-card-cr';
+    crDiv.textContent = 'CR ' + cr;
+    imgEl.appendChild(crDiv);
+
+    const body = document.createElement('div');
+    body.className = 'creature-card-body';
+    body.innerHTML = `<div class="creature-card-name">${escHtml(name)}</div>
+      <div class="creature-card-meta">${escHtml([p.size, p.type].filter(Boolean).join(' ') || '—')}</div>`;
+
+    card.appendChild(imgEl);
+    card.appendChild(body);
+
+    let holdTimer = null;
+    card.addEventListener('pointerdown', () => {
+      holdTimer = setTimeout(() => {
+        holdTimer = null;
+        showCardOptions(id, entry, p);
+      }, 600);
+    });
+    card.addEventListener('pointerup', () => {
+      if (holdTimer !== null) {
+        clearTimeout(holdTimer);
+        holdTimer = null;
+        switchCreature(id);
+      }
+    });
+    card.addEventListener('pointercancel', () => { clearTimeout(holdTimer); holdTimer = null; });
+    card.addEventListener('contextmenu', e => e.preventDefault());
+
+    grid.appendChild(card);
+  });
+
+  // "Add new" card
+  const addCard = document.createElement('div');
+  addCard.className = 'creature-add-card';
+  addCard.innerHTML = '<div style="font-size:28px">➕</div><div>New Creature</div>';
+  addCard.onclick = newCreature;
+  grid.appendChild(addCard);
+}
+
+function filterCreatures() { renderGrid(); }
+
+function showCardOptions(id, entry, p) {
+  if (confirm(`Delete "${p.name || entry.name}"? This cannot be undone.`)) {
+    delete rosterData.creatures[id];
+    if (activeId === id) {
+      const remaining = Object.keys(rosterData.creatures);
+      activeId = remaining[0] || null;
+      rosterData.activeId = activeId;
+      creature = activeId ? (rosterData.creatures[activeId]?.payload ? JSON.parse(JSON.stringify(rosterData.creatures[activeId].payload)) : defaultCreature()) : defaultCreature();
+    }
+    saveRoster();
+    renderGrid();
+    toast('Deleted');
+  }
+}
+
+// ── Detail rendering ───────────────────────────────────────────────────
+function renderCreatureDetail() {
+  const sb = document.getElementById('statBlock');
+  if (!sb) return;
+
+  const c = creature;
+  const pb = crProfBonus(c.cr);
+  const xp = crXP(c.cr);
+
+  sb.innerHTML = '';
+
+  // Name (holdable → description/notes info panel)
+  const nameDiv = document.createElement('div');
+  nameDiv.className = 'stat-block-name';
+  nameDiv.id = 'creatureNameEl';
+  nameDiv.innerHTML = `<input id="creatureNameInput" value="${escHtml(c.name)}" placeholder="Creature Name"
+    oninput="creature.name=this.value;document.getElementById('detailHeaderTitle').textContent=this.value;saveRoster()"
+    onclick="event.stopPropagation()" style="background:none;border:none;outline:none;color:inherit;font:inherit;width:100%;font-size:24px">`;
+  let nameHoldTimer = null;
+  nameDiv.addEventListener('pointerdown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    nameHoldTimer = setTimeout(() => { nameHoldTimer = null; openCreatureInfoPanel(); }, 500);
+  });
+  nameDiv.addEventListener('pointerup', () => { clearTimeout(nameHoldTimer); nameHoldTimer = null; });
+  nameDiv.addEventListener('pointercancel', () => { clearTimeout(nameHoldTimer); nameHoldTimer = null; });
+  nameDiv.addEventListener('contextmenu', e => e.preventDefault());
+  sb.appendChild(nameDiv);
+
+  // Subtitle
+  const subDiv = document.createElement('div');
+  subDiv.className = 'stat-sub';
+  const sub = [c.size, c.type + (c.subtype ? ` (${c.subtype})` : '')].filter(Boolean).join(' ');
+  subDiv.textContent = (sub ? sub.charAt(0).toUpperCase() + sub.slice(1) : 'Unknown') + (c.alignment ? ' · ' + c.alignment : '');
+  sb.appendChild(subDiv);
+
+  // Divider
+  sb.appendChild(_divider());
+
+  // Defences row
+  const speedStr = _speedStr(c.speed);
+  const pillsDiv = document.createElement('div');
+  pillsDiv.className = 'defence-pills';
+  pillsDiv.innerHTML = `
+    ${_pill('AC', c.ac, c.acDetail || '')}
+    ${_pill('HP', c.hp, c.hitDice || '')}
+    ${_pill('Speed', speedStr, '')}
+    ${_pill('CR', crDisplay(c.cr), `XP ${(xp||0).toLocaleString()}`)}
+  `;
+  sb.appendChild(pillsDiv);
+
+  // Ability grid
+  const abDiv = document.createElement('div');
+  abDiv.className = 'ability-grid';
+  ABILITIES.forEach(ab => {
+    const score = c.abilities[ab] || 10;
+    const m     = mod(score);
+    const sv    = c.savingThrows[ab];
+    const svTxt = (sv !== undefined) ? `Save ${fmtMod(sv)}` : '';
+    abDiv.innerHTML += `
+      <div class="ability-col">
+        <div class="ability-key">${ab}</div>
+        <div class="ability-score">${score}</div>
+        <div class="ability-mod-badge">${fmtMod(m)}</div>
+        ${svTxt ? `<div class="save-badge">${escHtml(svTxt)}</div>` : ''}
+      </div>`;
+  });
+  sb.appendChild(abDiv);
+
+  // Stat rows (saves, skills, damage types, senses, languages, PB)
+  const rowsDiv = document.createElement('div');
+  rowsDiv.className = 'cs-rows';
+  sb.appendChild(rowsDiv);
+
+  // Saving Throws
+  const savesArr = Object.entries(c.savingThrows).map(([ab, val]) => `${ab} ${fmtMod(val)}`);
+  if (savesArr.length) _addRow(rowsDiv, 'Saving Throws', savesArr.join(', '));
+
+  // Skills — individual rows, collapsible to show all
+  _buildSkillsRows(rowsDiv, c);
+
+  // Damage interactions — pill style
+  _buildDamageTypeBlock(rowsDiv, 'Immunities',      c.damageImmunities      || []);
+  _buildDamageTypeBlock(rowsDiv, 'Resistances',     c.damageResistances     || []);
+  _buildDamageTypeBlock(rowsDiv, 'Vulnerabilities', c.damageVulnerabilities || []);
+  if (c.conditionImmunities?.length) _addRow(rowsDiv, 'Condition Immunities', c.conditionImmunities.join(', '));
+
+  // Senses — individual rows
+  _buildSensesRows(rowsDiv, c);
+
+  if (c.languages) _addRow(rowsDiv, 'Languages', c.languages);
+  _addRow(rowsDiv, 'Proficiency Bonus', fmtMod(pb));
+
+  // Traits (special abilities) — always shown
+  sb.appendChild(_divider());
+  sb.appendChild(_sectionTitle('Traits', 'specialAbilities'));
+  if (c.specialAbilities?.length) {
+    c.specialAbilities.forEach((sa, i) => sb.appendChild(_actionRow('specialAbilities', i, sa)));
+  } else {
+    sb.appendChild(_emptyHint('No traits. Tap ＋ to add.'));
+  }
+
+  // Actions — always shown
+  sb.appendChild(_divider());
+  sb.appendChild(_sectionTitle('Actions', 'actions'));
+  if (c.actions?.length) {
+    c.actions.forEach((a, i) => sb.appendChild(_actionRow('actions', i, a)));
+  } else {
+    sb.appendChild(_emptyHint('No actions. Tap ＋ to add.'));
+  }
+
+  // Bonus Actions — always shown
+  sb.appendChild(_divider());
+  sb.appendChild(_sectionTitle('Bonus Actions', 'bonusActions'));
+  if (c.bonusActions?.length) {
+    c.bonusActions.forEach((ba, i) => sb.appendChild(_actionRow('bonusActions', i, ba)));
+  } else {
+    sb.appendChild(_emptyHint('No bonus actions.'));
+  }
+
+  // Reactions — always shown
+  sb.appendChild(_divider());
+  sb.appendChild(_sectionTitle('Reactions', 'reactions'));
+  if (c.reactions?.length) {
+    c.reactions.forEach((r, i) => sb.appendChild(_actionRow('reactions', i, r)));
+  } else {
+    sb.appendChild(_emptyHint('No reactions.'));
+  }
+
+  // Legendary Actions
+  if (c.legendaryActions?.length || c.legendaryActionsMax > 0) {
+    sb.appendChild(_divider());
+    sb.appendChild(_sectionTitle('Legendary Actions', 'legendaryActions'));
+    if (c.legendaryActionsMax > 0) {
+      const poolDiv = document.createElement('div');
+      poolDiv.className = 'legendary-pool';
+      poolDiv.innerHTML = `<span class="legendary-pool-label">Pool</span>
+        <div class="legendary-pool-dots" id="legendaryPoolDots"></div>
+        <button class="legendary-restore-btn" onclick="restoreLegendaryPool()">⏻</button>`;
+      sb.appendChild(poolDiv);
+      renderLegendaryPool();
+    }
+    c.legendaryActions.forEach((la, i) => sb.appendChild(_actionRow('legendaryActions', i, la)));
+  }
+
+  // Lair Actions
+  if (c.lairActions?.length) {
+    sb.appendChild(_divider());
+    sb.appendChild(_sectionTitle('Lair Actions', 'lairActions'));
+    c.lairActions.forEach((la, i) => sb.appendChild(_actionRow('lairActions', i, la)));
+  }
+
+  // Notes
+  sb.appendChild(_divider());
+  sb.appendChild(_sectionTitle('Notes', 'notes'));
+  const notesArea = document.createElement('textarea');
+  notesArea.style.cssText = 'width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:sans-serif;font-size:13px;padding:10px;resize:vertical;min-height:80px;outline:none;box-sizing:border-box;margin:0 0 4px';
+  notesArea.value = c.notes || '';
+  notesArea.placeholder = 'Notes, encounter tips, lore…';
+  notesArea.addEventListener('input', () => { creature.notes = notesArea.value; saveRoster(); });
+  sb.appendChild(notesArea);
+
+  // Render all dots
+  const _dotSections = ['specialAbilities','actions','bonusActions','reactions','legendaryActions','lairActions'];
+  _dotSections.forEach(sec => (c[sec] || []).forEach((_, i) => renderDots(sec, i)));
+}
+
+// ── Section/row helpers ────────────────────────────────────────────────
+function _divider() { const hr = document.createElement('hr'); hr.className = 'stat-divider'; return hr; }
+function _sectionTitle(label, sectionKey) {
+  const div = document.createElement('div');
+  div.className = 'section-title-row';
+  const titleEl = document.createElement('span');
+  titleEl.className = 'section-title-text';
+  titleEl.textContent = label;
+  div.appendChild(titleEl);
+  const btns = document.createElement('div');
+  btns.style.cssText = 'display:flex;gap:4px;align-items:center';
+  if (sectionKey && SECTION_DESCRIPTIONS[sectionKey]) {
+    const infoBtn = document.createElement('button');
+    infoBtn.className = 'section-info-btn';
+    infoBtn.textContent = 'ℹ';
+    infoBtn.title = 'What is this?';
+    infoBtn.addEventListener('click', e => { e.stopPropagation(); openSectionInfoPanel(sectionKey, label); });
+    btns.appendChild(infoBtn);
+  }
+  if (sectionKey && sectionKey !== 'notes') {
+    const addBtn = document.createElement('button');
+    addBtn.className = 'section-add-btn';
+    addBtn.textContent = '＋';
+    addBtn.title = 'Add to ' + label;
+    addBtn.addEventListener('click', e => { e.stopPropagation(); openEditPanel(sectionKey, -1); });
+    btns.appendChild(addBtn);
+  }
+  div.appendChild(btns);
+  return div;
+}
+function _pill(label, value, sub) {
+  return `<div class="defence-pill">
+    <div class="defence-pill-label">${escHtml(label)}</div>
+    <div class="defence-pill-value">${escHtml(String(value))}</div>
+    ${sub ? `<div class="defence-pill-sub">${escHtml(sub)}</div>` : ''}
+  </div>`;
+}
+function _addRow(container, label, value) {
+  const div = document.createElement('div');
+  div.className = 'cs-row';
+  div.innerHTML = `<span class="cs-row-label">${escHtml(label)}:</span><span class="cs-row-value">${escHtml(value)}</span>`;
+  container.appendChild(div);
+}
+function _emptyHint(text) {
+  const div = document.createElement('div');
+  div.style.cssText = 'padding:8px 12px;font-size:12px;color:var(--text-muted);font-family:sans-serif;font-style:italic';
+  div.textContent = text;
+  return div;
+}
+
+// ── Skill rows (individual, collapsible) ──────────────────────────────
+let _skillsExpanded = false;
+
+function _buildSkillsRows(container, c) {
+  const hasModified = Object.keys(c.skills || {}).length > 0;
+  if (!hasModified && !_skillsExpanded) return;
+  const wrapper = document.createElement('div');
+  const headerDiv = document.createElement('div');
+  headerDiv.className = 'detail-sub-section-header';
+  const lbl = document.createElement('span');
+  lbl.className = 'cs-row-label';
+  lbl.style.cssText = 'font-family:sans-serif;font-size:12px';
+  lbl.textContent = 'Skills';
+  const btn = document.createElement('button');
+  btn.className = 'skill-expand-btn';
+  btn.id = 'skillExpandBtn';
+  btn.textContent = _skillsExpanded ? '▲ Less' : '▼ All';
+  btn.addEventListener('click', () => _toggleSkillsExpand());
+  headerDiv.appendChild(lbl);
+  headerDiv.appendChild(btn);
+  wrapper.appendChild(headerDiv);
+  const rowsContainer = document.createElement('div');
+  rowsContainer.id = 'skillsRowsContainer';
+  _renderSkillRows(rowsContainer, c);
+  wrapper.appendChild(rowsContainer);
+  container.appendChild(wrapper);
+}
+
+function _renderSkillRows(container, c) {
+  container.innerHTML = '';
+  if (_skillsExpanded) {
+    ALL_CREATURE_SKILLS.forEach(sk => {
+      const abilityScore = c.abilities[sk.ability] || 10;
+      const baseMod = mod(abilityScore);
+      const override = (c.skills || {})[sk.key] !== undefined ? (c.skills || {})[sk.key] : null;
+      const row = document.createElement('div');
+      row.className = 'detail-sub-row';
+      const color = override !== null ? 'color:var(--gold-light)' : 'color:var(--text-muted)';
+      row.innerHTML = `<span class="detail-sub-label" style="${color}">${escHtml(sk.name)}</span>
+        <span class="detail-sub-value" style="${color}">${override !== null ? fmtMod(override) : fmtMod(baseMod)
+        }<span style="font-size:9px;opacity:0.6;margin-left:3px">${sk.ability}</span></span>`;
+      container.appendChild(row);
+    });
+  } else {
+    Object.entries(c.skills || {}).forEach(([sk, val]) => {
+      const row = document.createElement('div');
+      row.className = 'detail-sub-row';
+      row.innerHTML = `<span class="detail-sub-label">${escHtml(sk.charAt(0).toUpperCase()+sk.slice(1))}</span>
+        <span class="detail-sub-value">${fmtMod(val)}</span>`;
+      container.appendChild(row);
+    });
+  }
+}
+
+function _toggleSkillsExpand() {
+  _skillsExpanded = !_skillsExpanded;
+  const btn = document.getElementById('skillExpandBtn');
+  if (btn) btn.textContent = _skillsExpanded ? '▲ Less' : '▼ All';
+  const c2 = document.getElementById('skillsRowsContainer');
+  if (c2) _renderSkillRows(c2, creature);
+}
+
+// ── Senses rows ────────────────────────────────────────────────────────
+function _buildSensesRows(container, c) {
+  const senseMap = [
+    { label:'Darkvision',   value: c.senses?.darkvision  },
+    { label:'Blindsight',   value: c.senses?.blindsight  },
+    { label:'Truesight',    value: c.senses?.truesight   },
+    { label:'Tremorsense',  value: c.senses?.tremorsense },
+    { label:'Telepathy',    value: c.telepathy           },
+  ];
+  const active = senseMap.filter(s => s.value && s.value > 0);
+  const pp = c.senses?.passivePerception || 10;
+  if (!active.length && !pp) return;
+  const headerDiv = document.createElement('div');
+  headerDiv.className = 'detail-sub-section-header';
+  const lbl = document.createElement('span');
+  lbl.className = 'cs-row-label';
+  lbl.style.cssText = 'font-family:sans-serif;font-size:12px';
+  lbl.textContent = 'Senses';
+  headerDiv.appendChild(lbl);
+  container.appendChild(headerDiv);
+  active.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'detail-sub-row';
+    row.innerHTML = `<span class="detail-sub-label">${escHtml(s.label)}</span>
+      <span class="detail-sub-value">${escHtml(s.value + ' ft.')}</span>`;
+    container.appendChild(row);
+  });
+  const ppRow = document.createElement('div');
+  ppRow.className = 'detail-sub-row';
+  ppRow.innerHTML = `<span class="detail-sub-label">Passive Perception</span>
+    <span class="detail-sub-value">${pp}</span>`;
+  container.appendChild(ppRow);
+}
+
+// ── Damage type pills ──────────────────────────────────────────────────
+function _dmgTypeColor(type) {
+  const map = {
+    fire:'#e87070', cold:'#70a8e8', lightning:'#d4d470', acid:'#80c880',
+    poison:'#b070c8', necrotic:'#909090', radiant:'#e8d070', psychic:'#c070e8',
+    force:'#70c8e8', thunder:'#8090c0', bludgeoning:'#b0a090',
+    piercing:'#90a090', slashing:'#a09070',
+  };
+  return map[(type||'').toLowerCase()] || 'var(--text-muted)';
+}
+
+function _buildDamageTypeBlock(container, label, types) {
+  if (!types?.length) return;
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'padding:3px 10px 2px';
+  const labelEl = document.createElement('div');
+  labelEl.className = 'cs-row-label';
+  labelEl.style.cssText = 'font-family:sans-serif;font-size:11px;display:block;padding:2px 0';
+  labelEl.textContent = label + ':';
+  wrapper.appendChild(labelEl);
+  const pillsDiv = document.createElement('div');
+  pillsDiv.className = 'dmg-type-pills';
+  types.forEach(t => {
+    const pill = document.createElement('span');
+    pill.className = 'dmg-type-pill';
+    const color = _dmgTypeColor(String(t));
+    pill.style.color = color;
+    pill.style.borderColor = color;
+    pill.textContent = String(t).charAt(0).toUpperCase() + String(t).slice(1).toLowerCase();
+    pillsDiv.appendChild(pill);
+  });
+  wrapper.appendChild(pillsDiv);
+  container.appendChild(wrapper);
+}
+
+function _speedStr(speed) {
+  if (!speed) return '—';
+  const parts = [];
+  if (speed.walk)  parts.push(`${speed.walk} ft.`);
+  if (speed.fly)   parts.push(`fly ${speed.fly} ft.${speed.hover ? ' (hover)' : ''}`);
+  if (speed.swim)  parts.push(`swim ${speed.swim} ft.`);
+  if (speed.climb) parts.push(`climb ${speed.climb} ft.`);
+  if (speed.burrow)parts.push(`burrow ${speed.burrow} ft.`);
+  return parts.join(', ') || '—';
+}
+
+function _actionRow(section, index, item) {
+  const hasAttack = item.attackBonus && item.attackBonus !== '—';
+  const hasDmg    = item.rolls && item.rolls.length > 0;
+  const hasSave   = item.saveAbility && item.saveDC;
+  const hasMax    = (item.max || 0) > 0;
+  const hasCost   = section === 'legendaryActions' && (item.cost || 1) > 1;
+
+  const tags = [];
+  if (hasAttack) tags.push(`<span class="spell-item-tag" style="color:var(--gold)">ATK ${escHtml(item.attackBonus)}</span>`);
+  if (hasDmg)    tags.push(`<span class="spell-item-tag" style="color:var(--red-light)">DMG</span>`);
+  if (hasSave)   tags.push(`<span class="spell-item-tag" style="color:var(--spell)">DC ${item.saveDC}</span>`);
+  if (hasCost)   tags.push(`<span class="spell-item-tag" style="color:var(--text-muted)">${item.cost} uses</span>`);
+
+  const row = document.createElement('div');
+  row.className = 'feature-row';
+
+  const leftCol = document.createElement('div');
+  leftCol.className = 'feature-left-col';
+
+  const nameArea = document.createElement('div');
+  nameArea.className = 'feature-name-area';
+  nameArea.innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <span class="feature-name">${escHtml(item.name)}</span>
+      ${tags.join('')}
+    </div>
+    ${item.recharge ? `<span class="feature-recharge">${escHtml(item.recharge)}</span>` : ''}
+  `;
+
+  // Hold → info panel, tap → quick roll (if applicable)
+  let holdTimer = null;
+  nameArea.addEventListener('pointerdown', () => {
+    holdTimer = setTimeout(() => {
+      holdTimer = null;
+      nameArea.classList.add('holding');
+      openActionInfoPanel(section, index);
+    }, 500);
+  });
+  nameArea.addEventListener('pointerup', () => {
+    if (holdTimer !== null) {
+      clearTimeout(holdTimer);
+      holdTimer = null;
+      nameArea.classList.remove('holding');
+      // Quick tap: roll attack, or open info if no roll
+      if (hasAttack) {
+        quickRollAction(section, index, 'normal');
+      } else if (hasDmg) {
+        rollActionDamage(section, index);
+      } else {
+        openActionInfoPanel(section, index);
+      }
+    } else {
+      nameArea.classList.remove('holding');
+    }
+  });
+  nameArea.addEventListener('pointercancel', () => {
+    clearTimeout(holdTimer); holdTimer = null;
+    nameArea.classList.remove('holding');
+  });
+  nameArea.addEventListener('contextmenu', e => e.preventDefault());
+
+  const dotsDiv = document.createElement('div');
+  dotsDiv.className = 'feature-dots';
+  dotsDiv.id = `dots-${section}-${index}`;
+  leftCol.appendChild(nameArea);
+  leftCol.appendChild(dotsDiv);
+  row.appendChild(leftCol);
+
+  if (hasMax) {
+    const rightCol = document.createElement('div');
+    rightCol.className = 'feature-right-col';
+    const step = item.step || 1;
+    rightCol.innerHTML = `
+      <div class="feature-ctrl-top">
+        <button class="feature-restore-btn" onclick="restoreDots('${section}',${index})">⏻</button>
+      </div>
+      <div class="mini-tracker">
+        <button class="mini-btn minus"
+          onpointerdown="startDotHold('${section}',${index},1)"
+          onpointerup="stopDotHold()" onpointercancel="stopDotHold()">−</button>
+        <span class="mini-val" id="dots-val-${section}-${index}"></span>
+        <button class="mini-btn plus"
+          onpointerdown="startDotHold('${section}',${index},-1)"
+          onpointerup="stopDotHold()" onpointercancel="stopDotHold()">+</button>
+      </div>`;
+    row.appendChild(rightCol);
+  }
+
+  return row;
+}
+
+// ── Dots system ────────────────────────────────────────────────────────
+let _dotHoldTimer = null, _dotHoldInterval = null;
+
+function startDotHold(section, index, delta) {
+  _dotHoldTimer = setTimeout(() => {
+    adjustDots(section, index, delta);
+    _dotHoldInterval = setInterval(() => adjustDots(section, index, delta), 80);
+  }, 400);
+}
+function stopDotHold() {
+  clearTimeout(_dotHoldTimer);
+  clearInterval(_dotHoldInterval);
+  _dotHoldTimer = _dotHoldInterval = null;
+}
+
+function renderDots(section, index) {
+  const arr  = creature[section];
+  if (!arr) return;
+  const item = arr[index];
+  if (!item || !item.max) return;
+  const step     = item.step || 1;
+  const numDots  = Math.ceil(item.max / step);
+  const usedDots = Math.ceil((item.used || 0) / step);
+  const split    = numDots - usedDots; // gold dots on the left
+
+  const el = document.getElementById(`dots-${section}-${index}`);
+  if (el) {
+    el.innerHTML = Array.from({ length: numDots }, (_, j) =>
+      `<div class="slot-dot ${j < split ? 'available' : 'used'}" onclick="toggleCreatureDot('${section}',${index},${j})"></div>`
+    ).join('');
+  }
+  const valEl = document.getElementById(`dots-val-${section}-${index}`);
+  if (valEl) valEl.textContent = `${item.max - (item.used||0)}/${item.max}`;
+}
+
+function toggleCreatureDot(section, index, j) {
+  const item  = creature[section]?.[index];
+  if (!item) return;
+  const step     = item.step || 1;
+  const numDots  = Math.ceil(item.max / step);
+  const usedDots = Math.ceil((item.used || 0) / step);
+  const split    = numDots - usedDots;
+  item.used = j < split
+    ? Math.min(item.max, (numDots - j) * step)
+    : (numDots - j - 1) * step;
+  renderDots(section, index);
+  saveRoster();
+}
+
+function adjustDots(section, index, delta) {
+  const item = creature[section]?.[index];
+  if (!item) return;
+  const step = item.step || 1;
+  item.used = Math.max(0, Math.min(item.max, (item.used || 0) + delta * step));
+  renderDots(section, index);
+  saveRoster();
+}
+
+function restoreDots(section, index) {
+  const item = creature[section]?.[index];
+  if (!item) return;
+  item.used = 0;
+  renderDots(section, index);
+  saveRoster();
+}
+
+// ── Legendary action pool ──────────────────────────────────────────────
+function renderLegendaryPool() {
+  const el = document.getElementById('legendaryPoolDots');
+  if (!el || !creature.legendaryActionsMax) return;
+  const max  = creature.legendaryActionsMax;
+  const used = creature.legendaryActionsUsed || 0;
+  const avail = max - used;
+  el.innerHTML = Array.from({ length: max }, (_, j) =>
+    `<div class="slot-dot ${j < avail ? 'available' : 'used'}" onclick="toggleLegendaryPoolDot(${j})"></div>`
+  ).join('');
+}
+
+function toggleLegendaryPoolDot(j) {
+  const max  = creature.legendaryActionsMax;
+  const used = creature.legendaryActionsUsed || 0;
+  const avail = max - used;
+  creature.legendaryActionsUsed = j < avail ? (max - j) : (max - j - 1);
+  renderLegendaryPool();
+  saveRoster();
+}
+
+function restoreLegendaryPool() {
+  creature.legendaryActionsUsed = 0;
+  renderLegendaryPool();
+  saveRoster();
+}
+
+// ── Roll system ────────────────────────────────────────────────────────
+let infoPanelCfg = {};
+
+function quickRollAction(section, index, mode) {
+  const item = creature[section]?.[index];
+  if (!item) return;
+  if (item.attackBonus && item.attackBonus !== '—') {
+    const bonus = parseInt(item.attackBonus) || 0;
+    const { roll, breakdown } = d20Roll(mode);
+    const total = roll + bonus;
+    const nat   = natMsg(roll);
+    const modeSfx = mode === 'adv' ? ' (Adv)' : mode === 'dis' ? ' (Disadv)' : '';
+    // Also roll damage for convenience
+    const dmgParts = (item.rolls || []).filter(r => r.dice);
+    const dmgLines = dmgParts.map(r => {
+      const t = rollDiceExpr(r.dice);
+      return t !== null ? `${r.type ? r.type.charAt(0).toUpperCase()+r.type.slice(1) : 'Dmg'}: ${t}` : null;
+    }).filter(Boolean);
+    showRoll(item.name + modeSfx, `${breakdown}+${bonus}`, total, nat, dmgLines.join('\n'));
+    // Use legendary pool if applicable
+    if (section === 'legendaryActions') useLegendaryUses(item.cost || 1);
+  }
+}
+
+function rollActionDamage(section, index) {
+  const item = creature[section]?.[index];
+  if (!item || !item.rolls?.length) return;
+  const lines = item.rolls.filter(r => r.dice).map(r => {
+    const t = rollDiceExpr(r.dice);
+    return t !== null ? `${r.type ? r.type.charAt(0).toUpperCase()+r.type.slice(1) : 'Dmg'}: ${t}` : null;
+  }).filter(Boolean);
+  if (!lines.length) return;
+  const totalMatch = lines[0].match(/:\s*(\d+)/);
+  const total = totalMatch ? totalMatch[1] : '?';
+  showRoll(item.name + ' — Damage', item.rolls.map(r => r.dice).join(' + '), total, '', lines.slice(1).join('\n'));
+}
+
+function useLegendaryUses(cost) {
+  creature.legendaryActionsUsed = Math.min(creature.legendaryActionsMax, (creature.legendaryActionsUsed || 0) + cost);
+  renderLegendaryPool();
+  saveRoster();
+}
+
+function showRoll(label, breakdown, total, nat, secondary) {
+  document.getElementById('rrLabel').textContent     = label;
+  document.getElementById('rrTotal').textContent     = total;
+  document.getElementById('rrBreak').textContent     = breakdown + ' = ' + total;
+  document.getElementById('rrSecondary').textContent = secondary || '';
+  document.getElementById('rrNat').textContent       = nat || '';
+  document.getElementById('rollResult').classList.add('show');
+  document.getElementById('rollBackdrop').classList.add('show');
+}
+
+function dismissRollResult() {
+  document.getElementById('rollResult').classList.remove('show');
+  document.getElementById('rollBackdrop').classList.remove('show');
+}
+
+// ── Info panel ─────────────────────────────────────────────────────────
+function openActionInfoPanel(section, index) {
+  const item = creature[section]?.[index];
+  if (!item) return;
+  const badgeMap = { specialAbilities:'Trait', actions:'Action', bonusActions:'Bonus Action', reactions:'Reaction', legendaryActions:'Legendary', lairActions:'Lair Action' };
+  const badge = badgeMap[section] || 'Info';
+  const hasAttack = item.attackBonus && item.attackBonus !== '—';
+  const hasDmg    = item.rolls?.length > 0;
+  const hasSave   = item.saveAbility && item.saveDC;
+  const dmgSummary = hasDmg ? item.rolls.filter(r => r.dice).map(r => r.dice).join('+') : '';
+
+  infoPanelCfg = {
+    rollFn: hasAttack ? mode => {
+      quickRollAction(section, index, mode);
+      dismissInfoPanel();
+    } : null,
+    dmgFn: hasDmg ? () => {
+      rollActionDamage(section, index);
+      dismissInfoPanel();
+    } : null,
+  };
+
+  document.getElementById('ipBadge').textContent = badge;
+  document.getElementById('ipTitle').textContent = item.name || '';
+  const metaEl = document.getElementById('ipMeta');
+  const metaParts = [];
+  if (item.recharge) metaParts.push(item.recharge);
+  if (section === 'legendaryActions' && (item.cost||1) > 1) metaParts.push(`${item.cost} legendary uses`);
+  metaEl.textContent = metaParts.join(' · ');
+  metaEl.style.display = metaParts.length ? '' : 'none';
+
+  const rollBox = document.getElementById('ipRollBox');
+  if (hasAttack) {
+    document.getElementById('ipRollLabel').textContent = 'Attack Roll';
+    document.getElementById('ipRollBonus').textContent = item.attackBonus;
+    document.getElementById('ipRollDamage').textContent = dmgSummary;
+    rollBox.style.display = '';
+  } else { rollBox.style.display = 'none'; }
+
+  const saveBox = document.getElementById('ipSaveDcBox');
+  if (hasSave) {
+    document.getElementById('ipSaveDcValue').textContent   = item.saveDC;
+    document.getElementById('ipSaveDcAbility').textContent = item.saveAbility + ' Save';
+    saveBox.style.display = '';
+  } else { saveBox.style.display = 'none'; }
+
+  const dmgBox = document.getElementById('ipDmgBox');
+  if (hasDmg && !hasAttack) {
+    document.getElementById('ipDmgLabel').textContent = 'Damage — tap to roll';
+    document.getElementById('ipDmgDice').textContent  = dmgSummary;
+    dmgBox.style.display = '';
+  } else if (hasDmg && hasAttack) {
+    document.getElementById('ipDmgLabel').textContent = 'Damage — tap to roll';
+    document.getElementById('ipDmgDice').textContent  = dmgSummary;
+    dmgBox.style.display = '';
+  } else { dmgBox.style.display = 'none'; }
+
+  document.getElementById('ipDesc').textContent = item.desc || '';
+  document.getElementById('ipEditBtn').style.display = '';
+  infoPanelCfg.section = section;
+  infoPanelCfg.index   = index;
+  document.getElementById('infoPanel').classList.add('show');
+  document.getElementById('infoPanelBackdrop').classList.add('show');
+}
+
+function openCreatureInfoPanel() {
+  infoPanelCfg = {};
+  document.getElementById('ipBadge').textContent  = 'Creature';
+  document.getElementById('ipTitle').textContent  = creature.name || '';
+  document.getElementById('ipMeta').textContent   = [creature.size, creature.type, creature.alignment].filter(Boolean).join(' · ');
+  document.getElementById('ipMeta').style.display = '';
+  document.getElementById('ipRollBox').style.display    = 'none';
+  document.getElementById('ipSaveDcBox').style.display  = 'none';
+  document.getElementById('ipDmgBox').style.display     = 'none';
+  document.getElementById('ipDesc').textContent = creature.notes || '(No notes yet. Edit via ⚙ → Set Portrait to add a portrait, or type in the Notes section.)';
+  document.getElementById('ipEditBtn').style.display = 'none';
+  document.getElementById('infoPanel').classList.add('show');
+  document.getElementById('infoPanelBackdrop').classList.add('show');
+}
+
+function dismissInfoPanel() {
+  document.getElementById('infoPanel').classList.remove('show');
+  document.getElementById('infoPanelBackdrop').classList.remove('show');
+  document.querySelectorAll('.holding').forEach(el => el.classList.remove('holding'));
+  document.getElementById('ipEditBtn').style.display = 'none';
+  infoPanelCfg = {};
+}
+
+function infoPanelRoll(mode) {
+  if (infoPanelCfg.rollFn) infoPanelCfg.rollFn(mode || 'normal');
+}
+
+function infoPanelDmg() {
+  if (infoPanelCfg.dmgFn) infoPanelCfg.dmgFn();
+}
+
+// ── Section info panel ──────────────────────────────────────────────
+function openSectionInfoPanel(sectionKey, label) {
+  const desc = SECTION_DESCRIPTIONS[sectionKey];
+  if (!desc) return;
+  infoPanelCfg = {};
+  document.getElementById('ipBadge').textContent           = 'Section';
+  document.getElementById('ipTitle').textContent           = label || sectionKey;
+  document.getElementById('ipMeta').style.display          = 'none';
+  document.getElementById('ipRollBox').style.display       = 'none';
+  document.getElementById('ipSaveDcBox').style.display     = 'none';
+  document.getElementById('ipDmgBox').style.display        = 'none';
+  document.getElementById('ipEditBtn').style.display       = 'none';
+  document.getElementById('ipDesc').textContent            = desc;
+  document.getElementById('infoPanel').classList.add('show');
+  document.getElementById('infoPanelBackdrop').classList.add('show');
+}
+
+// ── Edit Panel ──────────────────────────────────────────────────
+let _editPanelSection = null;
+let _editPanelIndex   = -1;
+
+function openEditPanel(section, index) {
+  if (!section) return;
+  _editPanelSection = section;
+  _editPanelIndex   = index;
+  const isNew  = index === -1;
+  const item   = isNew ? _defaultActionItem() : (creature[section]?.[index] || _defaultActionItem());
+  const badgeMap = { specialAbilities:'Trait', actions:'Action', bonusActions:'Bonus Action',
+    reactions:'Reaction', legendaryActions:'Legendary Action', lairActions:'Lair Action' };
+  document.getElementById('epBadge').textContent = (isNew ? 'New ' : 'Edit ') + (badgeMap[section] || 'Item');
+  document.getElementById('epDeleteBtn').style.display = isNew ? 'none' : '';
+  const isLeg  = section === 'legendaryActions';
+  const hasRolls = ['specialAbilities','actions','bonusActions','reactions','legendaryActions'].includes(section);
+  document.getElementById('epForm').innerHTML = `
+    <div class="ep-field">
+      <div class="ep-label">Name</div>
+      <input class="ep-input" id="ep_name" value="${escHtml(item.name||'')}" placeholder="Name">
+    </div>
+    <div class="ep-row">
+      <div class="ep-field">
+        <div class="ep-label">Recharge / Limit</div>
+        <input class="ep-input" id="ep_recharge" value="${escHtml(item.recharge||'')}" placeholder="e.g. Recharge 5-6, 1/Day">
+      </div>
+      ${isLeg ? `<div class="ep-field" style="max-width:80px">
+        <div class="ep-label">Pool Cost</div>
+        <input class="ep-input" id="ep_cost" type="number" min="1" max="9" value="${item.cost||1}">
+      </div>` : '<div id="ep_cost" style="display:none"></div>'}
+    </div>
+    <div class="ep-row">
+      <div class="ep-field">
+        <div class="ep-label">Max Charges (0 = unlimited)</div>
+        <input class="ep-input" id="ep_max" type="number" min="0" value="${item.max||0}">
+      </div>
+      <div class="ep-field" style="max-width:80px">
+        <div class="ep-label">Step</div>
+        <input class="ep-input" id="ep_step" type="number" min="1" value="${item.step||1}">
+      </div>
+    </div>
+    ${hasRolls ? `<div class="ep-row">
+      <div class="ep-field">
+        <div class="ep-label">Attack Bonus</div>
+        <input class="ep-input" id="ep_atk" value="${escHtml(item.attackBonus||'')}" placeholder="e.g. +7">
+      </div>
+      <div class="ep-field">
+        <div class="ep-label">Damage Dice</div>
+        <input class="ep-input" id="ep_dmg" value="${escHtml(item.rolls?.[0]?.dice||'')}" placeholder="2d6+5">
+      </div>
+    </div>
+    <div class="ep-row">
+      <div class="ep-field">
+        <div class="ep-label">Damage Type</div>
+        <input class="ep-input" id="ep_dmgtype" value="${escHtml(item.rolls?.[0]?.type||'')}" placeholder="slashing">
+      </div>
+      <div class="ep-field">
+        <div class="ep-label">Save DC (0 = none)</div>
+        <input class="ep-input" id="ep_savedc" type="number" min="0" value="${item.saveDC||0}">
+      </div>
+    </div>
+    <div class="ep-field">
+      <div class="ep-label">Save Ability</div>
+      <select class="ep-input" id="ep_saveab">
+        <option value="">—</option>
+        ${['STR','DEX','CON','INT','WIS','CHA'].map(ab =>
+          `<option value="${ab}"${item.saveAbility===ab?' selected':''}>${ab}</option>`).join('')}
+      </select>
+    </div>` : '<input id="ep_atk" style="display:none"><input id="ep_dmg" style="display:none"><input id="ep_dmgtype" style="display:none"><input id="ep_savedc" style="display:none" value="0"><select id="ep_saveab" style="display:none"></select>'}
+    <div class="ep-field">
+      <div class="ep-label">Description</div>
+      <textarea class="ep-input ep-textarea" id="ep_desc">${escHtml(item.desc||'')}</textarea>
+    </div>`;
+  document.getElementById('editPanel').classList.add('show');
+  document.getElementById('editPanelBackdrop').classList.add('show');
+  dismissInfoPanel();
+}
+
+function _defaultActionItem() {
+  return { name:'', desc:'', attackBonus:'', rolls:[], saveAbility:'', saveDC:0, max:0, used:0, step:1, recharge:'', cost:1 };
+}
+
+function saveEditPanel() {
+  const section = _editPanelSection;
+  const index   = _editPanelIndex;
+  if (!section) { dismissEditPanel(); return; }
+  if (!creature[section]) creature[section] = [];
+  const name = (document.getElementById('ep_name')?.value || '').trim();
+  if (!name) { toast('Name is required'); return; }
+  const dice  = (document.getElementById('ep_dmg')?.value || '').trim();
+  const dType = (document.getElementById('ep_dmgtype')?.value || '').trim();
+  const rolls = dice ? [{ dice, type: dType || 'untyped' }] : [];
+  const item = {
+    name,
+    desc:        document.getElementById('ep_desc')?.value || '',
+    attackBonus: (document.getElementById('ep_atk')?.value || '').trim(),
+    rolls,
+    saveAbility: document.getElementById('ep_saveab')?.value || '',
+    saveDC:      parseInt(document.getElementById('ep_savedc')?.value) || 0,
+    max:         parseInt(document.getElementById('ep_max')?.value)    || 0,
+    used:        0,
+    step:        Math.max(1, parseInt(document.getElementById('ep_step')?.value) || 1),
+    recharge:    (document.getElementById('ep_recharge')?.value || '').trim(),
+    cost:        parseInt(document.getElementById('ep_cost')?.value)   || 1,
+  };
+  if (index !== -1 && creature[section][index]) {
+    item.used = creature[section][index].used || 0;
+  }
+  if (index === -1) {
+    creature[section].push(item);
+  } else {
+    creature[section][index] = item;
+  }
+  saveRoster();
+  renderCreatureDetail();
+  dismissEditPanel();
+  toast(index === -1 ? 'Added!' : 'Saved!');
+}
+
+function deleteFromEditPanel() {
+  const section = _editPanelSection;
+  const index   = _editPanelIndex;
+  if (!section || index === -1) { dismissEditPanel(); return; }
+  const itemName = creature[section]?.[index]?.name || 'this item';
+  if (!confirm(`Delete "${itemName}"?`)) return;
+  creature[section].splice(index, 1);
+  saveRoster();
+  renderCreatureDetail();
+  dismissEditPanel();
+  toast('Deleted');
+}
+
+function dismissEditPanel() {
+  document.getElementById('editPanel').classList.remove('show');
+  document.getElementById('editPanelBackdrop').classList.remove('show');
+  _editPanelSection = null;
+  _editPanelIndex   = -1;
+}
+
+// ── Creature settings sheet ────────────────────────────────────────────
+function openCreatureSettings() {
+  document.getElementById('settingsSheet').classList.add('show');
+  document.getElementById('settingsBackdrop').classList.add('show');
+}
+function dismissCreatureSettings() {
+  document.getElementById('settingsSheet').classList.remove('show');
+  document.getElementById('settingsBackdrop').classList.remove('show');
+}
+
+function openPortraitPicker() { document.getElementById('portraitInput').click(); }
+function handlePortraitFile(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    creature.portrait = e.target.result;
+    saveRoster();
+    renderCreatureDetail();
+    toast('Portrait set');
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+// ── JSON export / import ───────────────────────────────────────────────
+function exportCreatureJSON() {
+  const name = (creature.name || 'creature').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  const blob = new Blob([JSON.stringify(creature, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = name + '.json'; a.click();
+  URL.revokeObjectURL(url);
+  toast('Exported: ' + name + '.json');
+}
+
+function importCreatureFromJSON(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      applyCreaturePayload(data);
+      dismissCreatureSettings();
+      toast('Creature loaded!');
+    } catch { toast('Error: invalid JSON file'); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function applyCreaturePayload(data) {
+  if (!data || typeof data !== 'object') return;
+  // Support both raw creature state and wrapped { payload: ... }
+  const payload = data.payload || data;
+  const id = activeId || genId();
+  activeId = id;
+  creature = Object.assign(defaultCreature(), payload);
+  rosterData.creatures[id] = { name: creature.name, portrait: creature.portrait, payload: creature };
+  rosterData.activeId = id;
+  saveRoster();
+  renderCreatureDetail();
+  showDetail();
+}
+
+// ── Import modal ───────────────────────────────────────────────────────
+let _importTab = 'ai';
+
+function openImportModal() {
+  document.getElementById('importModal').classList.add('show');
+  document.getElementById('importBackdrop').classList.add('show');
+  setImportTab('ai');
+  // Probe 2024 availability
+  _srd24Detect().then(avail => {
+    const btn = document.getElementById('tabSrd24');
+    if (btn) { btn.disabled = !avail; btn.title = avail ? '' : '2024 creatures.json not found'; }
+  });
+}
+
+function dismissImportModal() {
+  document.getElementById('importModal').classList.remove('show');
+  document.getElementById('importBackdrop').classList.remove('show');
+}
+
+function setImportTab(tab) {
+  _importTab = tab;
+  ['ai','srd14','srd24'].forEach(t => {
+    document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1))?.classList.toggle('active', t === tab);
+    document.getElementById(t + 'TabContent').style.display = t === tab ? '' : 'none';
+  });
+}
+
+// ── AI Import ──────────────────────────────────────────────────────────
+function generateAndCopyCreaturePrompt() {
+  const what = document.getElementById('aiWhatInput').value.trim();
+  if (!what) { toast('Enter a creature name first'); return; }
+  const prompt = `You are a D&D 5e assistant. Return ONLY a raw JSON object — no markdown fences, no explanation.
+
+Create a stat block for: ${what}
+
+Use this exact JSON structure:
+{
+  "name": string,
+  "size": one of "Tiny","Small","Medium","Large","Huge","Gargantuan",
+  "type": string (e.g. "aberration","beast","humanoid","undead","construct"),
+  "subtype": string or "",
+  "alignment": string (e.g. "lawful evil","unaligned"),
+  "cr": number (0, 0.125, 0.25, 0.5, 1, 2, ... 30),
+  "xp": integer,
+  "ac": integer,
+  "acDetail": string (e.g. "natural armor","chain mail"),
+  "hp": integer,
+  "hitDice": string (e.g. "20d10+40"),
+  "speed": { "walk":integer, "fly":integer, "swim":integer, "climb":integer, "burrow":integer, "hover":boolean },
+  "abilities": { "STR":int,"DEX":int,"CON":int,"INT":int,"WIS":int,"CHA":int },
+  "savingThrows": { "STR":int, ... } (only proficient saves),
+  "skills": { "perception":int, "stealth":int, ... } (only proficient skills, lowercase names),
+  "damageImmunities": string[],
+  "damageResistances": string[],
+  "damageVulnerabilities": string[],
+  "conditionImmunities": string[],
+  "senses": { "darkvision":int,"blindsight":int,"truesight":int,"tremorsense":int,"passivePerception":int },
+  "telepathy": int (0 if none),
+  "languages": string,
+  "legendaryActionsMax": int (0 if none),
+  "legendaryActionsUsed": 0,
+  "specialAbilities": [
+    {
+      "name": string,
+      "desc": string,
+      "max": int (0 if passive, number of uses otherwise),
+      "used": 0,
+      "step": 1,
+      "recharge": string (e.g. "Day","Long Rest","Short Rest","Recharge 5-6","Turn" or "")
+    }
+  ],
+  "actions": [
+    {
+      "name": string,
+      "desc": string,
+      "attackBonus": string or null (e.g. "+7"),
+      "rolls": [{"dice":"2d6+5","type":"slashing"}] or [],
+      "saveAbility": one of "STR","DEX","CON","INT","WIS","CHA" or "",
+      "saveDC": int or 0,
+      "max": int (0 if unlimited, 1 if recharge),
+      "used": 0,
+      "step": 1,
+      "recharge": string (e.g. "Recharge 5-6","Day","Long Rest" or ""),
+      "cost": 1
+    }
+  ],
+  "reactions": [
+    {
+      "name": string,
+      "desc": string,
+      "max": int (0 if unlimited),
+      "used": 0,
+      "step": 1,
+      "recharge": string
+    }
+  ],
+  "bonusActions": [
+    {
+      "name": string,
+      "desc": string,
+      "attackBonus": string or null,
+      "rolls": [{"dice":"2d6+5","type":"slashing"}] or [],
+      "saveAbility": one of "STR","DEX","CON","INT","WIS","CHA" or "",
+      "saveDC": int or 0,
+      "max": int (0 if unlimited),
+      "used": 0,
+      "step": 1,
+      "recharge": string,
+      "cost": 1
+    }
+  ],
+  "legendaryActions": [
+    {
+      "name": string,
+      "desc": string,
+      "cost": int (default 1),
+      "attackBonus": string or null,
+      "rolls": [{"dice":"2d10","type":"radiant"}] or []
+    }
+  ],
+  "lairActions": [ { "name":string,"desc":string } ],
+  "notes": ""
+}
+
+Output ONLY the JSON object.`;
+  navigator.clipboard.writeText(prompt).then(() => {
+    document.getElementById('aiCopyNotice').textContent = 'Copied! Paste into an AI assistant, then paste the JSON response below.';
+  }).catch(() => {
+    document.getElementById('aiCopyNotice').textContent = 'Could not auto-copy — please copy manually.';
+  });
+}
+
+function importAICreatureResponse() {
+  const raw = document.getElementById('aiResponsePaste').value.trim();
+  if (!raw) { toast('Nothing pasted yet'); return; }
+  let parsed;
+  try {
+    const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+    parsed = JSON.parse(stripped);
+  } catch { toast('Invalid JSON — check the pasted text'); return; }
+  if (!parsed.name) { toast('Missing "name" field'); return; }
+  applyCreaturePayload(parsed);
+  dismissImportModal();
+  toast(`${parsed.name} imported!`);
+}
+
+// ── SRD 2014 Search ────────────────────────────────────────────────────
+let _srd14MonsterList = null;
+let _srd14SearchTimeout = null;
+
+async function onSrd14Search() {
+  clearTimeout(_srd14SearchTimeout);
+  _srd14SearchTimeout = setTimeout(_doSrd14Search, 350);
+}
+
+async function _doSrd14Search() {
+  const q = document.getElementById('srd14SearchInput').value.trim().toLowerCase();
+  const statusEl  = document.getElementById('srd14Status');
+  const resultsEl = document.getElementById('srd14Results');
+  if (q.length < 2) { resultsEl.innerHTML = '<div class="srd-hint">Type at least 2 characters.</div>'; return; }
+  statusEl.textContent = 'Loading…';
+  try {
+    if (!_srd14MonsterList) {
+      const data = await _srdGet('/monsters?limit=500');
+      _srd14MonsterList = data.results || [];
+    }
+    const matches = _srd14MonsterList.filter(m => m.name.toLowerCase().includes(q)).slice(0, 30);
+    statusEl.textContent = matches.length ? `${matches.length} result${matches.length>1?'s':''}` : 'No results';
+    if (!matches.length) { resultsEl.innerHTML = '<div class="srd-hint">No matches found.</div>'; return; }
+    resultsEl.innerHTML = matches.map(m =>
+      `<div class="srd-result-item" onclick="importFromSrd14('${escHtml(m.index)}','${escHtml(m.name)}')">${escHtml(m.name)}</div>`
+    ).join('');
+  } catch(e) { statusEl.textContent = 'Error loading SRD — check internet connection.'; }
+}
+
+async function importFromSrd14(index, name) {
+  const statusEl = document.getElementById('srd14Status');
+  statusEl.textContent = `Loading ${name}…`;
+  try {
+    const data = await _srdGet('/monsters/' + index);
+    const c = parseSrd2014Monster(data);
+    applyCreaturePayload(c);
+    dismissImportModal();
+    toast(`${name} imported from SRD 2014`);
+  } catch(e) { statusEl.textContent = 'Error loading monster.'; toast('Error: ' + e.message); }
+}
+
+// ── SRD 2024 Search ────────────────────────────────────────────────────
+let _srd24Creatures = null;
+let _srd24SearchTimeout = null;
+
+async function onSrd24Search() {
+  clearTimeout(_srd24SearchTimeout);
+  _srd24SearchTimeout = setTimeout(_doSrd24Search, 350);
+}
+
+async function _doSrd24Search() {
+  const q = document.getElementById('srd24SearchInput').value.trim().toLowerCase();
+  const statusEl  = document.getElementById('srd24Status');
+  const resultsEl = document.getElementById('srd24Results');
+  if (q.length < 2) { resultsEl.innerHTML = '<div class="srd-hint">Type at least 2 characters.</div>'; return; }
+  statusEl.textContent = 'Loading…';
+  try {
+    if (!_srd24Creatures) {
+      _srd24Creatures = await _srd24Load('creatures');
+    }
+    const matches = _srd24Creatures.filter(m =>
+      (m.name||'').toLowerCase().includes(q) || (m.type||'').toLowerCase().includes(q)
+    ).slice(0, 30);
+    statusEl.textContent = matches.length ? `${matches.length} result${matches.length>1?'s':''}` : 'No results';
+    if (!matches.length) { resultsEl.innerHTML = '<div class="srd-hint">No matches found.</div>'; return; }
+    resultsEl.innerHTML = matches.map((m, i) =>
+      `<div class="srd-result-item" onclick="importFromSrd24(${i},'${escHtml(m.name||'')}')">
+         ${escHtml(m.name||'?')}
+         <span style="color:var(--text-muted);font-size:11px;margin-left:6px">CR ${crDisplay(m.challenge_rating||0)} ${m.type||''}</span>
+       </div>`
+    ).join('');
+    // Store indices matching search for lookup
+    resultsEl.dataset.matches = JSON.stringify(matches.map(m => m.index || m.name));
+  } catch(e) { statusEl.textContent = 'Error — 2024 SRD not available.'; }
+}
+
+async function importFromSrd24(listIndex, name) {
+  const statusEl = document.getElementById('srd24Status');
+  statusEl.textContent = `Importing ${name}…`;
+  try {
+    if (!_srd24Creatures) _srd24Creatures = await _srd24Load('creatures');
+    const q = document.getElementById('srd24SearchInput').value.trim().toLowerCase();
+    const matches = _srd24Creatures.filter(m =>
+      (m.name||'').toLowerCase().includes(q) || (m.type||'').toLowerCase().includes(q)
+    );
+    const item = matches[listIndex];
+    if (!item) { toast('Creature not found'); return; }
+    const c = parseSrd2024Monster(item);
+    applyCreaturePayload(c);
+    dismissImportModal();
+    toast(`${name} imported from SRD 2024`);
+  } catch(e) { statusEl.textContent = 'Error importing.'; toast('Error: ' + e.message); }
+}
+
+// ── SRD Parsing ────────────────────────────────────────────────────────
+function parseSrd2014Monster(d) {
+  const c = defaultCreature();
+  c.name      = d.name || 'Unknown';
+  c.source    = 'srd2014';
+  c.size      = d.size ? d.size.charAt(0).toUpperCase() + d.size.slice(1).toLowerCase() : 'Medium';
+  c.type      = d.type || '';
+  c.subtype   = d.subtype || '';
+  c.alignment = d.alignment || '';
+  c.cr        = d.challenge_rating ?? 0;
+  c.xp        = d.xp ?? crXP(c.cr);
+  // AC: API returns array [{value,type}] or single number
+  if (Array.isArray(d.armor_class)) {
+    c.ac       = d.armor_class[0]?.value ?? d.armor_class[0] ?? 10;
+    c.acDetail = d.armor_class[0]?.type || '';
+  } else { c.ac = d.armor_class || 10; }
+  c.hp      = d.hit_points || 0;
+  c.hitDice = d.hit_dice || '';
+  // Speed
+  if (d.speed) {
+    c.speed.walk   = parseInt(d.speed.walk)   || 0;
+    c.speed.fly    = parseInt(d.speed.fly)    || 0;
+    c.speed.swim   = parseInt(d.speed.swim)   || 0;
+    c.speed.climb  = parseInt(d.speed.climb)  || 0;
+    c.speed.burrow = parseInt(d.speed.burrow) || 0;
+    c.speed.hover  = !!(d.speed.hover);
+  }
+  // Abilities
+  const abMap = {strength:'STR',dexterity:'DEX',constitution:'CON',intelligence:'INT',wisdom:'WIS',charisma:'CHA'};
+  Object.entries(abMap).forEach(([long, short]) => { if (d[long] !== undefined) c.abilities[short] = d[long]; });
+  // Saving throws from proficiencies array
+  if (Array.isArray(d.proficiencies)) {
+    d.proficiencies.forEach(p => {
+      const idx = p.proficiency?.index || '';
+      const stMatch = idx.match(/^saving-throw-(\w+)$/i);
+      if (stMatch) c.savingThrows[stMatch[1].toUpperCase()] = p.value;
+      const skMatch = idx.match(/^skill-(.+)$/i);
+      if (skMatch) c.skills[skMatch[1].replace(/-/g,' ')] = p.value;
+    });
+  }
+  // Damage interactions
+  c.damageImmunities    = d.damage_immunities    || [];
+  c.damageResistances   = d.damage_resistances   || [];
+  c.damageVulnerabilities = d.damage_vulnerabilities || [];
+  c.conditionImmunities = (d.condition_immunities || []).map(ci => ci.name || ci);
+  // Senses
+  if (d.senses) {
+    c.senses.darkvision    = parseInt(d.senses.darkvision)    || 0;
+    c.senses.blindsight    = parseInt(d.senses.blindsight)    || 0;
+    c.senses.truesight     = parseInt(d.senses.truesight)     || 0;
+    c.senses.tremorsense   = parseInt(d.senses.tremorsense)   || 0;
+    c.senses.passivePerception = d.senses.passive_perception  || 10;
+    c.telepathy            = parseInt(d.senses.telepathy)     || 0;
+  }
+  c.languages = d.languages || '';
+  c.legendaryActionsMax = d.legendary_actions_per_round ?? (d.legendary_actions?.length ? 3 : 0);
+  // Special abilities
+  c.specialAbilities = (d.special_abilities || []).map(sa => {
+    const uses = parseUsesFromName(sa.name || '');
+    return { name: sa.name||'', desc: sa.desc||'', max: uses.max, used:0, step:1, recharge: uses.recharge };
+  });
+  // Actions
+  c.actions = (d.actions || []).filter(a => !a.legendary_cost).map(a => _parseAction(a));
+  // Legendary actions
+  c.legendaryActions = (d.legendary_actions || []).map(la => {
+    const parsed = _parseAction(la);
+    parsed.cost = la.attack_bonus_to_legendary_actions || 1;
+    return parsed;
+  });
+  // Also handle 2014 API's interleaved action types
+  const allActions = d.actions || [];
+  const legFromActions = allActions.filter(a => a.legendary_cost);
+  if (legFromActions.length && !c.legendaryActions.length) {
+    c.legendaryActions = legFromActions.map(a => { const p = _parseAction(a); p.cost = a.legendary_cost || 1; return p; });
+    c.legendaryActionsMax = c.legendaryActionsMax || 3;
+  }
+  return c;
+}
+
+function parseSrd2024Monster(d) {
+  const c = defaultCreature();
+  c.name      = d.name || 'Unknown';
+  c.source    = 'srd2024';
+  c.size      = d.size ? d.size.charAt(0).toUpperCase() + d.size.slice(1).toLowerCase() : 'Medium';
+  c.type      = d.type || '';
+  c.subtype   = d.subtype || '';
+  c.alignment = d.alignment || '';
+  c.cr        = d.challenge_rating ?? 0;
+  c.xp        = d.experience_points ?? crXP(c.cr);
+  c.ac        = d.armor_class || 10;
+  c.acDetail  = d.armor_detail || '';
+  c.hp        = d.hit_points || 0;
+  c.hitDice   = d.hit_dice || '';
+  // Speed (2024 uses 'speeds' key)
+  const spd = d.speeds || d.speed || {};
+  c.speed.walk   = spd.walk   || 0;
+  c.speed.fly    = spd.fly    || 0;
+  c.speed.swim   = spd.swim   || 0;
+  c.speed.climb  = spd.climb  || 0;
+  c.speed.burrow = spd.burrow || 0;
+  c.speed.hover  = !!(spd.hover);
+  // Abilities (2024 uses lowercase keys in ability_scores)
+  const as = d.ability_scores || {};
+  ['str','dex','con','int','wis','cha'].forEach(ab => {
+    const key = ab.toUpperCase();
+    if (as[ab] !== undefined) c.abilities[key] = as[ab];
+    else if (as[key] !== undefined) c.abilities[key] = as[key];
+  });
+  // Saving throws (2024 stores as object {str:5, dex:3, ...})
+  const st = d.saving_throws || {};
+  Object.entries(st).forEach(([ab, val]) => {
+    if (val !== null && val !== undefined) c.savingThrows[ab.toUpperCase()] = val;
+  });
+  // Skills
+  const sk = d.skills || {};
+  Object.entries(sk).forEach(([name, val]) => { c.skills[name] = val; });
+  // Damage interactions
+  c.damageImmunities      = d.damage_immunities       || [];
+  c.damageResistances     = d.damage_resistances      || [];
+  c.damageVulnerabilities = d.damage_vulnerabilities  || [];
+  c.conditionImmunities   = d.condition_immunities    || [];
+  // Senses
+  const sn = d.senses || {};
+  c.senses.darkvision      = sn.darkvision      || 0;
+  c.senses.blindsight      = sn.blindsight      || 0;
+  c.senses.truesight       = sn.truesight       || 0;
+  c.senses.tremorsense     = sn.tremorsense     || 0;
+  c.senses.passivePerception = sn.passive_perception || 10;
+  c.telepathy = sn.telepathy || d.telepathy || 0;
+  c.languages = d.languages || '';
+  // Legendary pool
+  c.legendaryActionsMax = d.legendary_actions_per_round || 0;
+  // Actions — 2024 may mix all action types in one array using action_type field
+  const allActions = d.actions || [];
+  const legTypes = ['LEGENDARY_ACTION','LEGENDARY'];
+  c.specialAbilities = (d.special_abilities || []).map(sa => {
+    const uses = parseUsesFromName(sa.name || '');
+    return { name: sa.name||'', desc: sa.desc||'', max: uses.max, used:0, step:1, recharge: uses.recharge };
+  });
+  const bonusTypes = ['BONUS_ACTION','BONUS'];
+  c.bonusActions = allActions
+    .filter(a => bonusTypes.includes((a.action_type||'').toUpperCase()))
+    .map(a => _parseAction(a));
+  c.actions = allActions
+    .filter(a => !legTypes.includes((a.action_type||'').toUpperCase()) && !bonusTypes.includes((a.action_type||'').toUpperCase()))
+    .map(a => _parseAction(a));
+  const legActions = allActions.filter(a => legTypes.includes((a.action_type||'').toUpperCase()));
+  if (legActions.length) {
+    c.legendaryActions = legActions.map(a => { const p = _parseAction(a); p.cost = a.legendary_cost || 1; return p; });
+    if (!c.legendaryActionsMax) c.legendaryActionsMax = 3;
+  }
+  return c;
+}
+
+function _parseAction(a) {
+  const name = a.name || '';
+  const desc = a.desc || '';
+  const uses = parseUsesFromName(name);
+  const parsed = parseActionDesc(name, desc);
+  return {
+    name, desc,
+    attackBonus: parsed.attackBonus,
+    rolls: parsed.rolls,
+    saveAbility: parsed.saveAbility,
+    saveDC: parsed.saveDC,
+    max: uses.max,
+    used: 0,
+    step: 1,
+    recharge: uses.recharge,
+    cost: a.cost || a.legendary_cost || 1,
+  };
+}
+
+function parseUsesFromName(name) {
+  const dayMatch = name.match(/\((\d+)\s*\/\s*(Day|Rest|Dawn|Long\s*Rest|Short\s*Rest|Turn)\)/i);
+  if (dayMatch) return { max: parseInt(dayMatch[1]), recharge: dayMatch[2].replace(/\s+/g,' ') };
+  const rechargeMatch = name.match(/\(Recharge\s+([\d\-–]+)\)/i);
+  if (rechargeMatch) return { max: 1, recharge: `Recharge ${rechargeMatch[1]}` };
+  return { max: 0, recharge: '' };
+}
+
+function parseActionDesc(name, desc) {
+  const result = { attackBonus: null, rolls: [], saveAbility: null, saveDC: 0 };
+  // Attack bonus
+  const atkMatch = desc.match(/Attack Roll:\s*([+-]\d+)/i) ||
+                   desc.match(/([+-]\d+)\s+to hit/i) ||
+                   (name && desc.match(/^\s*([+-]\d+)/));
+  if (atkMatch) result.attackBonus = atkMatch[1];
+  // Damage rolls: match (NdN) or (NdN+N) or (NdN-N) followed by type damage
+  const validTypes = ['slashing','piercing','bludgeoning','fire','cold','lightning','thunder','acid','poison','necrotic','radiant','force','psychic','healing'];
+  const dmgRe = /\((\d+d\d+(?:\s*[+\-]\s*\d+)?)\)\s*(\w+)\s+damage/gi;
+  let m;
+  while ((m = dmgRe.exec(desc)) !== null) {
+    const dice    = m[1].replace(/\s+/g, '');
+    const typeRaw = m[2].toLowerCase();
+    result.rolls.push({ dice, type: validTypes.includes(typeRaw) ? typeRaw : 'other' });
+  }
+  // Save DC
+  const saveMatch = desc.match(/(\w+)\s+Saving Throw:\s*DC\s*(\d+)/i) ||
+                    desc.match(/DC\s*(\d+)[^,]*?(\w+)\s+saving throw/i);
+  if (saveMatch) {
+    const raw = (saveMatch[1] || saveMatch[2] || '').toUpperCase();
+    const abMap = { STRENGTH:'STR',DEXTERITY:'DEX',CONSTITUTION:'CON',INTELLIGENCE:'INT',WISDOM:'WIS',CHARISMA:'CHA' };
+    result.saveAbility = abMap[raw] || (raw.length === 3 ? raw : raw.slice(0,3));
+    result.saveDC = parseInt(saveMatch[2] || saveMatch[1]) || 0;
+  }
+  return result;
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────
+let _toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Theme persistence ──────────────────────────────────────────────────
+function _applyTheme() {
+  const t = localStorage.getItem('dnd5e_theme');
+  if (t) document.documentElement.setAttribute('data-theme', t);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────
+function init() {
+  _applyTheme();
+  loadRoster();
+
+  // Handle "open specific creature" flag from character sheet
+  const openId = localStorage.getItem(OPEN_KEY);
+  if (openId && rosterData.creatures[openId]) {
+    activeId = openId;
+    creature = JSON.parse(JSON.stringify(rosterData.creatures[openId].payload || defaultCreature()));
+  } else {
+    activeId = rosterData.activeId;
+    if (activeId && rosterData.creatures[activeId]) {
+      creature = JSON.parse(JSON.stringify(rosterData.creatures[activeId]?.payload || defaultCreature()));
+    } else if (Object.keys(rosterData.creatures).length) {
+      activeId = Object.keys(rosterData.creatures)[0];
+      creature = JSON.parse(JSON.stringify(rosterData.creatures[activeId]?.payload || defaultCreature()));
+    } else {
+      activeId = genId();
+      creature = defaultCreature();
+      rosterData.creatures[activeId] = { name: creature.name, portrait: null, payload: creature };
+      rosterData.activeId = activeId;
+      saveRoster();
+    }
+  }
+
+  const ctx = _getContext();
+  const openKey = localStorage.getItem(OPEN_KEY);
+
+  // If opened with a specific creature from character sheet, go straight to detail
+  if (openKey && rosterData.creatures[openKey]) {
+    localStorage.removeItem(OPEN_KEY);
+    activeId = openKey;
+    creature = JSON.parse(JSON.stringify(rosterData.creatures[openKey].payload || defaultCreature()));
+    renderCreatureDetail();
+    showDetail();
+  } else {
+    renderGrid();
+    showGrid();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

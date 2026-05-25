@@ -3328,7 +3328,8 @@
   <button class="tab-btn"        data-tab="features"  onclick="switchTab('features')">Features</button>
   <button class="tab-btn"        data-tab="inventory" onclick="switchTab('inventory')">Gear</button>
   <button class="tab-btn"        data-tab="dice"      onclick="switchTab('dice')">Dice</button>
-  <button class="tab-btn"        data-tab="rolls"     onclick="switchTab('rolls')">Logs</button>
+  <button class="tab-btn"        data-tab="rolls"      onclick="switchTab('rolls')">Logs</button>
+  <button class="tab-btn"        data-tab="companions" onclick="switchTab('companions')">&#128009;</button>
 </div>
 
 <!-- ════════ OVERVIEW ════════ -->
@@ -4054,6 +4055,19 @@
   </div>
 </div>
 
+<!-- ════════ COMPANIONS ════════ -->
+<div id="panel-companions" class="panel">
+  <div class="section">
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+      Companions &amp; Forms
+      <button class="attack-edit-btn" onclick="openCreatureStatBlocks()">Open Creature Page &#8594;</button>
+    </div>
+    <div class="section-body" id="companionsBody">
+      <div style="color:var(--text-muted);font-size:12px;font-style:italic;font-family:sans-serif;padding:4px 0">No companions linked. Open the Creature page and creatures linked to this character will appear here.</div>
+    </div>
+  </div>
+</div>
+
 <div id="hpBackdrop" onclick="dismissHpDialog()"></div>
 <div id="hpDialog">
   <div class="hp-dlg-title" data-i18n="modal.set_hp">Set Hit Points</div>
@@ -4701,6 +4715,7 @@
   <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(openCharImport, 100)" data-i18n="btn.ai_import">&#129302; AI Import Character</button>
   <button class="settings-full-btn" id="srdEnrichBtn" onclick="enrichAllFromSrd()" data-i18n="btn.fill_srd">&#128218; Fill Descriptions from SRD</button>
   <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(openDescEnrichPanel, 100)">&#129302; Fill Descriptions with AI</button>
+  <button class="settings-full-btn" onclick="dismissSettings();openCreatureStatBlocks()" style="color:var(--gold-light)">&#128009; Creature Stat Blocks &#8594;</button>
   <hr class="settings-divider">
   <div class="settings-row">
     <div class="settings-row-label">
@@ -5251,6 +5266,7 @@ let state = {
   damageResistances: {},
   maxSpellsPrepared: 0,
   equipmentItems: [],
+  companions: [],   // [{ creatureId, alias }]
 };
 
 // ── Init ───────────────────────────────────────────────────────────────
@@ -5271,6 +5287,7 @@ function init() {
   buildDiceRoller();
   renderHitDice();
   buildDamageResistances();
+  buildCompanions();
   recalcAll();
   applyPortrait();
   setupAutoSave();
@@ -9347,6 +9364,79 @@ function dismissSettings() {
   popModalHistory();
 }
 
+// ── Creature Stat Block navigation ────────────────────────────────────
+function openCreatureStatBlocks(creatureId) {
+  saveData();
+  const charName = document.getElementById('charName')?.value?.trim() || 'Character';
+  const ctx = { from: 'sheet', charId: rosterActiveId, charName, url: 'dnd-character-sheet.html' };
+  try { localStorage.setItem('dnd5e_creature_context', JSON.stringify(ctx)); } catch(e) {}
+  if (creatureId) {
+    try { localStorage.setItem('dnd5e_creature_open', creatureId); } catch(e) {}
+  }
+  window.location.href = 'creature-stat-block.html';
+}
+
+// ── Companions panel ──────────────────────────────────────────────────
+function buildCompanions() {
+  const body = document.getElementById('companionsBody');
+  if (!body) return;
+  const companions = state.companions || [];
+  // Load creature roster to display card data
+  let creatureRoster = null;
+  try {
+    const raw = localStorage.getItem('dnd5e_creatures');
+    creatureRoster = raw ? JSON.parse(raw) : null;
+  } catch(e) {}
+  const creatures = creatureRoster?.creatures || {};
+
+  if (!companions.length) {
+    body.innerHTML = '<div style="color:var(--text-muted);font-size:12px;font-style:italic;font-family:sans-serif;padding:4px 0">No companions linked yet. Use the Creature page to create stat blocks.</div>';
+    // Show a grid of ALL creatures from the roster as quick links
+    const ids = Object.keys(creatures);
+    if (ids.length) {
+      body.innerHTML += '<div style="color:var(--text-muted);font-size:11px;font-family:sans-serif;margin-top:10px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">All Creatures</div>';
+      body.innerHTML += '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+        ids.map(id => {
+          const e = creatures[id];
+          const p = e.payload || {};
+          const cr = p.cr !== undefined ? (p.cr === 0.125 ? '1/8' : p.cr === 0.25 ? '1/4' : p.cr === 0.5 ? '1/2' : String(p.cr)) : '?';
+          const portrait = e.portrait || p.portrait;
+          return `<div onclick="openCreatureStatBlocks('${id}')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;font-family:sans-serif;font-size:12px;transition:border-color 0.15s" onmouseenter="this.style.borderColor='var(--gold)'" onmouseleave="this.style.borderColor='var(--border)'">
+            ${portrait ? `<img src="${portrait}" style="width:30px;height:30px;border-radius:4px;object-fit:cover">` : '<span style="font-size:20px">🐉</span>'}
+            <div>
+              <div style="color:var(--text);font-weight:600">${escHtml(p.name || e.name || 'Unknown')}</div>
+              <div style="color:var(--text-muted);font-size:10px">CR ${cr} ${escHtml(p.type||'')}</div>
+            </div>
+          </div>`;
+        }).join('') + '</div>';
+    }
+    return;
+  }
+
+  body.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+    companions.map((comp, i) => {
+      const e = creatures[comp.creatureId];
+      const p = e?.payload || {};
+      const name = comp.alias || p.name || e?.name || 'Unknown';
+      const portrait = e?.portrait || p.portrait;
+      return `<div onclick="openCreatureStatBlocks('${comp.creatureId}')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;font-family:sans-serif;font-size:12px;transition:border-color 0.15s;position:relative" onmouseenter="this.style.borderColor='var(--gold)'" onmouseleave="this.style.borderColor='var(--border)'">
+        ${portrait ? `<img src="${portrait}" style="width:30px;height:30px;border-radius:4px;object-fit:cover">` : '<span style="font-size:20px">🐉</span>'}
+        <div>
+          <div style="color:var(--text);font-weight:600">${escHtml(name)}</div>
+          <div style="color:var(--text-muted);font-size:10px">${escHtml(p.type||'')}</div>
+        </div>
+        <button onclick="event.stopPropagation();unlinkCompanion(${i})" style="position:absolute;top:4px;right:4px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:1px 4px">✕</button>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+function unlinkCompanion(index) {
+  if (!state.companions) return;
+  state.companions.splice(index, 1);
+  buildCompanions();
+  saveData();
+}
+
 // ── Font size ──────────────────────────────────────────────────────────
 const FONT_SIZES = [75, 85, 100, 110, 125, 150];
 let fontSizeIdx = 2; // default 100%
@@ -9678,7 +9768,7 @@ function clearSheet() {
 function _rebuildAll() {
   buildAbilityGrid(); buildSkillsList(); buildEquipProfList(); buildConditions();
   buildSpellSlots(); buildSpellsKnown(); buildSpellsPrepared(); buildFeatures(); buildFeaturedSpells(); buildFeaturedTraits();
-  buildInfoTraits(); buildEquipmentItems(); buildDiceRoller(); renderHitDice(); buildDamageResistances(); renderAttacks();
+  buildInfoTraits(); buildEquipmentItems(); buildDiceRoller(); renderHitDice(); buildDamageResistances(); renderAttacks(); buildCompanions();
   recalcAll(); updateHeader(); updateHP(); applyPortrait();
   document.getElementById('inspirationBtn').classList.toggle('active', state.inspiration);
 }
@@ -9942,6 +10032,7 @@ function _applyPayloadData(payload) {
     if (!Array.isArray(state.equipProficiencies)) state.equipProficiencies = [];
     if (!Array.isArray(state.customEquipProfRows)) state.customEquipProfRows = [];
     if (!Array.isArray(state.equipmentItems)) state.equipmentItems = [];
+    if (!Array.isArray(state.companions)) state.companions = [];
   }
 }
 
