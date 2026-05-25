@@ -1489,6 +1489,10 @@ Edition availability is detected automatically on modal open via `_srd24Detect()
 | `icaApplyAIDesc(p)` | Writes paste area raw text to description textarea and closes ICA block |
 | `_enrichEquipDescriptions(items)` | Async; fills missing equipment fields from SRD (2014 or 2024 path); called after AI import |
 | `enrichAllFromSrd()` | Async; bulk-fills empty descriptions across all four state arrays; in 2024 mode searches local files (no network); in 2014 mode fetches from API. Triggered from Settings → **📖 Fill Descriptions from SRD** |
+| `openDescEnrichPanel()` | Opens the `#descEnrichPanel` modal (AI description fill); resets paste area and notice text |
+| `dismissDescEnrichPanel()` | Hides `#descEnrichPanel` and its backdrop |
+| `generateDescEnrichPrompt()` | Builds a prompt listing every item across `state.spells`, `state.classFeatures`, `state.infoTraits`, and `state.equipmentItems` that has an empty `description`; copies to clipboard with `execCommand` fallback |
+| `applyDescEnrichResponse()` | Parses the JSON array pasted by the user; for each `{type, name, description}` entry, finds the matching item by name and fills its `description` if currently empty; rebuilds all four lists and saves |
 
 > **2024 SRD note:** `dnd5eapi.co` covers the 2014 SRD. For 2024 SRD content (released under CC-BY 4.0 as SRD 5.2), use the AI Import workflow: the prompt templates are edition-agnostic and work with any LLM that knows the 2024 rules.
 
