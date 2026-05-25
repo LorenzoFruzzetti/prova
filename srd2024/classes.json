@@ -171,6 +171,16 @@
           }
         ]
       }
+    ],
+    "starting_equipment": [
+      {
+        "name": "Explorer's Pack",
+        "quantity": 1
+      },
+      {
+        "name": "Handaxe",
+        "quantity": 4
+      }
     ]
   },
   {
@@ -367,6 +377,24 @@
           }
         ]
       }
+    ],
+    "starting_equipment": [
+      {
+        "name": "Leather Armor",
+        "quantity": 1
+      },
+      {
+        "name": "Dagger",
+        "quantity": 2
+      },
+      {
+        "name": "Lute",
+        "quantity": 1
+      },
+      {
+        "name": "Entertainer's Pack",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -549,6 +577,28 @@
             "description": "When you would normally roll one or more dice to restore Hit Points to a creature with a spell or Channel Divinity, don't roll those dice for the healing; instead use the highest number possible for each die. For example, instead of restoring 2d6 Hit Points to a creature with a spell, you restore 12."
           }
         ]
+      }
+    ],
+    "starting_equipment": [
+      {
+        "name": "Chain Shirt",
+        "quantity": 1
+      },
+      {
+        "name": "Shield",
+        "quantity": 1
+      },
+      {
+        "name": "Mace",
+        "quantity": 1
+      },
+      {
+        "name": "Holy Symbol",
+        "quantity": 1
+      },
+      {
+        "name": "Priest's Pack",
+        "quantity": 1
       }
     ]
   },
@@ -746,6 +796,28 @@
           }
         ]
       }
+    ],
+    "starting_equipment": [
+      {
+        "name": "Leather Armor",
+        "quantity": 1
+      },
+      {
+        "name": "Shield",
+        "quantity": 1
+      },
+      {
+        "name": "Sickle",
+        "quantity": 1
+      },
+      {
+        "name": "Druidic Focus (Wooden Staff)",
+        "quantity": 1
+      },
+      {
+        "name": "Explorer's Pack",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -901,6 +973,24 @@
             "description": "You attain the pinnacle of resilience in battle, giving you these benefits.\n  Defy Death. You have Advantage on Death Saving Throws. Moreover, when you roll 18-20 on a Death Saving Throw, you gain the benefit of rolling a 20 on it.\n  Heroic Rally. At the start of each of your turns, you regain Hit Points equal to 5 plus your Constitution modifier if you are Bloodied and have at least 1 Hit Point."
           }
         ]
+      }
+    ],
+    "starting_equipment": [
+      {
+        "name": "Chain Mail",
+        "quantity": 1
+      },
+      {
+        "name": "Shield",
+        "quantity": 1
+      },
+      {
+        "name": "Shortsword",
+        "quantity": 1
+      },
+      {
+        "name": "Dungeoneer's Pack",
+        "quantity": 1
       }
     ]
   },
@@ -1080,6 +1170,20 @@
             "description": "You gain the ability to set up lethal vibrations in someone's body. When you hit a creature with an Unarmed Strike, you can expend 4 Focus Points to start these imperceptible vibrations, which last\nfor a number of days equal to your Monk level. The vibrations are harmless unless you take an action to end them. Alternatively, when you take the Attack action on your turn, you can forgo one of the attacks to end the vibrations. To end them, you and the target must be on the same plane of existence. When you end them, the target must make a Constitution saving throw, taking 10d12 Force damage on a failed save or half as much damage on a successful one.\n  You can have only one creature under the effect of this feature at a time. You can end the vibrations harmlessly (no action required)."
           }
         ]
+      }
+    ],
+    "starting_equipment": [
+      {
+        "name": "Shortsword",
+        "quantity": 1
+      },
+      {
+        "name": "Explorer's Pack",
+        "quantity": 1
+      },
+      {
+        "name": "Javelin",
+        "quantity": 5
       }
     ]
   },
@@ -1269,6 +1373,28 @@
             "description": "As a Bonus Action, you can imbue your Aura of Protection with holy power, granting the benefits below for 10 minutes or until you end them (no action required). Once you use this feature, you can't use it again until you finish a Long Rest. You can also restore your use of it by expending a level 5 spell slot (no action required).\n  Holy Ward. You have Advantage on any saving throw you are forced to make by a Fiend or an Undead.\n  Radiant Damage. Whenever an enemy starts its turn in the aura, that creature takes Radiant damage equal to your Charisma modifier plus your Proficiency Bonus.\n  Sunlight. The aura is filled with Bright Light that is sunlight."
           }
         ]
+      }
+    ],
+    "starting_equipment": [
+      {
+        "name": "Chain Mail",
+        "quantity": 1
+      },
+      {
+        "name": "Shield",
+        "quantity": 1
+      },
+      {
+        "name": "Javelin",
+        "quantity": 6
+      },
+      {
+        "name": "Holy Symbol",
+        "quantity": 1
+      },
+      {
+        "name": "Priest's Pack",
+        "quantity": 1
       }
     ]
   },
@@ -1461,6 +1587,28 @@
           }
         ]
       }
+    ],
+    "starting_equipment": [
+      {
+        "name": "Studded Leather Armor",
+        "quantity": 1
+      },
+      {
+        "name": "Shortsword",
+        "quantity": 2
+      },
+      {
+        "name": "Longbow",
+        "quantity": 1
+      },
+      {
+        "name": "Arrow",
+        "quantity": 20
+      },
+      {
+        "name": "Dungeoneer's Pack",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -1624,6 +1772,28 @@
             "description": "You are adept at laying ambushes and quickly escaping danger. You can take two turns during the first round of any combat. You take your first turn at your normal Initiative and your second turn at your Initiative minus 10."
           }
         ]
+      }
+    ],
+    "starting_equipment": [
+      {
+        "name": "Leather Armor",
+        "quantity": 1
+      },
+      {
+        "name": "Shortsword",
+        "quantity": 1
+      },
+      {
+        "name": "Dagger",
+        "quantity": 2
+      },
+      {
+        "name": "Thieves' Tools",
+        "quantity": 1
+      },
+      {
+        "name": "Burglar's Pack",
+        "quantity": 1
       }
     ]
   },
@@ -1809,6 +1979,20 @@
           }
         ]
       }
+    ],
+    "starting_equipment": [
+      {
+        "name": "Arcane Focus (Crystal)",
+        "quantity": 1
+      },
+      {
+        "name": "Dagger",
+        "quantity": 2
+      },
+      {
+        "name": "Dungeoneer's Pack",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -1953,6 +2137,24 @@
             "description": "Once per turn when you hit a creature with an attack roll, you can try to instantly transport the target through the Lower Planes. The target must succeed on a Charisma saving throw against your spell save DC, or the target disappears and hurtles through a nightmare landscape. The target takes 8d10 Psychic damage if it isn't a Fiend, and it has the Incapacitated condition until the end of your next turn, when it returns to the space it previously occupied or the nearest unoccupied space.\n  Once you use this feature, you can't use it again until you finish a Long Rest unless you expend a Pact Magic spell slot (no action required) to restore your use of it."
           }
         ]
+      }
+    ],
+    "starting_equipment": [
+      {
+        "name": "Leather Armor",
+        "quantity": 1
+      },
+      {
+        "name": "Arcane Focus (Orb)",
+        "quantity": 1
+      },
+      {
+        "name": "Dagger",
+        "quantity": 2
+      },
+      {
+        "name": "Scholar's Pack",
+        "quantity": 1
       }
     ]
   },
@@ -2127,6 +2329,20 @@
             "description": "You can increase the power of your spells. When you cast a Wizard spell with a spell slot of levels 1-5 that deals damage, you can deal maximum damage with that spell on the turn you cast it.\n  The first time you do so, you suffer no adverse effect. If you use this feature again before you finish a Long Rest, you take 2d12 Necrotic damage for each level of the spell slot immediately after you cast it. This damage ignores Resistance and Immunity.\n  Each time you use this feature again before finishing a Long Rest, the Necrotic damage per spell level increases by 1d12."
           }
         ]
+      }
+    ],
+    "starting_equipment": [
+      {
+        "name": "Quarterstaff",
+        "quantity": 1
+      },
+      {
+        "name": "Spellbook",
+        "quantity": 1
+      },
+      {
+        "name": "Scholar's Pack",
+        "quantity": 1
       }
     ]
   }

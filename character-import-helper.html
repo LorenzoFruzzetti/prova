@@ -166,6 +166,27 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .nav-back{background:var(--surface2);border:1px solid var(--border);color:var(--text-muted)}
 .nav-next{background:var(--gold);color:#1a1410}
 .nav-next:disabled{opacity:.4;cursor:default}
+
+/* ── Skill mode toggle ── */
+.skill-mode-tog{display:flex;gap:5px;margin-bottom:9px}
+.smt{flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text-muted);font-size:.76rem;cursor:pointer;text-align:center}
+.smt.active{background:var(--surface2);border-color:var(--gold);color:var(--gold-light);font-weight:600}
+.skill-chip.non-class{border-color:var(--spell);color:var(--spell-light)}
+.skill-chip.non-class .skill-dot{border-color:var(--spell)}
+.skill-chip.non-class.on{background:rgba(91,174,255,.1);border-color:var(--spell-light)}
+
+/* ── Starting equipment list ── */
+.eq-item-tog{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(92,74,42,.2);cursor:pointer;user-select:none}
+.eq-item-tog:last-child{border-bottom:none}
+.eq-check{width:14px;height:14px;border-radius:3px;border:1px solid var(--border);background:var(--bg);flex-shrink:0;transition:background .15s}
+.eq-item-tog.on .eq-check{background:var(--gold);border-color:var(--gold)}
+.eq-item-label{font-size:.83rem;flex:1}
+.eq-item-qty-badge{font-size:.72rem;color:var(--text-muted)}
+
+/* ── Feat selector ── */
+.feat-card{background:var(--surface2);border:1px solid var(--gold);border-radius:var(--radius);padding:8px 10px;margin-top:8px}
+.feat-card-name{font-weight:700;font-size:.88rem;color:var(--gold-light);margin-bottom:3px}
+.feat-card-desc{font-size:.73rem;color:var(--text-muted);line-height:1.45}
 </style>
 </head>
 <body>
@@ -205,7 +226,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
     </div>
     <div class="field"><label class="lbl">Alignment</label>
       <select class="sel" id="b-align" onchange="W.basic.alignment=this.value">
-        <option value="">— Select —</option>
+        <option value="No Alignment" selected>No Alignment</option>
         <option>Lawful Good</option><option>Neutral Good</option><option>Chaotic Good</option>
         <option>Lawful Neutral</option><option>True Neutral</option><option>Chaotic Neutral</option>
         <option>Lawful Evil</option><option>Neutral Evil</option><option>Chaotic Evil</option>
@@ -265,8 +286,19 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
   <div id="cl-detail" style="display:none">
     <div class="sec"><div class="sec-t">Class Info</div><div class="sec-b" id="cl-info-body"></div></div>
-    <div class="sec"><div class="sec-t" id="cl-skill-title">Skill Proficiencies</div><div class="sec-b"><div class="skill-grid" id="cl-skill-grid"></div></div></div>
+    <div class="sec"><div class="sec-t" id="cl-skill-title">Skill Proficiencies</div><div class="sec-b">
+      <div class="skill-mode-tog">
+        <div class="smt active" id="smt-class" onclick="setSkillMode('class')">Class Skills</div>
+        <div class="smt" id="smt-free" onclick="setSkillMode('free')">Any Skill</div>
+      </div>
+      <div class="skill-grid" id="cl-skill-grid"></div>
+      <p class="hint" id="cl-skill-hint" style="margin-top:6px;display:none">Non-class skills shown in blue. Same pick limit applies.</p>
+    </div></div>
     <div class="sec"><div class="sec-t">Equipment Proficiencies</div><div class="sec-b"><div class="ep-grid" id="cl-equip-grid"></div></div></div>
+    <div class="sec" id="cl-start-equip-sec" style="display:none">
+      <div class="sec-t">Starting Equipment</div>
+      <div class="sec-b" id="cl-start-equip-body"></div>
+    </div>
   </div>
   <div id="cl-status"></div>
 </div>
@@ -287,7 +319,15 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
       <p class="hint" style="margin-bottom:10px" id="bg-bonus-hint"></p>
       <div id="bg-bonus-ui"></div>
     </div></div>
+    <div class="sec" id="bg-feat-sec" style="display:none">
+      <div class="sec-t">Origin Feat</div>
+      <div class="sec-b" id="bg-feat-body"></div>
+    </div>
     <div class="sec"><div class="sec-t">Background Proficiencies</div><div class="sec-b" id="bg-profs-body"></div></div>
+    <div class="sec" id="bg-start-equip-sec" style="display:none">
+      <div class="sec-t">Starting Equipment</div>
+      <div class="sec-b" id="bg-start-equip-body"></div>
+    </div>
   </div>
   <div class="status" id="bg-status-none" style="display:none">No background selected — skills from background will be skipped.</div>
   <div id="bg-status"></div>
@@ -446,12 +486,30 @@ const CLASS_EQUIP = {
 const PB_COST = [0,1,2,3,4,5,0,7,0,9];
 const PB_TOTAL = 27;
 
+// Origin feats available at character creation (2024 SRD)
+const ORIGIN_FEATS = [
+  'Alert','Crafter','Healer','Lucky','Magic Initiate','Musician',
+  'Savage Attacker','Skilled','Tavern Brawler','Tough',
+];
+const FEAT_DESCRIPTIONS = {
+  'Alert': 'You gain a +5 bonus to Initiative. You cannot be surprised while conscious.',
+  'Crafter': 'You gain Tool Proficiency with three different Artisan\'s Tools of your choice.',
+  'Healer': 'When you use a Healer\'s Kit to stabilize a creature, it regains 1 HP. As an action, spend one use to restore 1d6 + 4 + creature\'s max hit dice HP.',
+  'Lucky': 'You have 3 Luck Points per Long Rest. Spend one to add a d20 to any attack roll, ability check, or saving throw.',
+  'Magic Initiate': 'Choose Cleric, Druid, or Wizard. Learn two cantrips and one 1st-level spell from that class\'s list. Regain the spell on a Long Rest.',
+  'Musician': 'Gain proficiency with three Musical Instruments of your choice. Grant Heroic Inspiration to allies who hear you play.',
+  'Savage Attacker': 'Once per turn, reroll a weapon\'s damage dice on a melee attack and use either result.',
+  'Skilled': 'Gain proficiency in any combination of three Skills or Tools of your choice.',
+  'Tavern Brawler': 'Unarmed Strikes deal 1d4 damage. Proficiency with improvised weapons. Grapple as a Bonus Action.',
+  'Tough': 'Hit Point maximum increases by 2 per character level, now and each time you gain a level.',
+};
+
 // ── State ──────────────────────────────────────────────────────────────────
 
 const W = {
   edition: '2024',
   step: 0,
-  basic: { name:'', level:1, alignment:'', xp:'0' },
+  basic: { name:'', level:1, alignment:'No Alignment', xp:'0' },
 
   // species
   speciesIndex: '',
@@ -468,13 +526,17 @@ const W = {
   subclassIndex: '',
   subclassName: '',
   chosenSkills: [],
+  skillPickMode: 'class',                 // 'class' = class-list only, 'free' = any skill
   equipProfs: [],                         // array of group names (from CLASS_EQUIP)
   equipCustom: [],                        // extra custom prof names
+  classEquipment: [],                     // starting equipment items from class
 
   // background
   bgIndex: '',
   bgData: null,
   bgBonus: {big:'', small:''},
+  bgFeat: '',                             // chosen origin feat
+  bgEquipment: [],                        // starting equipment items from background
 
   // ability scores
   scoreMethod: 'manual',
@@ -618,6 +680,7 @@ function normalizeClass2024(raw) {
     savingThrows: raw.saving_throws || [],
     skillChoices: raw.skill_choices || {choose:2,from:[]},
     subclasses: (raw.subclasses||[]).map(s=>({index:s.index, name:s.name})),
+    startingEquipment: (raw.starting_equipment||[]).map(e=>({...e, included:true})),
   };
 }
 
@@ -631,6 +694,11 @@ function normalizeClass2014(raw) {
       skillChoices.from = opts.map(o=>o.item.name.replace('Skill: ',''));
     }
   }
+  const startingEquipment = (raw.starting_equipment||[]).map(e=>({
+    name: e.equipment?.name || '',
+    quantity: e.quantity || 1,
+    included: true,
+  })).filter(e=>e.name);
   return {
     index: raw.index,
     name: raw.name,
@@ -639,6 +707,7 @@ function normalizeClass2014(raw) {
     savingThrows: (raw.saving_throws||[]).map(s=>s.index.toUpperCase()),
     skillChoices,
     subclasses: (raw.subclasses||[]).map(s=>({index:s.index, name:s.name})),
+    startingEquipment,
   };
 }
 
@@ -649,6 +718,7 @@ function normalizeBackground2024(raw) {
     else if (p.startsWith('Tool: ')) toolProfs.push(p.replace('Tool: ',''));
     else toolProfs.push(p);
   }
+  const startingEquipment = (raw.starting_equipment||[]).map(e=>({...e, included:true}));
   return {
     index: raw.index,
     name: raw.name,
@@ -656,6 +726,7 @@ function normalizeBackground2024(raw) {
     toolProfs,
     abilityScores: raw.ability_scores || null,  // eligible abilities for bonuses
     feat: raw.feat || '',
+    startingEquipment,
   };
 }
 
@@ -665,6 +736,11 @@ function normalizeBackground2014(raw) {
     if (p.name.startsWith('Skill: ')) skillProfs.push(p.name.replace('Skill: ',''));
     else toolProfs.push(p.name);
   }
+  const startingEquipment = (raw.starting_equipment||[]).map(e=>({
+    name: e.equipment?.name || e.item?.name || '',
+    quantity: e.quantity || 1,
+    included: true,
+  })).filter(e=>e.name);
   return {
     index: raw.index,
     name: raw.name,
@@ -672,6 +748,7 @@ function normalizeBackground2014(raw) {
     toolProfs,
     abilityScores: null,
     feat: '',
+    startingEquipment,
   };
 }
 
@@ -961,6 +1038,8 @@ async function onClassChange(idx) {
     const eq = CLASS_EQUIP[idx] || {groups:[], custom:[]};
     W.equipProfs = [...eq.groups];
     W.equipCustom = [...eq.custom];
+    // Init starting equipment
+    W.classEquipment = (normalized.startingEquipment||[]).map(e=>({...e}));
     statusEl.innerHTML = '';
     renderClassDetail(normalized);
     updateNav();
@@ -986,19 +1065,21 @@ function renderClassDetail(cls) {
     el('cl-subclass-wrap').style.display = '';
   }
 
-  // Skills
-  const sc = cls.skillChoices;
-  el('cl-skill-title').textContent = `Skill Proficiencies (choose ${sc.choose})`;
-  const skillFrom = sc.from.length ? sc.from : ALL_SKILLS;
-  el('cl-skill-grid').innerHTML = skillFrom.map(s=>`
-    <div class="skill-chip" data-skill="${s}" onclick="toggleSkill(this,'${s}',${sc.choose})">
-      <div class="skill-dot"></div>${s}
-    </div>`).join('');
+  // Skills (using renderSkillGrid for skill-mode support)
+  renderSkillGrid(cls);
 
-  // Equipment
+  // Equipment proficiencies
   const allEq = [...W.equipProfs, ...W.equipCustom];
   el('cl-equip-grid').innerHTML = allEq.map(p=>`
     <div class="ep-chip on" data-prof="${p}" onclick="toggleEquipProf(this,'${p}')">${p}</div>`).join('');
+
+  // Starting equipment
+  if (W.classEquipment.length) {
+    el('cl-start-equip-sec').style.display = '';
+    renderEquipmentList('cl-start-equip-body', W.classEquipment, 'class');
+  } else {
+    el('cl-start-equip-sec').style.display = 'none';
+  }
 
   el('cl-detail').style.display = '';
 }
@@ -1021,6 +1102,54 @@ function toggleEquipProf(chipEl, prof) {
     if (eq.groups.includes(prof)) W.equipProfs.push(prof);
     else W.equipCustom.push(prof);
   }
+}
+
+function setSkillMode(mode) {
+  W.skillPickMode = mode;
+  el('smt-class').classList.toggle('active', mode==='class');
+  el('smt-free').classList.toggle('active', mode==='free');
+  el('cl-skill-hint').style.display = mode==='free' ? '' : 'none';
+  // Drop non-class skills from selection when switching back to class-only
+  if (mode==='class' && W.classData) {
+    const allowed = new Set(W.classData.skillChoices.from.length ? W.classData.skillChoices.from : ALL_SKILLS);
+    W.chosenSkills = W.chosenSkills.filter(s=>allowed.has(s));
+  }
+  if (W.classData) renderSkillGrid(W.classData);
+}
+
+function renderSkillGrid(cls) {
+  const sc = cls.skillChoices;
+  el('cl-skill-title').textContent = `Skill Proficiencies (choose ${sc.choose})`;
+  const classSkillSet = new Set(sc.from.length ? sc.from : ALL_SKILLS);
+  const skillFrom = W.skillPickMode === 'free' ? ALL_SKILLS : [...classSkillSet];
+  el('cl-skill-grid').innerHTML = skillFrom.map(s=>{
+    const isChosen = W.chosenSkills.includes(s);
+    const isNonClass = W.skillPickMode === 'free' && !classSkillSet.has(s);
+    return `<div class="skill-chip${isChosen?' on':''}${isNonClass?' non-class':''}"
+      data-skill="${s}" onclick="toggleSkill(this,'${s}',${sc.choose})">
+      <div class="skill-dot"></div>${s}
+    </div>`;
+  }).join('');
+}
+
+function renderEquipmentList(bodyId, items, source) {
+  if (!items.length) {
+    el(bodyId).innerHTML = '<p class="hint">No starting equipment listed.</p>';
+    return;
+  }
+  el(bodyId).innerHTML = items.map((item, i)=>`
+    <div class="eq-item-tog${item.included?' on':''}" onclick="toggleEquipItem('${source}',${i})">
+      <div class="eq-check"></div>
+      <span class="eq-item-label">${item.name}</span>
+      ${(item.quantity||1)>1?`<span class="eq-item-qty-badge">×${item.quantity}</span>`:''}
+    </div>`).join('');
+}
+
+function toggleEquipItem(source, i) {
+  const arr = source==='class' ? W.classEquipment : W.bgEquipment;
+  if (arr[i]) arr[i].included = !arr[i].included;
+  const bodyId = source==='class' ? 'cl-start-equip-body' : 'bg-start-equip-body';
+  renderEquipmentList(bodyId, arr, source);
 }
 
 // ── Background step ────────────────────────────────────────────────────────
@@ -1070,6 +1199,8 @@ async function onBackgroundChange(idx) {
       normalized = normalizeBackground2014(raw);
     }
     W.bgData = normalized;
+    W.bgFeat = normalized.feat || '';
+    W.bgEquipment = (normalized.startingEquipment||[]).map(e=>({...e}));
     statusEl.innerHTML = '';
     renderBackgroundDetail(normalized);
     updateNav();
@@ -1102,13 +1233,62 @@ function renderBackgroundDetail(bg) {
     bonusSec.style.display = 'none';
   }
 
+  // Origin Feat (2024 only)
+  const featSec = el('bg-feat-sec');
+  if (W.edition === '2024' && bg.feat) {
+    featSec.style.display = '';
+    renderFeatSelector(bg.feat);
+  } else {
+    featSec.style.display = 'none';
+  }
+
   // Proficiencies
   let profsHtml = '';
   if (bg.skillProfs.length) profsHtml += '<p style="margin-bottom:6px">' + bg.skillProfs.map(s=>`<span class="badge-green">Skill: ${s}</span>`).join('') + '</p>';
   if (bg.toolProfs.length) profsHtml += '<p>' + bg.toolProfs.map(t=>`<span class="badge-blue">${t}</span>`).join('') + '</p>';
-  if (bg.feat) profsHtml += `<p class="hint" style="margin-top:6px">Origin Feat: <b>${bg.feat}</b> (add manually in the character sheet)</p>`;
   el('bg-profs-body').innerHTML = profsHtml || '<p class="hint">No listed proficiencies.</p>';
+
+  // Starting equipment
+  if (W.bgEquipment.length) {
+    el('bg-start-equip-sec').style.display = '';
+    renderEquipmentList('bg-start-equip-body', W.bgEquipment, 'bg');
+  } else {
+    el('bg-start-equip-sec').style.display = 'none';
+  }
+
   el('bg-detail').style.display = '';
+}
+
+function renderFeatSelector(defaultFeat) {
+  if (!W.bgFeat) W.bgFeat = defaultFeat;
+  const isCustom = W.bgFeat && !ORIGIN_FEATS.includes(W.bgFeat) && W.bgFeat !== '';
+  const selectVal = isCustom ? '__custom' : W.bgFeat;
+  const desc = FEAT_DESCRIPTIONS[W.bgFeat] || '';
+  el('bg-feat-body').innerHTML = `
+    <div class="field">
+      <label class="lbl">Selected Feat</label>
+      <select class="sel" id="feat-sel" onchange="onFeatChange(this.value)">
+        ${ORIGIN_FEATS.map(f=>`<option value="${f}"${f===selectVal?' selected':''}>${f}</option>`).join('')}
+        <option value="__custom"${selectVal==='__custom'?' selected':''}>Custom…</option>
+      </select>
+    </div>
+    ${isCustom?`<div class="field">
+      <label class="lbl">Custom Feat Name</label>
+      <input class="inp" id="feat-custom-inp" type="text" value="${isCustom?W.bgFeat:''}"
+        placeholder="Enter feat name…" oninput="W.bgFeat=this.value">
+    </div>`:''}
+    ${desc?`<div class="feat-card"><div class="feat-card-name">${W.bgFeat}</div><div class="feat-card-desc">${desc}</div></div>`:''}
+    <p class="hint" style="margin-top:6px">Default: <b>${defaultFeat}</b>. The feat will be added as a trait to your character sheet.</p>
+  `;
+}
+
+function onFeatChange(val) {
+  if (val === '__custom') {
+    W.bgFeat = '';
+  } else {
+    W.bgFeat = val;
+  }
+  if (W.bgData) renderFeatSelector(W.bgData.feat);
 }
 
 // ── Ability Scores step ────────────────────────────────────────────────────
@@ -1342,10 +1522,26 @@ function buildPayload() {
   const equipProficiencies = [...W.equipProfs];
   const customEquipProfRows = [...W.equipCustom];
 
-  // Info traits from selected species traits
+  // Info traits from selected species traits + origin feat
   const allTraits = [...(sp?.traits||[]),...(W.subspeciesData?.traits||[])];
   const infoTraits = W.selectedTraits.sort((a,b)=>a-b).map(i=>allTraits[i]).filter(Boolean)
     .map(t=>({name:t.name, description:t.description||''}));
+  if (W.bgFeat) {
+    const featDesc = FEAT_DESCRIPTIONS[W.bgFeat] || '';
+    infoTraits.push({name:`${W.bgFeat} (Origin Feat)`, description: featDesc});
+  }
+
+  // Starting equipment (class + background, selected items only)
+  const equipmentItems = [
+    ...W.classEquipment.filter(e=>e.included),
+    ...W.bgEquipment.filter(e=>e.included),
+  ].map(e=>({
+    name: e.name,
+    quantity: e.quantity || 1,
+    weight: '',
+    cost: '',
+    category: '',
+  }));
 
   const form = {
     charName: W.basic.name.trim(),
@@ -1395,7 +1591,7 @@ function buildPayload() {
     statMods: {ac:0,speed:0,initiative:0,spellatk:0,spelldc:0},
     damageResistances: {},
     maxSpellsPrepared: 0,
-    equipmentItems: [],
+    equipmentItems,
   };
 
   return {form, state};
@@ -1435,7 +1631,7 @@ function setEdition(ed) {
   W.speciesData=null; W.speciesIndex=''; W.subspeciesData=null; W.subspeciesIndex='';
   W.classData=null; W.classIndex=''; W.bgData=null; W.bgIndex='';
   W.chosenSkills=[]; W.selectedTraits=[]; W.speciesBonus={big:'',small:''};
-  W.bgBonus={big:'',small:''};
+  W.bgBonus={big:'',small:''}; W.bgFeat=''; W.classEquipment=[]; W.bgEquipment=[];
   // Reset selects
   ['sp-sel','cl-sel','bg-sel'].forEach(id=>{ const s=el(id); if(s) s.innerHTML='<option>— Loading… —</option>'; });
   el('sp-detail').style.display='none';

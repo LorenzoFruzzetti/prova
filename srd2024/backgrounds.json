@@ -13,6 +13,28 @@
       "Skill: Insight",
       "Skill: Religion",
       "Tool: Calligrapher's Supplies"
+    ],
+    "starting_equipment": [
+      {
+        "name": "Holy Symbol",
+        "quantity": 1
+      },
+      {
+        "name": "Prayer Book",
+        "quantity": 1
+      },
+      {
+        "name": "Incense (sticks)",
+        "quantity": 5
+      },
+      {
+        "name": "Vestments",
+        "quantity": 1
+      },
+      {
+        "name": "Common Clothes",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -29,6 +51,24 @@
       "Skill: Sleight of Hand",
       "Skill: Stealth",
       "Tool: Thieves' Tools"
+    ],
+    "starting_equipment": [
+      {
+        "name": "Crowbar",
+        "quantity": 1
+      },
+      {
+        "name": "Dagger",
+        "quantity": 2
+      },
+      {
+        "name": "Dark Common Clothes with Hood",
+        "quantity": 1
+      },
+      {
+        "name": "Thieves' Tools",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -45,6 +85,28 @@
       "Skill: Arcana",
       "Skill: History",
       "Tool: Calligrapher's Supplies"
+    ],
+    "starting_equipment": [
+      {
+        "name": "Bottle of Black Ink",
+        "quantity": 1
+      },
+      {
+        "name": "Ink Pen",
+        "quantity": 1
+      },
+      {
+        "name": "Small Knife",
+        "quantity": 1
+      },
+      {
+        "name": "Letter from Dead Colleague",
+        "quantity": 1
+      },
+      {
+        "name": "Common Clothes",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -60,6 +122,24 @@
     "proficiencies": [
       "Skill: Athletics",
       "Skill: Intimidation"
+    ],
+    "starting_equipment": [
+      {
+        "name": "Insignia of Rank",
+        "quantity": 1
+      },
+      {
+        "name": "Dagger (trophy from fallen foe)",
+        "quantity": 1
+      },
+      {
+        "name": "Bone Dice",
+        "quantity": 1
+      },
+      {
+        "name": "Common Clothes",
+        "quantity": 1
+      }
     ]
   }
 ]
