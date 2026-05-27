@@ -190,6 +190,11 @@ body{background:var(--bg);color:var(--text);font-family:Georgia,serif;-webkit-ta
   border:1px solid currentColor;border-radius:4px;padding:1px 7px;
   text-transform:capitalize;
 }
+.dmg-interact-pill{
+  cursor:pointer;user-select:none;-webkit-user-select:none;
+  transition:opacity 0.12s,background 0.12s;
+}
+.dmg-interact-pill:active{opacity:0.6}
 /* ── Section title row with info/add buttons ── */
 .section-title-row{
   display:flex;align-items:center;justify-content:space-between;
@@ -430,6 +435,8 @@ select.ep-input{cursor:pointer}
   color:var(--text-muted);cursor:pointer;transition:color 0.15s,border-color 0.15s,background 0.15s;
 }
 .import-tab-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(var(--accent-rgb),0.1)}
+#importModal .panel{display:none}
+#importModal .panel.active{display:block}
 .ai-prompt-box{
   width:100%;min-height:72px;resize:vertical;padding:9px 12px;
   font-size:13px;font-family:sans-serif;background:var(--surface2);
@@ -582,13 +589,13 @@ label.settings-full-btn{cursor:pointer}
 <div id="importModal">
   <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:12px">Import Creature</div>
   <div class="import-tab-row">
-    <button class="import-tab-btn active" id="tabAI"    onclick="setImportTab('ai')">✨ AI</button>
-    <button class="import-tab-btn"        id="tabSrd14" onclick="setImportTab('srd14')">📖 2014</button>
-    <button class="import-tab-btn"        id="tabSrd24" onclick="setImportTab('srd24')">📗 2024</button>
+    <button class="import-tab-btn tab-btn active" data-tab="ai"    onclick="switchTab('ai')">✨ AI</button>
+    <button class="import-tab-btn tab-btn"        data-tab="srd14" onclick="switchTab('srd14')">📖 2014</button>
+    <button class="import-tab-btn tab-btn"        data-tab="srd24" onclick="switchTab('srd24')">📗 2024</button>
   </div>
 
   <!-- AI tab -->
-  <div id="aiTabContent">
+  <div id="panel-ai" class="panel active">
     <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Creature name or description</div>
     <textarea class="ai-prompt-box" id="aiWhatInput" placeholder="e.g. Ancient Red Dragon, Goblin Boss, Aboleth…"></textarea>
     <button class="settings-full-btn" style="margin-bottom:10px" onclick="generateAndCopyCreaturePrompt()">Copy prompt to clipboard</button>
@@ -599,14 +606,14 @@ label.settings-full-btn{cursor:pointer}
   </div>
 
   <!-- SRD 2014 tab -->
-  <div id="srd14TabContent" style="display:none">
+  <div id="panel-srd14" class="panel">
     <input type="search" id="srd14SearchInput" class="ai-prompt-box" style="min-height:unset;padding:9px 12px;resize:none" placeholder="Search monsters (2014 SRD)…" oninput="onSrd14Search()">
     <div id="srd14Status" style="font-size:11px;color:var(--text-muted);min-height:16px;margin-bottom:6px;font-family:sans-serif"></div>
     <div id="srd14Results" class="srd-results-box"><div class="srd-hint">Type to search monsters.</div></div>
   </div>
 
   <!-- SRD 2024 tab -->
-  <div id="srd24TabContent" style="display:none">
+  <div id="panel-srd24" class="panel">
     <input type="search" id="srd24SearchInput" class="ai-prompt-box" style="min-height:unset;padding:9px 12px;resize:none" placeholder="Search monsters (2024 SRD)…" oninput="onSrd24Search()">
     <div id="srd24Status" style="font-size:11px;color:var(--text-muted);min-height:16px;margin-bottom:6px;font-family:sans-serif"></div>
     <div id="srd24Results" class="srd-results-box"><div class="srd-hint">Type to search monsters.</div></div>
@@ -641,6 +648,7 @@ const CONTEXT_KEY   = 'dnd5e_creature_context';
 const OPEN_KEY      = 'dnd5e_creature_open';
 const SRD_API       = 'https://www.dnd5eapi.co/api';
 const ABILITIES     = ['STR','DEX','CON','INT','WIS','CHA'];
+const STANDARD_DMG_TYPES = ['acid','bludgeoning','cold','fire','force','lightning','necrotic','piercing','poison','psychic','radiant','slashing','thunder'];
 
 const CR_XP = {
   0:10, 0.125:25, 0.25:50, 0.5:100,
@@ -1043,10 +1051,8 @@ function renderCreatureDetail() {
   // Skills — individual rows, collapsible to show all
   _buildSkillsRows(rowsDiv, c);
 
-  // Damage interactions — pill style
-  _buildDamageTypeBlock(rowsDiv, 'Immunities',      c.damageImmunities      || []);
-  _buildDamageTypeBlock(rowsDiv, 'Resistances',     c.damageResistances     || []);
-  _buildDamageTypeBlock(rowsDiv, 'Vulnerabilities', c.damageVulnerabilities || []);
+  // Damage interactions — interactive cycling grid
+  _buildDamageInteractionsGrid(rowsDiv, c);
   if (c.conditionImmunities?.length) _addRow(rowsDiv, 'Condition Immunities', c.conditionImmunities.join(', '));
 
   // Senses — individual rows
@@ -1286,28 +1292,84 @@ function _dmgTypeColor(type) {
   return map[(type||'').toLowerCase()] || 'var(--text-muted)';
 }
 
-function _buildDamageTypeBlock(container, label, types) {
-  if (!types?.length) return;
+function _getDmgState(c, type) {
+  const t = type.toLowerCase();
+  if ((c.damageImmunities      || []).some(x => x.toLowerCase() === t)) return 'immune';
+  if ((c.damageResistances     || []).some(x => x.toLowerCase() === t)) return 'resistant';
+  if ((c.damageVulnerabilities || []).some(x => x.toLowerCase() === t)) return 'vulnerable';
+  return 'normal';
+}
+
+function _cycleDmgState(type) {
+  const t = type.toLowerCase();
+  const cur = _getDmgState(creature, t);
+  creature.damageResistances     = (creature.damageResistances     || []).filter(x => x.toLowerCase() !== t);
+  creature.damageImmunities      = (creature.damageImmunities      || []).filter(x => x.toLowerCase() !== t);
+  creature.damageVulnerabilities = (creature.damageVulnerabilities || []).filter(x => x.toLowerCase() !== t);
+  const next = cur === 'normal' ? 'resistant' : cur === 'resistant' ? 'immune' : cur === 'immune' ? 'vulnerable' : 'normal';
+  if (next === 'resistant')  creature.damageResistances.push(t);
+  else if (next === 'immune')     creature.damageImmunities.push(t);
+  else if (next === 'vulnerable') creature.damageVulnerabilities.push(t);
+  saveRoster();
+  const old = document.getElementById('dmgInteractionsWrapper');
+  if (old) old.replaceWith(_buildDmgInteractionsWrapper(creature));
+}
+
+function _buildDmgInteractionsWrapper(c) {
   const wrapper = document.createElement('div');
-  wrapper.style.cssText = 'padding:3px 10px 2px';
+  wrapper.id = 'dmgInteractionsWrapper';
+  wrapper.style.cssText = 'padding:3px 10px 6px';
   const labelEl = document.createElement('div');
   labelEl.className = 'cs-row-label';
   labelEl.style.cssText = 'font-family:sans-serif;font-size:11px;display:block;padding:2px 0';
-  labelEl.textContent = label + ':';
+  labelEl.textContent = 'Damage:';
   wrapper.appendChild(labelEl);
   const pillsDiv = document.createElement('div');
   pillsDiv.className = 'dmg-type-pills';
-  types.forEach(t => {
+  // Standard types + any non-standard already in the arrays
+  const extraTypes = [
+    ...(c.damageImmunities || []),
+    ...(c.damageResistances || []),
+    ...(c.damageVulnerabilities || []),
+  ].map(x => x.toLowerCase()).filter(x => !STANDARD_DMG_TYPES.includes(x));
+  const allTypes = [...STANDARD_DMG_TYPES, ...new Set(extraTypes)];
+  allTypes.forEach(t => {
+    const state = _getDmgState(c, t);
     const pill = document.createElement('span');
-    pill.className = 'dmg-type-pill';
-    const color = _dmgTypeColor(String(t));
-    pill.style.color = color;
-    pill.style.borderColor = color;
-    pill.textContent = String(t).charAt(0).toUpperCase() + String(t).slice(1).toLowerCase();
+    pill.className = 'dmg-type-pill dmg-interact-pill';
+    const baseColor = _dmgTypeColor(t);
+    if (state === 'normal') {
+      pill.style.color = 'var(--text-muted)';
+      pill.style.borderColor = 'var(--border)';
+      pill.style.opacity = '0.4';
+    } else if (state === 'resistant') {
+      pill.style.color = baseColor;
+      pill.style.borderColor = baseColor;
+    } else if (state === 'immune') {
+      pill.style.color = '#fff';
+      pill.style.borderColor = '#111';
+      pill.style.background = '#111';
+    } else { // vulnerable
+      pill.style.color = '#e8705a';
+      pill.style.borderColor = '#e8705a';
+    }
+    const label = t.charAt(0).toUpperCase() + t.slice(1);
+    const suffix = state === 'resistant' ? ' ½' : state === 'immune' ? ' ✕' : state === 'vulnerable' ? ' ×2' : '';
+    pill.textContent = label + suffix;
+    pill.title = state === 'normal' ? 'Normal — tap to make resistant' : `${state} — tap to cycle`;
+    pill.addEventListener('click', () => _cycleDmgState(t));
     pillsDiv.appendChild(pill);
   });
   wrapper.appendChild(pillsDiv);
-  container.appendChild(wrapper);
+  const hint = document.createElement('div');
+  hint.style.cssText = 'font-size:9px;color:var(--text-muted);font-family:sans-serif;padding-top:2px;letter-spacing:0.3px';
+  hint.textContent = 'tap: resistant → immune → vulnerable → normal';
+  wrapper.appendChild(hint);
+  return wrapper;
+}
+
+function _buildDamageInteractionsGrid(container, c) {
+  container.appendChild(_buildDmgInteractionsWrapper(c));
 }
 
 function _speedStr(speed) {
@@ -1880,15 +1942,13 @@ function applyCreaturePayload(data) {
 }
 
 // ── Import modal ───────────────────────────────────────────────────────
-let _importTab = 'ai';
-
 function openImportModal() {
   document.getElementById('importModal').classList.add('show');
   document.getElementById('importBackdrop').classList.add('show');
-  setImportTab('ai');
+  switchTab('ai');
   // Probe 2024 availability
   _srd24Detect().then(avail => {
-    const btn = document.getElementById('tabSrd24');
+    const btn = document.querySelector('.tab-btn[data-tab="srd24"]');
     if (btn) { btn.disabled = !avail; btn.title = avail ? '' : '2024 creatures.json not found'; }
   });
 }
@@ -1896,14 +1956,6 @@ function openImportModal() {
 function dismissImportModal() {
   document.getElementById('importModal').classList.remove('show');
   document.getElementById('importBackdrop').classList.remove('show');
-}
-
-function setImportTab(tab) {
-  _importTab = tab;
-  ['ai','srd14','srd24'].forEach(t => {
-    document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1))?.classList.toggle('active', t === tab);
-    document.getElementById(t + 'TabContent').style.display = t === tab ? '' : 'none';
-  });
 }
 
 // ── AI Import ──────────────────────────────────────────────────────────

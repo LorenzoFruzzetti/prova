@@ -151,7 +151,6 @@ The app has two tiers:
 | **Served** (Netlify / local server) | HTML + companion files in same directory | Everything above, plus: 2024 SRD lookup (requires `srd2024/*.json`), 2014 SRD lookup (requires internet) |
 
 **Rules for companion files:**
-- All companion files are **optional**. The app must start and run fully without them — their absence must degrade gracefully (hide the feature, show a disabled state), never throw an error.
 - Companion files are primarily **data assets** (`.json`). However, shared utility logic that is needed by more than one HTML file **may** be extracted into an external `.js` file (e.g. `shared.js`) and loaded with `<script src="shared.js">`. Logic that is only used by a single HTML file should remain inline in that file.
 - The `srd2024/translation.json` file is the single source of truth for 2014↔2024 terminology differences (endpoint aliases, field name aliases, UI label overrides). Do not scatter edition-specific string checks through the main code.
 
@@ -236,3 +235,12 @@ The following directories are referenced in older docs but **do not exist** in t
 - `temp_image/`, `temporary_files/`, `debugging_scripts/` — scratch directories not committed
 
 Do not create these directories unless there is a concrete need. Do not reference them in documentation.
+
+---
+
+## 9. Known Issues Fixed
+
+- Date: 2026-05-27
+- File: `shared.js`
+- Problem: Declared `const DAMAGE_RESIST_TYPES` (and related resistance helpers) that were already declared in `dnd-character-sheet.html`, causing a global redeclaration runtime error (`Identifier 'DAMAGE_RESIST_TYPES' has already been declared`). This halted inline script initialization and made multiple UI features appear missing (e.g. Settings/Import panel actions, hit dice/resistance rendering).
+- Fix applied: Removed the duplicated damage resistance constant/functions from `shared.js`, keeping the page-specific implementation only in `dnd-character-sheet.html`.

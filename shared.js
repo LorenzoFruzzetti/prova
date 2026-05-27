@@ -136,3 +136,75 @@ function genId() {
 function escHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+// ── Tab / Panel navigation ────────────────────────────────────────────────────
+
+/**
+ * Activates a named tab and its associated panel.
+ * Removes .active from every .tab-btn and .panel on the page, then adds it to
+ * the button matching [data-tab="id"] and the element with id="panel-<id>".
+ * Any page that uses the tab-btn / panel-* naming convention can call this.
+ * @param {string} id  The data-tab value to activate.
+ */
+function switchTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  const btn = document.querySelector(`.tab-btn[data-tab="${id}"]`);
+  if (btn) { btn.classList.add('active'); btn.scrollIntoView({inline: 'center', block: 'nearest'}); }
+}
+
+/**
+ * Attaches horizontal touch-swipe listeners to document.body so the user can
+ * swipe left/right to move between tabs.
+ * @param {string[]}           tabs          Ordered list of tab IDs to cycle through.
+ * @param {function():boolean} [shouldBlock] Optional. Called before each swipe attempt;
+ *                                           return true to suppress the navigation.
+ */
+function setupSwipe(tabs, shouldBlock) {
+  let x0 = null, y0 = null, xLast = null, yLast = null;
+  let startedOnTabBar = false;
+  document.body.addEventListener('touchstart', e => {
+    x0    = e.touches[0].clientX;
+    y0    = e.touches[0].clientY;
+    xLast = x0;
+    yLast = y0;
+    const tb = document.querySelector('.tab-bar');
+    if (tb) {
+      const r = tb.getBoundingClientRect();
+      startedOnTabBar = y0 >= r.top && y0 <= r.bottom;
+    } else {
+      startedOnTabBar = false;
+    }
+  }, {passive: true});
+  document.body.addEventListener('touchmove', e => {
+    if (e.touches.length > 0) {
+      xLast = e.touches[0].clientX;
+      yLast = e.touches[0].clientY;
+    }
+  }, {passive: true});
+  function applySwipe(endX, endY) {
+    if (x0 === null) return false;
+    const dx = endX - x0;
+    const dy = endY - y0;
+    x0 = null; xLast = null; yLast = null;
+    if (shouldBlock && shouldBlock()) return false;
+    if (startedOnTabBar) return false;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return false;
+    const cur = tabs.indexOf(document.querySelector('.tab-btn.active')?.dataset.tab ?? tabs[0]);
+    const next = Math.max(0, Math.min(tabs.length - 1, cur + (dx < 0 ? 1 : -1)));
+    if (next !== cur) switchTab(tabs[next]);
+    return true;
+  }
+  // non-passive so we can call preventDefault() and cancel the click that
+  // would otherwise fire on whichever tab button the finger landed on.
+  document.body.addEventListener('touchend', e => {
+    const swipe = applySwipe(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    if (swipe) e.preventDefault();
+  });
+  // touchcancel: browser took over the gesture (e.g. scroll); use last tracked position.
+  document.body.addEventListener('touchcancel', () => {
+    applySwipe(xLast ?? x0 ?? 0, yLast ?? y0 ?? 0);
+  }, {passive: true});
+}
+

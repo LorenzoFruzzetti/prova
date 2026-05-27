@@ -580,6 +580,7 @@ Object mapping damage type keys to resistance state. Each entry is optional; omi
 ```json
 "damageResistances": {
   "fire": 1,
+  "necrotic": 2,
   "cold": -1,
   "slashing": 0
 }
@@ -588,12 +589,13 @@ Object mapping damage type keys to resistance state. Each entry is optional; omi
 | Value | Meaning | Dot colour |
 |---|---|---|
 | `1` | Resistant — half damage | Green |
+| `2` | Immune — zero damage | Black |
 | `-1` | Vulnerable — double damage | Red |
 | `0` or absent | Normal | Empty |
 
 Valid damage type keys: `slashing`, `piercing`, `bludgeoning`, `fire`, `cold`, `lightning`, `thunder`, `acid`, `poison`, `necrotic`, `radiant`, `force`, `psychic`.
 
-Cycled by tapping a dot in the Resistances & Vulnerabilities section of the Combat tab. Undoable.
+Cycled by tapping a dot in the Resistances, Immunities & Vulnerabilities section of the Combat tab (cycle: normal → resistant → immune → vulnerable → normal). Undoable.
 
 #### `maxSpellsPrepared`
 Integer. The daily preparation limit for spells marked with the P dot (`prepared: true`). `0` (default) means no limit is enforced. Always-prepared spells (`alwaysPrepared: true`) never count toward this limit.

@@ -13,15 +13,13 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 ### Application structure
 
-**Single-file app** — The entire application lives in `dnd-character-sheet.html`. There is no build step, no bundler, no external CSS or JS files, and no server. Open the file directly in a browser. Every HTML structure, every CSS rule, and every JavaScript function is in that one file.
-
-**Tab** — One of the eight top-level navigation buttons in the sticky tab bar. Each tab button carries a `data-tab` attribute identifying the panel it activates. The currently active tab has the `.active` CSS class on its button.
+**Tab** — One of the eight top-level navigation buttons in the tab bar. Each tab button carries a `data-tab` attribute identifying the panel it activates. The currently active tab has the `.active` CSS class on its button.
 
 **Panel** — The content area shown when a tab is selected. Each panel is a `<div class="panel">` whose `id` matches the tab's `data-tab` value prefixed with `panel-`. Panels are hidden by default; the active one gets the `.active` class.
 
 **Section** — A card-like visual grouping inside a panel. Implemented as `<div class="section">`, which contains a `.section-title` strip at the top and a `.section-body` below. Multiple sections stack vertically within a panel.
 
-**Header** — The sticky top bar (`<div class="header">`). Contains the app title on the left, action buttons (Undo, Import, Settings) on the right, and character name + meta on a second line. Always visible regardless of which tab is active.
+**Header** — The top bar (`<div class="header">`). Contains the app title on the left, action buttons (Undo, Import, Settings) on the right, and character name + meta on a second line. It scrolls with the page instead of staying fixed.
 
 ---
 
@@ -102,7 +100,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **Stat modifier dialog (`#statModDialog`)** — Bottom-sheet for entering a custom numeric bonus for one combat stat (AC, Speed, Initiative, Spell Atk, or Spell DC). Opened via the Edit button inside the stat pill's info panel. The bonus is stored in `state.statMods[key]` and displayed as a `.stat-pill-mod` badge inside the pill.
 
-**Settings sheet (`#settingsMenu`)** — Bottom-sheet opened by the ⚙ header button. Contains Save to file, Load from file, font size control, lefty mode toggle, and theme swatches.
+ — Bottom-sheet opened by the ⚙ header button. Contains Save to file, Load from file, font size control, lefty mode toggle, and theme swatches.
 
 **AI / SRD Import panel (`#aiImportPanel`)** — Modal opened by the ⇓ Import header button, or by any "+ Add" section button (pre-selected to the matching type tab). Two modes: **AI mode** generates a copy-ready LLM prompt and accepts paste-back JSON, plus a "+ Create custom" button that opens the matching item panel directly; **SRD mode** searches the live D&D 5e SRD API (`dnd5eapi.co`) and imports selected items. Four type tabs: **Spells** / **Features** / **Traits** / **Items** (equipment).
 
@@ -206,7 +204,7 @@ These are the flat string values stored directly in HTML `<input>` / `<textarea>
 
 | ID | Meaning | Notes |
 |---|---|---|
-| `charName` | Character name | Displayed in the sticky header |
+| `charName` | Character name | Displayed in the header |
 | `charClass` | Class (e.g. "Wizard") | Used in character grid card meta |
 | `charSubclass` | Subclass (e.g. "Evocation") | Sub-field below class on the Info tab |
 | `charRace` | Race / species (e.g. "High Elf") | Used in character grid card meta |
@@ -259,7 +257,7 @@ These are the structured, typed values in the `state` object. They are persisted
 | `diceRoller` | `{sides,count}[]|null` | Free-form dice roller configuration; `null` means use defaults (d4/d6/d8/d10/d12/d20/d100, count 1 each) |
 | `portrait` | `string|null` | Base64 data URL for the character portrait, or `null` |
 | `statMods` | `{ac,speed,initiative,spellatk,spelldc}` | Custom numeric bonuses added on top of the base stat values |
-| `damageResistances` | `{[damageType]: -1|0|1}` | Per damage-type resistance state: `1` = resistant (green), `-1` = vulnerable (red), `0` or absent = normal |
+| `damageResistances` | `{[damageType]: -1|0|1|2}` | Per damage-type resistance state: `1` = resistant (green), `2` = immune (black), `-1` = vulnerable (red), `0` or absent = normal |
 | `equipmentItems` | `object[]` | Structured equipment items in the Inventory tab; each entry: `{name, quantity, weight, cost, category, description}` (see nested fields below) |
 
 ---
@@ -428,9 +426,9 @@ These are the discrete string values used in state fields. When the code falls b
 dnd-character-sheet.html
 ├── <style>          CSS — variables, component classes
 ├── <body>
-│   ├── .header      Sticky top bar (title, Undo/Save/Load buttons, character name, meta)
+│   ├── .header      Top bar (title, Undo/Save/Load buttons, character name, meta); scrolls with page content
 │   ├── input#jsonFileInput   Hidden file picker for JSON import
-│   ├── .tab-bar     Eight sticky tab buttons (Info / Stats / Skills / Combat / Spells / Features / Gear / Rolls)
+│   ├── .tab-bar     Eight tab buttons (Info / Stats / Skills / Combat / Spells / Features / Gear / Rolls); sticky at viewport top during scroll
 │   │                Each button carries data-tab="<id>" for programmatic activation
 │   ├── #panel-overview    Tab: character info + features & traits (structured list, tap = roll or info panel, hold = info panel) + personality + Long Rest button
 │   ├── #panel-abilities   Tab: ability scores + saving throws + passive perception + conditions
@@ -510,10 +508,10 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 
 | Class | Purpose |
 |---|---|
-| `.header` | Sticky top bar; `z-index: 100` |
+| `.header` | Top bar section; `z-index: 100` |
 | `.header-top` | Flex row inside header (title left, buttons right) |
 | `.header-btn` | Undo / Save / Load buttons in the header; `:disabled` reduces opacity |
-| `.tab-bar` | Sticky tab strip below header; `z-index: 99`; horizontally scrollable |
+| `.tab-bar` | Sticky tab strip; `z-index: 99`; horizontally scrollable; pinned at `top:0` |
 | `.tab-btn` | Individual tab button; `.active` adds gold underline |
 | `.panel` | Tab content area; hidden by default; `.active` shows it |
 | `.section` | Grouped content card (border + radius) |
@@ -870,6 +868,7 @@ let state = {
   maxSpellsPrepared:  0,    // daily preparation limit for spells with prepared:true; 0 = no limit enforced
   damageResistances:  {     // damage-type resistance states; absent key = normal (0)
     // slashing: 1,   //   1  = resistant (green dot)
+    // necrotic: 2,   //   2  = immune (black dot)
     // fire: -1,      //  -1  = vulnerable (red dot)
     // ...            //   0 or absent = normal (empty dot)
   },
@@ -988,7 +987,7 @@ DOMContentLoaded
 | `buildInfoTraits()` | Features & Traits rows in `#infoTraitsBody`, or empty-state placeholder | `state.infoTraits` |
 | `renderFeatureDots(i)` | Dot row + counter for one feature, scaled by `step` | `state.classFeatures[i]` |
 | `renderHitDice()` | Hit dice dots in `#hitDiceDots`; max = character level | `state.hitDiceUsed`, `charLevel` input |
-| `buildDamageResistances()` | Resistance/vulnerability dot grid in `#dmgResistGrid`; one dot per damage type (13 types); dot is empty (normal), green (resistant), or red (vulnerable) | `state.damageResistances` |
+| `buildDamageResistances()` | **`shared.js`** — Resistance/immunity/vulnerability dot grid in `#dmgResistGrid`; one dot per damage type (13 types); dot is empty (normal), green (resistant), black (immune), or red (vulnerable) | `state.damageResistances` |
 | `renderAttacks()` | Renders the Turn block: "Actions", "Bonus Actions", and "Reactions" sub-sections always rendered (with empty-state placeholders when empty); "Other" section rendered only when items exist; combat spells/traits/features (`showInCombat`) injected per section; hidden attacks faded (`atk-hidden`) | `state.attacks`, `state.spells`, `state.infoTraits`, `state.classFeatures` |
 | `startTurnTitlePress(e)` | `pointerdown` on the "Turn" section title | Adds `.holding` class; starts 500 ms timer; on fire calls `openTurnInfoPanel()` |
 | `endTurnTitlePress(e)` / `cancelTurnTitlePress()` | `pointerup` / `pointercancel` on "Turn" title | Clears timer; removes `.holding` class |
@@ -1366,7 +1365,7 @@ The session variable `rosterActiveId` (string) holds the currently loaded charac
 
 | Function | Description |
 |---|---|
-| `updateHeader()` | Reads name/class/race/level inputs → updates sticky header display |
+| `updateHeader()` | Reads name/class/race/level inputs → updates header display |
 | `switchTab(id)` | Deactivates all panels/buttons; activates the target; scrolls its tab button into view |
 | `setupSwipe()` | Attaches passive `touchstart`/`touchend` listeners to `document.body`; horizontal swipe ≥ 50 px (and greater than vertical movement) advances or retreats through `TABS`; ignored when roll result overlay is open |
 | `toast(msg)` | Shows floating message for 2 seconds; used for non-roll feedback (proficiency changes, inspiration, file ops) |
@@ -1388,7 +1387,7 @@ The session variable `rosterActiveId` (string) holds the currently loaded charac
 
 ### AI / SRD Import functions
 
-The **⇓ Import** button in the sticky header bar (between Undo and ⚙ Settings) opens `#aiImportPanel`. The modal has two modes selected by the top toggle.
+The **⇓ Import** button in the header bar (between Undo and ⚙ Settings) opens `#aiImportPanel`. The modal has two modes selected by the top toggle.
 
 #### AI mode
 Generates a copy-ready LLM prompt containing the exact JSON schema and the names of items already on the sheet; the user pastes the LLM's JSON array response into Step 2 and clicks Import.

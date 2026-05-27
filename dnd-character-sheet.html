@@ -147,8 +147,12 @@
     background: linear-gradient(135deg, var(--header-bg-1), var(--header-bg-2));
     border-bottom: 2px solid var(--gold);
     padding: 12px 16px 8px;
-    position: sticky;
-    top: 0;
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
+    max-width: 480px;
     z-index: 100;
   }
 
@@ -408,7 +412,7 @@
     background: var(--tabbar-bg);
     border-bottom: 1px solid var(--border);
     position: sticky;
-    top: 72px;
+    top: 0;
     z-index: 99;
     overflow-x: auto;
     scrollbar-width: none;
@@ -1617,6 +1621,7 @@
     width: min(92vw, 500px);
     max-height: 82vh;
     overflow-y: auto;
+    overscroll-behavior: contain;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
     user-select: none;
     -webkit-user-select: none;
@@ -1858,6 +1863,7 @@
     width: min(92vw, 500px);
     max-height: 82vh;
     overflow-y: auto;
+    overscroll-behavior: contain;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
     user-select: none;
     -webkit-user-select: none;
@@ -1865,6 +1871,9 @@
   }
   #spellPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
   #spellPanel.edit-mode { border-color: var(--spell); }
+
+  /* ── Panel-open scroll lock ── */
+  html.panel-open, html.panel-open body { overflow: hidden; }
 
   /* ── Unified Info Panel ── */
   #infoPanelBackdrop {
@@ -1894,6 +1903,7 @@
     width: min(92vw, 500px);
     max-height: 82vh;
     overflow-y: auto;
+    overscroll-behavior: contain;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
     user-select: none;
     -webkit-user-select: none;
@@ -2148,6 +2158,7 @@
     width: min(92vw, 500px);
     max-height: 82vh;
     overflow-y: auto;
+    overscroll-behavior: contain;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
     user-select: none;
     -webkit-user-select: none;
@@ -3037,7 +3048,7 @@
     padding: 22px 24px 20px; z-index: 301;
     opacity: 0; transition: opacity 0.2s, transform 0.2s, border-color 0.25s;
     pointer-events: none; width: min(92vw, 500px);
-    max-height: 82vh; overflow-y: auto;
+    max-height: 82vh; overflow-y: auto; overscroll-behavior: contain;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
     user-select: none;
     -webkit-user-select: none;
@@ -4969,7 +4980,7 @@
       </div>
     </div>
 
-    <!-- ── SRD mode controls only (results are below) ── -->
+    <!-- ── SRD mode controls + results ── -->
     <div id="srdModeContent" style="display:none">
       <!-- Spell search (type = spells) -->
       <div id="srdSpellCtrl">
@@ -4995,16 +5006,16 @@
         <input class="ai-prompt-box" id="srdEquipSearch" style="min-height:unset;padding:8px 12px;resize:none"
           placeholder="Search equipment by name…" oninput="_srdEquipSearch()">
       </div>
-    </div>
-  </div>
 
-  <!-- ── Lower zone: SRD results (allowed to shift) ── -->
-  <div id="srdResultsArea" style="display:none">
-    <div id="srdResults" class="srd-results-box">
-      <div class="srd-hint">Select a type above to start.</div>
+      <!-- SRD results -->
+      <div id="srdResultsArea" style="margin-top:10px">
+        <div id="srdResults" class="srd-results-box">
+          <div class="srd-hint">Select a type above to start.</div>
+        </div>
+        <div class="ai-copy-notice" id="srdStatus" style="margin-top:6px"></div>
+        <button id="srdAddBtn" class="settings-full-btn" style="margin-top:10px" onclick="addSelectedSRD()">Add Selected</button>
+      </div>
     </div>
-    <div class="ai-copy-notice" id="srdStatus" style="margin-top:6px"></div>
-    <button id="srdAddBtn" class="settings-full-btn" style="margin-top:10px" onclick="addSelectedSRD()">Add Selected</button>
   </div>
 
   <button class="hp-dlg-btn" onclick="dismissAIImport()" style="width:100%;margin-top:8px">Cancel</button>
@@ -5291,7 +5302,11 @@ function init() {
   recalcAll();
   applyPortrait();
   setupAutoSave();
-  setupSwipe();
+  setupSwipe(TABS, () =>
+    document.getElementById('rollResult').classList.contains('show') ||
+    document.getElementById('spellPanel')?.classList.contains('show') ||
+    document.getElementById('attackPanel')?.classList.contains('show')
+  );
 }
 
 // ── Undo stack ─────────────────────────────────────────────────────────
@@ -9267,59 +9282,17 @@ function updateHeader() {
 
 // ── Tabs ───────────────────────────────────────────────────────────────
 const TABS = ['overview','abilities','combat','spells','features','inventory','dice','rolls'];
-
-function switchTab(id) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-' + id).classList.add('active');
-  const btn = document.querySelector(`.tab-btn[data-tab="${id}"]`);
-  if (btn) { btn.classList.add('active'); btn.scrollIntoView({inline: 'center', block: 'nearest'}); }
-}
-
-function setupSwipe() {
-  let x0 = null, y0 = null, xLast = null, yLast = null;
-  document.body.addEventListener('touchstart', e => {
-    x0    = e.touches[0].clientX;
-    y0    = e.touches[0].clientY;
-    xLast = x0;
-    yLast = y0;
-  }, {passive: true});
-  document.body.addEventListener('touchmove', e => {
-    if (e.touches.length > 0) {
-      xLast = e.touches[0].clientX;
-      yLast = e.touches[0].clientY;
-    }
-  }, {passive: true});
-  function applySwipe(endX, endY) {
-    if (x0 === null) return;
-    const dx = endX - x0;
-    const dy = endY - y0;
-    x0 = null; xLast = null; yLast = null;
-    if (document.getElementById('rollResult').classList.contains('show')) return;
-    if (document.getElementById('spellPanel')?.classList.contains('show')) return;
-    if (document.getElementById('attackPanel')?.classList.contains('show')) return;
-    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
-    const cur = TABS.indexOf(document.querySelector('.tab-btn.active')?.dataset.tab ?? TABS[0]);
-    const next = Math.max(0, Math.min(TABS.length - 1, cur + (dx < 0 ? 1 : -1)));
-    if (next !== cur) switchTab(TABS[next]);
-  }
-  document.body.addEventListener('touchend', e => {
-    applySwipe(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-  }, {passive: true});
-  // touchcancel fires when the browser takes over the gesture (e.g. scroll);
-  // use the last tracked position so a nearly-complete horizontal swipe still registers.
-  document.body.addEventListener('touchcancel', () => {
-    applySwipe(xLast ?? x0 ?? 0, yLast ?? y0 ?? 0);
-  }, {passive: true});
-}
+// switchTab() and setupSwipe() are defined in shared.js
 
 // ── Back-button / swipe-back (Android & iOS Safari) ───────────────────
 let _modalStatePushed = false;
 function pushModalHistory() {
   _modalStatePushed = true;
+  document.documentElement.classList.add('panel-open');
   history.pushState({dndModal: true}, '');
 }
 function popModalHistory() {
+  document.documentElement.classList.remove('panel-open');
   if (_modalStatePushed) {
     _modalStatePushed = false;
     history.back();
@@ -10105,7 +10078,7 @@ function setModalMode(mode) {
   document.getElementById('aiModeSrd').classList.toggle('active', mode === 'srd');
   document.getElementById('aiModeContent').style.display    = mode === 'ai'  ? '' : 'none';
   document.getElementById('srdModeContent').style.display   = mode === 'srd' ? '' : 'none';
-  document.getElementById('srdResultsArea').style.display   = mode === 'srd' ? '' : 'none';
+  // srdResultsArea is inside srdModeContent; visibility follows its parent
   if (mode === 'srd') _srdInitForType(aiImportType);
 }
 
