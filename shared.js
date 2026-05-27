@@ -232,3 +232,222 @@ function setupSwipe(tabs, shouldBlock) {
   }, true);
 }
 
+// ── Toast notification ────────────────────────────────────────────────────────
+
+let toastTimer;
+
+/**
+ * Shows a brief dismissible toast message at the bottom of the screen.
+ * Requires a <div id="toast"> element in the page.
+ */
+function toast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Roll result overlay ───────────────────────────────────────────────────────
+
+/**
+ * Displays the roll result overlay.
+ * Adds to rollLog[] and calls renderRollLog() when those symbols exist on the page
+ * (character sheet only). Calls pushModalHistory() when defined (character sheet only).
+ */
+function showRoll(label, breakdown, total, nat, secondary) {
+  if (typeof pushModalHistory === 'function') pushModalHistory();
+  document.getElementById('rrLabel').textContent     = label;
+  document.getElementById('rrTotal').textContent     = total;
+  document.getElementById('rrBreak').textContent     = breakdown + ' = ' + total;
+  document.getElementById('rrSecondary').textContent = secondary || '';
+  document.getElementById('rrNat').textContent       = nat || '';
+  document.getElementById('rollResult').classList.add('show');
+  document.getElementById('rollBackdrop').classList.add('show');
+  // Roll log (character sheet only)
+  if (typeof rollLog !== 'undefined') {
+    const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    rollLog.unshift({label, breakdown, total, nat: nat || '', secondary: secondary || '', time});
+    if (rollLog.length > 50) rollLog.pop();
+    if (typeof renderRollLog === 'function') renderRollLog();
+  }
+}
+
+/** Hides the roll result overlay. */
+function dismissRollResult() {
+  if (typeof popModalHistory === 'function') popModalHistory();
+  document.getElementById('rollResult').classList.remove('show');
+  document.getElementById('rollBackdrop').classList.remove('show');
+}
+
+// ── Unified Info Panel ────────────────────────────────────────────────────────
+
+let infoPanelCfg = {};
+
+/**
+ * Opens the unified info panel with the given configuration.
+ *
+ * Config shape:
+ *   badge          {string}   – label shown in top-left badge (default 'Info')
+ *   borderColor    {string}   – CSS color for panel border (default 'var(--gold)')
+ *   title          {string}   – main title text
+ *   meta           {string}   – subtitle / meta line (hidden when empty)
+ *   description    {string}   – body text
+ *   rollLabel      {string}   – label inside 3-zone roll box
+ *   rollBonus      {string}   – bonus value inside 3-zone roll box
+ *   rollDamage     {string}   – damage summary below bonus (optional, creature)
+ *   rollFn         {function} – called with ('normal'|'adv'|'dis') for 3-zone rolls
+ *   simpleRollLabel {string}  – label for the simple tap-to-roll box
+ *   simpleRollBonus {string}  – value shown in the simple roll box
+ *   simpleRollFn   {function} – called with no args for the simple roll
+ *   saveDc         {object}   – { value, ability } — shows Save DC box (creature)
+ *   editFn         {function} – called when Edit button is tapped
+ *   actionLabel    {string}   – label for the optional action button
+ *   actionClass    {string}   – CSS classes for action button
+ *   actionFn       {function} – called when action button is tapped
+ */
+function openInfoPanel(cfg) {
+  const {
+    badge          = 'Info',
+    borderColor    = 'var(--gold)',
+    title          = '',
+    meta           = '',
+    description    = '',
+    rollLabel      = '',
+    rollBonus      = '',
+    rollDamage     = '',
+    rollFn         = null,
+    simpleRollLabel = null,
+    simpleRollBonus = '',
+    simpleRollFn   = null,
+    saveDc         = null,
+    editFn         = null,
+    actionLabel    = null,
+    actionClass    = '',
+    actionFn       = null,
+  } = cfg;
+
+  infoPanelCfg = { rollFn, simpleRollFn, editFn, actionFn };
+
+  const _set  = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const _show = (id, show) => { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; };
+
+  const panel = document.getElementById('infoPanel');
+  if (panel) panel.style.borderColor = borderColor;
+
+  _set('ipBadge', badge);
+  _set('ipTitle', title);
+
+  const metaEl = document.getElementById('ipMeta');
+  if (metaEl) { metaEl.textContent = meta; metaEl.style.display = meta ? '' : 'none'; }
+
+  _set('ipDesc', description);
+
+  // 3-zone roll box
+  if (rollFn) {
+    _set('ipRollLabel', rollLabel || 'Roll');
+    _set('ipRollBonus', rollBonus);
+    const dmgEl = document.getElementById('ipRollDamage');
+    if (dmgEl) { dmgEl.textContent = rollDamage; dmgEl.style.display = rollDamage ? '' : 'none'; }
+    _show('ipRollBox', true);
+  } else {
+    _show('ipRollBox', false);
+  }
+
+  // Save DC box (creature only — element may not exist in character sheet)
+  if (saveDc) {
+    _set('ipSaveDcValue', saveDc.value);
+    _set('ipSaveDcAbility', saveDc.ability);
+    _show('ipSaveDcBox', true);
+  } else {
+    _show('ipSaveDcBox', false);
+  }
+
+  // Simple / damage roll box — id differs: character sheet uses ipSimpleRollBox
+  const simpleBox = document.getElementById('ipSimpleRollBox');
+  if (simpleRollFn) {
+    _set('ipSimpleRollLabel', simpleRollLabel || 'Roll');
+    _set('ipSimpleRollBonus', simpleRollBonus);
+    if (simpleBox) simpleBox.style.display = '';
+  } else {
+    if (simpleBox) simpleBox.style.display = 'none';
+  }
+
+  _show('ipEditBtn', !!editFn);
+
+  // Character-sheet-only elements (safely absent in creature)
+  const editSection = document.getElementById('ipEditSection');
+  if (editSection) editSection.style.display = 'none';
+  const dismissHint = document.getElementById('ipDismissHint');
+  if (dismissHint) dismissHint.style.display = '';
+
+  const actionBtn = document.getElementById('ipActionBtn');
+  if (actionBtn) {
+    if (actionFn && actionLabel) {
+      actionBtn.textContent = actionLabel;
+      actionBtn.className = 'cond-toggle-btn ' + actionClass;
+      actionBtn.style.display = '';
+    } else {
+      actionBtn.style.display = 'none';
+    }
+  }
+
+  if (typeof pushModalHistory === 'function') pushModalHistory();
+  document.getElementById('infoPanelBackdrop').classList.add('show');
+  if (panel) panel.classList.add('show');
+}
+
+/** Hides the info panel and resets its state. */
+function dismissInfoPanel() {
+  if (typeof popModalHistory === 'function') popModalHistory();
+  document.getElementById('infoPanel').classList.remove('show');
+  document.getElementById('infoPanelBackdrop').classList.remove('show');
+  infoPanelCfg = {};
+  // Clear inline-edit state if present (character sheet only)
+  if (typeof infoPanelEditCfg !== 'undefined') { infoPanelEditCfg = null; }
+  document.querySelectorAll('.holding').forEach(el => el.classList.remove('holding'));
+}
+
+// ── Info panel action helpers ─────────────────────────────────────────────────
+
+/** Triggers the 3-zone roll; pass 'normal', 'adv', or 'dis'. */
+function infoPanelRoll(mode) {
+  if (infoPanelCfg.rollFn) infoPanelCfg.rollFn(mode || 'normal');
+}
+
+/** Triggers the simple / damage roll. */
+function infoPanelSimpleRoll() {
+  if (infoPanelCfg.simpleRollFn) infoPanelCfg.simpleRollFn();
+}
+
+/** Alias used by older creature stat block call sites. */
+function infoPanelDmg() { infoPanelSimpleRoll(); }
+
+/** Triggers the edit action (opens edit panel). */
+function infoPanelEdit() {
+  if (infoPanelCfg.editFn) infoPanelCfg.editFn();
+}
+
+/**
+ * Triggers the optional action button: dismisses the panel first, then calls
+ * the stored actionFn.
+ */
+function infoPanelAction() {
+  const fn = infoPanelCfg.actionFn;
+  dismissInfoPanel();
+  if (fn) fn();
+}
+
+// ── Theme persistence (creature stat block) ───────────────────────────────────
+
+/**
+ * Reads dnd5e_theme from localStorage and applies it to <html data-theme="…">.
+ * Creature stat block calls this in init(); character sheet uses its own
+ * applyTheme(theme) which also syncs the swatch UI.
+ */
+function _applyTheme() {
+  const t = localStorage.getItem('dnd5e_theme');
+  if (t) document.documentElement.setAttribute('data-theme', t);
+}
+

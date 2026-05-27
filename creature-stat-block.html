@@ -4,51 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
 <title>Creature Stat Block</title>
+<link rel="stylesheet" href="shared.css">
 <style>
-/* ── Theme variables (same tokens as character sheet) ── */
-:root {
-  --bg:#1a1410;--surface:#2a2018;--surface2:#352a1e;--border:#5c4a2a;--border-rgb:92,74,42;
-  --gold:#c9a84c;--gold-light:#e8c96a;--accent-rgb:201,168,76;
-  --red:#c0392b;--red-light:#e74c3c;--green:#27ae60;
-  --text:#e8d9b8;--text-muted:#9a8a6a;
-  --tab-active:#3d2e1a;--header-bg-1:#2a1a0a;--header-bg-2:#1a0e05;
-  --panel-bg-1:#2a1e0e;--panel-bg-2:#1a1206;
-  --spell:#5baeff;--spell-light:#7ec8ff;--spell-rgb:91,174,255;--spell-dark:#3d8fe0;
-  --radius:8px;--shadow:0 2px 8px rgba(0,0,0,0.5);--roll-border:2px;
-}
-:root[data-theme="dark"] {
-  --bg:#0f0f12;--surface:#1a1a20;--surface2:#222228;--border:#38383f;--border-rgb:56,56,63;
-  --gold:#9090b0;--gold-light:#b0b0d0;--accent-rgb:144,144,176;
-  --text:#d8d8e8;--text-muted:#686878;
-  --tab-active:#252530;--header-bg-1:#151518;--header-bg-2:#0a0a0e;
-  --panel-bg-1:#1e1e26;--panel-bg-2:#14141c;
-  --spell:#b07fff;--spell-light:#c8a0ff;--spell-rgb:176,127,255;--spell-dark:#8855d0;
-}
-:root[data-theme="red"] {
-  --bg:#150808;--surface:#201010;--surface2:#2c1414;--border:#5c2828;--border-rgb:92,40,40;
-  --gold:#c94c4c;--gold-light:#e87070;--accent-rgb:201,76,76;
-  --text:#e8d0d0;--text-muted:#9a6a6a;
-  --tab-active:#2e1818;--header-bg-1:#2a1010;--header-bg-2:#1a0808;
-  --panel-bg-1:#2a1414;--panel-bg-2:#1a0c0c;
-  --spell:#ffad50;--spell-light:#ffc87a;--spell-rgb:255,173,80;--spell-dark:#e08820;
-}
-:root[data-theme="forest"] {
-  --bg:#08130a;--surface:#101e12;--surface2:#162816;--border:#2a5c30;--border-rgb:42,92,48;
-  --gold:#4caa60;--gold-light:#6ec87a;--accent-rgb:76,170,96;
-  --text:#d0e8d2;--text-muted:#6a9a70;
-  --tab-active:#182a1a;--header-bg-1:#0c2010;--header-bg-2:#081408;
-  --panel-bg-1:#122018;--panel-bg-2:#0c160e;
-  --spell:#40c8c0;--spell-light:#70e0da;--spell-rgb:64,200,192;--spell-dark:#28a09a;
-}
-:root[data-theme="ocean"] {
-  --bg:#080e18;--surface:#101828;--surface2:#182030;--border:#28405c;--border-rgb:40,64,92;
-  --gold:#4a80c8;--gold-light:#6aa0e0;--accent-rgb:74,128,200;
-  --text:#d0dce8;--text-muted:#6a7a90;
-  --tab-active:#182030;--header-bg-1:#0c1824;--header-bg-2:#080e18;
-  --panel-bg-1:#182030;--panel-bg-2:#101828;
-  --spell:#50d890;--spell-light:#78e8a8;--spell-rgb:80,216,144;--spell-dark:#30b070;
-}
-
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overscroll-behavior:none}
 body{background:var(--bg);color:var(--text);font-family:Georgia,serif;-webkit-tap-highlight-color:transparent}
@@ -257,150 +214,6 @@ select.ep-input{cursor:pointer}
   padding:12px 8px 6px;
 }
 
-/* ── Feature/action rows (same pattern as character sheet) ── */
-.feature-row{
-  display:flex;align-items:stretch;gap:0;
-  border-bottom:1px solid rgba(var(--border-rgb),0.35);
-}
-.feature-row:last-child{border-bottom:none}
-.feature-left-col{flex:1;min-width:0;display:flex;flex-direction:column}
-.feature-name-area{
-  padding:8px 8px 8px calc(var(--roll-border) + 6px);
-  box-shadow:inset var(--roll-border) 0 0 0 rgba(var(--accent-rgb),0.35);
-  background:rgba(var(--accent-rgb),0.04);
-  border-radius:4px 0 0 4px;
-  cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;
-  transition:background 0.12s;display:flex;flex-direction:column;justify-content:flex-start;
-}
-.feature-name-area:active,.feature-name-area.holding{background:rgba(var(--accent-rgb),0.13)}
-.feature-name{font-size:13px;color:var(--gold-light);font-family:sans-serif;font-weight:600}
-.feature-recharge{font-size:10px;color:var(--text-muted);font-family:sans-serif;font-style:italic}
-.feature-step-hint{font-size:9px;color:var(--text-muted);font-family:sans-serif}
-.feature-dots{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.feature-dots-col{display:flex;flex-direction:column;gap:5px;padding:8px;justify-content:center;flex-shrink:0}
-.feature-right-col{
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-  padding:6px 6px 4px 8px;flex-shrink:0;
-}
-.feature-ctrl-top{display:flex;align-items:center;gap:4px}
-.feature-restore-btn{
-  background:none;border:1px solid var(--border);border-radius:4px;
-  color:var(--text-muted);font-size:12px;padding:2px 6px;cursor:pointer;
-}
-.feature-restore-btn:active{border-color:var(--gold);color:var(--gold)}
-.mini-tracker{display:flex;align-items:center;gap:3px}
-.mini-btn{
-  background:none;border:1px solid var(--border);border-radius:4px;
-  color:var(--text-muted);font-size:14px;width:26px;height:26px;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;
-  user-select:none;-webkit-user-select:none;
-}
-.mini-btn:active{border-color:var(--gold);color:var(--gold)}
-.mini-val{font-size:11px;color:var(--text-muted);font-family:sans-serif;min-width:30px;text-align:center}
-
-/* ── Slot dots ── */
-.slot-dot{
-  width:16px;height:16px;border-radius:50%;border:2px solid var(--gold);
-  cursor:pointer;transition:background 0.15s;flex-shrink:0;
-}
-.slot-dot.available{background:var(--gold)}
-.slot-dot.used{background:rgba(var(--accent-rgb),0.15);border-color:var(--border)}
-
-/* ── Attack/roll tags ── */
-.spell-item-tag{
-  font-size:9px;font-family:sans-serif;font-weight:bold;
-  border:1px solid currentColor;border-radius:3px;padding:0 4px;opacity:0.85;
-}
-.action-bonus-tag{
-  font-size:10px;font-family:sans-serif;color:var(--gold);white-space:nowrap;
-}
-
-/* ── 3-zone roll widget ── */
-.roll-tri{
-  border:var(--roll-border) solid var(--gold);border-radius:10px;
-  overflow:hidden;margin:10px 0;user-select:none;-webkit-user-select:none;
-}
-.rtz-top{
-  padding:12px 12px 9px;text-align:center;cursor:pointer;
-  background:rgba(var(--accent-rgb),0.08);
-  border-bottom:1px solid rgba(var(--border-rgb),0.4);transition:background 0.15s;
-}
-.rtz-top:active{background:rgba(var(--accent-rgb),0.18)}
-.rtz-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);font-family:sans-serif;margin-bottom:3px}
-.rtz-bonus{font-size:26px;font-weight:bold;color:var(--gold-light);line-height:1.1}
-.rtz-damage{font-size:11px;color:var(--text-muted);margin-top:2px}
-.rtz-bottom{display:flex}
-.rtz-dis,.rtz-adv{
-  flex:1;padding:8px 4px;text-align:center;cursor:pointer;
-  font-size:10px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;font-family:sans-serif;
-  transition:background 0.15s;
-}
-.rtz-dis{background:rgba(192,57,43,0.07);color:var(--red-light);border-right:1px solid rgba(var(--border-rgb),0.4)}
-.rtz-dis:active{background:rgba(192,57,43,0.20)}
-.rtz-adv{background:rgba(39,174,96,0.07);color:var(--green)}
-.rtz-adv:active{background:rgba(39,174,96,0.20)}
-
-/* ── Save DC box ── */
-.sp-save-dc-box{
-  background:rgba(var(--accent-rgb),0.08);border:1px solid rgba(var(--accent-rgb),0.35);
-  border-radius:10px;padding:10px 14px;text-align:center;margin-bottom:12px;font-family:sans-serif;
-}
-.sp-save-dc-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
-.sp-save-dc-value{font-size:32px;font-weight:bold;color:var(--gold-light);line-height:1.1}
-.sp-save-dc-ability{font-size:11px;color:var(--text-muted)}
-
-/* ── Damage roll button ── */
-.sp-atk-box{
-  background:rgba(var(--spell-rgb),0.08);border:1px solid rgba(var(--spell-rgb),0.35);
-  border-radius:10px;padding:10px 14px;text-align:center;margin-bottom:12px;
-  font-family:sans-serif;cursor:pointer;user-select:none;-webkit-user-select:none;
-  transition:background 0.15s;
-}
-.sp-atk-box:active{background:rgba(var(--spell-rgb),0.18)}
-.sp-atk-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
-.sp-atk-bonus{font-size:30px;font-weight:bold;color:var(--spell);line-height:1.1}
-
-/* ── Roll overlay ── */
-#rollBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:350;opacity:0;pointer-events:none;transition:opacity 0.2s}
-#rollBackdrop.show{opacity:1;pointer-events:auto}
-#rollResult{
-  position:fixed;top:50%;left:50%;
-  transform:translate(-50%,-50%) scale(0.85);
-  background:linear-gradient(160deg,var(--panel-bg-1),var(--panel-bg-2));
-  border:2px solid var(--gold);border-radius:20px;
-  padding:26px 34px 22px;text-align:center;
-  z-index:351;opacity:0;transition:opacity 0.2s,transform 0.2s;pointer-events:none;
-  min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,0.7);
-}
-#rollResult.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
-.rr-label{font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:2px;font-family:sans-serif;margin-bottom:6px}
-.rr-total{font-size:72px;font-weight:bold;color:var(--text);line-height:1;margin:4px 0}
-.rr-breakdown{font-size:13px;color:var(--text-muted);font-family:sans-serif;margin-top:4px}
-.rr-secondary{font-size:13px;color:var(--red-light);font-family:sans-serif;margin-top:4px;min-height:18px;white-space:pre-line}
-.rr-nat{font-size:14px;color:var(--gold-light);margin-top:8px;min-height:18px;font-family:sans-serif}
-.rr-dismiss{display:block;margin-top:14px;font-size:9px;color:var(--text-muted);font-family:sans-serif;letter-spacing:1px;text-transform:uppercase}
-
-/* ── Info panel ── */
-#infoPanelBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;opacity:0;pointer-events:none;transition:opacity 0.2s}
-#infoPanelBackdrop.show{opacity:1;pointer-events:auto}
-#infoPanel{
-  position:fixed;top:50%;left:50%;
-  transform:translate(-50%,-50%) scale(0.88);
-  background:linear-gradient(160deg,var(--panel-bg-1),var(--panel-bg-2));
-  border:2px solid var(--gold);border-radius:20px;
-  padding:22px 22px 18px;z-index:301;opacity:0;
-  transition:opacity 0.2s,transform 0.2s,border-color 0.25s;pointer-events:none;
-  width:min(92vw,500px);max-height:82vh;overflow-y:auto;
-  box-shadow:0 8px 32px rgba(0,0,0,0.7);
-  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
-}
-#infoPanel.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
-.sp-mode-badge{font-size:9px;letter-spacing:2.5px;text-transform:uppercase;font-family:sans-serif;color:var(--gold);margin-bottom:6px}
-.sp-name{font-size:20px;font-weight:bold;color:var(--text);margin-bottom:3px;line-height:1.2}
-.sp-meta{font-size:12px;color:var(--text-muted);font-family:sans-serif;font-style:italic;margin-bottom:12px}
-.sp-description{font-size:13px;color:var(--text);font-family:sans-serif;line-height:1.6;white-space:pre-wrap;margin-bottom:12px}
-.sp-dismiss-hint{display:block;font-size:9px;color:var(--text-muted);font-family:sans-serif;letter-spacing:1px;text-transform:uppercase;text-align:center;margin-top:4px}
-
 /* ── Creature settings sheet ── */
 #settingsBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;opacity:0;pointer-events:none;transition:opacity 0.2s}
 #settingsBackdrop.show{opacity:1;pointer-events:auto}
@@ -457,38 +270,6 @@ select.ep-input{cursor:pointer}
 .srd-result-item:last-child{border-bottom:none}
 .srd-result-item:active,.srd-result-item:hover{background:rgba(var(--accent-rgb),0.1);color:var(--gold)}
 .srd-hint{padding:14px 12px;color:var(--text-muted);font-family:sans-serif;font-size:12px;text-align:center}
-
-/* ── Buttons ── */
-.hp-dlg-btn{
-  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
-  color:var(--text);font-family:sans-serif;font-size:13px;padding:10px 16px;
-  cursor:pointer;transition:border-color 0.15s,color 0.15s;
-}
-.hp-dlg-btn:active{border-color:var(--gold);color:var(--gold)}
-.attack-edit-btn{
-  background:none;border:1px solid var(--border);border-radius:4px;
-  color:var(--text-muted);font-family:sans-serif;font-size:10px;
-  font-weight:600;letter-spacing:0.5px;text-transform:uppercase;
-  padding:3px 8px;cursor:pointer;transition:color 0.15s,border-color 0.15s;
-}
-.attack-edit-btn:active{border-color:var(--gold);color:var(--gold)}
-.settings-full-btn{
-  display:block;width:100%;padding:12px 16px;margin-bottom:8px;
-  background:var(--surface2);border:1px solid var(--border);border-radius:10px;
-  color:var(--text);font-family:sans-serif;font-size:13px;text-align:left;
-  cursor:pointer;transition:border-color 0.15s,color 0.15s;
-}
-.settings-full-btn:active{border-color:var(--gold);color:var(--gold-light)}
-label.settings-full-btn{cursor:pointer}
-
-/* ── Toast ── */
-#toast{
-  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-  background:rgba(0,0,0,0.85);color:#fff;font-family:sans-serif;font-size:13px;
-  padding:9px 18px;border-radius:20px;z-index:9999;pointer-events:none;
-  opacity:0;transition:opacity 0.2s;white-space:nowrap;
-}
-#toast.show{opacity:1}
 
 /* ── Inline editable field ── */
 .cs-inline-input{
@@ -572,7 +353,7 @@ label.settings-full-btn{cursor:pointer}
 <div id="infoPanel">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
     <div class="sp-mode-badge" id="ipBadge">Info</div>
-    <button class="attack-edit-btn" id="ipEditBtn" style="display:none" onclick="openEditPanel(infoPanelCfg.section,infoPanelCfg.index)">Edit</button>
+    <button class="attack-edit-btn" id="ipEditBtn" style="display:none" onclick="event.stopPropagation();infoPanelEdit()">Edit</button>
   </div>
   <div class="sp-name" id="ipTitle"></div>
   <div class="sp-meta" id="ipMeta" style="display:none"></div>
@@ -580,7 +361,7 @@ label.settings-full-btn{cursor:pointer}
     <div class="rtz-top" onclick="event.stopPropagation();infoPanelRoll('normal')">
       <div class="rtz-label" id="ipRollLabel">Attack Roll</div>
       <div class="rtz-bonus" id="ipRollBonus">+0</div>
-      <div class="rtz-damage" id="ipRollDamage"></div>
+      <div class="rtz-damage" id="ipRollDamage" style="display:none"></div>
     </div>
     <div class="rtz-bottom">
       <div class="rtz-dis" onclick="event.stopPropagation();infoPanelRoll('dis')">Disadv</div>
@@ -592,12 +373,14 @@ label.settings-full-btn{cursor:pointer}
     <div class="sp-save-dc-value" id="ipSaveDcValue">—</div>
     <div class="sp-save-dc-ability" id="ipSaveDcAbility"></div>
   </div>
-  <div class="sp-atk-box" id="ipDmgBox" style="display:none" onclick="event.stopPropagation();infoPanelDmg()">
-    <div class="sp-atk-label" id="ipDmgLabel">Damage — tap to roll</div>
-    <div class="sp-atk-bonus" id="ipDmgDice"></div>
+  <div class="sp-atk-box" id="ipSimpleRollBox" style="display:none" onclick="event.stopPropagation();infoPanelSimpleRoll()">
+    <div class="sp-atk-label" id="ipSimpleRollLabel">Damage — tap to roll</div>
+    <div class="sp-atk-bonus" id="ipSimpleRollBonus"></div>
   </div>
   <div class="sp-description" id="ipDesc"></div>
-  <span class="sp-dismiss-hint">tap to dismiss</span>
+  <div id="ipEditSection" style="display:none"></div>
+  <button class="cond-toggle-btn" id="ipActionBtn" style="display:none" onclick="event.stopPropagation();infoPanelAction()"></button>
+  <span class="sp-dismiss-hint" id="ipDismissHint">tap to dismiss</span>
 </div>
 
 <!-- ── CREATURE SETTINGS SHEET ── -->
@@ -1681,7 +1464,6 @@ function restoreLegendaryPool() {
 }
 
 // ── Roll system ────────────────────────────────────────────────────────
-let infoPanelCfg = {};
 
 function quickRollAction(section, index, mode) {
   const item = creature[section]?.[index];
@@ -1723,21 +1505,6 @@ function useLegendaryUses(cost) {
   saveRoster();
 }
 
-function showRoll(label, breakdown, total, nat, secondary) {
-  document.getElementById('rrLabel').textContent     = label;
-  document.getElementById('rrTotal').textContent     = total;
-  document.getElementById('rrBreak').textContent     = breakdown + ' = ' + total;
-  document.getElementById('rrSecondary').textContent = secondary || '';
-  document.getElementById('rrNat').textContent       = nat || '';
-  document.getElementById('rollResult').classList.add('show');
-  document.getElementById('rollBackdrop').classList.add('show');
-}
-
-function dismissRollResult() {
-  document.getElementById('rollResult').classList.remove('show');
-  document.getElementById('rollBackdrop').classList.remove('show');
-}
-
 // ── Info panel ─────────────────────────────────────────────────────────
 function openActionInfoPanel(section, index) {
   const item = creature[section]?.[index];
@@ -1748,107 +1515,44 @@ function openActionInfoPanel(section, index) {
   const hasDmg    = item.rolls?.length > 0;
   const hasSave   = item.saveAbility && item.saveDC;
   const dmgSummary = hasDmg ? item.rolls.filter(r => r.dice).map(r => r.dice).join('+') : '';
-
-  infoPanelCfg = {
-    rollFn: hasAttack ? mode => {
-      quickRollAction(section, index, mode);
-      dismissInfoPanel();
-    } : null,
-    dmgFn: hasDmg ? () => {
-      rollActionDamage(section, index);
-      dismissInfoPanel();
-    } : null,
-  };
-
-  document.getElementById('ipBadge').textContent = badge;
-  document.getElementById('ipTitle').textContent = item.name || '';
-  const metaEl = document.getElementById('ipMeta');
   const metaParts = [];
   if (item.recharge) metaParts.push(item.recharge);
   if (section === 'legendaryActions' && (item.cost||1) > 1) metaParts.push(`${item.cost} legendary uses`);
-  metaEl.textContent = metaParts.join(' · ');
-  metaEl.style.display = metaParts.length ? '' : 'none';
-
-  const rollBox = document.getElementById('ipRollBox');
-  if (hasAttack) {
-    document.getElementById('ipRollLabel').textContent = 'Attack Roll';
-    document.getElementById('ipRollBonus').textContent = item.attackBonus;
-    document.getElementById('ipRollDamage').textContent = dmgSummary;
-    rollBox.style.display = '';
-  } else { rollBox.style.display = 'none'; }
-
-  const saveBox = document.getElementById('ipSaveDcBox');
-  if (hasSave) {
-    document.getElementById('ipSaveDcValue').textContent   = item.saveDC;
-    document.getElementById('ipSaveDcAbility').textContent = item.saveAbility + ' Save';
-    saveBox.style.display = '';
-  } else { saveBox.style.display = 'none'; }
-
-  const dmgBox = document.getElementById('ipDmgBox');
-  if (hasDmg && !hasAttack) {
-    document.getElementById('ipDmgLabel').textContent = 'Damage — tap to roll';
-    document.getElementById('ipDmgDice').textContent  = dmgSummary;
-    dmgBox.style.display = '';
-  } else if (hasDmg && hasAttack) {
-    document.getElementById('ipDmgLabel').textContent = 'Damage — tap to roll';
-    document.getElementById('ipDmgDice').textContent  = dmgSummary;
-    dmgBox.style.display = '';
-  } else { dmgBox.style.display = 'none'; }
-
-  document.getElementById('ipDesc').textContent = item.desc || '';
-  document.getElementById('ipEditBtn').style.display = '';
-  infoPanelCfg.section = section;
-  infoPanelCfg.index   = index;
-  document.getElementById('infoPanel').classList.add('show');
-  document.getElementById('infoPanelBackdrop').classList.add('show');
+  openInfoPanel({
+    badge,
+    title: item.name || '',
+    meta: metaParts.join(' · '),
+    description: item.desc || '',
+    rollLabel: 'Attack Roll',
+    rollBonus: hasAttack ? item.attackBonus : '',
+    rollDamage: (hasAttack && dmgSummary) ? dmgSummary : '',
+    rollFn: hasAttack ? mode => { quickRollAction(section, index, mode); dismissInfoPanel(); } : null,
+    simpleRollLabel: 'Damage — tap to roll',
+    simpleRollBonus: hasDmg ? dmgSummary : '',
+    simpleRollFn: hasDmg ? () => { rollActionDamage(section, index); dismissInfoPanel(); } : null,
+    saveDc: hasSave ? { value: item.saveDC, ability: item.saveAbility + ' Save' } : null,
+    editFn: () => openEditPanel(section, index),
+  });
 }
 
 function openCreatureInfoPanel() {
-  infoPanelCfg = {};
-  document.getElementById('ipBadge').textContent  = 'Creature';
-  document.getElementById('ipTitle').textContent  = creature.name || '';
-  document.getElementById('ipMeta').textContent   = [creature.size, creature.type, creature.alignment].filter(Boolean).join(' · ');
-  document.getElementById('ipMeta').style.display = '';
-  document.getElementById('ipRollBox').style.display    = 'none';
-  document.getElementById('ipSaveDcBox').style.display  = 'none';
-  document.getElementById('ipDmgBox').style.display     = 'none';
-  document.getElementById('ipDesc').textContent = creature.notes || '(No description yet. Add it in the Info tab.)';
-  document.getElementById('ipEditBtn').style.display = 'none';
-  document.getElementById('infoPanel').classList.add('show');
-  document.getElementById('infoPanelBackdrop').classList.add('show');
-}
-
-function dismissInfoPanel() {
-  document.getElementById('infoPanel').classList.remove('show');
-  document.getElementById('infoPanelBackdrop').classList.remove('show');
-  document.querySelectorAll('.holding').forEach(el => el.classList.remove('holding'));
-  document.getElementById('ipEditBtn').style.display = 'none';
-  infoPanelCfg = {};
-}
-
-function infoPanelRoll(mode) {
-  if (infoPanelCfg.rollFn) infoPanelCfg.rollFn(mode || 'normal');
-}
-
-function infoPanelDmg() {
-  if (infoPanelCfg.dmgFn) infoPanelCfg.dmgFn();
+  openInfoPanel({
+    badge: 'Creature',
+    title: creature.name || '',
+    meta: [creature.size, creature.type, creature.alignment].filter(Boolean).join(' · '),
+    description: creature.notes || '(No description yet. Add it in the Info tab.)',
+  });
 }
 
 // ── Section info panel ──────────────────────────────────────────────
 function openSectionInfoPanel(sectionKey, label) {
   const desc = SECTION_DESCRIPTIONS[sectionKey];
   if (!desc) return;
-  infoPanelCfg = {};
-  document.getElementById('ipBadge').textContent           = 'Section';
-  document.getElementById('ipTitle').textContent           = label || sectionKey;
-  document.getElementById('ipMeta').style.display          = 'none';
-  document.getElementById('ipRollBox').style.display       = 'none';
-  document.getElementById('ipSaveDcBox').style.display     = 'none';
-  document.getElementById('ipDmgBox').style.display        = 'none';
-  document.getElementById('ipEditBtn').style.display       = 'none';
-  document.getElementById('ipDesc').textContent            = desc;
-  document.getElementById('infoPanel').classList.add('show');
-  document.getElementById('infoPanelBackdrop').classList.add('show');
+  openInfoPanel({
+    badge: 'Section',
+    title: label || sectionKey,
+    description: desc,
+  });
 }
 
 // ── Edit Panel ──────────────────────────────────────────────────
@@ -2500,22 +2204,6 @@ function parseActionDesc(name, desc) {
     result.saveDC = parseInt(saveMatch[2] || saveMatch[1]) || 0;
   }
   return result;
-}
-
-// ── Toast ──────────────────────────────────────────────────────────────
-let _toastTimer = null;
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
-}
-
-// ── Theme persistence ──────────────────────────────────────────────────
-function _applyTheme() {
-  const t = localStorage.getItem('dnd5e_theme');
-  if (t) document.documentElement.setAttribute('data-theme', t);
 }
 
 // ── Init ───────────────────────────────────────────────────────────────

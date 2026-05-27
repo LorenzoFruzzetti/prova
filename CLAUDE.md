@@ -12,6 +12,7 @@ prova/
 ├── character-creator.html                ← character creation wizard (produces JSON for the core app)
 ├── creature-stat-block.html              ← creature stat block viewer/editor (standalone-capable)
 ├── shared.js                             ← shared utilities loaded by all HTML pages
+├── shared.css                            ← shared CSS (tokens, themes, component classes) loaded by all HTML pages
 ├── CLAUDE.md                             ← this file (AI instructions)
 ├── REFERENCE.md                          ← developer reference: CSS tokens, JS functions, state shape
 ├── REFERENCE-character-creator.md        ← developer reference for the character creator
@@ -44,7 +45,8 @@ There is no build toolchain, no `src/` directory, no `tests/` directory, no `.en
 | `JSONGeneration.md` | JSON field names, types, valid values, full annotated example for **character sheets** |
 | `stat-blockJsongeneration.md` | JSON field names, types, valid values, full annotated example for **creature stat blocks** |
 | `README.md` | User-facing: how to open, features, input/output, directory map |
-| `shared.js` | Pure utilities shared by all HTML pages: `mod`, `fmtMod`, `profBonus`, spell slot tables |
+| `shared.js` | Utilities shared by all HTML pages: `mod`, `fmtMod`, `profBonus`, spell slot tables, dice functions (`d20Roll`, `rollDiceExpr`, `natMsg`), `genId`, `escHtml`, `switchTab`, `setupSwipe`, `toast`, `showRoll`, `dismissRollResult`, `_applyTheme`, `openInfoPanel`, `dismissInfoPanel`, `infoPanelRoll`, `infoPanelSimpleRoll`, `infoPanelEdit`, `infoPanelAction`; global `infoPanelCfg` |
+| `shared.css` | CSS shared by all HTML pages: `:root` design tokens, all 4 theme overrides, CSS reset, `.feature-row`, `.mini-tracker`, `.slot-dot`, `.spell-item-tag`, `.action-bonus-tag`, `.roll-tri`/`.rtz-*`, `.sp-save-dc-*`, `.sp-atk-*`, `#rollResult`, `#infoPanel`, `.rr-*`, `#toast`, `.hp-dlg-btn`, `.attack-edit-btn`, `.settings-full-btn`, `.cond-toggle-btn` |
 | `examples/data/` | Two sample characters for import testing |
 | `srd2024/translation.json` | Terminology map between 2014 API field names and 2024 SRD field names / UI labels |
 | `srd2024/*.json` | 2024 SRD data files fetched at runtime; absent = feature hidden, not an error |
@@ -56,9 +58,11 @@ There is no build toolchain, no `src/` directory, no `tests/` directory, no `.en
 `dnd-character-sheet.html` is structured as:
 
 ```
-<style>    — All CSS (variables, component classes, theme overrides)
+<link>     — Loads shared.css (design tokens, themes, shared component classes)
+<style>    — Page-specific CSS only (layout, page-specific classes, contextual overrides)
 <body>     — Static HTML: header, tab bar, 8 panels, all modal overlays
-<script>   — All JS: constants, state object, build/calc/handler/persistence functions
+<script src="shared.js">  — Shared utilities (dice, roll overlay, info panel, toast, theme)
+<script>   — All page JS: constants, state object, build/calc/handler/persistence functions
 ```
 
 ### State model
@@ -87,6 +91,12 @@ Eight tabs in order (used by swipe navigation and `switchTab()`):
 ---
 
 ## 3. Documentation sync rules
+
+`shared.js` and `shared.css` are companion files that must stay in sync:
+
+| Doc | Covers | Update when |
+|---|---|----|  
+| `REFERENCE.md` | Shared function signatures, CSS class documentation | Any function added/removed/renamed in `shared.js`, or any CSS class added/removed/renamed in `shared.css` |
 
 `dnd-character-sheet.html` has **two companion docs** that must stay in sync:
 
@@ -151,7 +161,7 @@ The app has two tiers:
 | **Served** (Netlify / local server) | HTML + companion files in same directory | Everything above, plus: 2024 SRD lookup (requires `srd2024/*.json`), 2014 SRD lookup (requires internet) |
 
 **Rules for companion files:**
-- Companion files are primarily **data assets** (`.json`). However, shared utility logic that is needed by more than one HTML file **may** be extracted into an external `.js` file (e.g. `shared.js`) and loaded with `<script src="shared.js">`. Logic that is only used by a single HTML file should remain inline in that file.
+- Companion files are primarily **data assets** (`.json`). However, shared utility logic and CSS needed by more than one HTML file **may** be extracted into external `.js` and `.css` files (`shared.js`, `shared.css`) and loaded with `<script src="shared.js">` and `<link rel="stylesheet" href="shared.css">`. Logic or CSS that is only used by a single HTML file should remain inline in that file.
 - The `srd2024/translation.json` file is the single source of truth for 2014↔2024 terminology differences (endpoint aliases, field name aliases, UI label overrides). Do not scatter edition-specific string checks through the main code.
 
 This model is consistent with existing precedent: the SRD tab already requires internet (graceful degradation when offline), and the AI-assisted import workflow already references `JSONGeneration.md` as an external document.
@@ -244,3 +254,13 @@ Do not create these directories unless there is a concrete need. Do not referenc
 - File: `shared.js`
 - Problem: Declared `const DAMAGE_RESIST_TYPES` (and related resistance helpers) that were already declared in `dnd-character-sheet.html`, causing a global redeclaration runtime error (`Identifier 'DAMAGE_RESIST_TYPES' has already been declared`). This halted inline script initialization and made multiple UI features appear missing (e.g. Settings/Import panel actions, hit dice/resistance rendering).
 - Fix applied: Removed the duplicated damage resistance constant/functions from `shared.js`, keeping the page-specific implementation only in `dnd-character-sheet.html`.
+
+---
+
+- Date: 2026-05-27
+- Files: `shared.css` (new), `shared.js` (expanded), `dnd-character-sheet.html`, `creature-stat-block.html`
+- Change: Major CSS/JS refactoring to unify the info panel, roll overlay, toast, and theme system across both HTML apps.
+- What moved to `shared.css`: `:root` design tokens, all 4 `[data-theme]` overrides, CSS reset, `.feature-row` + sub-elements, `.mini-tracker`/`.mini-btn`/`.mini-val`, `.slot-dot`, `.spell-item-tag`, `.action-bonus-tag`, `.roll-tri`/`.rtz-*`, `.sp-save-dc-*`, `.sp-atk-*`, `#rollBackdrop`/`#rollResult`/`.rr-*`, `#infoPanelBackdrop`/`#infoPanel`/`.sp-mode-badge`/`.sp-name`/`.sp-meta`/`.sp-description`/`.sp-dismiss-hint`, `#toast`, `.hp-dlg-btn`, `.attack-edit-btn`, `.settings-full-btn`, `.cond-toggle-btn`.
+- What moved to `shared.js`: `toast`, `showRoll`, `dismissRollResult`, `_applyTheme`, `infoPanelCfg` declaration, `openInfoPanel`, `dismissInfoPanel`, `infoPanelRoll`, `infoPanelSimpleRoll`, `infoPanelDmg` (alias for `infoPanelSimpleRoll`), `infoPanelEdit`, `infoPanelAction`.
+- `creature-stat-block.html` `openActionInfoPanel`, `openCreatureInfoPanel`, `openSectionInfoPanel` rewritten to call the shared `openInfoPanel()` using the `cfg` object API.
+- Note: `#ipDmgBox`/`#ipDmgLabel`/`#ipDmgDice` IDs in creature HTML were renamed to `#ipSimpleRollBox`/`#ipSimpleRollLabel`/`#ipSimpleRollBonus` to match the character sheet's element IDs.

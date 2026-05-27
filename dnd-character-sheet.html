@@ -4,132 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>D&D Character Sheet</title>
+<link rel="stylesheet" href="shared.css">
 <style>
-  :root {
-    --bg: #1a1410;
-    --surface: #2a2018;
-    --surface2: #352a1e;
-    --border: #5c4a2a;
-    --border-rgb: 92,74,42;
-    --gold: #c9a84c;
-    --gold-light: #e8c96a;
-    --accent-rgb: 201,168,76;
-    --red: #c0392b;
-    --red-light: #e74c3c;
-    --green: #27ae60;
-    --text: #e8d9b8;
-    --text-muted: #9a8a6a;
-    --tab-active: #3d2e1a;
-    --header-bg-1: #2a1a0a;
-    --header-bg-2: #1a0e05;
-    --tabbar-bg: #120d08;
-    --panel-bg-1: #2a1e0e;
-    --panel-bg-2: #1a1206;
-    --spell: #5baeff;
-    --spell-light: #7ec8ff;
-    --spell-rgb: 91,174,255;
-    --spell-dark: #3d8fe0;
-    --radius: 8px;
-    --shadow: 0 2px 8px rgba(0,0,0,0.5);
-    --roll-border: 2px;   /* width of the gold border on tappable/rollable elements */
-  }
-
-  /* ── Dark theme ── */
-  :root[data-theme="dark"] {
-    --bg: #0f0f12;
-    --surface: #1a1a20;
-    --surface2: #222228;
-    --border: #38383f;
-    --border-rgb: 56,56,63;
-    --gold: #9090b0;
-    --gold-light: #b0b0d0;
-    --accent-rgb: 144,144,176;
-    --text: #d8d8e8;
-    --text-muted: #686878;
-    --tab-active: #252530;
-    --header-bg-1: #151518;
-    --header-bg-2: #0a0a0e;
-    --tabbar-bg: #090910;
-    --panel-bg-1: #1e1e26;
-    --panel-bg-2: #14141c;
-    --spell: #b07fff;
-    --spell-light: #c8a0ff;
-    --spell-rgb: 176,127,255;
-    --spell-dark: #8855d0;
-  }
-
-  /* ── Red / Crimson theme ── */
-  :root[data-theme="red"] {
-    --bg: #150808;
-    --surface: #201010;
-    --surface2: #2c1414;
-    --border: #5c2828;
-    --border-rgb: 92,40,40;
-    --gold: #c94c4c;
-    --gold-light: #e87070;
-    --accent-rgb: 201,76,76;
-    --text: #e8d0d0;
-    --text-muted: #9a6a6a;
-    --tab-active: #2e1818;
-    --header-bg-1: #2a1010;
-    --header-bg-2: #1a0808;
-    --tabbar-bg: #0d0606;
-    --panel-bg-1: #2a1414;
-    --panel-bg-2: #1a0c0c;
-    --spell: #ffad50;
-    --spell-light: #ffc87a;
-    --spell-rgb: 255,173,80;
-    --spell-dark: #e08820;
-  }
-
-  /* ── Forest / Green theme ── */
-  :root[data-theme="forest"] {
-    --bg: #08130a;
-    --surface: #101e12;
-    --surface2: #162816;
-    --border: #2a5c30;
-    --border-rgb: 42,92,48;
-    --gold: #4caa60;
-    --gold-light: #6ec87a;
-    --accent-rgb: 76,170,96;
-    --text: #d0e8d2;
-    --text-muted: #6a9a70;
-    --tab-active: #182a1a;
-    --header-bg-1: #0c2010;
-    --header-bg-2: #081408;
-    --tabbar-bg: #060e06;
-    --panel-bg-1: #122018;
-    --panel-bg-2: #0c160e;
-    --spell: #40c8c0;
-    --spell-light: #70e0da;
-    --spell-rgb: 64,200,192;
-    --spell-dark: #28a09a;
-  }
-
-  /* ── Ocean / Blue theme ── */
-  :root[data-theme="ocean"] {
-    --bg: #080e18;
-    --surface: #101828;
-    --surface2: #182030;
-    --border: #28405c;
-    --border-rgb: 40,64,92;
-    --gold: #4a80c8;
-    --gold-light: #6aa0e0;
-    --accent-rgb: 74,128,200;
-    --text: #d0dce8;
-    --text-muted: #6a7a90;
-    --tab-active: #182030;
-    --header-bg-1: #0c1828;
-    --header-bg-2: #080e18;
-    --tabbar-bg: #060a12;
-    --panel-bg-1: #141e30;
-    --panel-bg-2: #0c1420;
-    --spell: #c06eff;
-    --spell-light: #d896ff;
-    --spell-rgb: 192,110,255;
-    --spell-dark: #9048c8;
-  }
-
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   body {
@@ -1177,57 +1053,6 @@
     flex: 1;
   }
 
-  /* ── Mini tracker (features + spell slots) ── */
-  .mini-tracker {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    flex-shrink: 0;
-  }
-
-  .mini-btn {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
-    background: var(--surface2);
-    font-size: 22px;
-    line-height: 1;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: border-color 0.15s, background 0.15s;
-    font-family: sans-serif;
-    color: var(--text);
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  .mini-btn:active { background: var(--surface); border-color: var(--gold); }
-  .mini-btn.minus { color: var(--red-light); border-color: #5a2020; }
-  .mini-btn.plus  { color: var(--green);     border-color: #1a5a2a; }
-
-  .mini-val {
-    font-size: 11px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    min-width: 30px;
-    text-align: center;
-  }
-
-  .slot-dot {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: 2px solid var(--gold);
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .slot-dot.used { background: rgba(var(--accent-rgb),0.15); border-color: var(--border); }
-  .slot-dot.available { background: var(--gold); }
-
   .spell-slots-max {
     font-size: 10px;
     color: var(--text-muted);
@@ -1306,21 +1131,6 @@
     color: var(--text);
     font-family: sans-serif;
   }
-
-  .spell-item-tag {
-    font-size: 9px;
-    font-family: sans-serif;
-    font-weight: bold;
-    letter-spacing: 0.5px;
-    background: rgba(var(--accent-rgb),0.15);
-    border: 1px solid rgba(var(--accent-rgb),0.4);
-    border-radius: 3px;
-    padding: 1px 4px;
-    color: var(--gold);
-    flex-shrink: 0;
-  }
-  .spell-item-tag.sp-tag-conc { color: var(--spell-light); border-color: rgba(var(--spell-rgb),0.4); background: rgba(var(--spell-rgb),0.08); }
-  .spell-item-tag.sp-tag-ritual { color: var(--gold); }
 
   .spell-lvl-pip {
     display: inline-flex; align-items: center; justify-content: center;
@@ -1466,112 +1276,7 @@
     max-width: 90vw;
   }
 
-  /* ── Class Features ── */
-  .feature-row {
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    padding: 4px 0;
-    border-bottom: 1px solid rgba(var(--border-rgb),0.25);
-    margin-bottom: 2px;
-  }
-  .feature-row:last-child { border-bottom: none; margin-bottom: 0; }
-
-  .feature-top {
-    display: flex;
-    gap: 0;
-    align-items: stretch;
-  }
-
-  .feature-dots-col {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 8px 8px;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .feature-left-col {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .feature-name-area {
-    padding: 8px 8px 8px calc(var(--roll-border) + 6px);
-    box-shadow: inset var(--roll-border) 0 0 0 rgba(var(--accent-rgb),0.35);
-    background: rgba(var(--accent-rgb),0.04);
-    border-radius: 4px 0 0 4px;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: manipulation;
-    transition: background 0.12s;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-  }
-  .feature-name-area:active { background: rgba(var(--accent-rgb),0.13); }
-  .feature-name-area.holding { background: rgba(var(--accent-rgb),0.18); }
-
-  .feature-dots {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 6px;
-  }
-
-  .feature-name {
-    font-size: 13px;
-    color: var(--gold-light);
-    font-family: sans-serif;
-    font-weight: 600;
-  }
-
-  .feature-recharge {
-    font-size: 10px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    font-style: italic;
-  }
-
-  .feature-right-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 6px 4px 8px;
-    flex-shrink: 0;
-    border-left: 1px solid rgba(var(--border-rgb),0.2);
-  }
-
-  .feature-ctrl-top {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    width: 100%;
-    justify-content: flex-end;
-  }
-
-  .feature-restore-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 1.5px solid var(--border);
-    background: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    font-size: 13px;
-    flex-shrink: 0;
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .feature-restore-btn:active { border-color: var(--gold); color: var(--gold); }
-
+  /* ── Feature panel (view/edit) ── */
   .feature-controls {
     display: flex;
     align-items: center;
@@ -1586,13 +1291,6 @@
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
-  }
-
-  .feature-step-hint {
-    font-size: 9px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    font-style: italic;
   }
 
   /* ── Feature panel (view/edit) ── */
@@ -1675,21 +1373,6 @@
   .attack-bonus { color: var(--gold-light); font-family: sans-serif; font-size: 12px; text-align: center; }
   .attack-damage { color: var(--red-light); font-family: sans-serif; font-size: 12px; text-align: right; }
 
-
-  .attack-edit-btn {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text-muted);
-    font-size: 10px;
-    font-family: sans-serif;
-    padding: 2px 8px;
-    cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    transition: border-color 0.2s, color 0.2s;
-  }
-  .attack-edit-btn.active { color: var(--gold); border-color: var(--gold); }
 
   /* ── Rollable / interactive stat pills — thicker gold border on top of base pill ── */
   .stat-pill.rollable,
@@ -1784,59 +1467,7 @@
   .currency-item label { color: var(--gold); }
   .currency-item input { text-align: center; padding: 6px 2px; font-size: 13px; }
 
-  /* ── Toast ── */
-  #toast {
-    position: fixed;
-    bottom: 90px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: var(--surface2);
-    border: 1px solid var(--gold);
-    color: var(--text);
-    padding: 10px 20px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-family: sans-serif;
-    opacity: 0;
-    transition: opacity 0.3s, transform 0.3s;
-    pointer-events: none;
-    z-index: 200;
-    white-space: nowrap;
-    max-width: 90vw;
-  }
-  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
   /* ── Roll Result Overlay ── */
-  #rollBackdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.55);
-    z-index: 350;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-  }
-  #rollBackdrop.show { opacity: 1; pointer-events: auto; }
-
-  #rollResult {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.85);
-    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
-    border: 2px solid var(--gold);
-    border-radius: 20px;
-    padding: 28px 36px 24px;
-    text-align: center;
-    z-index: 351;
-    opacity: 0;
-    transition: opacity 0.2s, transform 0.2s;
-    pointer-events: none;
-    min-width: 220px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
-  }
-  #rollResult.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
-
   /* ── Spell Description Panel ── */
   #spellBackdrop {
     position: fixed;
@@ -1877,160 +1508,7 @@
   /* ── Panel-open scroll lock ── */
   html.panel-open, html.panel-open body { overflow: hidden; }
 
-  /* ── Unified Info Panel ── */
-  #infoPanelBackdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.55);
-    z-index: 300;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-  }
-  #infoPanelBackdrop.show { opacity: 1; pointer-events: auto; }
-
-  #infoPanel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.88);
-    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
-    border: 2px solid var(--gold);
-    border-radius: 20px;
-    padding: 22px 24px 20px;
-    z-index: 301;
-    opacity: 0;
-    transition: opacity 0.2s, transform 0.2s, border-color 0.25s;
-    pointer-events: none;
-    width: min(92vw, 500px);
-    max-height: 82vh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-  }
-  #infoPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
-
   .check-roll-area.holding { background: rgba(var(--accent-rgb),0.08); box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb),0.4); border-radius: var(--radius); }
-
-  .sp-mode-badge {
-    font-size: 9px;
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-    font-family: sans-serif;
-    color: var(--gold);
-    margin-bottom: 6px;
-  }
-  #spellPanel.edit-mode .sp-mode-badge { color: var(--spell); }
-
-  .sp-name {
-    font-size: 22px;
-    font-weight: bold;
-    color: var(--text);
-    margin-bottom: 3px;
-    line-height: 1.2;
-  }
-
-  .sp-meta {
-    font-size: 12px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    font-style: italic;
-    margin-bottom: 12px;
-  }
-
-  .sp-details-grid {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 5px 10px;
-    font-family: sans-serif;
-    font-size: 12px;
-    margin-bottom: 14px;
-    align-items: start;
-  }
-  .sp-detail-label {
-    color: var(--gold);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 9px;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
-    padding-top: 2px;
-  }
-  .sp-detail-value { color: var(--text); }
-
-  .sp-save-dc-box {
-    background: rgba(var(--accent-rgb),0.08);
-    border: 1px solid rgba(var(--accent-rgb),0.35);
-    border-radius: 10px;
-    padding: 10px 14px;
-    text-align: center;
-    margin-bottom: 14px;
-    font-family: sans-serif;
-  }
-  .sp-save-dc-label {
-    font-size: 9px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .sp-save-dc-value {
-    font-size: 34px;
-    font-weight: bold;
-    color: var(--gold-light);
-    line-height: 1.1;
-  }
-  .sp-save-dc-ability { font-size: 11px; color: var(--text-muted); }
-
-  .sp-atk-box {
-    background: rgba(var(--spell-rgb),0.08);
-    border: 1px solid rgba(var(--spell-rgb),0.35);
-    border-radius: 10px;
-    padding: 10px 14px;
-    text-align: center;
-    margin-bottom: 14px;
-    font-family: sans-serif;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    transition: background 0.15s;
-  }
-  .sp-atk-box:active { background: rgba(var(--spell-rgb),0.18); }
-  .sp-atk-label {
-    font-size: 9px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .sp-atk-bonus {
-    font-size: 34px;
-    font-weight: bold;
-    color: var(--spell);
-    line-height: 1.1;
-  }
-  .sp-atk-damage { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
-  .sp-description {
-    font-size: 13px;
-    color: var(--text);
-    font-family: sans-serif;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    margin-bottom: 14px;
-  }
-
-  .sp-dismiss-hint {
-    display: block;
-    font-size: 9px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    text-align: center;
-    margin-top: 6px;
-  }
 
   /* Edit mode visibility toggling */
   .sp-edit-section { display: none; }
@@ -2334,52 +1812,6 @@
   .ica-copy-notice { font-size:0.73rem;color:var(--spell-light);min-height:1em;margin:4px 0 }
   .ica-paste-area { width:100%;min-height:72px;resize:vertical;padding:7px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:sans-serif;box-sizing:border-box;margin:6px 0 4px }
 
-  .rr-label {
-    font-size: 10px;
-    color: var(--gold);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-family: sans-serif;
-    margin-bottom: 6px;
-  }
-  .rr-total {
-    font-size: 80px;
-    font-weight: bold;
-    color: var(--text);
-    line-height: 1;
-    margin: 4px 0;
-  }
-  .rr-breakdown {
-    font-size: 14px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    margin-top: 4px;
-  }
-  .rr-secondary {
-    font-size: 14px;
-    color: var(--red-light);
-    font-family: sans-serif;
-    margin-top: 4px;
-    min-height: 18px;
-    white-space: pre-line;
-  }
-  .rr-nat {
-    font-size: 15px;
-    color: var(--gold-light);
-    margin-top: 8px;
-    min-height: 20px;
-    font-family: sans-serif;
-  }
-  .rr-dismiss {
-    display: block;
-    margin-top: 16px;
-    font-size: 10px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-
   /* ── Roll Log ── */
   .roll-log-entry {
     padding: 9px 0;
@@ -2476,23 +1908,6 @@
     gap: 10px;
     margin-top: 14px;
   }
-  .hp-dlg-btn {
-    padding: 13px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    font-size: 14px;
-    font-family: sans-serif;
-    cursor: pointer;
-    background: var(--bg);
-    color: var(--text);
-  }
-  .hp-dlg-btn.primary {
-    background: rgba(var(--accent-rgb),0.15);
-    border-color: var(--gold);
-    color: var(--gold-light);
-    font-weight: bold;
-  }
-
   /* ── Feature editor sheet ── */
   .fe-label {
     font-size: 11px;
@@ -2674,90 +2089,6 @@
     box-shadow: 0 0 0 2px rgba(192,57,43,0.5);
   }
 
-  /* ── 3-zone advantage/disadvantage roll button ── */
-  .roll-tri {
-    border: var(--roll-border) solid var(--gold);
-    border-radius: 10px;
-    overflow: hidden;
-    margin: 12px 0;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  .rtz-top {
-    padding: 14px 12px 10px;
-    text-align: center;
-    cursor: pointer;
-    background: rgba(var(--accent-rgb), 0.08);
-    border-bottom: 1px solid rgba(var(--border-rgb), 0.4);
-    transition: background 0.15s;
-  }
-  .rtz-top:active { background: rgba(var(--accent-rgb), 0.18); }
-  .rtz-label {
-    font-size: 10px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    margin-bottom: 3px;
-  }
-  .rtz-bonus {
-    font-size: 28px;
-    font-weight: bold;
-    color: var(--gold-light);
-    line-height: 1.1;
-  }
-  .rtz-damage {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-  .rtz-bottom {
-    display: flex;
-  }
-  .rtz-dis, .rtz-adv {
-    flex: 1;
-    padding: 9px 4px;
-    text-align: center;
-    cursor: pointer;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    font-family: sans-serif;
-    transition: background 0.15s;
-  }
-  .rtz-dis {
-    background: rgba(192,57,43,0.07);
-    color: var(--red-light);
-    border-right: 1px solid rgba(var(--border-rgb), 0.4);
-  }
-  .rtz-dis:active { background: rgba(192,57,43,0.20); }
-  .rtz-adv {
-    background: rgba(39,174,96,0.07);
-    color: var(--green);
-  }
-  .rtz-adv:active { background: rgba(39,174,96,0.20); }
-
-  .cond-toggle-btn {
-    display: block;
-    width: 100%;
-    padding: 11px;
-    border-radius: 10px;
-    border: none;
-    font-size: 13px;
-    font-family: sans-serif;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    transition: background 0.15s;
-    margin-bottom: 14px;
-  }
-  .cond-toggle-btn.apply  { background: rgba(192,57,43,0.18); color: var(--red-light); border: 1px solid rgba(192,57,43,0.45); }
-  .cond-toggle-btn.remove { background: rgba(192,57,43,0.35); color: var(--red-light); border: 1px solid var(--red-light); }
-  .cond-toggle-btn:active { opacity: 0.75; }
-
   /* ── Settings menu ── */
   #settingsBackdrop {
     position: fixed; inset: 0;
@@ -2782,22 +2113,6 @@
     transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
   }
   #settingsMenu.show { transform: translateY(0); }
-
-  .settings-full-btn {
-    width: 100%;
-    padding: 13px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    font-size: 14px;
-    font-family: sans-serif;
-    cursor: pointer;
-    background: var(--bg);
-    color: var(--text);
-    text-align: center;
-    margin-bottom: 10px;
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .settings-full-btn:active { border-color: var(--gold); color: var(--gold-light); }
 
   .settings-divider {
     border: none;
@@ -4335,6 +3650,7 @@
         <select id="spEditCombatType">
           <option value="action">Action</option>
           <option value="bonus">Bonus Action</option>
+          <option value="reaction">Reaction</option>
           <option value="other">Other</option>
         </select>
       </div>
@@ -4476,6 +3792,7 @@
         <select id="trEditCombatType">
           <option value="action">Action</option>
           <option value="bonus">Bonus Action</option>
+          <option value="reaction">Reaction</option>
           <option value="other">Other</option>
         </select>
       </div>
@@ -4755,6 +4072,7 @@
         <select id="fpEditCombatType">
           <option value="action">Action</option>
           <option value="bonus">Bonus Action</option>
+          <option value="reaction">Reaction</option>
           <option value="other">Other</option>
         </select>
       </div>
@@ -4902,6 +4220,7 @@
       <select id="atkEditActionType">
         <option value="action">Action</option>
         <option value="bonus">Bonus Action</option>
+        <option value="reaction">Reaction</option>
         <option value="other">Other</option>
       </select>
     </div>
@@ -4954,6 +4273,7 @@
     <div class="rtz-top" onclick="event.stopPropagation();infoPanelRoll('normal')">
       <div class="rtz-label" id="ipRollLabel">Roll</div>
       <div class="rtz-bonus" id="ipRollBonus">+0</div>
+      <div class="rtz-damage" id="ipRollDamage" style="display:none"></div>
     </div>
     <div class="rtz-bottom">
       <div class="rtz-dis" onclick="event.stopPropagation();infoPanelRoll('dis')" data-i18n="game.disadv">Disadv</div>
@@ -5950,93 +5270,6 @@ function showRollsOnly(name, rolls) {
 }
 
 // ── Unified Info Panel ─────────────────────────────────────────────────
-let infoPanelCfg = {};
-
-function openInfoPanel(cfg) {
-  const {
-    badge = 'Info',
-    borderColor = 'var(--gold)',
-    title = '',
-    meta = '',
-    description = '',
-    rollLabel = '',
-    rollBonus = '',
-    rollFn = null,
-    simpleRollLabel = null,
-    simpleRollBonus = '',
-    simpleRollFn = null,
-    editFn = null,
-    actionLabel = null,
-    actionClass = '',
-    actionFn = null,
-  } = cfg;
-
-  infoPanelCfg = { rollFn, simpleRollFn, editFn, actionFn };
-
-  const panel = document.getElementById('infoPanel');
-  panel.style.borderColor = borderColor;
-  document.getElementById('ipBadge').textContent = badge;
-  document.getElementById('ipTitle').textContent = title;
-  const metaEl = document.getElementById('ipMeta');
-  metaEl.textContent = meta;
-  metaEl.style.display = meta ? '' : 'none';
-  document.getElementById('ipDesc').textContent = description;
-
-  const rollBox = document.getElementById('ipRollBox');
-  if (rollFn) {
-    document.getElementById('ipRollLabel').textContent = rollLabel || 'Roll';
-    document.getElementById('ipRollBonus').textContent = rollBonus;
-    rollBox.style.display = '';
-  } else {
-    rollBox.style.display = 'none';
-  }
-
-  const simpleBox = document.getElementById('ipSimpleRollBox');
-  if (simpleRollFn) {
-    document.getElementById('ipSimpleRollLabel').textContent = simpleRollLabel || 'Roll';
-    document.getElementById('ipSimpleRollBonus').textContent = simpleRollBonus;
-    simpleBox.style.display = '';
-  } else {
-    simpleBox.style.display = 'none';
-  }
-
-  document.getElementById('ipEditBtn').style.display = editFn ? '' : 'none';
-  document.getElementById('ipEditSection').style.display = 'none';
-  document.getElementById('ipDesc').style.display = '';
-  document.getElementById('ipDismissHint').style.display = '';
-
-  const actionBtn = document.getElementById('ipActionBtn');
-  if (actionFn && actionLabel) {
-    actionBtn.textContent = actionLabel;
-    actionBtn.className = 'cond-toggle-btn ' + actionClass;
-    actionBtn.style.display = '';
-  } else {
-    actionBtn.style.display = 'none';
-  }
-
-  pushModalHistory();
-  document.getElementById('infoPanelBackdrop').classList.add('show');
-  panel.classList.add('show');
-}
-
-function dismissInfoPanel() {
-  popModalHistory();
-  document.getElementById('infoPanel').classList.remove('show');
-  document.getElementById('infoPanelBackdrop').classList.remove('show');
-  infoPanelCfg = {};
-  infoPanelEditCfg = null;
-  document.querySelectorAll('.holding').forEach(el => el.classList.remove('holding'));
-}
-
-function infoPanelRoll(mode) {
-  if (infoPanelCfg.rollFn) infoPanelCfg.rollFn(mode || 'normal');
-}
-function infoPanelSimpleRoll() {
-  if (infoPanelCfg.simpleRollFn) infoPanelCfg.simpleRollFn();
-}
-function infoPanelEdit() {
-  if (infoPanelCfg.editFn) infoPanelCfg.editFn();
-}
 
 let infoPanelEditCfg = null;
 
@@ -6092,36 +5325,8 @@ function cancelInfoPanelEdit() {
   infoPanelEditCfg = null;
   dismissInfoPanel();
 }
-function infoPanelAction() {
-  const fn = infoPanelCfg.actionFn;
-  dismissInfoPanel();
-  if (fn) fn();
-}
-
 // ── Roll result overlay & log ──────────────────────────────────────────
 let rollLog = [];
-
-function showRoll(label, breakdown, total, nat, secondary) {
-  pushModalHistory();
-  document.getElementById('rrLabel').textContent    = label;
-  document.getElementById('rrTotal').textContent    = total;
-  document.getElementById('rrBreak').textContent    = breakdown + ' = ' + total;
-  document.getElementById('rrSecondary').textContent = secondary || '';
-  document.getElementById('rrNat').textContent      = nat;
-  document.getElementById('rollResult').classList.add('show');
-  document.getElementById('rollBackdrop').classList.add('show');
-
-  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-  rollLog.unshift({label, breakdown, total, nat, secondary: secondary || '', time});
-  if (rollLog.length > 50) rollLog.pop();
-  renderRollLog();
-}
-
-function dismissRollResult() {
-  popModalHistory();
-  document.getElementById('rollResult').classList.remove('show');
-  document.getElementById('rollBackdrop').classList.remove('show');
-}
 
 function renderRollLog() {
   const el = document.getElementById('rollLogList');
@@ -9054,27 +8259,32 @@ function renderAttacks() {
   const list = document.getElementById('attackList');
 
   const combatSpells = state.spells.filter(sp => sp.showInCombat);
-  const combatSpellActions = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'action');
-  const combatSpellBonus   = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'bonus');
-  const combatSpellOther   = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'other');
+  const combatSpellActions   = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'action');
+  const combatSpellBonus     = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'bonus');
+  const combatSpellReaction  = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'reaction');
+  const combatSpellOther     = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'other');
 
   const combatTraits = (state.infoTraits || []).filter(t => t.showInCombat);
-  const combatTraitActions = combatTraits.filter(t => (t.combatActionType || 'action') === 'action');
-  const combatTraitBonus   = combatTraits.filter(t => (t.combatActionType || 'action') === 'bonus');
-  const combatTraitOther   = combatTraits.filter(t => (t.combatActionType || 'action') === 'other');
+  const combatTraitActions   = combatTraits.filter(t => (t.combatActionType || 'action') === 'action');
+  const combatTraitBonus     = combatTraits.filter(t => (t.combatActionType || 'action') === 'bonus');
+  const combatTraitReaction  = combatTraits.filter(t => (t.combatActionType || 'action') === 'reaction');
+  const combatTraitOther     = combatTraits.filter(t => (t.combatActionType || 'action') === 'other');
 
   const combatFeatures = (state.classFeatures || []).filter(f => f.showInCombat);
-  const combatFeatActions = combatFeatures.filter(f => (f.combatActionType || 'action') === 'action');
-  const combatFeatBonus   = combatFeatures.filter(f => (f.combatActionType || 'action') === 'bonus');
-  const combatFeatOther   = combatFeatures.filter(f => (f.combatActionType || 'action') === 'other');
+  const combatFeatActions    = combatFeatures.filter(f => (f.combatActionType || 'action') === 'action');
+  const combatFeatBonus      = combatFeatures.filter(f => (f.combatActionType || 'action') === 'bonus');
+  const combatFeatReaction   = combatFeatures.filter(f => (f.combatActionType || 'action') === 'reaction');
+  const combatFeatOther      = combatFeatures.filter(f => (f.combatActionType || 'action') === 'other');
 
-  const actionAtks = state.attacks.filter(a => (a.actionType || 'action') === 'action');
-  const bonusAtks  = state.attacks.filter(a => (a.actionType || 'action') === 'bonus');
-  const otherAtks  = state.attacks.filter(a => (a.actionType || 'action') === 'other');
+  const actionAtks   = state.attacks.filter(a => (a.actionType || 'action') === 'action');
+  const bonusAtks    = state.attacks.filter(a => (a.actionType || 'action') === 'bonus');
+  const reactionAtks = state.attacks.filter(a => (a.actionType || 'action') === 'reaction');
+  const otherAtks    = state.attacks.filter(a => (a.actionType || 'action') === 'other');
 
-  const hasVisActions = actionAtks.length > 0 || combatSpellActions.length > 0 || combatTraitActions.length > 0 || combatFeatActions.length > 0;
-  const hasVisBonus   = bonusAtks.length > 0  || combatSpellBonus.length > 0   || combatTraitBonus.length > 0  || combatFeatBonus.length > 0;
-  const hasVisOther   = otherAtks.length > 0  || combatSpellOther.length > 0   || combatTraitOther.length > 0  || combatFeatOther.length > 0;
+  const hasVisActions  = actionAtks.length > 0   || combatSpellActions.length > 0  || combatTraitActions.length > 0  || combatFeatActions.length > 0;
+  const hasVisBonus    = bonusAtks.length > 0    || combatSpellBonus.length > 0    || combatTraitBonus.length > 0    || combatFeatBonus.length > 0;
+  const hasVisReaction = reactionAtks.length > 0 || combatSpellReaction.length > 0 || combatTraitReaction.length > 0 || combatFeatReaction.length > 0;
+  const hasVisOther    = otherAtks.length > 0    || combatSpellOther.length > 0    || combatTraitOther.length > 0    || combatFeatOther.length > 0;
 
   function makeEmptyRow(msg) {
     return `<div class="attack-row" style="cursor:default"><span class="attack-name" style="color:var(--text-muted);font-size:12px;font-style:italic">${msg}</span><span></span><span></span></div>`;
@@ -9170,10 +8380,17 @@ function renderAttacks() {
     html += makeEmptyRow(_t('game.no_bonus_actions') ?? 'No bonus actions');
   }
 
-  // Reactions — always rendered (no reaction attack type yet, always shows placeholder)
+  // Reactions — always rendered
   html += '<div style="margin-top:8px"></div>';
   html += `<div class="attack-section-label">${_t('game.reactions') ?? 'Reactions'}</div>`;
-  html += makeEmptyRow(_t('game.no_reactions') ?? 'No reactions');
+  if (hasVisReaction) {
+    reactionAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
+    combatSpellReaction.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
+    combatTraitReaction.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
+    combatFeatReaction.forEach(f  => { html += makeFeatureRow(f, state.classFeatures.indexOf(f)); });
+  } else {
+    html += makeEmptyRow(_t('game.no_reactions') ?? 'No reactions');
+  }
 
   // Other — only when there are items
   if (hasVisOther) {
@@ -9697,16 +8914,6 @@ function setLanguage(code) {
 
 function loadLangPref() {
   return localStorage.getItem('dnd5e_lang') || 'en';
-}
-
-// ── Toast ──────────────────────────────────────────────────────────────
-let toastTimer;
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
 }
 
 // ── Portrait ───────────────────────────────────────────────────────────

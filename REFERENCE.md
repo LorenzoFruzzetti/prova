@@ -274,8 +274,8 @@ These field names appear inside `state.spells`, `state.attacks`, `state.classFea
 |---|---|---|---|
 | `name` | all | `string` | Display name of the item |
 | `description` | all | `string` | Free-text description; newlines are preserved |
-| `actionType` | `attacks` | `'action'|'bonus'|'other'` | Which Turn sub-section the attack appears in (default `'action'`) |
-| `combatActionType` | `spells`, `classFeatures`, `infoTraits` | `'action'|'bonus'|'other'` | Which Turn sub-section the item appears in when `showInCombat` is true (default `'action'`) |
+| `actionType` | `attacks` | `'action'|'bonus'|'reaction'|'other'` | Which Turn sub-section the attack appears in (default `'action'`) |
+| `combatActionType` | `spells`, `classFeatures`, `infoTraits` | `'action'|'bonus'|'reaction'|'other'` | Which Turn sub-section the item appears in when `showInCombat` is true (default `'action'`) |
 | `showInCombat` | `spells`, `classFeatures`, `infoTraits` | `boolean` | Whether the item appears as a row in the Turn block in the Combat tab |
 | `showInFeatures` | `spells`, `infoTraits` | `boolean` | Whether the item appears in the "Featured Spells" / "Featured Traits" block in the Features tab |
 | `featureMax` | `spells`, `infoTraits` | `integer` | Maximum number of uses to track in the Featured block (dot count × `featureStep`) |
@@ -333,7 +333,7 @@ Not persisted. Reset on page reload or character switch.
 | `rosterActiveId` | String ID of the character currently loaded in the UI |
 | `undoStack` | Array of undo action objects (max 50); top is most recent |
 | `rollLog` | Array of roll history entries (max 50) shown in the Rolls tab |
-| `infoPanelCfg` | Object holding the `rollFn`, `simpleRollFn`, `editFn`, `actionFn` closures for the currently-open `#infoPanel` |
+| `infoPanelCfg` | **`shared.js`** — Object holding the `rollFn`, `simpleRollFn`, `editFn`, `actionFn` closures for the currently-open `#infoPanel` |
 | `attackPanelIdx` | Index into `state.attacks` for the attack panel currently open; `-1` = new attack being created |
 | `spellPanelEditIdx` | Index into `state.spells`; `-1` = new spell |
 | `traitPanelEditIdx` | Index into `state.infoTraits`; `-1` = new trait |
@@ -411,8 +411,8 @@ These are the discrete string values used in state fields. When the code falls b
 
 | Field | Valid values | Default | Where used |
 |---|---|---|---|
-| `actionType` | `'action'`, `'bonus'`, `'other'` | `'action'` | `attacks[i].actionType` — Turn block sub-section |
-| `combatActionType` | `'action'`, `'bonus'`, `'other'` | `'action'` | `spells[i]`, `classFeatures[i]`, `infoTraits[i]` — same sub-section logic |
+| `actionType` | `'action'`, `'bonus'`, `'reaction'`, `'other'` | `'action'` | `attacks[i].actionType` — Turn block sub-section |
+| `combatActionType` | `'action'`, `'bonus'`, `'reaction'`, `'other'` | `'action'` | `spells[i]`, `classFeatures[i]`, `infoTraits[i]` — same sub-section logic |
 | `abilityMod` | `''`, `'STR'`, `'DEX'`, `'CON'`, `'INT'`, `'WIS'`, `'CHA'`, `'SPELL'`, `'manual'` | `''` | `attacks[i].abilityMod` — `''` = no attack roll; `'manual'` = use `bonus` string; otherwise computed |
 | `attackMod` | same set as `abilityMod` | `''` | `classFeatures[i].attackMod` — same semantics |
 | `rolls[].type` | `'slashing'`, `'piercing'`, `'bludgeoning'`, `'fire'`, `'cold'`, `'lightning'`, `'thunder'`, `'acid'`, `'poison'`, `'necrotic'`, `'radiant'`, `'force'`, `'psychic'`, `'healing'`, `'not_damage'`, `'other'` | — | Damage type for a roll entry; `'not_damage'` for non-damage rolls; `'other'` uses `label` field |
@@ -428,7 +428,8 @@ These are the discrete string values used in state fields. When the code falls b
 
 ```
 dnd-character-sheet.html
-├── <style>          CSS — variables, component classes
+├── <link>           Loads shared.css — design tokens, themes, shared component classes
+├── <style>          Page-specific CSS — layout, page-specific classes, contextual overrides
 ├── <body>
 │   ├── .header      Top bar (title, Undo/Save/Load buttons, character name, meta); scrolls with page content
 │   ├── input#jsonFileInput   Hidden file picker for JSON import
@@ -464,14 +465,17 @@ dnd-character-sheet.html
 │   ├── #infoPanelBackdrop  Fixed full-screen dim layer behind the unified info panel; tap to dismiss
 │   ├── #infoPanel  Fixed centered card (≤500 px, scrollable) — the generic unified info panel used for skills, abilities, saving throws, combat stats, hit die, death saves, and conditions (NOT for spells, traits, attacks, or class features — those have their own dedicated panels); badge + title + optional meta + optional 3-zone roll button + optional simple roll button + description + optional action button + "tap to dismiss" hint; `.show` reveals it
 │   └── #toast       Floating feedback message (non-roll events only)
-└── <script>         All application logic (no external libraries)
+├── <script src="shared.js">  Shared utilities: mod/fmtMod/profBonus, dice functions, toast, showRoll, dismissRollResult, _applyTheme, openInfoPanel, dismissInfoPanel, infoPanelRoll/SimpleRoll/Edit/Action, infoPanelCfg, switchTab, setupSwipe
+└── <script>         All page application logic (constants, state, build/calc/handler/persistence functions)
 ```
 
 ---
 
 ## CSS architecture
 
-### Design tokens (`:root` variables)
+> **Design tokens, theme overrides, and all shared component classes live in `shared.css`**, which is loaded via `<link rel="stylesheet" href="shared.css">` before the inline `<style>` tag. The inline `<style>` contains only page-specific classes and contextual overrides.
+
+### Design tokens (`:root` variables — defined in `shared.css`)
 
 | Variable | Gold default | Role |
 |---|---|---|
@@ -502,7 +506,7 @@ dnd-character-sheet.html
 | `--shadow` | `0 2px 8px rgba(0,0,0,0.5)` | Shared box-shadow |
 | `--roll-border` | `2px` | Border width on all tappable/rollable elements |
 
-Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the structural/accent variables above (but leaves `--red`, `--green`, `--radius`, `--roll-border` unchanged).
+Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the structural/accent variables above (but leaves `--red`, `--green`, `--radius`, `--roll-border` unchanged). Theme override rules are defined in `shared.css`.
 
 | Theme key | Accent feel | Spell accent |
 |---|---|---|
@@ -818,7 +822,7 @@ let state = {
                           saveAbility,           //   ability key for saving throw or ''
                           saveDC,                //   integer override DC; 0 = use character's spell save DC
                           showInCombat,          //   boolean — true if spell appears in the combat attack block
-                          combatActionType,      //   'action' | 'bonus' | 'other' — sub-section in the combat block (default: 'action')
+                          combatActionType,      //   'action' | 'bonus' | 'reaction' | 'other' — sub-section in the combat block (default: 'action')
                           showInFeatures,        //   boolean — true if spell appears in the Featured Spells block in the Features tab
                           prepared,              //   boolean — true if spell is prepared for the day (counts toward maxSpellsPrepared)
                           alwaysPrepared,        //   boolean — true if spell is always prepared (does NOT count toward maxSpellsPrepared); mutually exclusive with prepared
@@ -831,7 +835,7 @@ let state = {
                           flatBonus,             //   integer — additional flat modifier added to computed roll
                           bonus,                 //   string — manual attack roll modifier (only used when abilityMod='manual')
                           rolls,                 //   array of roll objects: [{dice, type, label?, mod?}] — same shape as spells.rolls
-                          actionType,            //   'action' | 'bonus' | 'other' (default: 'action')
+                          actionType,            //   'action' | 'bonus' | 'reaction' | 'other' (default: 'action')
                           hidden,                //   boolean — shows row faded in the combat list; toggled via the edit panel checkbox
                           saveAbility,           //   ability key for a saving throw option, or ''
                           saveDC,                //   integer save DC, or 0
@@ -850,14 +854,14 @@ let state = {
                           saveAbility,           //   ability key or ""
                           saveDC,                //   integer, 0 = use current Spell Save DC
                           showInCombat,          //   boolean — true if feature appears in the combat attack block
-                          combatActionType,      //   'action' | 'bonus' | 'other' — sub-section in the combat block (default: 'action')
+                          combatActionType,      //   'action' | 'bonus' | 'reaction' | 'other' — sub-section in the combat block (default: 'action')
                         } ],
   infoTraits:         [ {   // Features & Traits shown in the Info tab
                           name, description,
                           damage, rollDamage,    //   optional damage roll support
                           saveAbility, saveDC,   //   optional saving throw display
                           showInCombat,          //   boolean — show as row in the combat block
-                          combatActionType,      //   'action' | 'bonus' | 'other' (default: 'action')
+                          combatActionType,      //   'action' | 'bonus' | 'reaction' | 'other' (default: 'action')
                           showInFeatures,        //   boolean — true if trait appears in Featured Traits block in Features tab
                           featureMax,            //   integer — total uses to track (dot count × featureStep)
                           featureUsed,           //   integer — uses already expended (reset on Long Rest)
@@ -911,7 +915,7 @@ hitDiceHoldTimer/Interval  // hold-to-repeat timers for hit dice +/− buttons
 featureNamePressTimer      // setTimeout handle for feature name long-press (500 ms → edit mode)
 featureNamePressActive     // boolean — true during and after a held feature name press
 featurePanelEditIdx        // index into state.classFeatures currently being edited; −1 = new feature
-infoPanelCfg        // object holding the rollFn, simpleRollFn, editFn, actionFn closures for the currently-open #infoPanel
+infoPanelCfg        // shared.js — object holding the rollFn, simpleRollFn, editFn, actionFn closures for the currently-open #infoPanel
 skillPressTimer / skillPressActive / skillPanelCurrentName  // skill row hold detection + current skill name
 equipProfPressTimer / equipProfPressActive  // equipment proficiency row hold detection (tap = info panel, hold 500 ms = same)
 equipProfAllCollapsed                       // boolean — true when the "All Proficiencies" section body is hidden; default true; not persisted
@@ -1183,12 +1187,12 @@ DOMContentLoaded
 | `restoreHitDice()` | ↺ Restore button in Hit Dice section | Sets `state.hitDiceUsed = 0`; rerenders |
 | `fullLongRest()` | ⟳ Long Rest button in Overview panel | Restores HP to max, resets hit dice, all spell slots, all class features, all featured spell uses, and all featured trait uses; saves |
 | `removeAttack(i)` | Tap Delete button in attack edit panel | Pushes undo; splices `state.attacks`; rerenders |
-| `openInfoPanel(cfg)` | Called by any item that opens the unified info panel | Applies badge, title, meta, description, optional 3-zone roll button, optional simple roll button, optional edit button, optional action button; calls `pushModalHistory()`; stores `rollFn/simpleRollFn/editFn/actionFn` in `infoPanelCfg` |
-| `dismissInfoPanel()` | Backdrop tap or browser back | Calls `popModalHistory()`; hides `#infoPanel` and backdrop; clears `infoPanelCfg` |
-| `infoPanelRoll(mode)` | Tap zone in `#ipRollBox` | Calls `infoPanelCfg.rollFn(mode)` |
-| `infoPanelSimpleRoll()` | Tap `#ipSimpleRollBox` | Calls `infoPanelCfg.simpleRollFn()` |
-| `infoPanelEdit()` | Tap Edit button (`#ipEditBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.editFn()` |
-| `infoPanelAction()` | Tap action button (`#ipActionBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.actionFn()` |
+| `openInfoPanel(cfg)` | **`shared.js`** — Called by any item that opens the unified info panel | Applies badge, title, meta, description, optional 3-zone roll button, optional simple roll button, optional edit button, optional action button; calls `pushModalHistory()` (if present); stores `rollFn/simpleRollFn/editFn/actionFn` in `infoPanelCfg` |
+| `dismissInfoPanel()` | **`shared.js`** — Backdrop tap or browser back | Calls `popModalHistory()` (if present); hides `#infoPanel` and backdrop; clears `infoPanelCfg` |
+| `infoPanelRoll(mode)` | **`shared.js`** — Tap zone in `#ipRollBox` | Calls `infoPanelCfg.rollFn(mode)` |
+| `infoPanelSimpleRoll()` | **`shared.js`** — Tap `#ipSimpleRollBox` | Calls `infoPanelCfg.simpleRollFn()` |
+| `infoPanelEdit()` | **`shared.js`** — Tap Edit button (`#ipEditBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.editFn()` |
+| `infoPanelAction()` | **`shared.js`** — Tap action button (`#ipActionBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.actionFn()` |
 | `startStatPillPress(e, key)` | `pointerdown` on a combat stat pill | Starts 500 ms timer; on fire sets `statPillPressActive`, adds `.holding`, calls `openStatPillPanel(key)`. Input elements inside pills stop propagation so typing doesn't trigger hold. |
 | `clickStatPillItem(e, key)` | `onclick` on a combat stat pill | If guard not set and stat is rollable: calls `rollInitiative()` or `rollSpellAtk()`; otherwise opens info panel; always clears timer and removes `.holding` |
 | `cancelStatPillPress()` | `pointercancel` on stat pill | Clears timer; removes `.holding` |
@@ -1309,8 +1313,8 @@ Edit mode            — shows editable form for all fields (name, attack roll s
 
 | Function | Description |
 |---|---|
-| `showRoll(label, breakdown, total, nat, secondary?)` | Displays the roll result overlay and logs to `rollLog`; `secondary` is optional (e.g. damage line for attacks) |
-| `dismissRollResult()` | Hides the roll result overlay and backdrop |
+| `showRoll(label, breakdown, total, nat, secondary?)` | **`shared.js`** — Displays the roll result overlay; appends to `rollLog` (if present) and calls `renderRollLog()`; `secondary` is optional (e.g. damage line for attacks) |
+| `dismissRollResult()` | **`shared.js`** — Hides the roll result overlay and backdrop |
 | `renderRollLog()` | Renders all entries in `rollLog` into `#rollLogList` |
 | `clearRollLog()` | Empties `rollLog` and re-renders the log panel |
 
@@ -1374,9 +1378,10 @@ The session variable `rosterActiveId` (string) holds the currently loaded charac
 | Function | Description |
 |---|---|
 | `updateHeader()` | Reads name/class/race/level inputs → updates header display |
-| `switchTab(id)` | Deactivates all panels/buttons; activates the target; scrolls its tab button into view |
-| `setupSwipe()` | Attaches passive `touchstart`/`touchend` listeners to `document.body`; horizontal swipe ≥ 50 px (and greater than vertical movement) advances or retreats through `TABS`; ignored when roll result overlay is open |
-| `toast(msg)` | Shows floating message for 2 seconds; used for non-roll feedback (proficiency changes, inspiration, file ops) |
+| `switchTab(id)` | **`shared.js`** — Deactivates all panels/buttons; activates the target; scrolls its tab button into view |
+| `setupSwipe()` | **`shared.js`** — Attaches passive `touchstart`/`touchend` listeners to `document.body`; horizontal swipe ≥ 50 px (and greater than vertical movement) advances or retreats through `TABS`; ignored when roll result overlay is open |
+| `toast(msg)` | **`shared.js`** — Shows floating message for 2 seconds; used for non-roll feedback (proficiency changes, inspiration, file ops) |
+| `_applyTheme()` | **`shared.js`** — Reads `dnd5e_theme` from `localStorage` and applies as `data-theme` on `<html>`; called at page init |
 | `setupAutoSave()` | Attaches `saveData` as `input` + `change` listener to every form element |
 | `openSettings()` / `dismissSettings()` | Opens / closes the ⚙ settings bottom-sheet; manages `pushModalHistory` / `popModalHistory` |
 | `pushModalHistory()` | Calls `history.pushState()` to add an entry so the browser back button can dismiss the open modal |
