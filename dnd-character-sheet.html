@@ -416,6 +416,8 @@
     z-index: 99;
     overflow-x: auto;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
   }
   .tab-bar::-webkit-scrollbar { display: none; }
 
@@ -3079,6 +3081,54 @@
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
   }
   #aiImportPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  #importHubBackdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  #importHubBackdrop.show { opacity: 1; pointer-events: auto; }
+  #importHubPanel {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.88);
+    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
+    border: 2px solid var(--gold); border-radius: 20px;
+    padding: 22px 24px 20px; z-index: 301;
+    opacity: 0; transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none; width: min(92vw, 500px);
+    max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  }
+  #importHubPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  .import-hub-grid {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .import-hub-card {
+    width: 100%;
+    background: rgba(var(--accent-rgb),0.08);
+    border: 1px solid rgba(var(--border-rgb),0.6);
+    border-radius: 12px;
+    padding: 11px 12px;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .import-hub-card:active {
+    border-color: var(--gold);
+    background: rgba(var(--accent-rgb),0.2);
+  }
+  .import-hub-title {
+    font-size: 0.9rem;
+    color: var(--gold-light);
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .import-hub-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+  }
   .ai-step { margin-bottom: 14px; }
   .ai-step-label {
     font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
@@ -3315,7 +3365,7 @@
         <button class="header-btn" onclick="toggleCharMenu()">🎭 ▾</button>
       </div>
       <button class="header-btn" id="undoBtn" onclick="undo()" disabled>↩ Undo</button>
-      <button class="header-btn" onclick="openAIImport('spells')">&#8659; Import</button>
+      <button class="header-btn" onclick="openImportHub()">&#8659; Import</button>
       <button class="header-btn" onclick="openSettings()">⚙ Settings</button>
     </div>
   </div>
@@ -4722,10 +4772,6 @@
   <div class="hp-dlg-title" data-i18n="settings.title">Settings</div>
   <div style="height:16px"></div>
   <button class="settings-full-btn" onclick="exportToJSON(); dismissSettings()" data-i18n="btn.save_character">&#128190; Save Character</button>
-  <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(()=>document.getElementById('jsonFileInput').click(), 100)" data-i18n="btn.load_character">&#128194; Load Character</button>
-  <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(openCharImport, 100)" data-i18n="btn.ai_import">&#129302; AI Import Character</button>
-  <button class="settings-full-btn" id="srdEnrichBtn" onclick="enrichAllFromSrd()" data-i18n="btn.fill_srd">&#128218; Fill Descriptions from SRD</button>
-  <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(openDescEnrichPanel, 100)">&#129302; Fill Descriptions with AI</button>
   <button class="settings-full-btn" onclick="dismissSettings();openCreatureStatBlocks()" style="color:var(--gold-light)">&#128009; Creature Stat Blocks &#8594;</button>
   <hr class="settings-divider">
   <div class="settings-row">
@@ -4934,6 +4980,26 @@
 </div>
 
 <!-- ── AI / SRD Import Modal ── -->
+<div id="importHubBackdrop" onclick="dismissImportHub()"></div>
+<div id="importHubPanel">
+  <div class="sp-mode-badge" style="color:var(--gold-light);margin-bottom:10px">Import</div>
+  <div class="import-hub-grid">
+    <button class="import-hub-card" onclick="openAIImportFromHub('spells')">
+      <div class="import-hub-title">1) AI / SRD Import</div>
+      <div class="import-hub-desc">Import spells, features, traits, and items with AI prompts or direct SRD search.</div>
+    </button>
+    <button class="import-hub-card" onclick="openCharImportFromHub()">
+      <div class="import-hub-title">2) Import Character</div>
+      <div class="import-hub-desc">Choose AI import from photos or JSON file import for a full character payload.</div>
+    </button>
+    <button class="import-hub-card" onclick="openDescEnrichFromHub()">
+      <div class="import-hub-title">3) Import Informations</div>
+      <div class="import-hub-desc">Fill or refresh descriptions for your sheet using AI or SRD, on missing-only or all items.</div>
+    </button>
+  </div>
+  <button class="hp-dlg-btn" onclick="dismissImportHub()" style="width:100%;margin-top:8px">Cancel</button>
+</div>
+
 <div id="aiImportBackdrop" onclick="dismissAIImport()"></div>
 <div id="aiImportPanel">
   <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px">Import</div>
@@ -5027,49 +5093,94 @@
 <input type="file" id="charSchemaInput" accept=".md,.txt" style="display:none" onchange="loadSchemaFromFile(this)">
 <div id="charImportBackdrop" onclick="dismissCharImport()"></div>
 <div id="charImportPanel">
-  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px">&#129302; AI Character Import</div>
+  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px">Import Character</div>
 
-  <div class="ai-step">
-    <div class="ai-step-label">Step 1 &#8212; Copy the prompt</div>
-    <div class="ci-schema-status" id="ciSchemaStatus"></div>
-    <div id="ciSchemaFilePicker" class="ci-file-picker" style="display:none">
-      <button class="attack-edit-btn" style="width:100%;padding:7px 0;font-size:0.82rem"
-              onclick="document.getElementById('charSchemaInput').click()">Select JSONGeneration.md</button>
-      <div class="ci-or-divider">or</div>
-      <button class="attack-edit-btn" style="width:100%;padding:7px 0;font-size:0.82rem"
-              onclick="useBuiltinSchema()">Use built-in schema</button>
-    </div>
-    <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">
-      Send this prompt + photos of your character sheet to Claude, ChatGPT, or Gemini.
-    </div>
-    <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateCharImportPrompt()">Copy prompt to clipboard</button>
-    <div class="ai-copy-notice" id="ciCopyNotice"></div>
+  <div class="ai-mode-row">
+    <button class="ai-mode-btn active" id="charModeAI" onclick="setCharImportMode('ai')">&#129302; AI</button>
+    <button class="ai-mode-btn" id="charModeJSON" onclick="setCharImportMode('json')">&#128194; JSON</button>
   </div>
 
-  <div class="ai-step" style="margin-top:16px">
-    <div class="ai-step-label">Step 2 &#8212; Paste the AI&#8217;s response</div>
-    <textarea class="ai-prompt-box" id="ciResponsePaste" placeholder="Paste the full character JSON here&#8230;"></textarea>
+  <div id="charImportAiContent">
+    <div class="ai-step">
+      <div class="ai-step-label">Step 1 &#8212; Copy the prompt</div>
+      <div class="ci-schema-status" id="ciSchemaStatus"></div>
+      <div id="ciSchemaFilePicker" class="ci-file-picker" style="display:none">
+        <button class="attack-edit-btn" style="width:100%;padding:7px 0;font-size:0.82rem"
+                onclick="document.getElementById('charSchemaInput').click()">Select JSONGeneration.md</button>
+        <div class="ci-or-divider">or</div>
+        <button class="attack-edit-btn" style="width:100%;padding:7px 0;font-size:0.82rem"
+                onclick="useBuiltinSchema()">Use built-in schema</button>
+      </div>
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">
+        Send this prompt + photos of your character sheet to Claude, ChatGPT, or Gemini.
+      </div>
+      <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateCharImportPrompt()">Copy prompt to clipboard</button>
+      <div class="ai-copy-notice" id="ciCopyNotice"></div>
+    </div>
+
+    <div class="ai-step" style="margin-top:16px">
+      <div class="ai-step-label">Step 2 &#8212; Paste the AI&#8217;s response</div>
+      <textarea class="ai-prompt-box" id="ciResponsePaste" placeholder="Paste the full character JSON here&#8230;"></textarea>
+    </div>
+    <button class="settings-full-btn" onclick="importCharFromAI()" style="margin-bottom:8px">Import Character</button>
   </div>
-  <button class="settings-full-btn" onclick="importCharFromAI()" style="margin-bottom:8px">Import Character</button>
+
+  <div id="charImportJsonContent" style="display:none">
+    <div class="ai-step">
+      <div class="ai-step-label">Import from JSON file</div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px">
+        Load a full {form,state} character JSON exported from this sheet or generated with the documented schema.
+      </div>
+      <button class="settings-full-btn" onclick="openJsonImportFromCharPanel()">Choose JSON File</button>
+    </div>
+  </div>
+
   <button class="hp-dlg-btn" onclick="dismissCharImport()" style="width:100%;margin-top:8px">Cancel</button>
 </div>
 
 <div id="descEnrichBackdrop" onclick="dismissDescEnrichPanel()"></div>
 <div id="descEnrichPanel">
-  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px">&#129302; Fill Descriptions with AI</div>
-  <div class="ai-step">
-    <div class="ai-step-label">Step 1 &#8212; Copy the prompt</div>
-    <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">
-      Lists every item on your sheet that is missing a description. Paste the prompt into Claude, ChatGPT, or Gemini.
+  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px">Import Informations</div>
+
+  <div class="ai-mode-row">
+    <button class="ai-mode-btn active" id="deModeAI" onclick="setDescImportMode('ai')">&#129302; AI</button>
+    <button class="ai-mode-btn" id="deModeSRD" onclick="setDescImportMode('srd')">&#128218; SRD</button>
+  </div>
+
+  <div class="ai-type-toggle" style="margin-bottom:10px">
+    <button class="ai-type-btn active" id="deScopeMissing" onclick="setDescImportScope('missing')">Missing Only</button>
+    <button class="ai-type-btn" id="deScopeAll" onclick="setDescImportScope('all')">All Entries</button>
+  </div>
+
+  <div class="ai-copy-notice" id="deScopeHint" style="margin-bottom:10px"></div>
+
+  <div id="descEnrichAiContent">
+    <div class="ai-step">
+      <div class="ai-step-label">Step 1 &#8212; Copy the prompt</div>
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">
+        Generate a prompt to fill descriptions with AI using your selected scope.
+      </div>
+      <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateDescEnrichPrompt()">Copy prompt to clipboard</button>
+      <div class="ai-copy-notice" id="deCopyNotice"></div>
     </div>
-    <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateDescEnrichPrompt()">Copy prompt to clipboard</button>
-    <div class="ai-copy-notice" id="deCopyNotice"></div>
+    <div class="ai-step" style="margin-top:16px">
+      <div class="ai-step-label">Step 2 &#8212; Paste the AI&#8217;s response</div>
+      <textarea class="ai-prompt-box" id="deResponsePaste" placeholder="Paste the JSON array here&#8230;"></textarea>
+    </div>
+    <button class="settings-full-btn" onclick="applyDescEnrichResponse()" style="margin-bottom:8px">Apply Descriptions</button>
   </div>
-  <div class="ai-step" style="margin-top:16px">
-    <div class="ai-step-label">Step 2 &#8212; Paste the AI&#8217;s response</div>
-    <textarea class="ai-prompt-box" id="deResponsePaste" placeholder="Paste the JSON array here&#8230;"></textarea>
+
+  <div id="descEnrichSrdContent" style="display:none">
+    <div class="ai-step">
+      <div class="ai-step-label">SRD Search</div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px">
+        Search SRD descriptions for sheet entries using their names. This can fill missing descriptions or refresh all existing descriptions.
+      </div>
+      <button class="settings-full-btn" id="srdEnrichRunBtn" onclick="runDescImportSrd()">Run SRD Import</button>
+      <div class="ai-copy-notice" id="deSrdNotice"></div>
+    </div>
   </div>
-  <button class="settings-full-btn" onclick="applyDescEnrichResponse()" style="margin-bottom:8px">Apply Descriptions</button>
+
   <button class="hp-dlg-btn" onclick="dismissDescEnrichPanel()" style="width:100%;margin-top:8px">Cancel</button>
 </div>
 
@@ -10043,6 +10154,34 @@ function _normalizeFeature(f) {
 // ── AI Import ──────────────────────────────────────────────────────────
 let aiImportType = 'spells';
 let srdModalMode  = 'ai';
+let charImportMode = 'ai';
+let descImportMode = 'ai';
+let descImportScope = 'missing';
+
+function openImportHub() {
+  document.getElementById('importHubBackdrop').classList.add('show');
+  document.getElementById('importHubPanel').classList.add('show');
+}
+
+function dismissImportHub() {
+  document.getElementById('importHubBackdrop').classList.remove('show');
+  document.getElementById('importHubPanel').classList.remove('show');
+}
+
+function openAIImportFromHub(type) {
+  dismissImportHub();
+  setTimeout(() => openAIImport(type || 'spells'), 80);
+}
+
+function openCharImportFromHub() {
+  dismissImportHub();
+  setTimeout(openCharImport, 80);
+}
+
+function openDescEnrichFromHub() {
+  dismissImportHub();
+  setTimeout(openDescEnrichPanel, 80);
+}
 
 function openAIImport(type) {
   aiImportType = type || 'spells';
@@ -11002,12 +11141,31 @@ async function _enrichEquipDescriptions(items) {
   if (updated) { buildEquipmentItems(); saveData(); }
 }
 
-async function enrichAllFromSrd() {
-  const btn      = document.getElementById('srdEnrichBtn');
-  const origText = btn.textContent;
-  btn.disabled   = true;
+async function enrichAllFromSrd(opts = {}) {
+  const includeExisting = !!opts.includeExisting;
+  const btn = opts.buttonEl || document.getElementById('srdEnrichRunBtn') || document.getElementById('srdEnrichBtn');
+  const origText = btn ? btn.textContent : '';
+  if (btn) btn.disabled = true;
   let updated = 0, fetched = 0;
   const use24 = await _srdUse24();
+
+  const setBusy = txt => {
+    if (btn) btn.textContent = txt;
+  };
+  const shouldApplyDesc = (item, desc) => {
+    if (!desc) return false;
+    const next = String(desc).trim();
+    if (!next) return false;
+    const prev = String(item.description || '').trim();
+    if (!includeExisting) {
+      if (prev) return false;
+      item.description = next;
+      return true;
+    }
+    if (prev === next) return false;
+    item.description = next;
+    return true;
+  };
 
   if (use24) {
     async function _enrich24(items, category, applyFn, getPool) {
@@ -11020,41 +11178,24 @@ async function enrichAllFromSrd() {
                       pool.find(r => r.name.toLowerCase().includes(q));
         if (!match) continue;
         fetched++;
-        btn.textContent = `Checking ${fetched}…`;
+        setBusy(`Checking ${fetched}...`);
         if (applyFn(item, match)) updated++;
       }
     }
     try {
-      await _enrich24(state.spells || [], 'spells', (item, d) => {
-        if (item.description) return false;
-        const desc = d.desc || '';
-        if (!desc) return false;
-        item.description = desc; return true;
-      });
-      await _enrich24(state.infoTraits || [], null, (item, d) => {
-        if (item.description) return false;
-        const desc = d.description || d.desc || '';
-        if (!desc) return false;
-        item.description = desc; return true;
-      }, async () => {
+      await _enrich24(state.spells || [], 'spells', (item, d) => shouldApplyDesc(item, d.desc || ''));
+      await _enrich24(state.infoTraits || [], null, (item, d) => shouldApplyDesc(item, d.description || d.desc || ''), async () => {
         const sp = await _srd24Load('species');
-        return sp.flatMap(s => [...(s.traits || []),
-          ...(s.subspecies || []).flatMap(sub => sub.traits || [])]);
+        return sp.flatMap(s => [...(s.traits || []), ...(s.subspecies || []).flatMap(sub => sub.traits || [])]);
       });
-      await _enrich24(state.classFeatures || [], null, (item, d) => {
-        if (item.description) return false;
-        const desc = d.description || d.desc || '';
-        if (!desc) return false;
-        item.description = desc; return true;
-      }, async () => {
+      await _enrich24(state.classFeatures || [], null, (item, d) => shouldApplyDesc(item, d.description || d.desc || ''), async () => {
         const cls = await _srd24Load('classes');
-        return cls.flatMap(c => [...(c.features || []),
-          ...(c.subclasses || []).flatMap(sub => sub.features || [])]);
+        return cls.flatMap(c => [...(c.features || []), ...(c.subclasses || []).flatMap(sub => sub.features || [])]);
       });
       await _enrich24(state.equipmentItems || [], 'equipment', (item, d) => {
         const m = _mapSrd24Equipment(d);
         let changed = false;
-        if (!item.description && m.description) { item.description = m.description; changed = true; }
+        if (shouldApplyDesc(item, m.description)) changed = true;
         if (!item.weight   && m.weight)   { item.weight   = m.weight;   changed = true; }
         if (!item.cost     && m.cost)     { item.cost     = m.cost;     changed = true; }
         if (!item.category && m.category) { item.category = m.category; changed = true; }
@@ -11071,11 +11212,10 @@ async function enrichAllFromSrd() {
       const results = list.results || [];
       for (const item of items) {
         const q = (item.name || '').toLowerCase();
-        const match = results.find(r => r.name.toLowerCase() === q) ||
-                      results.find(r => r.name.toLowerCase().includes(q));
+        const match = results.find(r => r.name.toLowerCase() === q) || results.find(r => r.name.toLowerCase().includes(q));
         if (!match) continue;
         fetched++;
-        btn.textContent = `Checking ${fetched}…`;
+        setBusy(`Checking ${fetched}...`);
         try {
           const detail = await _srdGet('/' + endpoint + '/' + match.index);
           if (applyFn(item, detail)) updated++;
@@ -11084,25 +11224,13 @@ async function enrichAllFromSrd() {
     }
     const _rawDesc = d => (Array.isArray(d.desc) ? d.desc : [d.desc || '']).join('\n\n');
     try {
-      await _enrich(state.spells || [], 'spells', (item, d) => {
-        if (item.description) return false;
-        const desc = _rawDesc(d); if (!desc) return false;
-        item.description = desc; return true;
-      });
-      await _enrich(state.infoTraits || [], 'traits', (item, d) => {
-        if (item.description) return false;
-        const desc = _rawDesc(d); if (!desc) return false;
-        item.description = desc; return true;
-      });
-      await _enrich(state.classFeatures || [], 'features', (item, d) => {
-        if (item.description) return false;
-        const desc = _rawDesc(d); if (!desc) return false;
-        item.description = desc; return true;
-      });
+      await _enrich(state.spells || [], 'spells', (item, d) => shouldApplyDesc(item, _rawDesc(d)));
+      await _enrich(state.infoTraits || [], 'traits', (item, d) => shouldApplyDesc(item, _rawDesc(d)));
+      await _enrich(state.classFeatures || [], 'features', (item, d) => shouldApplyDesc(item, _rawDesc(d)));
       await _enrich(state.equipmentItems || [], 'equipment', (item, d) => {
         const m = _mapSrdEquipment(d);
         let changed = false;
-        if (!item.description && m.description) { item.description = m.description; changed = true; }
+        if (shouldApplyDesc(item, m.description)) changed = true;
         if (!item.weight   && m.weight)   { item.weight   = m.weight;   changed = true; }
         if (!item.cost     && m.cost)     { item.cost     = m.cost;     changed = true; }
         if (!item.category && m.category) { item.category = m.category; changed = true; }
@@ -11118,11 +11246,14 @@ async function enrichAllFromSrd() {
     buildInfoTraits(); buildFeatures(); buildEquipmentItems();
     saveData();
   }
-  btn.disabled = false;
-  btn.textContent = origText;
-  dismissSettings();
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+  if (document.getElementById('descEnrichPanel')?.classList.contains('show')) dismissDescEnrichPanel();
+  else if (document.getElementById('settingsMenu')?.classList.contains('show')) dismissSettings();
   toast(updated > 0
-    ? `${updated} item${updated > 1 ? 's' : ''} filled from SRD`
+    ? `${updated} item${updated > 1 ? 's' : ''} ${includeExisting ? 'updated' : 'filled'} from SRD`
     : 'No new SRD content found');
 }
 
@@ -11131,6 +11262,9 @@ async function enrichAllFromSrd() {
 function openDescEnrichPanel() {
   document.getElementById('deResponsePaste').value = '';
   document.getElementById('deCopyNotice').textContent = '';
+  document.getElementById('deSrdNotice').textContent = '';
+  setDescImportMode('ai');
+  setDescImportScope('missing');
   document.getElementById('descEnrichBackdrop').classList.add('show');
   document.getElementById('descEnrichPanel').classList.add('show');
 }
@@ -11140,21 +11274,57 @@ function dismissDescEnrichPanel() {
   document.getElementById('descEnrichPanel').classList.remove('show');
 }
 
-function generateDescEnrichPrompt() {
+function setDescImportMode(mode) {
+  descImportMode = mode;
+  document.getElementById('deModeAI').classList.toggle('active', mode === 'ai');
+  document.getElementById('deModeSRD').classList.toggle('active', mode === 'srd');
+  document.getElementById('descEnrichAiContent').style.display = mode === 'ai' ? '' : 'none';
+  document.getElementById('descEnrichSrdContent').style.display = mode === 'srd' ? '' : 'none';
+}
+
+function setDescImportScope(scope) {
+  descImportScope = scope;
+  const all = scope === 'all';
+  document.getElementById('deScopeMissing').classList.toggle('active', !all);
+  document.getElementById('deScopeAll').classList.toggle('active', all);
+  document.getElementById('deScopeHint').textContent = all
+    ? 'Scope: update all current spell/feature/trait/item descriptions from AI or SRD.'
+    : 'Scope: only entries with empty descriptions will be targeted.';
+}
+
+function runDescImportSrd() {
+  const includeExisting = descImportScope === 'all';
+  document.getElementById('deSrdNotice').textContent = includeExisting
+    ? 'Running SRD import for all entries...'
+    : 'Running SRD import for missing descriptions...';
+  enrichAllFromSrd({ includeExisting, buttonEl: document.getElementById('srdEnrichRunBtn') });
+}
+
+function _collectDescImportItems(includeExisting) {
   const items = [];
-  (state.spells        || []).forEach(s => { if (!s.description) items.push({ type: 'spell',     name: s.name }); });
-  (state.classFeatures || []).forEach(f => { if (!f.description) items.push({ type: 'feature',   name: f.name }); });
-  (state.infoTraits    || []).forEach(t => { if (!t.description) items.push({ type: 'trait',     name: t.name }); });
-  (state.equipmentItems|| []).forEach(e => { if (!e.description) items.push({ type: 'equipment', name: e.name }); });
+  const include = (obj, type) => {
+    const desc = String(obj.description || '').trim();
+    if (includeExisting || !desc) items.push({ type, name: obj.name });
+  };
+  (state.spells || []).forEach(s => include(s, 'spell'));
+  (state.classFeatures || []).forEach(f => include(f, 'feature'));
+  (state.infoTraits || []).forEach(t => include(t, 'trait'));
+  (state.equipmentItems || []).forEach(e => include(e, 'equipment'));
+  return items;
+}
+
+function generateDescEnrichPrompt() {
+  const includeExisting = descImportScope === 'all';
+  const items = _collectDescImportItems(includeExisting);
 
   if (!items.length) {
-    toast('All items already have descriptions');
+    toast(includeExisting ? 'No entries available to update' : 'All items already have descriptions');
     return;
   }
 
   const prompt =
-`You are a D&D 5e rules expert. The following items on a character sheet are missing descriptions.
-For each item, write a concise but complete D&D 5e description (2–5 sentences).
+`You are a D&D 5e rules expert. The following items are from my character sheet.
+${includeExisting ? 'For each item, write a concise and complete D&D 5e description (2–5 sentences), replacing existing text when needed.' : 'The listed items are missing descriptions. For each item, write a concise but complete D&D 5e description (2–5 sentences).'}
 
 Rules:
 - Output ONLY a raw JSON array — no markdown code fences, no explanation.
@@ -11170,7 +11340,7 @@ Output the JSON array now:`;
 
   navigator.clipboard.writeText(prompt).then(() => {
     document.getElementById('deCopyNotice').textContent =
-      `✓ Copied! ${items.length} item(s) listed. Paste into Claude, ChatGPT, or Gemini, then paste the response below.`;
+      `Copied. ${items.length} item(s) listed (${includeExisting ? 'all entries' : 'missing only'}). Paste into Claude, ChatGPT, or Gemini, then paste the response below.`;
   }).catch(() => {
     document.getElementById('deCopyNotice').textContent =
       'Could not auto-copy — the prompt is shown below; copy it manually, then clear and paste the AI response.';
@@ -11183,6 +11353,7 @@ Output the JSON array now:`;
 function applyDescEnrichResponse() {
   const raw = document.getElementById('deResponsePaste').value.trim();
   if (!raw) { toast('Nothing pasted yet'); return; }
+  const includeExisting = descImportScope === 'all';
   let arr;
   try {
     const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
@@ -11200,8 +11371,13 @@ function applyDescEnrichResponse() {
     if (!desc) continue;
     const applyTo = list => {
       const match = list.find(x => (x.name || '').toLowerCase() === name);
-      if (match && !match.description) { match.description = desc; updated++; return true; }
-      return false;
+      if (!match) return false;
+      const prev = String(match.description || '').trim();
+      if (!includeExisting && prev) return false;
+      if (prev === desc) return false;
+      match.description = desc;
+      updated++;
+      return true;
     };
     if      (item.type === 'spell')     applyTo(state.spells        || []);
     else if (item.type === 'feature')   applyTo(state.classFeatures || []);
@@ -11337,6 +11513,7 @@ let _charImportSchema = null;
 
 function openCharImport() {
   _charImportSchema = null;
+  setCharImportMode('ai');
   document.getElementById('ciResponsePaste').value = '';
   document.getElementById('ciCopyNotice').textContent = '';
   document.getElementById('ciSchemaFilePicker').style.display = 'none';
@@ -11351,6 +11528,19 @@ function openCharImport() {
 function dismissCharImport() {
   document.getElementById('charImportBackdrop').classList.remove('show');
   document.getElementById('charImportPanel').classList.remove('show');
+}
+
+function setCharImportMode(mode) {
+  charImportMode = mode;
+  document.getElementById('charModeAI').classList.toggle('active', mode === 'ai');
+  document.getElementById('charModeJSON').classList.toggle('active', mode === 'json');
+  document.getElementById('charImportAiContent').style.display = mode === 'ai' ? '' : 'none';
+  document.getElementById('charImportJsonContent').style.display = mode === 'json' ? '' : 'none';
+}
+
+function openJsonImportFromCharPanel() {
+  dismissCharImport();
+  setTimeout(() => document.getElementById('jsonFileInput').click(), 100);
 }
 
 async function _tryLoadCharSchema() {

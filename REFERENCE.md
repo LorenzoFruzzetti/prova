@@ -100,13 +100,17 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **Stat modifier dialog (`#statModDialog`)** — Bottom-sheet for entering a custom numeric bonus for one combat stat (AC, Speed, Initiative, Spell Atk, or Spell DC). Opened via the Edit button inside the stat pill's info panel. The bonus is stored in `state.statMods[key]` and displayed as a `.stat-pill-mod` badge inside the pill.
 
- — Bottom-sheet opened by the ⚙ header button. Contains Save to file, Load from file, font size control, lefty mode toggle, and theme swatches.
+**Settings sheet (`#settingsMenu`)** — Bottom-sheet opened by the ⚙ header button. Contains Save to file, creature stat block shortcut, font size control, lefty mode toggle, and theme/language controls.
 
-**AI / SRD Import panel (`#aiImportPanel`)** — Modal opened by the ⇓ Import header button, or by any "+ Add" section button (pre-selected to the matching type tab). Two modes: **AI mode** generates a copy-ready LLM prompt and accepts paste-back JSON, plus a "+ Create custom" button that opens the matching item panel directly; **SRD mode** searches the live D&D 5e SRD API (`dnd5eapi.co`) and imports selected items. Four type tabs: **Spells** / **Features** / **Traits** / **Items** (equipment).
+**Import hub (`#importHubPanel`)** — Modal opened by the ⇓ Import header button. Contains three entry points: **AI / SRD Import**, **Import Character**, and **Import Informations**.
+
+**AI / SRD Import panel (`#aiImportPanel`)** — Modal opened from the Import hub, or by any "+ Add" section button (pre-selected to the matching type tab). Two modes: **AI mode** generates a copy-ready LLM prompt and accepts paste-back JSON, plus a "+ Create custom" button that opens the matching item panel directly; **SRD mode** searches/imports from SRD sources. Four type tabs: **Spells** / **Features** / **Traits** / **Items** (equipment).
 
 **Item Content Assist (inline ✨ Fill)** — Collapsible section that appears inside the edit form of each dedicated panel (spell, trait, class feature, equipment item), revealed by tapping the **✨ Fill** button next to the Description label. Two modes: **📖 SRD** searches the live SRD API by the item's current name and previews the found description; **✨ AI Prompt** generates a copy-ready LLM prompt and accepts a pasted response. For spells and equipment, "Apply All Fields" also fills mechanical fields (level, school, casting time, range, etc. for spells; weight, cost, category for equipment). For all types, "Desc Only" / "Apply Description" fills only the description textarea. Controlled by `toggleIca(p)`, `setIcaMode(p, mode)`, `icaSearchSrd(p, type)`, `icaApply(p)`, `icaApplyDesc(p)`, `icaCopyPrompt(p, type)`, `icaApplyAI(p, type)`, `icaApplyAIDesc(p)` where `p` is a panel prefix (`'sp'`/`'tr'`/`'fp'`/`'eq'`). Requires internet for SRD mode; clipboard API for copy (degrades gracefully on `file://`). The section is automatically collapsed when `populate*EditForm()` is called.
 
-**AI Character Import panel (`#charImportPanel`)** — Modal opened from Settings → 🤖 AI Import Character. Generates a schema-rich LLM prompt intended to be sent with photos of a physical or digital character sheet. Tries to load `JSONGeneration.md` from the same folder via `fetch`; on failure shows a file picker and a "Use built-in schema" fallback. Pasted JSON is validated and fed into `applyPayload()` to replace the current character.
+**Character Import panel (`#charImportPanel`)** — Modal opened from the Import hub → Import Character. Two modes: **AI** (schema-rich prompt workflow for photo-to-JSON import, then paste response) and **JSON** (opens file picker and imports a `{form,state}` file via `importFromJSON`).
+
+**Informations Import panel (`#descEnrichPanel`)** — Modal opened from the Import hub → Import Informations. Two modes: **AI** (generate prompt and paste JSON descriptions) and **SRD** (auto-search by existing entry names). Scope toggle supports **Missing Only** or **All Entries** (refresh existing descriptions too).
 
 **Character Grid (`#charGridOverlay`)** — Full-screen overlay opened by the 🎭 header button. Displays one card per saved character; supports switching, creating, and deleting characters.
 
@@ -450,8 +454,12 @@ dnd-character-sheet.html
 │   ├── #attackPanel  Fixed centered overlay showing attack details (view mode) or editable form (edit mode)
 │   ├── #traitBackdrop  Fixed backdrop for the trait view/edit panel
 │   ├── #traitPanel  Fixed centered overlay showing a feature/trait (view mode) or editable form (edit mode)
+│   ├── #importHubBackdrop  Fixed backdrop for the 3-option import hub
+│   ├── #importHubPanel  Fixed centered import hub modal with 3 actions: AI/SRD item import, character import, informations import
 │   ├── #aiImportBackdrop  Fixed backdrop for the AI/SRD import modal
-│   ├── #aiImportPanel  Fixed centered modal for importing spells, features, and traits; two modes — ✨ AI (prompt-copy + paste-back) and 📖 SRD (live search against dnd5eapi.co); three type tabs: Spells / Features / Traits
+│   ├── #aiImportPanel  Fixed centered modal for importing spells/features/traits/items; two modes — ✨ AI (prompt-copy + paste-back) and 📖 SRD; four type tabs: Spells / Features / Traits / Items
+│   ├── #charImportPanel  Fixed centered modal for character import; AI mode (prompt + paste) and JSON mode (file picker)
+│   ├── #descEnrichPanel  Fixed centered modal for informations import; AI/SRD modes plus Missing-only/All-entries scope toggle
 │   ├── #charGridOverlay  Fixed full-screen overlay for the character roster grid panel; open via the 🎭 header button; tap backdrop to dismiss
 │   ├── #infoPanelBackdrop  Fixed full-screen dim layer behind the unified info panel; tap to dismiss
 │   ├── #infoPanel  Fixed centered card (≤500 px, scrollable) — the generic unified info panel used for skills, abilities, saving throws, combat stats, hit die, death saves, and conditions (NOT for spells, traits, attacks, or class features — those have their own dedicated panels); badge + title + optional meta + optional 3-zone roll button + optional simple roll button + description + optional action button + "tap to dismiss" hint; `.show` reveals it
@@ -685,8 +693,8 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `#stepBackdrop` | Fixed dim layer behind the legacy feature editor sheet (retained in HTML but no longer triggered) |
 | `#stepMenu` | Legacy bottom-sheet for adding/editing class features; superseded by `#featurePanel` |
 | `#settingsBackdrop` | Fixed dim layer behind the settings sheet; tap to dismiss |
-| `#settingsMenu` | Bottom-sheet opened by the ⚙ Settings header button; contains Save, Load, font-size, lefty-mode, and theme controls |
-| `.settings-full-btn` | Full-width action button inside the settings sheet (Save / Load) |
+| `#settingsMenu` | Bottom-sheet opened by the ⚙ Settings header button; contains Save, Creature Stat Blocks shortcut, font-size, lefty-mode, theme, and language controls |
+| `.settings-full-btn` | Full-width action button used in Settings and import-related modals |
 | `.settings-divider` | Thin horizontal rule separating sections inside the settings sheet |
 | `.settings-row` | Flex row pairing a label+sub-label on the left with a control on the right |
 | `.font-ctrl` | Flex row grouping `[−][value][+]` for the font-size control |
@@ -722,7 +730,7 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.portrait-remove-btn` | Modifier on `.portrait-btn`; red tint; hidden until a portrait is set |
 | `.ai-mode-row` | Flex row containing the AI / SRD mode toggle buttons at the top of `#aiImportPanel` |
 | `.ai-mode-btn` | One of the two mode-toggle pill buttons (✨ AI or 📖 SRD); `.active` styles it gold |
-| `.ai-type-toggle` | Flex row containing the three type-tab buttons (Spells / Features / Traits) inside `#aiImportPanel` |
+| `.ai-type-toggle` | Flex row containing type/scope tab buttons in import modals (e.g. Spells/Features/Traits/Items in `#aiImportPanel`) |
 | `.ai-type-btn` | One type-tab button; `.active` styles it in spell blue |
 | `.import-upper` | Fixed-height wrapper (`min-height: 360px`) containing both `#aiModeContent` and `#srdModeContent`; prevents the panel from resizing when switching between AI and SRD tabs or between type tabs |
 | `.ai-step` | Labeled step block (step label + input) in the AI mode content area |
@@ -1387,14 +1395,14 @@ The session variable `rosterActiveId` (string) holds the currently loaded charac
 
 ### AI / SRD Import functions
 
-The **⇓ Import** button in the header bar (between Undo and ⚙ Settings) opens `#aiImportPanel`. The modal has two modes selected by the top toggle.
+The **⇓ Import** button in the header bar opens `#importHubPanel`, which routes to item import (`#aiImportPanel`), character import (`#charImportPanel`), or informations import (`#descEnrichPanel`).
 
 #### AI mode
 Generates a copy-ready LLM prompt containing the exact JSON schema and the names of items already on the sheet; the user pastes the LLM's JSON array response into Step 2 and clicks Import.
 
 | Function | Description |
 |---|---|
-| `openAIImport(type)` | Opens `#aiImportPanel` in AI mode, pre-selects the given type tab (`'spells'`, `'features'`, or `'traits'`), resets both text areas and the SRD selection set |
+| `openAIImport(type)` | Opens `#aiImportPanel` in AI mode, pre-selects the given type tab (`'spells'`, `'features'`, `'traits'`, or `'equipment'`), resets both text areas and the SRD selection set |
 | `dismissAIImport()` | Hides `#aiImportPanel` and its backdrop |
 | `setModalMode(mode)` | Switches between `'ai'` and `'srd'` content areas; also shows/hides `#srdResultsArea` (the detached results section below `.import-upper`); calls `_srdInitForType()` when switching to SRD |
 | `setAIImportType(type)` | Updates active state on type-tab buttons; calls `_srdInitForType()` if currently in SRD mode |
@@ -1405,12 +1413,14 @@ Generates a copy-ready LLM prompt containing the exact JSON schema and the names
 | `importAIResponse()` | Parses the pasted text (strips markdown fences); merges into `state.spells`, `state.classFeatures`, or `state.infoTraits` depending on active type; deduplicates by lowercase name; rebuilds the relevant list |
 
 #### AI Character Import (full sheet from photos)
-Full-character import modal (`#charImportPanel`) opened from Settings → AI Import Character. Loads the JSON schema from `JSONGeneration.md` (via `fetch`), with a file-picker fallback and a compact built-in schema as final fallback. The generated prompt is intended to be sent alongside photos of a physical or digital character sheet.
+Full-character import modal (`#charImportPanel`) opened from Import hub → Import Character. It has AI mode (photo-to-JSON prompt workflow) and JSON mode (file picker for direct character import).
 
 | Function | Description |
 |---|---|
-| `openCharImport()` | Shows `#charImportPanel`, resets state, triggers `_tryLoadCharSchema()` |
+| `openCharImport()` | Shows `#charImportPanel` in AI mode, resets state, triggers `_tryLoadCharSchema()` |
 | `dismissCharImport()` | Hides `#charImportPanel` and its backdrop |
+| `setCharImportMode(mode)` | Switches character import between `'ai'` and `'json'` sub-views |
+| `openJsonImportFromCharPanel()` | Closes `#charImportPanel` and opens hidden `#jsonFileInput` after a short delay |
 | `_tryLoadCharSchema()` | Async; `fetch('./JSONGeneration.md')`; on success sets `_charImportSchema`; on failure shows `#ciSchemaFilePicker` |
 | `loadSchemaFromFile(input)` | `FileReader` handler for the manual file picker; loads selected `.md`/`.txt` into `_charImportSchema` |
 | `useBuiltinSchema()` | Sets `_charImportSchema` to the embedded `_BUILTIN_CHAR_SCHEMA` constant |
@@ -1487,11 +1497,14 @@ Edition availability is detected automatically on modal open via `_srd24Detect()
 | `icaApplyAI(p, type)` | Parses pasted JSON for spells; falls through to `icaApplyAIDesc` otherwise |
 | `icaApplyAIDesc(p)` | Writes paste area raw text to description textarea and closes ICA block |
 | `_enrichEquipDescriptions(items)` | Async; fills missing equipment fields from SRD (2014 or 2024 path); called after AI import |
-| `enrichAllFromSrd()` | Async; bulk-fills empty descriptions across all four state arrays; in 2024 mode searches local files (no network); in 2014 mode fetches from API. Triggered from Settings → **📖 Fill Descriptions from SRD** |
-| `openDescEnrichPanel()` | Opens the `#descEnrichPanel` modal (AI description fill); resets paste area and notice text |
+| `enrichAllFromSrd(opts)` | Async; SRD-based description enrichment for spells/features/traits/items. `opts.includeExisting=true` refreshes all entries, otherwise only fills missing descriptions |
+| `openDescEnrichPanel()` | Opens `#descEnrichPanel` with default mode AI + scope Missing-only |
 | `dismissDescEnrichPanel()` | Hides `#descEnrichPanel` and its backdrop |
-| `generateDescEnrichPrompt()` | Builds a prompt listing every item across `state.spells`, `state.classFeatures`, `state.infoTraits`, and `state.equipmentItems` that has an empty `description`; copies to clipboard with `execCommand` fallback |
-| `applyDescEnrichResponse()` | Parses the JSON array pasted by the user; for each `{type, name, description}` entry, finds the matching item by name and fills its `description` if currently empty; rebuilds all four lists and saves |
+| `setDescImportMode(mode)` | Toggles informations import mode between `'ai'` and `'srd'` |
+| `setDescImportScope(scope)` | Toggles scope between `'missing'` and `'all'` |
+| `runDescImportSrd()` | Runs SRD enrichment from `#descEnrichPanel` using the selected scope |
+| `generateDescEnrichPrompt()` | Builds and copies an AI prompt from selected scope (Missing-only or All-entries) |
+| `applyDescEnrichResponse()` | Applies pasted AI descriptions according to selected scope (fill missing only or overwrite existing) |
 
 > **2024 SRD note:** `dnd5eapi.co` covers the 2014 SRD. For 2024 SRD content (released under CC-BY 4.0 as SRD 5.2), use the AI Import workflow: the prompt templates are edition-agnostic and work with any LLM that knows the 2024 rules.
 

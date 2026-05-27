@@ -164,15 +164,21 @@ function switchTab(id) {
 function setupSwipe(tabs, shouldBlock) {
   let x0 = null, y0 = null, xLast = null, yLast = null;
   let startedOnTabBar = false;
+  let startedOnTabButton = false;
+  let tabBarDrag = false;
+  let suppressNextTabClick = false;
   document.body.addEventListener('touchstart', e => {
+    suppressNextTabClick = false;
     x0    = e.touches[0].clientX;
     y0    = e.touches[0].clientY;
     xLast = x0;
     yLast = y0;
+    tabBarDrag = false;
+    startedOnTabButton = !!e.target.closest('.tab-btn');
     const tb = document.querySelector('.tab-bar');
     if (tb) {
       const r = tb.getBoundingClientRect();
-      startedOnTabBar = y0 >= r.top && y0 <= r.bottom;
+      startedOnTabBar = x0 >= r.left && x0 <= r.right && y0 >= r.top && y0 <= r.bottom;
     } else {
       startedOnTabBar = false;
     }
@@ -181,15 +187,22 @@ function setupSwipe(tabs, shouldBlock) {
     if (e.touches.length > 0) {
       xLast = e.touches[0].clientX;
       yLast = e.touches[0].clientY;
+      if (!tabBarDrag && startedOnTabBar && startedOnTabButton && Math.abs(xLast - x0) > 10) {
+        tabBarDrag = true;
+      }
     }
   }, {passive: true});
   function applySwipe(endX, endY) {
     if (x0 === null) return false;
+    const wasOnTabBar = startedOnTabBar;
     const dx = endX - x0;
     const dy = endY - y0;
     x0 = null; xLast = null; yLast = null;
+    startedOnTabBar = false;
+    startedOnTabButton = false;
+    tabBarDrag = false;
     if (shouldBlock && shouldBlock()) return false;
-    if (startedOnTabBar) return false;
+    if (wasOnTabBar) return false;
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return false;
     const cur = tabs.indexOf(document.querySelector('.tab-btn.active')?.dataset.tab ?? tabs[0]);
     const next = Math.max(0, Math.min(tabs.length - 1, cur + (dx < 0 ? 1 : -1)));
@@ -199,6 +212,10 @@ function setupSwipe(tabs, shouldBlock) {
   // non-passive so we can call preventDefault() and cancel the click that
   // would otherwise fire on whichever tab button the finger landed on.
   document.body.addEventListener('touchend', e => {
+    if (tabBarDrag) {
+      suppressNextTabClick = true;
+      e.preventDefault();
+    }
     const swipe = applySwipe(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
     if (swipe) e.preventDefault();
   });
@@ -206,5 +223,12 @@ function setupSwipe(tabs, shouldBlock) {
   document.body.addEventListener('touchcancel', () => {
     applySwipe(xLast ?? x0 ?? 0, yLast ?? y0 ?? 0);
   }, {passive: true});
+  document.body.addEventListener('click', e => {
+    if (!suppressNextTabClick) return;
+    suppressNextTabClick = false;
+    if (!e.target.closest('.tab-btn')) return;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
 }
 
