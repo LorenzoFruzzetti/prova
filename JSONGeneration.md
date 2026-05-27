@@ -350,7 +350,7 @@ Each object:
 | `rolls` | array | Array of roll objects `[{dice, type, label?, mod?}]`. Each entry: `dice` = expression (`"4d6"`); `type` = damage type key or `"not_damage"` or `"other"`; `label` = custom label when `type="other"`; `mod` = modifier to add — ability key (`"STR"`/`"DEX"`/…/`"CHA"`), `"SPELLMOD"` (spellcasting ability modifier only), `"SPELL"` (full spell attack bonus = ability mod + proficiency), or `""` for none. **Use `"SPELLMOD"` whenever the spell or feature text says "add your spellcasting ability modifier"** — e.g. Healing Word `"1d4 + your spellcasting ability modifier"` → `{"dice":"1d4","type":"healing","mod":"SPELLMOD"}`. Use `"SPELL"` only for rolls that explicitly add the full spell attack bonus. The SRD import mappers detect the "spellcasting modifier" phrasing automatically; the AI import prompts enforce both distinctions. |
 | `description` | string | Full spell description; newlines are preserved |
 | `showInCombat` | boolean | `true` to show the spell as a row in the combat attack block. Use this instead of duplicating the spell in `state.attacks[]` |
-| `combatActionType` | string | `"action"` (default), `"bonus"`, or `"other"` — which sub-section of the combat block the spell appears in when `showInCombat` is `true` |
+| `combatActionType` | string | `"action"` (default), `"bonus"`, `"reaction"`, or `"other"` — which sub-section of the combat block the spell appears in when `showInCombat` is `true` |
 | `showInFeatures` | boolean | `true` to show the spell in the "Featured Spells" block inside the Features tab — useful for spells that function like limited-use class features |
 | `prepared` | boolean | `true` if the spell is prepared for the day; prepared spells appear in the Spells Prepared section and count toward `state.maxSpellsPrepared`; mutually exclusive with `alwaysPrepared` (default `false`) |
 | `alwaysPrepared` | boolean | `true` if the spell is always prepared (e.g. domain spells, class feature spells); always-prepared spells appear in Spells Prepared but do **not** count toward `maxSpellsPrepared`; mutually exclusive with `prepared` (default `false`) |
@@ -359,7 +359,7 @@ When a spell has a `saveAbility` set, the view panel shows the current **Spell S
 
 **Tap/hold behaviour on spell rows:** tapping a spell row rolls directly — d20 + spell attack bonus if `attackRoll` is `true` (rolls are shown in secondary); all `rolls` dice if `rolls` is non-empty and `attackRoll` is `false`; opens the info panel when neither is set. Holding (500 ms) always opens the info panel.
 
-Spells with `showInCombat: true` appear in the combat attack block under "Actions", "Bonus Actions", or "Other" depending on `combatActionType`. The same tap/hold rules apply there. The spell level is shown as a gold circle badge (level 1–9); cantrips (level 0) show no badge. **Do not duplicate a spell in `state.attacks[]` — set `showInCombat: true` on the spell object instead.**
+Spells with `showInCombat: true` appear in the combat attack block under "Actions", "Bonus Actions", "Reactions", or "Other" depending on `combatActionType`. The same tap/hold rules apply there. The spell level is shown as a gold circle badge (level 1–9); cantrips (level 0) show no badge. **Do not duplicate a spell in `state.attacks[]` — set `showInCombat: true` on the spell object instead.**
 
 ```json
 "spells": [
@@ -424,7 +424,7 @@ Each object:
 | `flatBonus` | integer | Additional flat modifier added to the computed roll (default `0`) |
 | `bonus` | string | Manual attack roll modifier string, e.g. `"+7"` — only used when `abilityMod: "manual"` |
 | `rolls` | array | Roll objects `[{dice, type, label?, mod?}]` — same structure as `spells.rolls` |
-| `actionType` | string | `"action"` (default), `"bonus"`, or `"other"` — which combat sub-section to show in |
+| `actionType` | string | `"action"` (default), `"bonus"`, `"reaction"`, or `"other"` — which combat sub-section to show in |
 | `hidden` | boolean | `true` to show the row faded in the combat list; toggled via "Hide from combat list" in the edit panel (default `false`) |
 | `saveAbility` | string | Ability key for a saving throw option: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` for none |
 | `saveDC` | integer | Save DC value (e.g. `15`); `0` or omitted means no save DC displayed |
@@ -467,7 +467,7 @@ Each object:
 | `saveAbility` | string | Ability key for a saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` |
 | `saveDC` | integer | Override DC; if `0` or omitted, the sheet's current Spell Save DC is used |
 | `showInCombat` | boolean | `true` to show the feature as a row in the combat attack block (default `false`) |
-| `combatActionType` | string | `"action"` (default), `"bonus"`, or `"other"` — sub-section in the combat block when `showInCombat` is `true` |
+| `combatActionType` | string | `"action"` (default), `"bonus"`, `"reaction"`, or `"other"` — sub-section in the combat block when `showInCombat` is `true` |
 
 **Tap/hold behaviour on feature rows:** tapping the feature name area runs rolls directly if `rolls` is non-empty (opens panel first if `attackRoll` is also `true`); otherwise opens the info panel. Holding (500 ms) always opens the info panel.
 
@@ -504,7 +504,7 @@ Each object:
 | `saveAbility` | string | Ability key for a saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` |
 | `saveDC` | integer | Override DC; if `0` or omitted, the sheet's current Spell Save DC is used |
 | `showInCombat` | boolean | `true` to show this trait as a row in the combat attack block |
-| `combatActionType` | string | `"action"` (default) or `"bonus"` — which sub-section of the combat block it appears in |
+| `combatActionType` | string | `"action"` (default), `"bonus"`, `"reaction"`, or `"other"` — which sub-section of the combat block it appears in |
 | `showInFeatures` | boolean | `true` to show this trait in the "Featured Traits" block in the Features tab — use for limited-use racial or class traits (e.g. Breath Weapon, Lay on Hands) |
 | `featureMax` | integer | Total number of uses to track when `showInFeatures` is `true`; dot count = `ceil(featureMax / featureStep)` |
 | `featureUsed` | integer | Uses already expended; defaults to `0`; reset to `0` on Long Rest |
@@ -580,6 +580,7 @@ Object mapping damage type keys to resistance state. Each entry is optional; omi
 ```json
 "damageResistances": {
   "fire": 1,
+  "necrotic": 2,
   "cold": -1,
   "slashing": 0
 }
@@ -588,12 +589,13 @@ Object mapping damage type keys to resistance state. Each entry is optional; omi
 | Value | Meaning | Dot colour |
 |---|---|---|
 | `1` | Resistant — half damage | Green |
+| `2` | Immune — zero damage | Black |
 | `-1` | Vulnerable — double damage | Red |
 | `0` or absent | Normal | Empty |
 
 Valid damage type keys: `slashing`, `piercing`, `bludgeoning`, `fire`, `cold`, `lightning`, `thunder`, `acid`, `poison`, `necrotic`, `radiant`, `force`, `psychic`.
 
-Cycled by tapping a dot in the Resistances & Vulnerabilities section of the Combat tab. Undoable.
+Cycled by tapping a dot in the Resistances, Immunities & Vulnerabilities section of the Combat tab (cycle: normal → resistant → immune → vulnerable → normal). Undoable.
 
 #### `maxSpellsPrepared`
 Integer. The daily preparation limit for spells marked with the P dot (`prepared: true`). `0` (default) means no limit is enforced. Always-prepared spells (`alwaysPrepared: true`) never count toward this limit.

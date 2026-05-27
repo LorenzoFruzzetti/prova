@@ -4,132 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>D&D Character Sheet</title>
+<link rel="stylesheet" href="shared.css">
 <style>
-  :root {
-    --bg: #1a1410;
-    --surface: #2a2018;
-    --surface2: #352a1e;
-    --border: #5c4a2a;
-    --border-rgb: 92,74,42;
-    --gold: #c9a84c;
-    --gold-light: #e8c96a;
-    --accent-rgb: 201,168,76;
-    --red: #c0392b;
-    --red-light: #e74c3c;
-    --green: #27ae60;
-    --text: #e8d9b8;
-    --text-muted: #9a8a6a;
-    --tab-active: #3d2e1a;
-    --header-bg-1: #2a1a0a;
-    --header-bg-2: #1a0e05;
-    --tabbar-bg: #120d08;
-    --panel-bg-1: #2a1e0e;
-    --panel-bg-2: #1a1206;
-    --spell: #5baeff;
-    --spell-light: #7ec8ff;
-    --spell-rgb: 91,174,255;
-    --spell-dark: #3d8fe0;
-    --radius: 8px;
-    --shadow: 0 2px 8px rgba(0,0,0,0.5);
-    --roll-border: 2px;   /* width of the gold border on tappable/rollable elements */
-  }
-
-  /* ── Dark theme ── */
-  :root[data-theme="dark"] {
-    --bg: #0f0f12;
-    --surface: #1a1a20;
-    --surface2: #222228;
-    --border: #38383f;
-    --border-rgb: 56,56,63;
-    --gold: #9090b0;
-    --gold-light: #b0b0d0;
-    --accent-rgb: 144,144,176;
-    --text: #d8d8e8;
-    --text-muted: #686878;
-    --tab-active: #252530;
-    --header-bg-1: #151518;
-    --header-bg-2: #0a0a0e;
-    --tabbar-bg: #090910;
-    --panel-bg-1: #1e1e26;
-    --panel-bg-2: #14141c;
-    --spell: #b07fff;
-    --spell-light: #c8a0ff;
-    --spell-rgb: 176,127,255;
-    --spell-dark: #8855d0;
-  }
-
-  /* ── Red / Crimson theme ── */
-  :root[data-theme="red"] {
-    --bg: #150808;
-    --surface: #201010;
-    --surface2: #2c1414;
-    --border: #5c2828;
-    --border-rgb: 92,40,40;
-    --gold: #c94c4c;
-    --gold-light: #e87070;
-    --accent-rgb: 201,76,76;
-    --text: #e8d0d0;
-    --text-muted: #9a6a6a;
-    --tab-active: #2e1818;
-    --header-bg-1: #2a1010;
-    --header-bg-2: #1a0808;
-    --tabbar-bg: #0d0606;
-    --panel-bg-1: #2a1414;
-    --panel-bg-2: #1a0c0c;
-    --spell: #ffad50;
-    --spell-light: #ffc87a;
-    --spell-rgb: 255,173,80;
-    --spell-dark: #e08820;
-  }
-
-  /* ── Forest / Green theme ── */
-  :root[data-theme="forest"] {
-    --bg: #08130a;
-    --surface: #101e12;
-    --surface2: #162816;
-    --border: #2a5c30;
-    --border-rgb: 42,92,48;
-    --gold: #4caa60;
-    --gold-light: #6ec87a;
-    --accent-rgb: 76,170,96;
-    --text: #d0e8d2;
-    --text-muted: #6a9a70;
-    --tab-active: #182a1a;
-    --header-bg-1: #0c2010;
-    --header-bg-2: #081408;
-    --tabbar-bg: #060e06;
-    --panel-bg-1: #122018;
-    --panel-bg-2: #0c160e;
-    --spell: #40c8c0;
-    --spell-light: #70e0da;
-    --spell-rgb: 64,200,192;
-    --spell-dark: #28a09a;
-  }
-
-  /* ── Ocean / Blue theme ── */
-  :root[data-theme="ocean"] {
-    --bg: #080e18;
-    --surface: #101828;
-    --surface2: #182030;
-    --border: #28405c;
-    --border-rgb: 40,64,92;
-    --gold: #4a80c8;
-    --gold-light: #6aa0e0;
-    --accent-rgb: 74,128,200;
-    --text: #d0dce8;
-    --text-muted: #6a7a90;
-    --tab-active: #182030;
-    --header-bg-1: #0c1828;
-    --header-bg-2: #080e18;
-    --tabbar-bg: #060a12;
-    --panel-bg-1: #141e30;
-    --panel-bg-2: #0c1420;
-    --spell: #c06eff;
-    --spell-light: #d896ff;
-    --spell-rgb: 192,110,255;
-    --spell-dark: #9048c8;
-  }
-
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   body {
@@ -147,8 +23,12 @@
     background: linear-gradient(135deg, var(--header-bg-1), var(--header-bg-2));
     border-bottom: 2px solid var(--gold);
     padding: 12px 16px 8px;
-    position: sticky;
-    top: 0;
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
+    max-width: 480px;
     z-index: 100;
   }
 
@@ -408,10 +288,12 @@
     background: var(--tabbar-bg);
     border-bottom: 1px solid var(--border);
     position: sticky;
-    top: 72px;
+    top: 0;
     z-index: 99;
     overflow-x: auto;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
   }
   .tab-bar::-webkit-scrollbar { display: none; }
 
@@ -1171,57 +1053,6 @@
     flex: 1;
   }
 
-  /* ── Mini tracker (features + spell slots) ── */
-  .mini-tracker {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    flex-shrink: 0;
-  }
-
-  .mini-btn {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
-    background: var(--surface2);
-    font-size: 22px;
-    line-height: 1;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: border-color 0.15s, background 0.15s;
-    font-family: sans-serif;
-    color: var(--text);
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  .mini-btn:active { background: var(--surface); border-color: var(--gold); }
-  .mini-btn.minus { color: var(--red-light); border-color: #5a2020; }
-  .mini-btn.plus  { color: var(--green);     border-color: #1a5a2a; }
-
-  .mini-val {
-    font-size: 11px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    min-width: 30px;
-    text-align: center;
-  }
-
-  .slot-dot {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: 2px solid var(--gold);
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .slot-dot.used { background: rgba(var(--accent-rgb),0.15); border-color: var(--border); }
-  .slot-dot.available { background: var(--gold); }
-
   .spell-slots-max {
     font-size: 10px;
     color: var(--text-muted);
@@ -1300,21 +1131,6 @@
     color: var(--text);
     font-family: sans-serif;
   }
-
-  .spell-item-tag {
-    font-size: 9px;
-    font-family: sans-serif;
-    font-weight: bold;
-    letter-spacing: 0.5px;
-    background: rgba(var(--accent-rgb),0.15);
-    border: 1px solid rgba(var(--accent-rgb),0.4);
-    border-radius: 3px;
-    padding: 1px 4px;
-    color: var(--gold);
-    flex-shrink: 0;
-  }
-  .spell-item-tag.sp-tag-conc { color: var(--spell-light); border-color: rgba(var(--spell-rgb),0.4); background: rgba(var(--spell-rgb),0.08); }
-  .spell-item-tag.sp-tag-ritual { color: var(--gold); }
 
   .spell-lvl-pip {
     display: inline-flex; align-items: center; justify-content: center;
@@ -1460,112 +1276,7 @@
     max-width: 90vw;
   }
 
-  /* ── Class Features ── */
-  .feature-row {
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    padding: 4px 0;
-    border-bottom: 1px solid rgba(var(--border-rgb),0.25);
-    margin-bottom: 2px;
-  }
-  .feature-row:last-child { border-bottom: none; margin-bottom: 0; }
-
-  .feature-top {
-    display: flex;
-    gap: 0;
-    align-items: stretch;
-  }
-
-  .feature-dots-col {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 8px 8px;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .feature-left-col {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .feature-name-area {
-    padding: 8px 8px 8px calc(var(--roll-border) + 6px);
-    box-shadow: inset var(--roll-border) 0 0 0 rgba(var(--accent-rgb),0.35);
-    background: rgba(var(--accent-rgb),0.04);
-    border-radius: 4px 0 0 4px;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: manipulation;
-    transition: background 0.12s;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-  }
-  .feature-name-area:active { background: rgba(var(--accent-rgb),0.13); }
-  .feature-name-area.holding { background: rgba(var(--accent-rgb),0.18); }
-
-  .feature-dots {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 6px;
-  }
-
-  .feature-name {
-    font-size: 13px;
-    color: var(--gold-light);
-    font-family: sans-serif;
-    font-weight: 600;
-  }
-
-  .feature-recharge {
-    font-size: 10px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    font-style: italic;
-  }
-
-  .feature-right-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 6px 4px 8px;
-    flex-shrink: 0;
-    border-left: 1px solid rgba(var(--border-rgb),0.2);
-  }
-
-  .feature-ctrl-top {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    width: 100%;
-    justify-content: flex-end;
-  }
-
-  .feature-restore-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 1.5px solid var(--border);
-    background: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    font-size: 13px;
-    flex-shrink: 0;
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .feature-restore-btn:active { border-color: var(--gold); color: var(--gold); }
-
+  /* ── Feature panel (view/edit) ── */
   .feature-controls {
     display: flex;
     align-items: center;
@@ -1580,13 +1291,6 @@
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
-  }
-
-  .feature-step-hint {
-    font-size: 9px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    font-style: italic;
   }
 
   /* ── Feature panel (view/edit) ── */
@@ -1617,6 +1321,7 @@
     width: min(92vw, 500px);
     max-height: 82vh;
     overflow-y: auto;
+    overscroll-behavior: contain;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
     user-select: none;
     -webkit-user-select: none;
@@ -1668,21 +1373,6 @@
   .attack-bonus { color: var(--gold-light); font-family: sans-serif; font-size: 12px; text-align: center; }
   .attack-damage { color: var(--red-light); font-family: sans-serif; font-size: 12px; text-align: right; }
 
-
-  .attack-edit-btn {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text-muted);
-    font-size: 10px;
-    font-family: sans-serif;
-    padding: 2px 8px;
-    cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    transition: border-color 0.2s, color 0.2s;
-  }
-  .attack-edit-btn.active { color: var(--gold); border-color: var(--gold); }
 
   /* ── Rollable / interactive stat pills — thicker gold border on top of base pill ── */
   .stat-pill.rollable,
@@ -1777,59 +1467,7 @@
   .currency-item label { color: var(--gold); }
   .currency-item input { text-align: center; padding: 6px 2px; font-size: 13px; }
 
-  /* ── Toast ── */
-  #toast {
-    position: fixed;
-    bottom: 90px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: var(--surface2);
-    border: 1px solid var(--gold);
-    color: var(--text);
-    padding: 10px 20px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-family: sans-serif;
-    opacity: 0;
-    transition: opacity 0.3s, transform 0.3s;
-    pointer-events: none;
-    z-index: 200;
-    white-space: nowrap;
-    max-width: 90vw;
-  }
-  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
   /* ── Roll Result Overlay ── */
-  #rollBackdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.55);
-    z-index: 350;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-  }
-  #rollBackdrop.show { opacity: 1; pointer-events: auto; }
-
-  #rollResult {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.85);
-    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
-    border: 2px solid var(--gold);
-    border-radius: 20px;
-    padding: 28px 36px 24px;
-    text-align: center;
-    z-index: 351;
-    opacity: 0;
-    transition: opacity 0.2s, transform 0.2s;
-    pointer-events: none;
-    min-width: 220px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
-  }
-  #rollResult.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
-
   /* ── Spell Description Panel ── */
   #spellBackdrop {
     position: fixed;
@@ -1858,6 +1496,7 @@
     width: min(92vw, 500px);
     max-height: 82vh;
     overflow-y: auto;
+    overscroll-behavior: contain;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
     user-select: none;
     -webkit-user-select: none;
@@ -1866,159 +1505,10 @@
   #spellPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
   #spellPanel.edit-mode { border-color: var(--spell); }
 
-  /* ── Unified Info Panel ── */
-  #infoPanelBackdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.55);
-    z-index: 300;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-  }
-  #infoPanelBackdrop.show { opacity: 1; pointer-events: auto; }
-
-  #infoPanel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.88);
-    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
-    border: 2px solid var(--gold);
-    border-radius: 20px;
-    padding: 22px 24px 20px;
-    z-index: 301;
-    opacity: 0;
-    transition: opacity 0.2s, transform 0.2s, border-color 0.25s;
-    pointer-events: none;
-    width: min(92vw, 500px);
-    max-height: 82vh;
-    overflow-y: auto;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-  }
-  #infoPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  /* ── Panel-open scroll lock ── */
+  html.panel-open, html.panel-open body { overflow: hidden; }
 
   .check-roll-area.holding { background: rgba(var(--accent-rgb),0.08); box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb),0.4); border-radius: var(--radius); }
-
-  .sp-mode-badge {
-    font-size: 9px;
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-    font-family: sans-serif;
-    color: var(--gold);
-    margin-bottom: 6px;
-  }
-  #spellPanel.edit-mode .sp-mode-badge { color: var(--spell); }
-
-  .sp-name {
-    font-size: 22px;
-    font-weight: bold;
-    color: var(--text);
-    margin-bottom: 3px;
-    line-height: 1.2;
-  }
-
-  .sp-meta {
-    font-size: 12px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    font-style: italic;
-    margin-bottom: 12px;
-  }
-
-  .sp-details-grid {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 5px 10px;
-    font-family: sans-serif;
-    font-size: 12px;
-    margin-bottom: 14px;
-    align-items: start;
-  }
-  .sp-detail-label {
-    color: var(--gold);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 9px;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
-    padding-top: 2px;
-  }
-  .sp-detail-value { color: var(--text); }
-
-  .sp-save-dc-box {
-    background: rgba(var(--accent-rgb),0.08);
-    border: 1px solid rgba(var(--accent-rgb),0.35);
-    border-radius: 10px;
-    padding: 10px 14px;
-    text-align: center;
-    margin-bottom: 14px;
-    font-family: sans-serif;
-  }
-  .sp-save-dc-label {
-    font-size: 9px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .sp-save-dc-value {
-    font-size: 34px;
-    font-weight: bold;
-    color: var(--gold-light);
-    line-height: 1.1;
-  }
-  .sp-save-dc-ability { font-size: 11px; color: var(--text-muted); }
-
-  .sp-atk-box {
-    background: rgba(var(--spell-rgb),0.08);
-    border: 1px solid rgba(var(--spell-rgb),0.35);
-    border-radius: 10px;
-    padding: 10px 14px;
-    text-align: center;
-    margin-bottom: 14px;
-    font-family: sans-serif;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    transition: background 0.15s;
-  }
-  .sp-atk-box:active { background: rgba(var(--spell-rgb),0.18); }
-  .sp-atk-label {
-    font-size: 9px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .sp-atk-bonus {
-    font-size: 34px;
-    font-weight: bold;
-    color: var(--spell);
-    line-height: 1.1;
-  }
-  .sp-atk-damage { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
-  .sp-description {
-    font-size: 13px;
-    color: var(--text);
-    font-family: sans-serif;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    margin-bottom: 14px;
-  }
-
-  .sp-dismiss-hint {
-    display: block;
-    font-size: 9px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    text-align: center;
-    margin-top: 6px;
-  }
 
   /* Edit mode visibility toggling */
   .sp-edit-section { display: none; }
@@ -2148,6 +1638,7 @@
     width: min(92vw, 500px);
     max-height: 82vh;
     overflow-y: auto;
+    overscroll-behavior: contain;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
     user-select: none;
     -webkit-user-select: none;
@@ -2321,52 +1812,6 @@
   .ica-copy-notice { font-size:0.73rem;color:var(--spell-light);min-height:1em;margin:4px 0 }
   .ica-paste-area { width:100%;min-height:72px;resize:vertical;padding:7px;font-size:0.8rem;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:sans-serif;box-sizing:border-box;margin:6px 0 4px }
 
-  .rr-label {
-    font-size: 10px;
-    color: var(--gold);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-family: sans-serif;
-    margin-bottom: 6px;
-  }
-  .rr-total {
-    font-size: 80px;
-    font-weight: bold;
-    color: var(--text);
-    line-height: 1;
-    margin: 4px 0;
-  }
-  .rr-breakdown {
-    font-size: 14px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    margin-top: 4px;
-  }
-  .rr-secondary {
-    font-size: 14px;
-    color: var(--red-light);
-    font-family: sans-serif;
-    margin-top: 4px;
-    min-height: 18px;
-    white-space: pre-line;
-  }
-  .rr-nat {
-    font-size: 15px;
-    color: var(--gold-light);
-    margin-top: 8px;
-    min-height: 20px;
-    font-family: sans-serif;
-  }
-  .rr-dismiss {
-    display: block;
-    margin-top: 16px;
-    font-size: 10px;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-
   /* ── Roll Log ── */
   .roll-log-entry {
     padding: 9px 0;
@@ -2463,23 +1908,6 @@
     gap: 10px;
     margin-top: 14px;
   }
-  .hp-dlg-btn {
-    padding: 13px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    font-size: 14px;
-    font-family: sans-serif;
-    cursor: pointer;
-    background: var(--bg);
-    color: var(--text);
-  }
-  .hp-dlg-btn.primary {
-    background: rgba(var(--accent-rgb),0.15);
-    border-color: var(--gold);
-    color: var(--gold-light);
-    font-weight: bold;
-  }
-
   /* ── Feature editor sheet ── */
   .fe-label {
     font-size: 11px;
@@ -2661,90 +2089,6 @@
     box-shadow: 0 0 0 2px rgba(192,57,43,0.5);
   }
 
-  /* ── 3-zone advantage/disadvantage roll button ── */
-  .roll-tri {
-    border: var(--roll-border) solid var(--gold);
-    border-radius: 10px;
-    overflow: hidden;
-    margin: 12px 0;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  .rtz-top {
-    padding: 14px 12px 10px;
-    text-align: center;
-    cursor: pointer;
-    background: rgba(var(--accent-rgb), 0.08);
-    border-bottom: 1px solid rgba(var(--border-rgb), 0.4);
-    transition: background 0.15s;
-  }
-  .rtz-top:active { background: rgba(var(--accent-rgb), 0.18); }
-  .rtz-label {
-    font-size: 10px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    font-family: sans-serif;
-    margin-bottom: 3px;
-  }
-  .rtz-bonus {
-    font-size: 28px;
-    font-weight: bold;
-    color: var(--gold-light);
-    line-height: 1.1;
-  }
-  .rtz-damage {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-  .rtz-bottom {
-    display: flex;
-  }
-  .rtz-dis, .rtz-adv {
-    flex: 1;
-    padding: 9px 4px;
-    text-align: center;
-    cursor: pointer;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    font-family: sans-serif;
-    transition: background 0.15s;
-  }
-  .rtz-dis {
-    background: rgba(192,57,43,0.07);
-    color: var(--red-light);
-    border-right: 1px solid rgba(var(--border-rgb), 0.4);
-  }
-  .rtz-dis:active { background: rgba(192,57,43,0.20); }
-  .rtz-adv {
-    background: rgba(39,174,96,0.07);
-    color: var(--green);
-  }
-  .rtz-adv:active { background: rgba(39,174,96,0.20); }
-
-  .cond-toggle-btn {
-    display: block;
-    width: 100%;
-    padding: 11px;
-    border-radius: 10px;
-    border: none;
-    font-size: 13px;
-    font-family: sans-serif;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    transition: background 0.15s;
-    margin-bottom: 14px;
-  }
-  .cond-toggle-btn.apply  { background: rgba(192,57,43,0.18); color: var(--red-light); border: 1px solid rgba(192,57,43,0.45); }
-  .cond-toggle-btn.remove { background: rgba(192,57,43,0.35); color: var(--red-light); border: 1px solid var(--red-light); }
-  .cond-toggle-btn:active { opacity: 0.75; }
-
   /* ── Settings menu ── */
   #settingsBackdrop {
     position: fixed; inset: 0;
@@ -2769,22 +2113,6 @@
     transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
   }
   #settingsMenu.show { transform: translateY(0); }
-
-  .settings-full-btn {
-    width: 100%;
-    padding: 13px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    font-size: 14px;
-    font-family: sans-serif;
-    cursor: pointer;
-    background: var(--bg);
-    color: var(--text);
-    text-align: center;
-    margin-bottom: 10px;
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .settings-full-btn:active { border-color: var(--gold); color: var(--gold-light); }
 
   .settings-divider {
     border: none;
@@ -3037,7 +2365,7 @@
     padding: 22px 24px 20px; z-index: 301;
     opacity: 0; transition: opacity 0.2s, transform 0.2s, border-color 0.25s;
     pointer-events: none; width: min(92vw, 500px);
-    max-height: 82vh; overflow-y: auto;
+    max-height: 82vh; overflow-y: auto; overscroll-behavior: contain;
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
     user-select: none;
     -webkit-user-select: none;
@@ -3068,6 +2396,54 @@
     box-shadow: 0 8px 32px rgba(0,0,0,0.7);
   }
   #aiImportPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  #importHubBackdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  #importHubBackdrop.show { opacity: 1; pointer-events: auto; }
+  #importHubPanel {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.88);
+    background: linear-gradient(160deg, var(--panel-bg-1), var(--panel-bg-2));
+    border: 2px solid var(--gold); border-radius: 20px;
+    padding: 22px 24px 20px; z-index: 301;
+    opacity: 0; transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none; width: min(92vw, 500px);
+    max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  }
+  #importHubPanel.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  .import-hub-grid {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .import-hub-card {
+    width: 100%;
+    background: rgba(var(--accent-rgb),0.08);
+    border: 1px solid rgba(var(--border-rgb),0.6);
+    border-radius: 12px;
+    padding: 11px 12px;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .import-hub-card:active {
+    border-color: var(--gold);
+    background: rgba(var(--accent-rgb),0.2);
+  }
+  .import-hub-title {
+    font-size: 0.9rem;
+    color: var(--gold-light);
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .import-hub-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+  }
   .ai-step { margin-bottom: 14px; }
   .ai-step-label {
     font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
@@ -3304,7 +2680,7 @@
         <button class="header-btn" onclick="toggleCharMenu()">🎭 ▾</button>
       </div>
       <button class="header-btn" id="undoBtn" onclick="undo()" disabled>↩ Undo</button>
-      <button class="header-btn" onclick="openAIImport('spells')">&#8659; Import</button>
+      <button class="header-btn" onclick="openImportHub()">&#8659; Import</button>
       <button class="header-btn" onclick="openSettings()">⚙ Settings</button>
     </div>
   </div>
@@ -3328,7 +2704,8 @@
   <button class="tab-btn"        data-tab="features"  onclick="switchTab('features')">Features</button>
   <button class="tab-btn"        data-tab="inventory" onclick="switchTab('inventory')">Gear</button>
   <button class="tab-btn"        data-tab="dice"      onclick="switchTab('dice')">Dice</button>
-  <button class="tab-btn"        data-tab="rolls"     onclick="switchTab('rolls')">Logs</button>
+  <button class="tab-btn"        data-tab="rolls"      onclick="switchTab('rolls')">Logs</button>
+  <button class="tab-btn"        data-tab="companions" onclick="switchTab('companions')">&#128009;</button>
 </div>
 
 <!-- ════════ OVERVIEW ════════ -->
@@ -4054,6 +3431,19 @@
   </div>
 </div>
 
+<!-- ════════ COMPANIONS ════════ -->
+<div id="panel-companions" class="panel">
+  <div class="section">
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+      Companions &amp; Forms
+      <button class="attack-edit-btn" onclick="openCreatureStatBlocks()">Open Creature Page &#8594;</button>
+    </div>
+    <div class="section-body" id="companionsBody">
+      <div style="color:var(--text-muted);font-size:12px;font-style:italic;font-family:sans-serif;padding:4px 0">No companions linked. Open the Creature page and creatures linked to this character will appear here.</div>
+    </div>
+  </div>
+</div>
+
 <div id="hpBackdrop" onclick="dismissHpDialog()"></div>
 <div id="hpDialog">
   <div class="hp-dlg-title" data-i18n="modal.set_hp">Set Hit Points</div>
@@ -4260,6 +3650,7 @@
         <select id="spEditCombatType">
           <option value="action">Action</option>
           <option value="bonus">Bonus Action</option>
+          <option value="reaction">Reaction</option>
           <option value="other">Other</option>
         </select>
       </div>
@@ -4401,6 +3792,7 @@
         <select id="trEditCombatType">
           <option value="action">Action</option>
           <option value="bonus">Bonus Action</option>
+          <option value="reaction">Reaction</option>
           <option value="other">Other</option>
         </select>
       </div>
@@ -4680,6 +4072,7 @@
         <select id="fpEditCombatType">
           <option value="action">Action</option>
           <option value="bonus">Bonus Action</option>
+          <option value="reaction">Reaction</option>
           <option value="other">Other</option>
         </select>
       </div>
@@ -4697,10 +4090,7 @@
   <div class="hp-dlg-title" data-i18n="settings.title">Settings</div>
   <div style="height:16px"></div>
   <button class="settings-full-btn" onclick="exportToJSON(); dismissSettings()" data-i18n="btn.save_character">&#128190; Save Character</button>
-  <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(()=>document.getElementById('jsonFileInput').click(), 100)" data-i18n="btn.load_character">&#128194; Load Character</button>
-  <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(openCharImport, 100)" data-i18n="btn.ai_import">&#129302; AI Import Character</button>
-  <button class="settings-full-btn" id="srdEnrichBtn" onclick="enrichAllFromSrd()" data-i18n="btn.fill_srd">&#128218; Fill Descriptions from SRD</button>
-  <button class="settings-full-btn" onclick="dismissSettings(); setTimeout(openDescEnrichPanel, 100)">&#129302; Fill Descriptions with AI</button>
+  <button class="settings-full-btn" onclick="dismissSettings();openCreatureStatBlocks()" style="color:var(--gold-light)">&#128009; Creature Stat Blocks &#8594;</button>
   <hr class="settings-divider">
   <div class="settings-row">
     <div class="settings-row-label">
@@ -4830,6 +4220,7 @@
       <select id="atkEditActionType">
         <option value="action">Action</option>
         <option value="bonus">Bonus Action</option>
+        <option value="reaction">Reaction</option>
         <option value="other">Other</option>
       </select>
     </div>
@@ -4882,6 +4273,7 @@
     <div class="rtz-top" onclick="event.stopPropagation();infoPanelRoll('normal')">
       <div class="rtz-label" id="ipRollLabel">Roll</div>
       <div class="rtz-bonus" id="ipRollBonus">+0</div>
+      <div class="rtz-damage" id="ipRollDamage" style="display:none"></div>
     </div>
     <div class="rtz-bottom">
       <div class="rtz-dis" onclick="event.stopPropagation();infoPanelRoll('dis')" data-i18n="game.disadv">Disadv</div>
@@ -4908,6 +4300,26 @@
 </div>
 
 <!-- ── AI / SRD Import Modal ── -->
+<div id="importHubBackdrop" onclick="dismissImportHub()"></div>
+<div id="importHubPanel">
+  <div class="sp-mode-badge" style="color:var(--gold-light);margin-bottom:10px" data-i18n="import.hub_title">Import</div>
+  <div class="import-hub-grid">
+    <button class="import-hub-card" onclick="openAIImportFromHub('spells')">
+      <div class="import-hub-title" data-i18n="import.option_items_title">1) AI / SRD Import</div>
+      <div class="import-hub-desc" data-i18n="import.option_items_desc">Import spells, features, traits, and items with AI prompts or direct SRD search.</div>
+    </button>
+    <button class="import-hub-card" onclick="openCharImportFromHub()">
+      <div class="import-hub-title" data-i18n="import.option_character_title">2) Import Character</div>
+      <div class="import-hub-desc" data-i18n="import.option_character_desc">Choose AI import from photos or JSON file import for a full character payload.</div>
+    </button>
+    <button class="import-hub-card" onclick="openDescEnrichFromHub()">
+      <div class="import-hub-title" data-i18n="import.option_info_title">3) Import Information</div>
+      <div class="import-hub-desc" data-i18n="import.option_info_desc">Fill or refresh descriptions for your sheet using AI or SRD, on missing-only or all items.</div>
+    </button>
+  </div>
+  <button class="hp-dlg-btn" onclick="dismissImportHub()" style="width:100%;margin-top:8px" data-i18n="btn.cancel">Cancel</button>
+</div>
+
 <div id="aiImportBackdrop" onclick="dismissAIImport()"></div>
 <div id="aiImportPanel">
   <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px">Import</div>
@@ -4954,7 +4366,7 @@
       </div>
     </div>
 
-    <!-- ── SRD mode controls only (results are below) ── -->
+    <!-- ── SRD mode controls + results ── -->
     <div id="srdModeContent" style="display:none">
       <!-- Spell search (type = spells) -->
       <div id="srdSpellCtrl">
@@ -4980,16 +4392,16 @@
         <input class="ai-prompt-box" id="srdEquipSearch" style="min-height:unset;padding:8px 12px;resize:none"
           placeholder="Search equipment by name…" oninput="_srdEquipSearch()">
       </div>
-    </div>
-  </div>
 
-  <!-- ── Lower zone: SRD results (allowed to shift) ── -->
-  <div id="srdResultsArea" style="display:none">
-    <div id="srdResults" class="srd-results-box">
-      <div class="srd-hint">Select a type above to start.</div>
+      <!-- SRD results -->
+      <div id="srdResultsArea" style="margin-top:10px">
+        <div id="srdResults" class="srd-results-box">
+          <div class="srd-hint">Select a type above to start.</div>
+        </div>
+        <div class="ai-copy-notice" id="srdStatus" style="margin-top:6px"></div>
+        <button id="srdAddBtn" class="settings-full-btn" style="margin-top:10px" onclick="addSelectedSRD()">Add Selected</button>
+      </div>
     </div>
-    <div class="ai-copy-notice" id="srdStatus" style="margin-top:6px"></div>
-    <button id="srdAddBtn" class="settings-full-btn" style="margin-top:10px" onclick="addSelectedSRD()">Add Selected</button>
   </div>
 
   <button class="hp-dlg-btn" onclick="dismissAIImport()" style="width:100%;margin-top:8px">Cancel</button>
@@ -5001,52 +4413,98 @@
 <input type="file" id="charSchemaInput" accept=".md,.txt" style="display:none" onchange="loadSchemaFromFile(this)">
 <div id="charImportBackdrop" onclick="dismissCharImport()"></div>
 <div id="charImportPanel">
-  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px">&#129302; AI Character Import</div>
+  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px" data-i18n="import.char_title">Import Character</div>
 
-  <div class="ai-step">
-    <div class="ai-step-label">Step 1 &#8212; Copy the prompt</div>
-    <div class="ci-schema-status" id="ciSchemaStatus"></div>
-    <div id="ciSchemaFilePicker" class="ci-file-picker" style="display:none">
-      <button class="attack-edit-btn" style="width:100%;padding:7px 0;font-size:0.82rem"
-              onclick="document.getElementById('charSchemaInput').click()">Select JSONGeneration.md</button>
-      <div class="ci-or-divider">or</div>
-      <button class="attack-edit-btn" style="width:100%;padding:7px 0;font-size:0.82rem"
-              onclick="useBuiltinSchema()">Use built-in schema</button>
-    </div>
-    <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">
-      Send this prompt + photos of your character sheet to Claude, ChatGPT, or Gemini.
-    </div>
-    <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateCharImportPrompt()">Copy prompt to clipboard</button>
-    <div class="ai-copy-notice" id="ciCopyNotice"></div>
+  <div class="ai-mode-row">
+    <button class="ai-mode-btn active" id="charModeAI" onclick="setCharImportMode('ai')">&#129302; AI</button>
+    <button class="ai-mode-btn" id="charModeJSON" onclick="setCharImportMode('json')">&#128194; JSON</button>
   </div>
 
-  <div class="ai-step" style="margin-top:16px">
-    <div class="ai-step-label">Step 2 &#8212; Paste the AI&#8217;s response</div>
-    <textarea class="ai-prompt-box" id="ciResponsePaste" placeholder="Paste the full character JSON here&#8230;"></textarea>
+  <div id="charImportAiContent">
+    <div class="ai-step">
+      <div class="ai-step-label" data-i18n="import.step1">Step 1 &#8212; Copy the prompt</div>
+      <div class="ci-schema-status" id="ciSchemaStatus"></div>
+      <div id="ciSchemaFilePicker" class="ci-file-picker" style="display:none">
+        <button class="attack-edit-btn" style="width:100%;padding:7px 0;font-size:0.82rem"
+                onclick="document.getElementById('charSchemaInput').click()">Select JSONGeneration.md</button>
+        <div class="ci-or-divider">or</div>
+        <button class="attack-edit-btn" style="width:100%;padding:7px 0;font-size:0.82rem"
+                onclick="useBuiltinSchema()">Use built-in schema</button>
+      </div>
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px" data-i18n="import.char_ai_hint">
+        Send this prompt + photos of your character sheet to Claude, ChatGPT, or Gemini.
+      </div>
+      <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateCharImportPrompt()" data-i18n="import.copy_prompt">Copy prompt to clipboard</button>
+      <div class="ai-copy-notice" id="ciCopyNotice"></div>
+    </div>
+
+    <div class="ai-step" style="margin-top:16px">
+      <div class="ai-step-label" data-i18n="import.step2">Step 2 &#8212; Paste the AI&#8217;s response</div>
+      <textarea class="ai-prompt-box" id="ciResponsePaste" placeholder="Paste the full character JSON here&#8230;" data-i18n-ph="import.char_paste_ph"></textarea>
+    </div>
+    <button class="settings-full-btn" onclick="importCharFromAI()" style="margin-bottom:8px" data-i18n="import.char_action_import">Import Character</button>
   </div>
-  <button class="settings-full-btn" onclick="importCharFromAI()" style="margin-bottom:8px">Import Character</button>
-  <button class="hp-dlg-btn" onclick="dismissCharImport()" style="width:100%;margin-top:8px">Cancel</button>
+
+  <div id="charImportJsonContent" style="display:none">
+    <div class="ai-step">
+      <div class="ai-step-label" data-i18n="import.char_json_title">Import from JSON file</div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px" data-i18n="import.char_json_hint">
+        Load a full {form,state} character JSON exported from this sheet or generated with the documented schema.
+      </div>
+      <button class="settings-full-btn" onclick="openJsonImportFromCharPanel()" data-i18n="import.char_json_choose">Choose JSON File</button>
+    </div>
+  </div>
+
+  <button class="hp-dlg-btn" onclick="dismissCharImport()" style="width:100%;margin-top:8px" data-i18n="btn.cancel">Cancel</button>
 </div>
 
 <div id="descEnrichBackdrop" onclick="dismissDescEnrichPanel()"></div>
 <div id="descEnrichPanel">
-  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px">&#129302; Fill Descriptions with AI</div>
-  <div class="ai-step">
-    <div class="ai-step-label">Step 1 &#8212; Copy the prompt</div>
-    <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">
-      Lists every item on your sheet that is missing a description. Paste the prompt into Claude, ChatGPT, or Gemini.
+  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px" data-i18n="import.info_title">Import Information</div>
+
+  <div class="ai-mode-row">
+    <button class="ai-mode-btn active" id="deModeAI" onclick="setDescImportMode('ai')">&#129302; AI</button>
+    <button class="ai-mode-btn" id="deModeSRD" onclick="setDescImportMode('srd')">&#128218; SRD</button>
+  </div>
+
+  <div class="ai-type-toggle" style="margin-bottom:10px">
+    <button class="ai-type-btn active" id="deScopeMissing" onclick="setDescImportScope('missing')" data-i18n="import.scope_missing">Missing Only</button>
+    <button class="ai-type-btn" id="deScopeAll" onclick="setDescImportScope('all')" data-i18n="import.scope_all">All Entries</button>
+  </div>
+
+  <div class="ai-copy-notice" id="deScopeHint" style="margin-bottom:10px"></div>
+
+  <div id="descEnrichAiContent">
+    <div class="ai-step">
+      <div class="ai-step-label" data-i18n="import.step1">Step 1 &#8212; Copy the prompt</div>
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px" data-i18n="import.info_ai_hint">
+        Generate a prompt to fill descriptions with AI using your selected scope.
+      </div>
+      <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateDescEnrichPrompt()" data-i18n="import.copy_prompt">Copy prompt to clipboard</button>
+      <div class="ai-copy-notice" id="deCopyNotice"></div>
     </div>
-    <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateDescEnrichPrompt()">Copy prompt to clipboard</button>
-    <div class="ai-copy-notice" id="deCopyNotice"></div>
+    <div class="ai-step" style="margin-top:16px">
+      <div class="ai-step-label" data-i18n="import.step2">Step 2 &#8212; Paste the AI&#8217;s response</div>
+      <textarea class="ai-prompt-box" id="deResponsePaste" placeholder="Paste the JSON array here&#8230;" data-i18n-ph="import.info_paste_ph"></textarea>
+    </div>
+    <button class="settings-full-btn" onclick="applyDescEnrichResponse()" style="margin-bottom:8px" data-i18n="import.info_apply">Apply Descriptions</button>
   </div>
-  <div class="ai-step" style="margin-top:16px">
-    <div class="ai-step-label">Step 2 &#8212; Paste the AI&#8217;s response</div>
-    <textarea class="ai-prompt-box" id="deResponsePaste" placeholder="Paste the JSON array here&#8230;"></textarea>
+
+  <div id="descEnrichSrdContent" style="display:none">
+    <div class="ai-step">
+      <div class="ai-step-label" data-i18n="import.info_srd_title">SRD Search</div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px" data-i18n="import.info_srd_hint">
+        Search SRD descriptions for sheet entries using their names. This can fill missing descriptions or refresh all existing descriptions.
+      </div>
+      <button class="settings-full-btn" id="srdEnrichRunBtn" onclick="runDescImportSrd()" data-i18n="import.info_run_srd">Run SRD Import</button>
+      <div class="ai-copy-notice" id="deSrdNotice"></div>
+    </div>
   </div>
-  <button class="settings-full-btn" onclick="applyDescEnrichResponse()" style="margin-bottom:8px">Apply Descriptions</button>
-  <button class="hp-dlg-btn" onclick="dismissDescEnrichPanel()" style="width:100%;margin-top:8px">Cancel</button>
+
+  <button class="hp-dlg-btn" onclick="dismissDescEnrichPanel()" style="width:100%;margin-top:8px" data-i18n="btn.cancel">Cancel</button>
 </div>
 
+<script src="shared.js"></script>
 <script>
 // ── State ──────────────────────────────────────────────────────────────
 const ABILITIES = ['STR','DEX','CON','INT','WIS','CHA'];
@@ -5250,6 +4708,7 @@ let state = {
   damageResistances: {},
   maxSpellsPrepared: 0,
   equipmentItems: [],
+  companions: [],   // [{ creatureId, alias }]
 };
 
 // ── Init ───────────────────────────────────────────────────────────────
@@ -5270,10 +4729,15 @@ function init() {
   buildDiceRoller();
   renderHitDice();
   buildDamageResistances();
+  buildCompanions();
   recalcAll();
   applyPortrait();
   setupAutoSave();
-  setupSwipe();
+  setupSwipe(TABS, () =>
+    document.getElementById('rollResult').classList.contains('show') ||
+    document.getElementById('spellPanel')?.classList.contains('show') ||
+    document.getElementById('attackPanel')?.classList.contains('show')
+  );
 }
 
 // ── Undo stack ─────────────────────────────────────────────────────────
@@ -5594,9 +5058,6 @@ function renderSlotDots(i) {
 }
 
 // ── Ability logic ──────────────────────────────────────────────────────
-function mod(score) { return Math.floor((score - 10) / 2); }
-function fmtMod(m)  { return (m >= 0 ? '+' : '') + m; }
-
 const abilityUndoTimers = {};
 function onAbilityInput(ab, val) {
   if (!abilityUndoTimers[ab]) pushUndo({type: 'ability', ab, previous: state.abilities[ab]});
@@ -5809,93 +5270,6 @@ function showRollsOnly(name, rolls) {
 }
 
 // ── Unified Info Panel ─────────────────────────────────────────────────
-let infoPanelCfg = {};
-
-function openInfoPanel(cfg) {
-  const {
-    badge = 'Info',
-    borderColor = 'var(--gold)',
-    title = '',
-    meta = '',
-    description = '',
-    rollLabel = '',
-    rollBonus = '',
-    rollFn = null,
-    simpleRollLabel = null,
-    simpleRollBonus = '',
-    simpleRollFn = null,
-    editFn = null,
-    actionLabel = null,
-    actionClass = '',
-    actionFn = null,
-  } = cfg;
-
-  infoPanelCfg = { rollFn, simpleRollFn, editFn, actionFn };
-
-  const panel = document.getElementById('infoPanel');
-  panel.style.borderColor = borderColor;
-  document.getElementById('ipBadge').textContent = badge;
-  document.getElementById('ipTitle').textContent = title;
-  const metaEl = document.getElementById('ipMeta');
-  metaEl.textContent = meta;
-  metaEl.style.display = meta ? '' : 'none';
-  document.getElementById('ipDesc').textContent = description;
-
-  const rollBox = document.getElementById('ipRollBox');
-  if (rollFn) {
-    document.getElementById('ipRollLabel').textContent = rollLabel || 'Roll';
-    document.getElementById('ipRollBonus').textContent = rollBonus;
-    rollBox.style.display = '';
-  } else {
-    rollBox.style.display = 'none';
-  }
-
-  const simpleBox = document.getElementById('ipSimpleRollBox');
-  if (simpleRollFn) {
-    document.getElementById('ipSimpleRollLabel').textContent = simpleRollLabel || 'Roll';
-    document.getElementById('ipSimpleRollBonus').textContent = simpleRollBonus;
-    simpleBox.style.display = '';
-  } else {
-    simpleBox.style.display = 'none';
-  }
-
-  document.getElementById('ipEditBtn').style.display = editFn ? '' : 'none';
-  document.getElementById('ipEditSection').style.display = 'none';
-  document.getElementById('ipDesc').style.display = '';
-  document.getElementById('ipDismissHint').style.display = '';
-
-  const actionBtn = document.getElementById('ipActionBtn');
-  if (actionFn && actionLabel) {
-    actionBtn.textContent = actionLabel;
-    actionBtn.className = 'cond-toggle-btn ' + actionClass;
-    actionBtn.style.display = '';
-  } else {
-    actionBtn.style.display = 'none';
-  }
-
-  pushModalHistory();
-  document.getElementById('infoPanelBackdrop').classList.add('show');
-  panel.classList.add('show');
-}
-
-function dismissInfoPanel() {
-  popModalHistory();
-  document.getElementById('infoPanel').classList.remove('show');
-  document.getElementById('infoPanelBackdrop').classList.remove('show');
-  infoPanelCfg = {};
-  infoPanelEditCfg = null;
-  document.querySelectorAll('.holding').forEach(el => el.classList.remove('holding'));
-}
-
-function infoPanelRoll(mode) {
-  if (infoPanelCfg.rollFn) infoPanelCfg.rollFn(mode || 'normal');
-}
-function infoPanelSimpleRoll() {
-  if (infoPanelCfg.simpleRollFn) infoPanelCfg.simpleRollFn();
-}
-function infoPanelEdit() {
-  if (infoPanelCfg.editFn) infoPanelCfg.editFn();
-}
 
 let infoPanelEditCfg = null;
 
@@ -5951,36 +5325,8 @@ function cancelInfoPanelEdit() {
   infoPanelEditCfg = null;
   dismissInfoPanel();
 }
-function infoPanelAction() {
-  const fn = infoPanelCfg.actionFn;
-  dismissInfoPanel();
-  if (fn) fn();
-}
-
 // ── Roll result overlay & log ──────────────────────────────────────────
 let rollLog = [];
-
-function showRoll(label, breakdown, total, nat, secondary) {
-  pushModalHistory();
-  document.getElementById('rrLabel').textContent    = label;
-  document.getElementById('rrTotal').textContent    = total;
-  document.getElementById('rrBreak').textContent    = breakdown + ' = ' + total;
-  document.getElementById('rrSecondary').textContent = secondary || '';
-  document.getElementById('rrNat').textContent      = nat;
-  document.getElementById('rollResult').classList.add('show');
-  document.getElementById('rollBackdrop').classList.add('show');
-
-  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-  rollLog.unshift({label, breakdown, total, nat, secondary: secondary || '', time});
-  if (rollLog.length > 50) rollLog.pop();
-  renderRollLog();
-}
-
-function dismissRollResult() {
-  popModalHistory();
-  document.getElementById('rollResult').classList.remove('show');
-  document.getElementById('rollBackdrop').classList.remove('show');
-}
 
 function renderRollLog() {
   const el = document.getElementById('rollLogList');
@@ -6068,7 +5414,7 @@ function rollDamageFromSpellPanel() {
 
 function getProfBonus() {
   const lvl = parseInt(document.getElementById('charLevel')?.value) || 1;
-  return Math.ceil(lvl / 4) + 1;
+  return profBonus(lvl);
 }
 
 function recalcAll() {
@@ -8913,27 +8259,32 @@ function renderAttacks() {
   const list = document.getElementById('attackList');
 
   const combatSpells = state.spells.filter(sp => sp.showInCombat);
-  const combatSpellActions = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'action');
-  const combatSpellBonus   = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'bonus');
-  const combatSpellOther   = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'other');
+  const combatSpellActions   = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'action');
+  const combatSpellBonus     = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'bonus');
+  const combatSpellReaction  = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'reaction');
+  const combatSpellOther     = combatSpells.filter(sp => (sp.combatActionType || 'action') === 'other');
 
   const combatTraits = (state.infoTraits || []).filter(t => t.showInCombat);
-  const combatTraitActions = combatTraits.filter(t => (t.combatActionType || 'action') === 'action');
-  const combatTraitBonus   = combatTraits.filter(t => (t.combatActionType || 'action') === 'bonus');
-  const combatTraitOther   = combatTraits.filter(t => (t.combatActionType || 'action') === 'other');
+  const combatTraitActions   = combatTraits.filter(t => (t.combatActionType || 'action') === 'action');
+  const combatTraitBonus     = combatTraits.filter(t => (t.combatActionType || 'action') === 'bonus');
+  const combatTraitReaction  = combatTraits.filter(t => (t.combatActionType || 'action') === 'reaction');
+  const combatTraitOther     = combatTraits.filter(t => (t.combatActionType || 'action') === 'other');
 
   const combatFeatures = (state.classFeatures || []).filter(f => f.showInCombat);
-  const combatFeatActions = combatFeatures.filter(f => (f.combatActionType || 'action') === 'action');
-  const combatFeatBonus   = combatFeatures.filter(f => (f.combatActionType || 'action') === 'bonus');
-  const combatFeatOther   = combatFeatures.filter(f => (f.combatActionType || 'action') === 'other');
+  const combatFeatActions    = combatFeatures.filter(f => (f.combatActionType || 'action') === 'action');
+  const combatFeatBonus      = combatFeatures.filter(f => (f.combatActionType || 'action') === 'bonus');
+  const combatFeatReaction   = combatFeatures.filter(f => (f.combatActionType || 'action') === 'reaction');
+  const combatFeatOther      = combatFeatures.filter(f => (f.combatActionType || 'action') === 'other');
 
-  const actionAtks = state.attacks.filter(a => (a.actionType || 'action') === 'action');
-  const bonusAtks  = state.attacks.filter(a => (a.actionType || 'action') === 'bonus');
-  const otherAtks  = state.attacks.filter(a => (a.actionType || 'action') === 'other');
+  const actionAtks   = state.attacks.filter(a => (a.actionType || 'action') === 'action');
+  const bonusAtks    = state.attacks.filter(a => (a.actionType || 'action') === 'bonus');
+  const reactionAtks = state.attacks.filter(a => (a.actionType || 'action') === 'reaction');
+  const otherAtks    = state.attacks.filter(a => (a.actionType || 'action') === 'other');
 
-  const hasVisActions = actionAtks.length > 0 || combatSpellActions.length > 0 || combatTraitActions.length > 0 || combatFeatActions.length > 0;
-  const hasVisBonus   = bonusAtks.length > 0  || combatSpellBonus.length > 0   || combatTraitBonus.length > 0  || combatFeatBonus.length > 0;
-  const hasVisOther   = otherAtks.length > 0  || combatSpellOther.length > 0   || combatTraitOther.length > 0  || combatFeatOther.length > 0;
+  const hasVisActions  = actionAtks.length > 0   || combatSpellActions.length > 0  || combatTraitActions.length > 0  || combatFeatActions.length > 0;
+  const hasVisBonus    = bonusAtks.length > 0    || combatSpellBonus.length > 0    || combatTraitBonus.length > 0    || combatFeatBonus.length > 0;
+  const hasVisReaction = reactionAtks.length > 0 || combatSpellReaction.length > 0 || combatTraitReaction.length > 0 || combatFeatReaction.length > 0;
+  const hasVisOther    = otherAtks.length > 0    || combatSpellOther.length > 0    || combatTraitOther.length > 0    || combatFeatOther.length > 0;
 
   function makeEmptyRow(msg) {
     return `<div class="attack-row" style="cursor:default"><span class="attack-name" style="color:var(--text-muted);font-size:12px;font-style:italic">${msg}</span><span></span><span></span></div>`;
@@ -9029,10 +8380,17 @@ function renderAttacks() {
     html += makeEmptyRow(_t('game.no_bonus_actions') ?? 'No bonus actions');
   }
 
-  // Reactions — always rendered (no reaction attack type yet, always shows placeholder)
+  // Reactions — always rendered
   html += '<div style="margin-top:8px"></div>';
   html += `<div class="attack-section-label">${_t('game.reactions') ?? 'Reactions'}</div>`;
-  html += makeEmptyRow(_t('game.no_reactions') ?? 'No reactions');
+  if (hasVisReaction) {
+    reactionAtks.forEach(a => { html += makeAtkRow(a, state.attacks.indexOf(a)); });
+    combatSpellReaction.forEach(sp => { html += makeSpellRow(sp, state.spells.indexOf(sp)); });
+    combatTraitReaction.forEach(t  => { html += makeTraitRow(t,  state.infoTraits.indexOf(t)); });
+    combatFeatReaction.forEach(f  => { html += makeFeatureRow(f, state.classFeatures.indexOf(f)); });
+  } else {
+    html += makeEmptyRow(_t('game.no_reactions') ?? 'No reactions');
+  }
 
   // Other — only when there are items
   if (hasVisOther) {
@@ -9252,59 +8610,17 @@ function updateHeader() {
 
 // ── Tabs ───────────────────────────────────────────────────────────────
 const TABS = ['overview','abilities','combat','spells','features','inventory','dice','rolls'];
-
-function switchTab(id) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-' + id).classList.add('active');
-  const btn = document.querySelector(`.tab-btn[data-tab="${id}"]`);
-  if (btn) { btn.classList.add('active'); btn.scrollIntoView({inline: 'center', block: 'nearest'}); }
-}
-
-function setupSwipe() {
-  let x0 = null, y0 = null, xLast = null, yLast = null;
-  document.body.addEventListener('touchstart', e => {
-    x0    = e.touches[0].clientX;
-    y0    = e.touches[0].clientY;
-    xLast = x0;
-    yLast = y0;
-  }, {passive: true});
-  document.body.addEventListener('touchmove', e => {
-    if (e.touches.length > 0) {
-      xLast = e.touches[0].clientX;
-      yLast = e.touches[0].clientY;
-    }
-  }, {passive: true});
-  function applySwipe(endX, endY) {
-    if (x0 === null) return;
-    const dx = endX - x0;
-    const dy = endY - y0;
-    x0 = null; xLast = null; yLast = null;
-    if (document.getElementById('rollResult').classList.contains('show')) return;
-    if (document.getElementById('spellPanel')?.classList.contains('show')) return;
-    if (document.getElementById('attackPanel')?.classList.contains('show')) return;
-    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
-    const cur = TABS.indexOf(document.querySelector('.tab-btn.active')?.dataset.tab ?? TABS[0]);
-    const next = Math.max(0, Math.min(TABS.length - 1, cur + (dx < 0 ? 1 : -1)));
-    if (next !== cur) switchTab(TABS[next]);
-  }
-  document.body.addEventListener('touchend', e => {
-    applySwipe(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-  }, {passive: true});
-  // touchcancel fires when the browser takes over the gesture (e.g. scroll);
-  // use the last tracked position so a nearly-complete horizontal swipe still registers.
-  document.body.addEventListener('touchcancel', () => {
-    applySwipe(xLast ?? x0 ?? 0, yLast ?? y0 ?? 0);
-  }, {passive: true});
-}
+// switchTab() and setupSwipe() are defined in shared.js
 
 // ── Back-button / swipe-back (Android & iOS Safari) ───────────────────
 let _modalStatePushed = false;
 function pushModalHistory() {
   _modalStatePushed = true;
+  document.documentElement.classList.add('panel-open');
   history.pushState({dndModal: true}, '');
 }
 function popModalHistory() {
+  document.documentElement.classList.remove('panel-open');
   if (_modalStatePushed) {
     _modalStatePushed = false;
     history.back();
@@ -9347,6 +8663,79 @@ function dismissSettings() {
   document.getElementById('settingsBackdrop').classList.remove('show');
   document.getElementById('settingsMenu').classList.remove('show');
   popModalHistory();
+}
+
+// ── Creature Stat Block navigation ────────────────────────────────────
+function openCreatureStatBlocks(creatureId) {
+  saveData();
+  const charName = document.getElementById('charName')?.value?.trim() || 'Character';
+  const ctx = { from: 'sheet', charId: rosterActiveId, charName, url: 'dnd-character-sheet.html' };
+  try { localStorage.setItem('dnd5e_creature_context', JSON.stringify(ctx)); } catch(e) {}
+  if (creatureId) {
+    try { localStorage.setItem('dnd5e_creature_open', creatureId); } catch(e) {}
+  }
+  window.location.href = 'creature-stat-block.html';
+}
+
+// ── Companions panel ──────────────────────────────────────────────────
+function buildCompanions() {
+  const body = document.getElementById('companionsBody');
+  if (!body) return;
+  const companions = state.companions || [];
+  // Load creature roster to display card data
+  let creatureRoster = null;
+  try {
+    const raw = localStorage.getItem('dnd5e_creatures');
+    creatureRoster = raw ? JSON.parse(raw) : null;
+  } catch(e) {}
+  const creatures = creatureRoster?.creatures || {};
+
+  if (!companions.length) {
+    body.innerHTML = '<div style="color:var(--text-muted);font-size:12px;font-style:italic;font-family:sans-serif;padding:4px 0">No companions linked yet. Use the Creature page to create stat blocks.</div>';
+    // Show a grid of ALL creatures from the roster as quick links
+    const ids = Object.keys(creatures);
+    if (ids.length) {
+      body.innerHTML += '<div style="color:var(--text-muted);font-size:11px;font-family:sans-serif;margin-top:10px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">All Creatures</div>';
+      body.innerHTML += '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+        ids.map(id => {
+          const e = creatures[id];
+          const p = e.payload || {};
+          const cr = p.cr !== undefined ? (p.cr === 0.125 ? '1/8' : p.cr === 0.25 ? '1/4' : p.cr === 0.5 ? '1/2' : String(p.cr)) : '?';
+          const portrait = e.portrait || p.portrait;
+          return `<div onclick="openCreatureStatBlocks('${id}')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;font-family:sans-serif;font-size:12px;transition:border-color 0.15s" onmouseenter="this.style.borderColor='var(--gold)'" onmouseleave="this.style.borderColor='var(--border)'">
+            ${portrait ? `<img src="${portrait}" style="width:30px;height:30px;border-radius:4px;object-fit:cover">` : '<span style="font-size:20px">🐉</span>'}
+            <div>
+              <div style="color:var(--text);font-weight:600">${escHtml(p.name || e.name || 'Unknown')}</div>
+              <div style="color:var(--text-muted);font-size:10px">CR ${cr} ${escHtml(p.type||'')}</div>
+            </div>
+          </div>`;
+        }).join('') + '</div>';
+    }
+    return;
+  }
+
+  body.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+    companions.map((comp, i) => {
+      const e = creatures[comp.creatureId];
+      const p = e?.payload || {};
+      const name = comp.alias || p.name || e?.name || 'Unknown';
+      const portrait = e?.portrait || p.portrait;
+      return `<div onclick="openCreatureStatBlocks('${comp.creatureId}')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;font-family:sans-serif;font-size:12px;transition:border-color 0.15s;position:relative" onmouseenter="this.style.borderColor='var(--gold)'" onmouseleave="this.style.borderColor='var(--border)'">
+        ${portrait ? `<img src="${portrait}" style="width:30px;height:30px;border-radius:4px;object-fit:cover">` : '<span style="font-size:20px">🐉</span>'}
+        <div>
+          <div style="color:var(--text);font-weight:600">${escHtml(name)}</div>
+          <div style="color:var(--text-muted);font-size:10px">${escHtml(p.type||'')}</div>
+        </div>
+        <button onclick="event.stopPropagation();unlinkCompanion(${i})" style="position:absolute;top:4px;right:4px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:1px 4px">✕</button>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+function unlinkCompanion(index) {
+  if (!state.companions) return;
+  state.companions.splice(index, 1);
+  buildCompanions();
+  saveData();
 }
 
 // ── Font size ──────────────────────────────────────────────────────────
@@ -9527,16 +8916,6 @@ function loadLangPref() {
   return localStorage.getItem('dnd5e_lang') || 'en';
 }
 
-// ── Toast ──────────────────────────────────────────────────────────────
-let toastTimer;
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
-}
-
 // ── Portrait ───────────────────────────────────────────────────────────
 function applyPortrait() {
   const img = document.getElementById('portraitImg');
@@ -9680,7 +9059,7 @@ function clearSheet() {
 function _rebuildAll() {
   buildAbilityGrid(); buildSkillsList(); buildEquipProfList(); buildConditions();
   buildSpellSlots(); buildSpellsKnown(); buildSpellsPrepared(); buildFeatures(); buildFeaturedSpells(); buildFeaturedTraits();
-  buildInfoTraits(); buildEquipmentItems(); buildDiceRoller(); renderHitDice(); buildDamageResistances(); renderAttacks();
+  buildInfoTraits(); buildEquipmentItems(); buildDiceRoller(); renderHitDice(); buildDamageResistances(); renderAttacks(); buildCompanions();
   recalcAll(); updateHeader(); updateHP(); applyPortrait();
   document.getElementById('inspirationBtn').classList.toggle('active', state.inspiration);
 }
@@ -9944,6 +9323,7 @@ function _applyPayloadData(payload) {
     if (!Array.isArray(state.equipProficiencies)) state.equipProficiencies = [];
     if (!Array.isArray(state.customEquipProfRows)) state.customEquipProfRows = [];
     if (!Array.isArray(state.equipmentItems)) state.equipmentItems = [];
+    if (!Array.isArray(state.companions)) state.companions = [];
   }
 }
 
@@ -9981,6 +9361,34 @@ function _normalizeFeature(f) {
 // ── AI Import ──────────────────────────────────────────────────────────
 let aiImportType = 'spells';
 let srdModalMode  = 'ai';
+let charImportMode = 'ai';
+let descImportMode = 'ai';
+let descImportScope = 'missing';
+
+function openImportHub() {
+  document.getElementById('importHubBackdrop').classList.add('show');
+  document.getElementById('importHubPanel').classList.add('show');
+}
+
+function dismissImportHub() {
+  document.getElementById('importHubBackdrop').classList.remove('show');
+  document.getElementById('importHubPanel').classList.remove('show');
+}
+
+function openAIImportFromHub(type) {
+  dismissImportHub();
+  setTimeout(() => openAIImport(type || 'spells'), 80);
+}
+
+function openCharImportFromHub() {
+  dismissImportHub();
+  setTimeout(openCharImport, 80);
+}
+
+function openDescEnrichFromHub() {
+  dismissImportHub();
+  setTimeout(openDescEnrichPanel, 80);
+}
 
 function openAIImport(type) {
   aiImportType = type || 'spells';
@@ -10016,7 +9424,7 @@ function setModalMode(mode) {
   document.getElementById('aiModeSrd').classList.toggle('active', mode === 'srd');
   document.getElementById('aiModeContent').style.display    = mode === 'ai'  ? '' : 'none';
   document.getElementById('srdModeContent').style.display   = mode === 'srd' ? '' : 'none';
-  document.getElementById('srdResultsArea').style.display   = mode === 'srd' ? '' : 'none';
+  // srdResultsArea is inside srdModeContent; visibility follows its parent
   if (mode === 'srd') _srdInitForType(aiImportType);
 }
 
@@ -10940,12 +10348,31 @@ async function _enrichEquipDescriptions(items) {
   if (updated) { buildEquipmentItems(); saveData(); }
 }
 
-async function enrichAllFromSrd() {
-  const btn      = document.getElementById('srdEnrichBtn');
-  const origText = btn.textContent;
-  btn.disabled   = true;
+async function enrichAllFromSrd(opts = {}) {
+  const includeExisting = !!opts.includeExisting;
+  const btn = opts.buttonEl || document.getElementById('srdEnrichRunBtn') || document.getElementById('srdEnrichBtn');
+  const origText = btn ? btn.textContent : '';
+  if (btn) btn.disabled = true;
   let updated = 0, fetched = 0;
   const use24 = await _srdUse24();
+
+  const setBusy = txt => {
+    if (btn) btn.textContent = txt;
+  };
+  const shouldApplyDesc = (item, desc) => {
+    if (!desc) return false;
+    const next = String(desc).trim();
+    if (!next) return false;
+    const prev = String(item.description || '').trim();
+    if (!includeExisting) {
+      if (prev) return false;
+      item.description = next;
+      return true;
+    }
+    if (prev === next) return false;
+    item.description = next;
+    return true;
+  };
 
   if (use24) {
     async function _enrich24(items, category, applyFn, getPool) {
@@ -10958,41 +10385,24 @@ async function enrichAllFromSrd() {
                       pool.find(r => r.name.toLowerCase().includes(q));
         if (!match) continue;
         fetched++;
-        btn.textContent = `Checking ${fetched}…`;
+        setBusy(`Checking ${fetched}...`);
         if (applyFn(item, match)) updated++;
       }
     }
     try {
-      await _enrich24(state.spells || [], 'spells', (item, d) => {
-        if (item.description) return false;
-        const desc = d.desc || '';
-        if (!desc) return false;
-        item.description = desc; return true;
-      });
-      await _enrich24(state.infoTraits || [], null, (item, d) => {
-        if (item.description) return false;
-        const desc = d.description || d.desc || '';
-        if (!desc) return false;
-        item.description = desc; return true;
-      }, async () => {
+      await _enrich24(state.spells || [], 'spells', (item, d) => shouldApplyDesc(item, d.desc || ''));
+      await _enrich24(state.infoTraits || [], null, (item, d) => shouldApplyDesc(item, d.description || d.desc || ''), async () => {
         const sp = await _srd24Load('species');
-        return sp.flatMap(s => [...(s.traits || []),
-          ...(s.subspecies || []).flatMap(sub => sub.traits || [])]);
+        return sp.flatMap(s => [...(s.traits || []), ...(s.subspecies || []).flatMap(sub => sub.traits || [])]);
       });
-      await _enrich24(state.classFeatures || [], null, (item, d) => {
-        if (item.description) return false;
-        const desc = d.description || d.desc || '';
-        if (!desc) return false;
-        item.description = desc; return true;
-      }, async () => {
+      await _enrich24(state.classFeatures || [], null, (item, d) => shouldApplyDesc(item, d.description || d.desc || ''), async () => {
         const cls = await _srd24Load('classes');
-        return cls.flatMap(c => [...(c.features || []),
-          ...(c.subclasses || []).flatMap(sub => sub.features || [])]);
+        return cls.flatMap(c => [...(c.features || []), ...(c.subclasses || []).flatMap(sub => sub.features || [])]);
       });
       await _enrich24(state.equipmentItems || [], 'equipment', (item, d) => {
         const m = _mapSrd24Equipment(d);
         let changed = false;
-        if (!item.description && m.description) { item.description = m.description; changed = true; }
+        if (shouldApplyDesc(item, m.description)) changed = true;
         if (!item.weight   && m.weight)   { item.weight   = m.weight;   changed = true; }
         if (!item.cost     && m.cost)     { item.cost     = m.cost;     changed = true; }
         if (!item.category && m.category) { item.category = m.category; changed = true; }
@@ -11009,11 +10419,10 @@ async function enrichAllFromSrd() {
       const results = list.results || [];
       for (const item of items) {
         const q = (item.name || '').toLowerCase();
-        const match = results.find(r => r.name.toLowerCase() === q) ||
-                      results.find(r => r.name.toLowerCase().includes(q));
+        const match = results.find(r => r.name.toLowerCase() === q) || results.find(r => r.name.toLowerCase().includes(q));
         if (!match) continue;
         fetched++;
-        btn.textContent = `Checking ${fetched}…`;
+        setBusy(`Checking ${fetched}...`);
         try {
           const detail = await _srdGet('/' + endpoint + '/' + match.index);
           if (applyFn(item, detail)) updated++;
@@ -11022,25 +10431,13 @@ async function enrichAllFromSrd() {
     }
     const _rawDesc = d => (Array.isArray(d.desc) ? d.desc : [d.desc || '']).join('\n\n');
     try {
-      await _enrich(state.spells || [], 'spells', (item, d) => {
-        if (item.description) return false;
-        const desc = _rawDesc(d); if (!desc) return false;
-        item.description = desc; return true;
-      });
-      await _enrich(state.infoTraits || [], 'traits', (item, d) => {
-        if (item.description) return false;
-        const desc = _rawDesc(d); if (!desc) return false;
-        item.description = desc; return true;
-      });
-      await _enrich(state.classFeatures || [], 'features', (item, d) => {
-        if (item.description) return false;
-        const desc = _rawDesc(d); if (!desc) return false;
-        item.description = desc; return true;
-      });
+      await _enrich(state.spells || [], 'spells', (item, d) => shouldApplyDesc(item, _rawDesc(d)));
+      await _enrich(state.infoTraits || [], 'traits', (item, d) => shouldApplyDesc(item, _rawDesc(d)));
+      await _enrich(state.classFeatures || [], 'features', (item, d) => shouldApplyDesc(item, _rawDesc(d)));
       await _enrich(state.equipmentItems || [], 'equipment', (item, d) => {
         const m = _mapSrdEquipment(d);
         let changed = false;
-        if (!item.description && m.description) { item.description = m.description; changed = true; }
+        if (shouldApplyDesc(item, m.description)) changed = true;
         if (!item.weight   && m.weight)   { item.weight   = m.weight;   changed = true; }
         if (!item.cost     && m.cost)     { item.cost     = m.cost;     changed = true; }
         if (!item.category && m.category) { item.category = m.category; changed = true; }
@@ -11056,11 +10453,14 @@ async function enrichAllFromSrd() {
     buildInfoTraits(); buildFeatures(); buildEquipmentItems();
     saveData();
   }
-  btn.disabled = false;
-  btn.textContent = origText;
-  dismissSettings();
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+  if (document.getElementById('descEnrichPanel')?.classList.contains('show')) dismissDescEnrichPanel();
+  else if (document.getElementById('settingsMenu')?.classList.contains('show')) dismissSettings();
   toast(updated > 0
-    ? `${updated} item${updated > 1 ? 's' : ''} filled from SRD`
+    ? `${updated} item${updated > 1 ? 's' : ''} ${includeExisting ? 'updated' : 'filled'} from SRD`
     : 'No new SRD content found');
 }
 
@@ -11069,6 +10469,9 @@ async function enrichAllFromSrd() {
 function openDescEnrichPanel() {
   document.getElementById('deResponsePaste').value = '';
   document.getElementById('deCopyNotice').textContent = '';
+  document.getElementById('deSrdNotice').textContent = '';
+  setDescImportMode('ai');
+  setDescImportScope('missing');
   document.getElementById('descEnrichBackdrop').classList.add('show');
   document.getElementById('descEnrichPanel').classList.add('show');
 }
@@ -11078,21 +10481,57 @@ function dismissDescEnrichPanel() {
   document.getElementById('descEnrichPanel').classList.remove('show');
 }
 
-function generateDescEnrichPrompt() {
+function setDescImportMode(mode) {
+  descImportMode = mode;
+  document.getElementById('deModeAI').classList.toggle('active', mode === 'ai');
+  document.getElementById('deModeSRD').classList.toggle('active', mode === 'srd');
+  document.getElementById('descEnrichAiContent').style.display = mode === 'ai' ? '' : 'none';
+  document.getElementById('descEnrichSrdContent').style.display = mode === 'srd' ? '' : 'none';
+}
+
+function setDescImportScope(scope) {
+  descImportScope = scope;
+  const all = scope === 'all';
+  document.getElementById('deScopeMissing').classList.toggle('active', !all);
+  document.getElementById('deScopeAll').classList.toggle('active', all);
+  document.getElementById('deScopeHint').textContent = all
+    ? (_t('import.scope_hint_all') ?? 'Scope: update all current spell/feature/trait/item descriptions from AI or SRD.')
+    : (_t('import.scope_hint_missing') ?? 'Scope: only entries with empty descriptions will be targeted.');
+}
+
+function runDescImportSrd() {
+  const includeExisting = descImportScope === 'all';
+  document.getElementById('deSrdNotice').textContent = includeExisting
+    ? (_t('import.srd_running_all') ?? 'Running SRD import for all entries...')
+    : (_t('import.srd_running_missing') ?? 'Running SRD import for missing descriptions...');
+  enrichAllFromSrd({ includeExisting, buttonEl: document.getElementById('srdEnrichRunBtn') });
+}
+
+function _collectDescImportItems(includeExisting) {
   const items = [];
-  (state.spells        || []).forEach(s => { if (!s.description) items.push({ type: 'spell',     name: s.name }); });
-  (state.classFeatures || []).forEach(f => { if (!f.description) items.push({ type: 'feature',   name: f.name }); });
-  (state.infoTraits    || []).forEach(t => { if (!t.description) items.push({ type: 'trait',     name: t.name }); });
-  (state.equipmentItems|| []).forEach(e => { if (!e.description) items.push({ type: 'equipment', name: e.name }); });
+  const include = (obj, type) => {
+    const desc = String(obj.description || '').trim();
+    if (includeExisting || !desc) items.push({ type, name: obj.name });
+  };
+  (state.spells || []).forEach(s => include(s, 'spell'));
+  (state.classFeatures || []).forEach(f => include(f, 'feature'));
+  (state.infoTraits || []).forEach(t => include(t, 'trait'));
+  (state.equipmentItems || []).forEach(e => include(e, 'equipment'));
+  return items;
+}
+
+function generateDescEnrichPrompt() {
+  const includeExisting = descImportScope === 'all';
+  const items = _collectDescImportItems(includeExisting);
 
   if (!items.length) {
-    toast('All items already have descriptions');
+    toast(includeExisting ? 'No entries available to update' : 'All items already have descriptions');
     return;
   }
 
   const prompt =
-`You are a D&D 5e rules expert. The following items on a character sheet are missing descriptions.
-For each item, write a concise but complete D&D 5e description (2–5 sentences).
+`You are a D&D 5e rules expert. The following items are from my character sheet.
+${includeExisting ? 'For each item, write a concise and complete D&D 5e description (2–5 sentences), replacing existing text when needed.' : 'The listed items are missing descriptions. For each item, write a concise but complete D&D 5e description (2–5 sentences).'}
 
 Rules:
 - Output ONLY a raw JSON array — no markdown code fences, no explanation.
@@ -11108,10 +10547,12 @@ Output the JSON array now:`;
 
   navigator.clipboard.writeText(prompt).then(() => {
     document.getElementById('deCopyNotice').textContent =
-      `✓ Copied! ${items.length} item(s) listed. Paste into Claude, ChatGPT, or Gemini, then paste the response below.`;
+      (_t('import.info_copy_success') ?? 'Copied. {count} item(s) listed ({scope}). Paste into Claude, ChatGPT, or Gemini, then paste the response below.')
+        .replace('{count}', String(items.length))
+        .replace('{scope}', includeExisting ? (_t('import.scope_all_short') ?? 'all entries') : (_t('import.scope_missing_short') ?? 'missing only'));
   }).catch(() => {
     document.getElementById('deCopyNotice').textContent =
-      'Could not auto-copy — the prompt is shown below; copy it manually, then clear and paste the AI response.';
+      _t('import.copy_fail_long') ?? 'Could not auto-copy — the prompt is shown below; copy it manually, then clear and paste the AI response.';
     document.getElementById('deResponsePaste').value = prompt;
     document.getElementById('deResponsePaste').focus();
     document.getElementById('deResponsePaste').select();
@@ -11121,6 +10562,7 @@ Output the JSON array now:`;
 function applyDescEnrichResponse() {
   const raw = document.getElementById('deResponsePaste').value.trim();
   if (!raw) { toast('Nothing pasted yet'); return; }
+  const includeExisting = descImportScope === 'all';
   let arr;
   try {
     const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
@@ -11138,8 +10580,13 @@ function applyDescEnrichResponse() {
     if (!desc) continue;
     const applyTo = list => {
       const match = list.find(x => (x.name || '').toLowerCase() === name);
-      if (match && !match.description) { match.description = desc; updated++; return true; }
-      return false;
+      if (!match) return false;
+      const prev = String(match.description || '').trim();
+      if (!includeExisting && prev) return false;
+      if (prev === desc) return false;
+      match.description = desc;
+      updated++;
+      return true;
     };
     if      (item.type === 'spell')     applyTo(state.spells        || []);
     else if (item.type === 'feature')   applyTo(state.classFeatures || []);
@@ -11275,11 +10722,12 @@ let _charImportSchema = null;
 
 function openCharImport() {
   _charImportSchema = null;
+  setCharImportMode('ai');
   document.getElementById('ciResponsePaste').value = '';
   document.getElementById('ciCopyNotice').textContent = '';
   document.getElementById('ciSchemaFilePicker').style.display = 'none';
   const status = document.getElementById('ciSchemaStatus');
-  status.textContent = 'Looking for JSONGeneration.md…';
+  status.textContent = _t('import.char_schema_searching') ?? 'Looking for JSONGeneration.md…';
   status.className = 'ci-schema-status';
   document.getElementById('charImportBackdrop').classList.add('show');
   document.getElementById('charImportPanel').classList.add('show');
@@ -11289,6 +10737,19 @@ function openCharImport() {
 function dismissCharImport() {
   document.getElementById('charImportBackdrop').classList.remove('show');
   document.getElementById('charImportPanel').classList.remove('show');
+}
+
+function setCharImportMode(mode) {
+  charImportMode = mode;
+  document.getElementById('charModeAI').classList.toggle('active', mode === 'ai');
+  document.getElementById('charModeJSON').classList.toggle('active', mode === 'json');
+  document.getElementById('charImportAiContent').style.display = mode === 'ai' ? '' : 'none';
+  document.getElementById('charImportJsonContent').style.display = mode === 'json' ? '' : 'none';
+}
+
+function openJsonImportFromCharPanel() {
+  dismissCharImport();
+  setTimeout(() => document.getElementById('jsonFileInput').click(), 100);
 }
 
 async function _tryLoadCharSchema() {
@@ -11304,7 +10765,7 @@ async function _tryLoadCharSchema() {
     document.getElementById('ciSchemaFilePicker').style.display = 'none';
   } catch(e) {
     const el = document.getElementById('ciSchemaStatus');
-    el.textContent = 'Schema not auto-loaded — select it or use the built-in one.';
+    el.textContent = _t('import.char_schema_missing') ?? 'Schema not auto-loaded — select it or use the built-in one.';
     el.className = 'ci-schema-status';
     document.getElementById('ciSchemaFilePicker').style.display = '';
   }
@@ -11327,7 +10788,7 @@ function loadSchemaFromFile(input) {
 function useBuiltinSchema() {
   _charImportSchema = _BUILTIN_CHAR_SCHEMA;
   const el = document.getElementById('ciSchemaStatus');
-  el.textContent = '✓ Using built-in schema';
+  el.textContent = _t('import.char_schema_builtin') ?? '✓ Using built-in schema';
   el.className = 'ci-schema-status ok';
   document.getElementById('ciSchemaFilePicker').style.display = 'none';
 }
@@ -11358,7 +10819,7 @@ Output the complete character JSON now:`;
   navigator.clipboard.writeText(prompt).then(() => {
     document.getElementById('ciCopyNotice').textContent = '✓ Copied! Paste into Claude, ChatGPT, or Gemini along with your character sheet photos.';
   }).catch(() => {
-    document.getElementById('ciCopyNotice').textContent = 'Could not auto-copy — the prompt is shown below; copy it manually, then clear and paste the AI response.';
+    document.getElementById('ciCopyNotice').textContent = _t('import.copy_fail_long') ?? 'Could not auto-copy — the prompt is shown below; copy it manually, then clear and paste the AI response.';
     document.getElementById('ciResponsePaste').value = prompt;
     document.getElementById('ciResponsePaste').focus();
     document.getElementById('ciResponsePaste').select();

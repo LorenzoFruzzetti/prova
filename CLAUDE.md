@@ -10,10 +10,14 @@ You are working on a **mobile-first D&D 5e character sheet**. The core applicati
 prova/
 ├── dnd-character-sheet.html              ← core app (HTML + CSS + JS, standalone-capable)
 ├── character-creator.html                ← character creation wizard (produces JSON for the core app)
+├── creature-stat-block.html              ← creature stat block viewer/editor (standalone-capable)
+├── shared.js                             ← shared utilities loaded by all HTML pages
+├── shared.css                            ← shared CSS (tokens, themes, component classes) loaded by all HTML pages
 ├── CLAUDE.md                             ← this file (AI instructions)
 ├── REFERENCE.md                          ← developer reference: CSS tokens, JS functions, state shape
 ├── REFERENCE-character-creator.md        ← developer reference for the character creator
-├── JSONGeneration.md                     ← JSON import/export schema specification
+├── JSONGeneration.md                     ← JSON import/export schema for character sheets
+├── stat-blockJsongeneration.md           ← JSON import/export schema for creature stat blocks
 ├── README.md                             ← user-facing documentation
 ├── srd2024/                              ← optional: 2024 SRD data files (requires serving)
 │   ├── translation.json                  ←   terminology map: 2014↔2024 field names and UI labels
@@ -34,11 +38,15 @@ There is no build toolchain, no `src/` directory, no `tests/` directory, no `.en
 | File | Purpose |
 |---|---|
 | `dnd-character-sheet.html` | Core app: HTML + `<style>` + `<script>` in one file |
+| `creature-stat-block.html` | Creature stat block viewer/editor: HTML + `<style>` + `<script>` in one file |
 | `character-creator.html` | Step-by-step character creation wizard; outputs a `{form,state}` JSON loadable in the core app, or sends it directly to the sheet via localStorage |
 | `REFERENCE.md` | CSS tokens, component classes, JS constants, state object shape, all functions for the core app |
 | `REFERENCE-character-creator.md` | Developer reference for `character-creator.html`: wizard steps, state shape, all functions |
-| `JSONGeneration.md` | JSON field names, types, valid values, full annotated example |
+| `JSONGeneration.md` | JSON field names, types, valid values, full annotated example for **character sheets** |
+| `stat-blockJsongeneration.md` | JSON field names, types, valid values, full annotated example for **creature stat blocks** |
 | `README.md` | User-facing: how to open, features, input/output, directory map |
+| `shared.js` | Utilities shared by all HTML pages: `mod`, `fmtMod`, `profBonus`, spell slot tables, dice functions (`d20Roll`, `rollDiceExpr`, `natMsg`), `genId`, `escHtml`, `switchTab`, `setupSwipe`, `toast`, `showRoll`, `dismissRollResult`, `_applyTheme`, `openInfoPanel`, `dismissInfoPanel`, `infoPanelRoll`, `infoPanelSimpleRoll`, `infoPanelEdit`, `infoPanelAction`; global `infoPanelCfg` |
+| `shared.css` | CSS shared by all HTML pages: `:root` design tokens, all 4 theme overrides, CSS reset, `.feature-row`, `.mini-tracker`, `.slot-dot`, `.spell-item-tag`, `.action-bonus-tag`, `.roll-tri`/`.rtz-*`, `.sp-save-dc-*`, `.sp-atk-*`, `#rollResult`, `#infoPanel`, `.rr-*`, `#toast`, `.hp-dlg-btn`, `.attack-edit-btn`, `.settings-full-btn`, `.cond-toggle-btn` |
 | `examples/data/` | Two sample characters for import testing |
 | `srd2024/translation.json` | Terminology map between 2014 API field names and 2024 SRD field names / UI labels |
 | `srd2024/*.json` | 2024 SRD data files fetched at runtime; absent = feature hidden, not an error |
@@ -50,9 +58,11 @@ There is no build toolchain, no `src/` directory, no `tests/` directory, no `.en
 `dnd-character-sheet.html` is structured as:
 
 ```
-<style>    — All CSS (variables, component classes, theme overrides)
+<link>     — Loads shared.css (design tokens, themes, shared component classes)
+<style>    — Page-specific CSS only (layout, page-specific classes, contextual overrides)
 <body>     — Static HTML: header, tab bar, 8 panels, all modal overlays
-<script>   — All JS: constants, state object, build/calc/handler/persistence functions
+<script src="shared.js">  — Shared utilities (dice, roll overlay, info panel, toast, theme)
+<script>   — All page JS: constants, state object, build/calc/handler/persistence functions
 ```
 
 ### State model
@@ -82,6 +92,12 @@ Eight tabs in order (used by swipe navigation and `switchTab()`):
 
 ## 3. Documentation sync rules
 
+`shared.js` and `shared.css` are companion files that must stay in sync:
+
+| Doc | Covers | Update when |
+|---|---|----|  
+| `REFERENCE.md` | Shared function signatures, CSS class documentation | Any function added/removed/renamed in `shared.js`, or any CSS class added/removed/renamed in `shared.css` |
+
 `dnd-character-sheet.html` has **two companion docs** that must stay in sync:
 
 | Doc | Covers | Update when |
@@ -89,11 +105,17 @@ Eight tabs in order (used by swipe navigation and `switchTab()`):
 | `REFERENCE.md` | CSS tokens, component classes, JS constants, state shape, all function signatures | Any HTML structure, CSS class, JS function, state key, or data-flow change |
 | `JSONGeneration.md` | JSON field names, types, valid values, examples, common mistakes | Any change to `collectFormData()`, `buildPayload()`, or the `state` object shape |
 
-**Every feature addition or change must include the corresponding documentation update in the same commit.** Do not leave REFERENCE.md or JSONGeneration.md lagging behind the code.
+`creature-stat-block.html` has **one companion doc** that must stay in sync:
+
+| Doc | Covers | Update when |
+|---|---|---|
+| `stat-blockJsongeneration.md` | Creature JSON field names, types, valid values, section schemas, full annotated example | Any change to `defaultCreature()`, `_defaultActionItem()`, `saveEditPanel()`, `parseSrd2024Monster()`, or the AI prompt in `generateAndCopyCreaturePrompt()` |
+
+**Every feature addition or change must include the corresponding documentation update in the same commit.** Do not leave REFERENCE.md, JSONGeneration.md, or stat-blockJsongeneration.md lagging behind the code.
 
 ### Conflict resolution: code wins
 
-When `REFERENCE.md` or `JSONGeneration.md` describes something that contradicts what the actual code in `dnd-character-sheet.html` does, **the code is the source of truth**. Update the documentation to match the code — never change the code just to match a stale doc entry. If you notice a conflict while working on a task, fix the doc entry as part of that task even if the doc change was not explicitly requested.
+When any companion doc describes something that contradicts what the actual code does, **the code is the source of truth**. Update the documentation to match the code — never change the code just to match a stale doc entry. If you notice a conflict while working on a task, fix the doc entry as part of that task even if the doc change was not explicitly requested.
 
 ### Pre-commit checklist for `dnd-character-sheet.html` changes
 
@@ -139,8 +161,7 @@ The app has two tiers:
 | **Served** (Netlify / local server) | HTML + companion files in same directory | Everything above, plus: 2024 SRD lookup (requires `srd2024/*.json`), 2014 SRD lookup (requires internet) |
 
 **Rules for companion files:**
-- All companion files are **optional**. The app must start and run fully without them — their absence must degrade gracefully (hide the feature, show a disabled state), never throw an error.
-- Companion files are **data assets** (`.json`), not code modules. Do not create external `.js` files. Logic that loads or interprets companion files lives inside `dnd-character-sheet.html`.
+- Companion files are primarily **data assets** (`.json`). However, shared utility logic and CSS needed by more than one HTML file **may** be extracted into external `.js` and `.css` files (`shared.js`, `shared.css`) and loaded with `<script src="shared.js">` and `<link rel="stylesheet" href="shared.css">`. Logic or CSS that is only used by a single HTML file should remain inline in that file.
 - The `srd2024/translation.json` file is the single source of truth for 2014↔2024 terminology differences (endpoint aliases, field name aliases, UI label overrides). Do not scatter edition-specific string checks through the main code.
 
 This model is consistent with existing precedent: the SRD tab already requires internet (graceful degradation when offline), and the AI-assisted import workflow already references `JSONGeneration.md` as an external document.
@@ -224,3 +245,22 @@ The following directories are referenced in older docs but **do not exist** in t
 - `temp_image/`, `temporary_files/`, `debugging_scripts/` — scratch directories not committed
 
 Do not create these directories unless there is a concrete need. Do not reference them in documentation.
+
+---
+
+## 9. Known Issues Fixed
+
+- Date: 2026-05-27
+- File: `shared.js`
+- Problem: Declared `const DAMAGE_RESIST_TYPES` (and related resistance helpers) that were already declared in `dnd-character-sheet.html`, causing a global redeclaration runtime error (`Identifier 'DAMAGE_RESIST_TYPES' has already been declared`). This halted inline script initialization and made multiple UI features appear missing (e.g. Settings/Import panel actions, hit dice/resistance rendering).
+- Fix applied: Removed the duplicated damage resistance constant/functions from `shared.js`, keeping the page-specific implementation only in `dnd-character-sheet.html`.
+
+---
+
+- Date: 2026-05-27
+- Files: `shared.css` (new), `shared.js` (expanded), `dnd-character-sheet.html`, `creature-stat-block.html`
+- Change: Major CSS/JS refactoring to unify the info panel, roll overlay, toast, and theme system across both HTML apps.
+- What moved to `shared.css`: `:root` design tokens, all 4 `[data-theme]` overrides, CSS reset, `.feature-row` + sub-elements, `.mini-tracker`/`.mini-btn`/`.mini-val`, `.slot-dot`, `.spell-item-tag`, `.action-bonus-tag`, `.roll-tri`/`.rtz-*`, `.sp-save-dc-*`, `.sp-atk-*`, `#rollBackdrop`/`#rollResult`/`.rr-*`, `#infoPanelBackdrop`/`#infoPanel`/`.sp-mode-badge`/`.sp-name`/`.sp-meta`/`.sp-description`/`.sp-dismiss-hint`, `#toast`, `.hp-dlg-btn`, `.attack-edit-btn`, `.settings-full-btn`, `.cond-toggle-btn`.
+- What moved to `shared.js`: `toast`, `showRoll`, `dismissRollResult`, `_applyTheme`, `infoPanelCfg` declaration, `openInfoPanel`, `dismissInfoPanel`, `infoPanelRoll`, `infoPanelSimpleRoll`, `infoPanelDmg` (alias for `infoPanelSimpleRoll`), `infoPanelEdit`, `infoPanelAction`.
+- `creature-stat-block.html` `openActionInfoPanel`, `openCreatureInfoPanel`, `openSectionInfoPanel` rewritten to call the shared `openInfoPanel()` using the `cfg` object API.
+- Note: `#ipDmgBox`/`#ipDmgLabel`/`#ipDmgDice` IDs in creature HTML were renamed to `#ipSimpleRollBox`/`#ipSimpleRollLabel`/`#ipSimpleRollBonus` to match the character sheet's element IDs.

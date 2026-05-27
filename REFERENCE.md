@@ -13,15 +13,13 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 ### Application structure
 
-**Single-file app** — The entire application lives in `dnd-character-sheet.html`. There is no build step, no bundler, no external CSS or JS files, and no server. Open the file directly in a browser. Every HTML structure, every CSS rule, and every JavaScript function is in that one file.
-
-**Tab** — One of the eight top-level navigation buttons in the sticky tab bar. Each tab button carries a `data-tab` attribute identifying the panel it activates. The currently active tab has the `.active` CSS class on its button.
+**Tab** — One of the eight top-level navigation buttons in the tab bar. Each tab button carries a `data-tab` attribute identifying the panel it activates. The currently active tab has the `.active` CSS class on its button.
 
 **Panel** — The content area shown when a tab is selected. Each panel is a `<div class="panel">` whose `id` matches the tab's `data-tab` value prefixed with `panel-`. Panels are hidden by default; the active one gets the `.active` class.
 
 **Section** — A card-like visual grouping inside a panel. Implemented as `<div class="section">`, which contains a `.section-title` strip at the top and a `.section-body` below. Multiple sections stack vertically within a panel.
 
-**Header** — The sticky top bar (`<div class="header">`). Contains the app title on the left, action buttons (Undo, Import, Settings) on the right, and character name + meta on a second line. Always visible regardless of which tab is active.
+**Header** — The top bar (`<div class="header">`). Contains the app title on the left, action buttons (Undo, Import, Settings) on the right, and character name + meta on a second line. It scrolls with the page instead of staying fixed.
 
 ---
 
@@ -102,13 +100,17 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **Stat modifier dialog (`#statModDialog`)** — Bottom-sheet for entering a custom numeric bonus for one combat stat (AC, Speed, Initiative, Spell Atk, or Spell DC). Opened via the Edit button inside the stat pill's info panel. The bonus is stored in `state.statMods[key]` and displayed as a `.stat-pill-mod` badge inside the pill.
 
-**Settings sheet (`#settingsMenu`)** — Bottom-sheet opened by the ⚙ header button. Contains Save to file, Load from file, font size control, lefty mode toggle, and theme swatches.
+**Settings sheet (`#settingsMenu`)** — Bottom-sheet opened by the ⚙ header button. Contains Save to file, creature stat block shortcut, font size control, lefty mode toggle, and theme/language controls.
 
-**AI / SRD Import panel (`#aiImportPanel`)** — Modal opened by the ⇓ Import header button, or by any "+ Add" section button (pre-selected to the matching type tab). Two modes: **AI mode** generates a copy-ready LLM prompt and accepts paste-back JSON, plus a "+ Create custom" button that opens the matching item panel directly; **SRD mode** searches the live D&D 5e SRD API (`dnd5eapi.co`) and imports selected items. Four type tabs: **Spells** / **Features** / **Traits** / **Items** (equipment).
+**Import hub (`#importHubPanel`)** — Modal opened by the ⇓ Import header button. Contains three entry points: **AI / SRD Import**, **Import Character**, and **Import Information**.
+
+**AI / SRD Import panel (`#aiImportPanel`)** — Modal opened from the Import hub, or by any "+ Add" section button (pre-selected to the matching type tab). Two modes: **AI mode** generates a copy-ready LLM prompt and accepts paste-back JSON, plus a "+ Create custom" button that opens the matching item panel directly; **SRD mode** searches/imports from SRD sources. Four type tabs: **Spells** / **Features** / **Traits** / **Items** (equipment).
 
 **Item Content Assist (inline ✨ Fill)** — Collapsible section that appears inside the edit form of each dedicated panel (spell, trait, class feature, equipment item), revealed by tapping the **✨ Fill** button next to the Description label. Two modes: **📖 SRD** searches the live SRD API by the item's current name and previews the found description; **✨ AI Prompt** generates a copy-ready LLM prompt and accepts a pasted response. For spells and equipment, "Apply All Fields" also fills mechanical fields (level, school, casting time, range, etc. for spells; weight, cost, category for equipment). For all types, "Desc Only" / "Apply Description" fills only the description textarea. Controlled by `toggleIca(p)`, `setIcaMode(p, mode)`, `icaSearchSrd(p, type)`, `icaApply(p)`, `icaApplyDesc(p)`, `icaCopyPrompt(p, type)`, `icaApplyAI(p, type)`, `icaApplyAIDesc(p)` where `p` is a panel prefix (`'sp'`/`'tr'`/`'fp'`/`'eq'`). Requires internet for SRD mode; clipboard API for copy (degrades gracefully on `file://`). The section is automatically collapsed when `populate*EditForm()` is called.
 
-**AI Character Import panel (`#charImportPanel`)** — Modal opened from Settings → 🤖 AI Import Character. Generates a schema-rich LLM prompt intended to be sent with photos of a physical or digital character sheet. Tries to load `JSONGeneration.md` from the same folder via `fetch`; on failure shows a file picker and a "Use built-in schema" fallback. Pasted JSON is validated and fed into `applyPayload()` to replace the current character.
+**Character Import panel (`#charImportPanel`)** — Modal opened from the Import hub → Import Character. Two modes: **AI** (schema-rich prompt workflow for photo-to-JSON import, then paste response) and **JSON** (opens file picker and imports a `{form,state}` file via `importFromJSON`).
+
+**Information Import panel (`#descEnrichPanel`)** — Modal opened from the Import hub → Import Information. Two modes: **AI** (generate prompt and paste JSON descriptions) and **SRD** (auto-search by existing entry names). Scope toggle supports **Missing Only** or **All Entries** (refresh existing descriptions too).
 
 **Character Grid (`#charGridOverlay`)** — Full-screen overlay opened by the 🎭 header button. Displays one card per saved character; supports switching, creating, and deleting characters.
 
@@ -206,7 +208,7 @@ These are the flat string values stored directly in HTML `<input>` / `<textarea>
 
 | ID | Meaning | Notes |
 |---|---|---|
-| `charName` | Character name | Displayed in the sticky header |
+| `charName` | Character name | Displayed in the header |
 | `charClass` | Class (e.g. "Wizard") | Used in character grid card meta |
 | `charSubclass` | Subclass (e.g. "Evocation") | Sub-field below class on the Info tab |
 | `charRace` | Race / species (e.g. "High Elf") | Used in character grid card meta |
@@ -259,7 +261,7 @@ These are the structured, typed values in the `state` object. They are persisted
 | `diceRoller` | `{sides,count}[]|null` | Free-form dice roller configuration; `null` means use defaults (d4/d6/d8/d10/d12/d20/d100, count 1 each) |
 | `portrait` | `string|null` | Base64 data URL for the character portrait, or `null` |
 | `statMods` | `{ac,speed,initiative,spellatk,spelldc}` | Custom numeric bonuses added on top of the base stat values |
-| `damageResistances` | `{[damageType]: -1|0|1}` | Per damage-type resistance state: `1` = resistant (green), `-1` = vulnerable (red), `0` or absent = normal |
+| `damageResistances` | `{[damageType]: -1|0|1|2}` | Per damage-type resistance state: `1` = resistant (green), `2` = immune (black), `-1` = vulnerable (red), `0` or absent = normal |
 | `equipmentItems` | `object[]` | Structured equipment items in the Inventory tab; each entry: `{name, quantity, weight, cost, category, description}` (see nested fields below) |
 
 ---
@@ -272,8 +274,8 @@ These field names appear inside `state.spells`, `state.attacks`, `state.classFea
 |---|---|---|---|
 | `name` | all | `string` | Display name of the item |
 | `description` | all | `string` | Free-text description; newlines are preserved |
-| `actionType` | `attacks` | `'action'|'bonus'|'other'` | Which Turn sub-section the attack appears in (default `'action'`) |
-| `combatActionType` | `spells`, `classFeatures`, `infoTraits` | `'action'|'bonus'|'other'` | Which Turn sub-section the item appears in when `showInCombat` is true (default `'action'`) |
+| `actionType` | `attacks` | `'action'|'bonus'|'reaction'|'other'` | Which Turn sub-section the attack appears in (default `'action'`) |
+| `combatActionType` | `spells`, `classFeatures`, `infoTraits` | `'action'|'bonus'|'reaction'|'other'` | Which Turn sub-section the item appears in when `showInCombat` is true (default `'action'`) |
 | `showInCombat` | `spells`, `classFeatures`, `infoTraits` | `boolean` | Whether the item appears as a row in the Turn block in the Combat tab |
 | `showInFeatures` | `spells`, `infoTraits` | `boolean` | Whether the item appears in the "Featured Spells" / "Featured Traits" block in the Features tab |
 | `featureMax` | `spells`, `infoTraits` | `integer` | Maximum number of uses to track in the Featured block (dot count × `featureStep`) |
@@ -331,7 +333,7 @@ Not persisted. Reset on page reload or character switch.
 | `rosterActiveId` | String ID of the character currently loaded in the UI |
 | `undoStack` | Array of undo action objects (max 50); top is most recent |
 | `rollLog` | Array of roll history entries (max 50) shown in the Rolls tab |
-| `infoPanelCfg` | Object holding the `rollFn`, `simpleRollFn`, `editFn`, `actionFn` closures for the currently-open `#infoPanel` |
+| `infoPanelCfg` | **`shared.js`** — Object holding the `rollFn`, `simpleRollFn`, `editFn`, `actionFn` closures for the currently-open `#infoPanel` |
 | `attackPanelIdx` | Index into `state.attacks` for the attack panel currently open; `-1` = new attack being created |
 | `spellPanelEditIdx` | Index into `state.spells`; `-1` = new spell |
 | `traitPanelEditIdx` | Index into `state.infoTraits`; `-1` = new trait |
@@ -409,8 +411,8 @@ These are the discrete string values used in state fields. When the code falls b
 
 | Field | Valid values | Default | Where used |
 |---|---|---|---|
-| `actionType` | `'action'`, `'bonus'`, `'other'` | `'action'` | `attacks[i].actionType` — Turn block sub-section |
-| `combatActionType` | `'action'`, `'bonus'`, `'other'` | `'action'` | `spells[i]`, `classFeatures[i]`, `infoTraits[i]` — same sub-section logic |
+| `actionType` | `'action'`, `'bonus'`, `'reaction'`, `'other'` | `'action'` | `attacks[i].actionType` — Turn block sub-section |
+| `combatActionType` | `'action'`, `'bonus'`, `'reaction'`, `'other'` | `'action'` | `spells[i]`, `classFeatures[i]`, `infoTraits[i]` — same sub-section logic |
 | `abilityMod` | `''`, `'STR'`, `'DEX'`, `'CON'`, `'INT'`, `'WIS'`, `'CHA'`, `'SPELL'`, `'manual'` | `''` | `attacks[i].abilityMod` — `''` = no attack roll; `'manual'` = use `bonus` string; otherwise computed |
 | `attackMod` | same set as `abilityMod` | `''` | `classFeatures[i].attackMod` — same semantics |
 | `rolls[].type` | `'slashing'`, `'piercing'`, `'bludgeoning'`, `'fire'`, `'cold'`, `'lightning'`, `'thunder'`, `'acid'`, `'poison'`, `'necrotic'`, `'radiant'`, `'force'`, `'psychic'`, `'healing'`, `'not_damage'`, `'other'` | — | Damage type for a roll entry; `'not_damage'` for non-damage rolls; `'other'` uses `label` field |
@@ -426,11 +428,12 @@ These are the discrete string values used in state fields. When the code falls b
 
 ```
 dnd-character-sheet.html
-├── <style>          CSS — variables, component classes
+├── <link>           Loads shared.css — design tokens, themes, shared component classes
+├── <style>          Page-specific CSS — layout, page-specific classes, contextual overrides
 ├── <body>
-│   ├── .header      Sticky top bar (title, Undo/Save/Load buttons, character name, meta)
+│   ├── .header      Top bar (title, Undo/Save/Load buttons, character name, meta); scrolls with page content
 │   ├── input#jsonFileInput   Hidden file picker for JSON import
-│   ├── .tab-bar     Eight sticky tab buttons (Info / Stats / Skills / Combat / Spells / Features / Gear / Rolls)
+│   ├── .tab-bar     Eight tab buttons (Info / Stats / Skills / Combat / Spells / Features / Gear / Rolls); sticky at viewport top during scroll
 │   │                Each button carries data-tab="<id>" for programmatic activation
 │   ├── #panel-overview    Tab: character info + features & traits (structured list, tap = roll or info panel, hold = info panel) + personality + Long Rest button
 │   ├── #panel-abilities   Tab: ability scores + saving throws + passive perception + conditions
@@ -452,20 +455,27 @@ dnd-character-sheet.html
 │   ├── #attackPanel  Fixed centered overlay showing attack details (view mode) or editable form (edit mode)
 │   ├── #traitBackdrop  Fixed backdrop for the trait view/edit panel
 │   ├── #traitPanel  Fixed centered overlay showing a feature/trait (view mode) or editable form (edit mode)
+│   ├── #importHubBackdrop  Fixed backdrop for the 3-option import hub
+│   ├── #importHubPanel  Fixed centered import hub modal with 3 actions: AI/SRD item import, character import, information import
 │   ├── #aiImportBackdrop  Fixed backdrop for the AI/SRD import modal
-│   ├── #aiImportPanel  Fixed centered modal for importing spells, features, and traits; two modes — ✨ AI (prompt-copy + paste-back) and 📖 SRD (live search against dnd5eapi.co); three type tabs: Spells / Features / Traits
+│   ├── #aiImportPanel  Fixed centered modal for importing spells/features/traits/items; two modes — ✨ AI (prompt-copy + paste-back) and 📖 SRD; four type tabs: Spells / Features / Traits / Items
+│   ├── #charImportPanel  Fixed centered modal for character import; AI mode (prompt + paste) and JSON mode (file picker)
+│   ├── #descEnrichPanel  Fixed centered modal for information import; AI/SRD modes plus Missing-only/All-entries scope toggle
 │   ├── #charGridOverlay  Fixed full-screen overlay for the character roster grid panel; open via the 🎭 header button; tap backdrop to dismiss
 │   ├── #infoPanelBackdrop  Fixed full-screen dim layer behind the unified info panel; tap to dismiss
 │   ├── #infoPanel  Fixed centered card (≤500 px, scrollable) — the generic unified info panel used for skills, abilities, saving throws, combat stats, hit die, death saves, and conditions (NOT for spells, traits, attacks, or class features — those have their own dedicated panels); badge + title + optional meta + optional 3-zone roll button + optional simple roll button + description + optional action button + "tap to dismiss" hint; `.show` reveals it
 │   └── #toast       Floating feedback message (non-roll events only)
-└── <script>         All application logic (no external libraries)
+├── <script src="shared.js">  Shared utilities: mod/fmtMod/profBonus, dice functions, toast, showRoll, dismissRollResult, _applyTheme, openInfoPanel, dismissInfoPanel, infoPanelRoll/SimpleRoll/Edit/Action, infoPanelCfg, switchTab, setupSwipe
+└── <script>         All page application logic (constants, state, build/calc/handler/persistence functions)
 ```
 
 ---
 
 ## CSS architecture
 
-### Design tokens (`:root` variables)
+> **Design tokens, theme overrides, and all shared component classes live in `shared.css`**, which is loaded via `<link rel="stylesheet" href="shared.css">` before the inline `<style>` tag. The inline `<style>` contains only page-specific classes and contextual overrides.
+
+### Design tokens (`:root` variables — defined in `shared.css`)
 
 | Variable | Gold default | Role |
 |---|---|---|
@@ -496,7 +506,7 @@ dnd-character-sheet.html
 | `--shadow` | `0 2px 8px rgba(0,0,0,0.5)` | Shared box-shadow |
 | `--roll-border` | `2px` | Border width on all tappable/rollable elements |
 
-Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the structural/accent variables above (but leaves `--red`, `--green`, `--radius`, `--roll-border` unchanged).
+Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the structural/accent variables above (but leaves `--red`, `--green`, `--radius`, `--roll-border` unchanged). Theme override rules are defined in `shared.css`.
 
 | Theme key | Accent feel | Spell accent |
 |---|---|---|
@@ -510,10 +520,10 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 
 | Class | Purpose |
 |---|---|
-| `.header` | Sticky top bar; `z-index: 100` |
+| `.header` | Top bar section; `z-index: 100` |
 | `.header-top` | Flex row inside header (title left, buttons right) |
 | `.header-btn` | Undo / Save / Load buttons in the header; `:disabled` reduces opacity |
-| `.tab-bar` | Sticky tab strip below header; `z-index: 99`; horizontally scrollable |
+| `.tab-bar` | Sticky tab strip; `z-index: 99`; horizontally scrollable; pinned at `top:0` |
 | `.tab-btn` | Individual tab button; `.active` adds gold underline |
 | `.panel` | Tab content area; hidden by default; `.active` shows it |
 | `.section` | Grouped content card (border + radius) |
@@ -687,8 +697,8 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `#stepBackdrop` | Fixed dim layer behind the legacy feature editor sheet (retained in HTML but no longer triggered) |
 | `#stepMenu` | Legacy bottom-sheet for adding/editing class features; superseded by `#featurePanel` |
 | `#settingsBackdrop` | Fixed dim layer behind the settings sheet; tap to dismiss |
-| `#settingsMenu` | Bottom-sheet opened by the ⚙ Settings header button; contains Save, Load, font-size, lefty-mode, and theme controls |
-| `.settings-full-btn` | Full-width action button inside the settings sheet (Save / Load) |
+| `#settingsMenu` | Bottom-sheet opened by the ⚙ Settings header button; contains Save, Creature Stat Blocks shortcut, font-size, lefty-mode, theme, and language controls |
+| `.settings-full-btn` | Full-width action button used in Settings and import-related modals |
 | `.settings-divider` | Thin horizontal rule separating sections inside the settings sheet |
 | `.settings-row` | Flex row pairing a label+sub-label on the left with a control on the right |
 | `.font-ctrl` | Flex row grouping `[−][value][+]` for the font-size control |
@@ -724,7 +734,7 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.portrait-remove-btn` | Modifier on `.portrait-btn`; red tint; hidden until a portrait is set |
 | `.ai-mode-row` | Flex row containing the AI / SRD mode toggle buttons at the top of `#aiImportPanel` |
 | `.ai-mode-btn` | One of the two mode-toggle pill buttons (✨ AI or 📖 SRD); `.active` styles it gold |
-| `.ai-type-toggle` | Flex row containing the three type-tab buttons (Spells / Features / Traits) inside `#aiImportPanel` |
+| `.ai-type-toggle` | Flex row containing type/scope tab buttons in import modals (e.g. Spells/Features/Traits/Items in `#aiImportPanel`) |
 | `.ai-type-btn` | One type-tab button; `.active` styles it in spell blue |
 | `.import-upper` | Fixed-height wrapper (`min-height: 360px`) containing both `#aiModeContent` and `#srdModeContent`; prevents the panel from resizing when switching between AI and SRD tabs or between type tabs |
 | `.ai-step` | Labeled step block (step label + input) in the AI mode content area |
@@ -812,7 +822,7 @@ let state = {
                           saveAbility,           //   ability key for saving throw or ''
                           saveDC,                //   integer override DC; 0 = use character's spell save DC
                           showInCombat,          //   boolean — true if spell appears in the combat attack block
-                          combatActionType,      //   'action' | 'bonus' | 'other' — sub-section in the combat block (default: 'action')
+                          combatActionType,      //   'action' | 'bonus' | 'reaction' | 'other' — sub-section in the combat block (default: 'action')
                           showInFeatures,        //   boolean — true if spell appears in the Featured Spells block in the Features tab
                           prepared,              //   boolean — true if spell is prepared for the day (counts toward maxSpellsPrepared)
                           alwaysPrepared,        //   boolean — true if spell is always prepared (does NOT count toward maxSpellsPrepared); mutually exclusive with prepared
@@ -825,7 +835,7 @@ let state = {
                           flatBonus,             //   integer — additional flat modifier added to computed roll
                           bonus,                 //   string — manual attack roll modifier (only used when abilityMod='manual')
                           rolls,                 //   array of roll objects: [{dice, type, label?, mod?}] — same shape as spells.rolls
-                          actionType,            //   'action' | 'bonus' | 'other' (default: 'action')
+                          actionType,            //   'action' | 'bonus' | 'reaction' | 'other' (default: 'action')
                           hidden,                //   boolean — shows row faded in the combat list; toggled via the edit panel checkbox
                           saveAbility,           //   ability key for a saving throw option, or ''
                           saveDC,                //   integer save DC, or 0
@@ -844,14 +854,14 @@ let state = {
                           saveAbility,           //   ability key or ""
                           saveDC,                //   integer, 0 = use current Spell Save DC
                           showInCombat,          //   boolean — true if feature appears in the combat attack block
-                          combatActionType,      //   'action' | 'bonus' | 'other' — sub-section in the combat block (default: 'action')
+                          combatActionType,      //   'action' | 'bonus' | 'reaction' | 'other' — sub-section in the combat block (default: 'action')
                         } ],
   infoTraits:         [ {   // Features & Traits shown in the Info tab
                           name, description,
                           damage, rollDamage,    //   optional damage roll support
                           saveAbility, saveDC,   //   optional saving throw display
                           showInCombat,          //   boolean — show as row in the combat block
-                          combatActionType,      //   'action' | 'bonus' | 'other' (default: 'action')
+                          combatActionType,      //   'action' | 'bonus' | 'reaction' | 'other' (default: 'action')
                           showInFeatures,        //   boolean — true if trait appears in Featured Traits block in Features tab
                           featureMax,            //   integer — total uses to track (dot count × featureStep)
                           featureUsed,           //   integer — uses already expended (reset on Long Rest)
@@ -870,6 +880,7 @@ let state = {
   maxSpellsPrepared:  0,    // daily preparation limit for spells with prepared:true; 0 = no limit enforced
   damageResistances:  {     // damage-type resistance states; absent key = normal (0)
     // slashing: 1,   //   1  = resistant (green dot)
+    // necrotic: 2,   //   2  = immune (black dot)
     // fire: -1,      //  -1  = vulnerable (red dot)
     // ...            //   0 or absent = normal (empty dot)
   },
@@ -904,7 +915,7 @@ hitDiceHoldTimer/Interval  // hold-to-repeat timers for hit dice +/− buttons
 featureNamePressTimer      // setTimeout handle for feature name long-press (500 ms → edit mode)
 featureNamePressActive     // boolean — true during and after a held feature name press
 featurePanelEditIdx        // index into state.classFeatures currently being edited; −1 = new feature
-infoPanelCfg        // object holding the rollFn, simpleRollFn, editFn, actionFn closures for the currently-open #infoPanel
+infoPanelCfg        // shared.js — object holding the rollFn, simpleRollFn, editFn, actionFn closures for the currently-open #infoPanel
 skillPressTimer / skillPressActive / skillPanelCurrentName  // skill row hold detection + current skill name
 equipProfPressTimer / equipProfPressActive  // equipment proficiency row hold detection (tap = info panel, hold 500 ms = same)
 equipProfAllCollapsed                       // boolean — true when the "All Proficiencies" section body is hidden; default true; not persisted
@@ -988,7 +999,7 @@ DOMContentLoaded
 | `buildInfoTraits()` | Features & Traits rows in `#infoTraitsBody`, or empty-state placeholder | `state.infoTraits` |
 | `renderFeatureDots(i)` | Dot row + counter for one feature, scaled by `step` | `state.classFeatures[i]` |
 | `renderHitDice()` | Hit dice dots in `#hitDiceDots`; max = character level | `state.hitDiceUsed`, `charLevel` input |
-| `buildDamageResistances()` | Resistance/vulnerability dot grid in `#dmgResistGrid`; one dot per damage type (13 types); dot is empty (normal), green (resistant), or red (vulnerable) | `state.damageResistances` |
+| `buildDamageResistances()` | **`shared.js`** — Resistance/immunity/vulnerability dot grid in `#dmgResistGrid`; one dot per damage type (13 types); dot is empty (normal), green (resistant), black (immune), or red (vulnerable) | `state.damageResistances` |
 | `renderAttacks()` | Renders the Turn block: "Actions", "Bonus Actions", and "Reactions" sub-sections always rendered (with empty-state placeholders when empty); "Other" section rendered only when items exist; combat spells/traits/features (`showInCombat`) injected per section; hidden attacks faded (`atk-hidden`) | `state.attacks`, `state.spells`, `state.infoTraits`, `state.classFeatures` |
 | `startTurnTitlePress(e)` | `pointerdown` on the "Turn" section title | Adds `.holding` class; starts 500 ms timer; on fire calls `openTurnInfoPanel()` |
 | `endTurnTitlePress(e)` / `cancelTurnTitlePress()` | `pointerup` / `pointercancel` on "Turn" title | Clears timer; removes `.holding` class |
@@ -1176,12 +1187,12 @@ DOMContentLoaded
 | `restoreHitDice()` | ↺ Restore button in Hit Dice section | Sets `state.hitDiceUsed = 0`; rerenders |
 | `fullLongRest()` | ⟳ Long Rest button in Overview panel | Restores HP to max, resets hit dice, all spell slots, all class features, all featured spell uses, and all featured trait uses; saves |
 | `removeAttack(i)` | Tap Delete button in attack edit panel | Pushes undo; splices `state.attacks`; rerenders |
-| `openInfoPanel(cfg)` | Called by any item that opens the unified info panel | Applies badge, title, meta, description, optional 3-zone roll button, optional simple roll button, optional edit button, optional action button; calls `pushModalHistory()`; stores `rollFn/simpleRollFn/editFn/actionFn` in `infoPanelCfg` |
-| `dismissInfoPanel()` | Backdrop tap or browser back | Calls `popModalHistory()`; hides `#infoPanel` and backdrop; clears `infoPanelCfg` |
-| `infoPanelRoll(mode)` | Tap zone in `#ipRollBox` | Calls `infoPanelCfg.rollFn(mode)` |
-| `infoPanelSimpleRoll()` | Tap `#ipSimpleRollBox` | Calls `infoPanelCfg.simpleRollFn()` |
-| `infoPanelEdit()` | Tap Edit button (`#ipEditBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.editFn()` |
-| `infoPanelAction()` | Tap action button (`#ipActionBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.actionFn()` |
+| `openInfoPanel(cfg)` | **`shared.js`** — Called by any item that opens the unified info panel | Applies badge, title, meta, description, optional 3-zone roll button, optional simple roll button, optional edit button, optional action button; calls `pushModalHistory()` (if present); stores `rollFn/simpleRollFn/editFn/actionFn` in `infoPanelCfg` |
+| `dismissInfoPanel()` | **`shared.js`** — Backdrop tap or browser back | Calls `popModalHistory()` (if present); hides `#infoPanel` and backdrop; clears `infoPanelCfg` |
+| `infoPanelRoll(mode)` | **`shared.js`** — Tap zone in `#ipRollBox` | Calls `infoPanelCfg.rollFn(mode)` |
+| `infoPanelSimpleRoll()` | **`shared.js`** — Tap `#ipSimpleRollBox` | Calls `infoPanelCfg.simpleRollFn()` |
+| `infoPanelEdit()` | **`shared.js`** — Tap Edit button (`#ipEditBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.editFn()` |
+| `infoPanelAction()` | **`shared.js`** — Tap action button (`#ipActionBtn`) in info panel | Dismisses info panel then calls `infoPanelCfg.actionFn()` |
 | `startStatPillPress(e, key)` | `pointerdown` on a combat stat pill | Starts 500 ms timer; on fire sets `statPillPressActive`, adds `.holding`, calls `openStatPillPanel(key)`. Input elements inside pills stop propagation so typing doesn't trigger hold. |
 | `clickStatPillItem(e, key)` | `onclick` on a combat stat pill | If guard not set and stat is rollable: calls `rollInitiative()` or `rollSpellAtk()`; otherwise opens info panel; always clears timer and removes `.holding` |
 | `cancelStatPillPress()` | `pointercancel` on stat pill | Clears timer; removes `.holding` |
@@ -1302,8 +1313,8 @@ Edit mode            — shows editable form for all fields (name, attack roll s
 
 | Function | Description |
 |---|---|
-| `showRoll(label, breakdown, total, nat, secondary?)` | Displays the roll result overlay and logs to `rollLog`; `secondary` is optional (e.g. damage line for attacks) |
-| `dismissRollResult()` | Hides the roll result overlay and backdrop |
+| `showRoll(label, breakdown, total, nat, secondary?)` | **`shared.js`** — Displays the roll result overlay; appends to `rollLog` (if present) and calls `renderRollLog()`; `secondary` is optional (e.g. damage line for attacks) |
+| `dismissRollResult()` | **`shared.js`** — Hides the roll result overlay and backdrop |
 | `renderRollLog()` | Renders all entries in `rollLog` into `#rollLogList` |
 | `clearRollLog()` | Empties `rollLog` and re-renders the log panel |
 
@@ -1366,10 +1377,11 @@ The session variable `rosterActiveId` (string) holds the currently loaded charac
 
 | Function | Description |
 |---|---|
-| `updateHeader()` | Reads name/class/race/level inputs → updates sticky header display |
-| `switchTab(id)` | Deactivates all panels/buttons; activates the target; scrolls its tab button into view |
-| `setupSwipe()` | Attaches passive `touchstart`/`touchend` listeners to `document.body`; horizontal swipe ≥ 50 px (and greater than vertical movement) advances or retreats through `TABS`; ignored when roll result overlay is open |
-| `toast(msg)` | Shows floating message for 2 seconds; used for non-roll feedback (proficiency changes, inspiration, file ops) |
+| `updateHeader()` | Reads name/class/race/level inputs → updates header display |
+| `switchTab(id)` | **`shared.js`** — Deactivates all panels/buttons; activates the target; scrolls its tab button into view |
+| `setupSwipe()` | **`shared.js`** — Attaches passive `touchstart`/`touchend` listeners to `document.body`; horizontal swipe ≥ 50 px (and greater than vertical movement) advances or retreats through `TABS`; ignored when roll result overlay is open |
+| `toast(msg)` | **`shared.js`** — Shows floating message for 2 seconds; used for non-roll feedback (proficiency changes, inspiration, file ops) |
+| `_applyTheme()` | **`shared.js`** — Reads `dnd5e_theme` from `localStorage` and applies as `data-theme` on `<html>`; called at page init |
 | `setupAutoSave()` | Attaches `saveData` as `input` + `change` listener to every form element |
 | `openSettings()` / `dismissSettings()` | Opens / closes the ⚙ settings bottom-sheet; manages `pushModalHistory` / `popModalHistory` |
 | `pushModalHistory()` | Calls `history.pushState()` to add an entry so the browser back button can dismiss the open modal |
@@ -1388,14 +1400,14 @@ The session variable `rosterActiveId` (string) holds the currently loaded charac
 
 ### AI / SRD Import functions
 
-The **⇓ Import** button in the sticky header bar (between Undo and ⚙ Settings) opens `#aiImportPanel`. The modal has two modes selected by the top toggle.
+The **⇓ Import** button in the header bar opens `#importHubPanel`, which routes to item import (`#aiImportPanel`), character import (`#charImportPanel`), or information import (`#descEnrichPanel`).
 
 #### AI mode
 Generates a copy-ready LLM prompt containing the exact JSON schema and the names of items already on the sheet; the user pastes the LLM's JSON array response into Step 2 and clicks Import.
 
 | Function | Description |
 |---|---|
-| `openAIImport(type)` | Opens `#aiImportPanel` in AI mode, pre-selects the given type tab (`'spells'`, `'features'`, or `'traits'`), resets both text areas and the SRD selection set |
+| `openAIImport(type)` | Opens `#aiImportPanel` in AI mode, pre-selects the given type tab (`'spells'`, `'features'`, `'traits'`, or `'equipment'`), resets both text areas and the SRD selection set |
 | `dismissAIImport()` | Hides `#aiImportPanel` and its backdrop |
 | `setModalMode(mode)` | Switches between `'ai'` and `'srd'` content areas; also shows/hides `#srdResultsArea` (the detached results section below `.import-upper`); calls `_srdInitForType()` when switching to SRD |
 | `setAIImportType(type)` | Updates active state on type-tab buttons; calls `_srdInitForType()` if currently in SRD mode |
@@ -1406,12 +1418,14 @@ Generates a copy-ready LLM prompt containing the exact JSON schema and the names
 | `importAIResponse()` | Parses the pasted text (strips markdown fences); merges into `state.spells`, `state.classFeatures`, or `state.infoTraits` depending on active type; deduplicates by lowercase name; rebuilds the relevant list |
 
 #### AI Character Import (full sheet from photos)
-Full-character import modal (`#charImportPanel`) opened from Settings → AI Import Character. Loads the JSON schema from `JSONGeneration.md` (via `fetch`), with a file-picker fallback and a compact built-in schema as final fallback. The generated prompt is intended to be sent alongside photos of a physical or digital character sheet.
+Full-character import modal (`#charImportPanel`) opened from Import hub → Import Character. It has AI mode (photo-to-JSON prompt workflow) and JSON mode (file picker for direct character import).
 
 | Function | Description |
 |---|---|
-| `openCharImport()` | Shows `#charImportPanel`, resets state, triggers `_tryLoadCharSchema()` |
+| `openCharImport()` | Shows `#charImportPanel` in AI mode, resets state, triggers `_tryLoadCharSchema()` |
 | `dismissCharImport()` | Hides `#charImportPanel` and its backdrop |
+| `setCharImportMode(mode)` | Switches character import between `'ai'` and `'json'` sub-views |
+| `openJsonImportFromCharPanel()` | Closes `#charImportPanel` and opens hidden `#jsonFileInput` after a short delay |
 | `_tryLoadCharSchema()` | Async; `fetch('./JSONGeneration.md')`; on success sets `_charImportSchema`; on failure shows `#ciSchemaFilePicker` |
 | `loadSchemaFromFile(input)` | `FileReader` handler for the manual file picker; loads selected `.md`/`.txt` into `_charImportSchema` |
 | `useBuiltinSchema()` | Sets `_charImportSchema` to the embedded `_BUILTIN_CHAR_SCHEMA` constant |
@@ -1488,11 +1502,14 @@ Edition availability is detected automatically on modal open via `_srd24Detect()
 | `icaApplyAI(p, type)` | Parses pasted JSON for spells; falls through to `icaApplyAIDesc` otherwise |
 | `icaApplyAIDesc(p)` | Writes paste area raw text to description textarea and closes ICA block |
 | `_enrichEquipDescriptions(items)` | Async; fills missing equipment fields from SRD (2014 or 2024 path); called after AI import |
-| `enrichAllFromSrd()` | Async; bulk-fills empty descriptions across all four state arrays; in 2024 mode searches local files (no network); in 2014 mode fetches from API. Triggered from Settings → **📖 Fill Descriptions from SRD** |
-| `openDescEnrichPanel()` | Opens the `#descEnrichPanel` modal (AI description fill); resets paste area and notice text |
+| `enrichAllFromSrd(opts)` | Async; SRD-based description enrichment for spells/features/traits/items. `opts.includeExisting=true` refreshes all entries, otherwise only fills missing descriptions |
+| `openDescEnrichPanel()` | Opens `#descEnrichPanel` with default mode AI + scope Missing-only |
 | `dismissDescEnrichPanel()` | Hides `#descEnrichPanel` and its backdrop |
-| `generateDescEnrichPrompt()` | Builds a prompt listing every item across `state.spells`, `state.classFeatures`, `state.infoTraits`, and `state.equipmentItems` that has an empty `description`; copies to clipboard with `execCommand` fallback |
-| `applyDescEnrichResponse()` | Parses the JSON array pasted by the user; for each `{type, name, description}` entry, finds the matching item by name and fills its `description` if currently empty; rebuilds all four lists and saves |
+| `setDescImportMode(mode)` | Toggles information import mode between `'ai'` and `'srd'` |
+| `setDescImportScope(scope)` | Toggles scope between `'missing'` and `'all'` |
+| `runDescImportSrd()` | Runs SRD enrichment from `#descEnrichPanel` using the selected scope |
+| `generateDescEnrichPrompt()` | Builds and copies an AI prompt from selected scope (Missing-only or All-entries) |
+| `applyDescEnrichResponse()` | Applies pasted AI descriptions according to selected scope (fill missing only or overwrite existing) |
 
 > **2024 SRD note:** `dnd5eapi.co` covers the 2014 SRD. For 2024 SRD content (released under CC-BY 4.0 as SRD 5.2), use the AI Import workflow: the prompt templates are edition-agnostic and work with any LLM that knows the 2024 rules.
 

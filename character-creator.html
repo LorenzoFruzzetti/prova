@@ -494,6 +494,8 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   <button class="nav-btn nav-next" id="btnNext" onclick="goNext()">Next →</button>
 </div>
 
+<script src="shared.js"></script>
+<script src="srd2024/bundle.js"></script>
 <script>
 'use strict';
 
@@ -506,46 +508,6 @@ const ABILITY_NAMES = {STR:'Strength',DEX:'Dexterity',CON:'Constitution',INT:'In
 const ALL_SKILLS = ['Acrobatics','Animal Handling','Arcana','Athletics','Deception','History',
   'Insight','Intimidation','Investigation','Medicine','Nature','Perception',
   'Performance','Persuasion','Religion','Sleight of Hand','Stealth','Survival'];
-
-const SLOT_LABELS = ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
-
-// Spell slot tables — index 0 = level 1, each entry = [1st…9th slots]
-const SLOTS_FULL = [
-  [2,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0],[4,2,0,0,0,0,0,0,0],[4,3,0,0,0,0,0,0,0],
-  [4,3,2,0,0,0,0,0,0],[4,3,3,0,0,0,0,0,0],[4,3,3,1,0,0,0,0,0],[4,3,3,2,0,0,0,0,0],
-  [4,3,3,3,1,0,0,0,0],[4,3,3,3,2,0,0,0,0],[4,3,3,3,2,1,0,0,0],[4,3,3,3,2,1,0,0,0],
-  [4,3,3,3,2,1,1,0,0],[4,3,3,3,2,1,1,0,0],[4,3,3,3,2,1,1,1,0],[4,3,3,3,2,1,1,1,0],
-  [4,3,3,3,2,1,1,1,1],[4,3,3,3,3,1,1,1,1],[4,3,3,3,3,2,1,1,1],[4,3,3,3,3,2,2,1,1]
-];
-const SLOTS_HALF_2024 = [
-  [2,0,0,0,0,0,0,0,0],[2,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0],
-  [4,2,0,0,0,0,0,0,0],[4,2,0,0,0,0,0,0,0],[4,3,0,0,0,0,0,0,0],[4,3,0,0,0,0,0,0,0],
-  [4,3,2,0,0,0,0,0,0],[4,3,2,0,0,0,0,0,0],[4,3,3,0,0,0,0,0,0],[4,3,3,0,0,0,0,0,0],
-  [4,3,3,1,0,0,0,0,0],[4,3,3,1,0,0,0,0,0],[4,3,3,2,0,0,0,0,0],[4,3,3,2,0,0,0,0,0],
-  [4,3,3,3,1,0,0,0,0],[4,3,3,3,1,0,0,0,0],[4,3,3,3,2,0,0,0,0],[4,3,3,3,2,0,0,0,0]
-];
-const SLOTS_HALF_2014 = [
-  [0,0,0,0,0,0,0,0,0],[2,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0],
-  [4,2,0,0,0,0,0,0,0],[4,2,0,0,0,0,0,0,0],[4,3,0,0,0,0,0,0,0],[4,3,0,0,0,0,0,0,0],
-  [4,3,2,0,0,0,0,0,0],[4,3,2,0,0,0,0,0,0],[4,3,3,0,0,0,0,0,0],[4,3,3,0,0,0,0,0,0],
-  [4,3,3,1,0,0,0,0,0],[4,3,3,1,0,0,0,0,0],[4,3,3,2,0,0,0,0,0],[4,3,3,2,0,0,0,0,0],
-  [4,3,3,3,1,0,0,0,0],[4,3,3,3,1,0,0,0,0],[4,3,3,3,2,0,0,0,0],[4,3,3,3,2,0,0,0,0]
-];
-const SLOTS_WARLOCK = [
-  [1,0,0,0,0,0,0,0,0],[2,0,0,0,0,0,0,0,0],[0,2,0,0,0,0,0,0,0],[0,2,0,0,0,0,0,0,0],
-  [0,0,2,0,0,0,0,0,0],[0,0,2,0,0,0,0,0,0],[0,0,0,2,0,0,0,0,0],[0,0,0,2,0,0,0,0,0],
-  [0,0,0,0,2,0,0,0,0],[0,0,0,0,2,0,0,0,0],[0,0,0,0,3,0,0,0,0],[0,0,0,0,3,0,0,0,0],
-  [0,0,0,0,3,0,0,0,0],[0,0,0,0,3,0,0,0,0],[0,0,0,0,3,0,0,0,0],[0,0,0,0,3,0,0,0,0],
-  [0,0,0,0,4,0,0,0,0],[0,0,0,0,4,0,0,0,0],[0,0,0,0,4,0,0,0,0],[0,0,0,0,4,0,0,0,0]
-];
-const SLOTS_NONE = Array.from({length:20},()=>[0,0,0,0,0,0,0,0,0]);
-
-function classSlotTable(idx, edition) {
-  if (['bard','cleric','druid','sorcerer','wizard'].includes(idx)) return SLOTS_FULL;
-  if (idx === 'warlock') return SLOTS_WARLOCK;
-  if (['paladin','ranger'].includes(idx)) return edition==='2024'?SLOTS_HALF_2024:SLOTS_HALF_2014;
-  return SLOTS_NONE;
-}
 
 // Equipment proficiencies by class index
 const CLASS_EQUIP = {
@@ -638,9 +600,6 @@ const W = {
 
 // ── Utilities ──────────────────────────────────────────────────────────────
 
-const abilityMod = s => Math.floor((s-10)/2);
-const modStr = m => (m>=0?'+':'')+m;
-const profBonus = lvl => Math.ceil(lvl/4)+1;
 const el = id => document.getElementById(id);
 
 function totalScores() {
@@ -697,6 +656,14 @@ const BASE_2024 = 'srd2024/';
 async function srdGet(path) {
   const key = W.edition + '|' + path;
   if (W._cache[key]) return W._cache[key];
+  // For 2024 edition, check the inlined bundle first (enables file:// usage)
+  if (W.edition === '2024' && window.__SRD2024) {
+    const bundleKey = path.replace(/\.json$/, '');
+    if (window.__SRD2024[bundleKey] !== undefined) {
+      W._cache[key] = window.__SRD2024[bundleKey];
+      return W._cache[key];
+    }
+  }
   let url;
   if (W.edition === '2024') {
     url = BASE_2024 + path;
@@ -857,7 +824,7 @@ async function loadSpeciesList() {
     statusEl.innerHTML = '';
     W._srdLoaded.species = true;
   } catch(e) {
-    statusEl.innerHTML = `<div class="status err">Failed to load species: ${e.message}. ${W.edition==='2024'?'2024 SRD requires a web server (not file://).':''}</div>`;
+    statusEl.innerHTML = `<div class="status err">Failed to load species: ${e.message}.</div>`;
   }
 }
 
