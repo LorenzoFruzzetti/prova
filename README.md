@@ -37,7 +37,7 @@ python3 -m http.server 8080
 | **Combat** | HP tracker (tap to edit, hold +/− to fast-change), AC, Speed, Initiative, spell attack, death saves, hit dice |
 | **Spells** | Spell slot tracking (1st–9th), full spell library with Concentration / Ritual / attack roll support |
 | **Features** | Class features with dot trackers, recharge types, and custom step sizes |
-| **Import** | ⇓ Import button opens a 3-option hub: **AI / SRD Import** (spells/features/traits/items), **Import Character** (AI from photos or JSON file), and **Import Informations** (AI or SRD description fill with Missing-only or All-entries scope) |
+| **Import** | ⇓ Import button opens a 3-option hub: **AI / SRD Import** (spells/features/traits/items), **Import Character** (AI from photos or JSON file), and **Import Information** (AI or SRD description fill with Missing-only or All-entries scope) |
 | **Gear** | Currency (CP/SP/EP/GP/PP), equipment, proficiencies, languages, notes |
 | **Rolls** | Session roll history; swipe left/right to change tabs |
 | **Long Rest** | Restores HP, spell slots, hit dice, and all feature uses in one tap |

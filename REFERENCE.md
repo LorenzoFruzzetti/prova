@@ -102,7 +102,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **Settings sheet (`#settingsMenu`)** — Bottom-sheet opened by the ⚙ header button. Contains Save to file, creature stat block shortcut, font size control, lefty mode toggle, and theme/language controls.
 
-**Import hub (`#importHubPanel`)** — Modal opened by the ⇓ Import header button. Contains three entry points: **AI / SRD Import**, **Import Character**, and **Import Informations**.
+**Import hub (`#importHubPanel`)** — Modal opened by the ⇓ Import header button. Contains three entry points: **AI / SRD Import**, **Import Character**, and **Import Information**.
 
 **AI / SRD Import panel (`#aiImportPanel`)** — Modal opened from the Import hub, or by any "+ Add" section button (pre-selected to the matching type tab). Two modes: **AI mode** generates a copy-ready LLM prompt and accepts paste-back JSON, plus a "+ Create custom" button that opens the matching item panel directly; **SRD mode** searches/imports from SRD sources. Four type tabs: **Spells** / **Features** / **Traits** / **Items** (equipment).
 
@@ -110,7 +110,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **Character Import panel (`#charImportPanel`)** — Modal opened from the Import hub → Import Character. Two modes: **AI** (schema-rich prompt workflow for photo-to-JSON import, then paste response) and **JSON** (opens file picker and imports a `{form,state}` file via `importFromJSON`).
 
-**Informations Import panel (`#descEnrichPanel`)** — Modal opened from the Import hub → Import Informations. Two modes: **AI** (generate prompt and paste JSON descriptions) and **SRD** (auto-search by existing entry names). Scope toggle supports **Missing Only** or **All Entries** (refresh existing descriptions too).
+**Information Import panel (`#descEnrichPanel`)** — Modal opened from the Import hub → Import Information. Two modes: **AI** (generate prompt and paste JSON descriptions) and **SRD** (auto-search by existing entry names). Scope toggle supports **Missing Only** or **All Entries** (refresh existing descriptions too).
 
 **Character Grid (`#charGridOverlay`)** — Full-screen overlay opened by the 🎭 header button. Displays one card per saved character; supports switching, creating, and deleting characters.
 
@@ -455,11 +455,11 @@ dnd-character-sheet.html
 │   ├── #traitBackdrop  Fixed backdrop for the trait view/edit panel
 │   ├── #traitPanel  Fixed centered overlay showing a feature/trait (view mode) or editable form (edit mode)
 │   ├── #importHubBackdrop  Fixed backdrop for the 3-option import hub
-│   ├── #importHubPanel  Fixed centered import hub modal with 3 actions: AI/SRD item import, character import, informations import
+│   ├── #importHubPanel  Fixed centered import hub modal with 3 actions: AI/SRD item import, character import, information import
 │   ├── #aiImportBackdrop  Fixed backdrop for the AI/SRD import modal
 │   ├── #aiImportPanel  Fixed centered modal for importing spells/features/traits/items; two modes — ✨ AI (prompt-copy + paste-back) and 📖 SRD; four type tabs: Spells / Features / Traits / Items
 │   ├── #charImportPanel  Fixed centered modal for character import; AI mode (prompt + paste) and JSON mode (file picker)
-│   ├── #descEnrichPanel  Fixed centered modal for informations import; AI/SRD modes plus Missing-only/All-entries scope toggle
+│   ├── #descEnrichPanel  Fixed centered modal for information import; AI/SRD modes plus Missing-only/All-entries scope toggle
 │   ├── #charGridOverlay  Fixed full-screen overlay for the character roster grid panel; open via the 🎭 header button; tap backdrop to dismiss
 │   ├── #infoPanelBackdrop  Fixed full-screen dim layer behind the unified info panel; tap to dismiss
 │   ├── #infoPanel  Fixed centered card (≤500 px, scrollable) — the generic unified info panel used for skills, abilities, saving throws, combat stats, hit die, death saves, and conditions (NOT for spells, traits, attacks, or class features — those have their own dedicated panels); badge + title + optional meta + optional 3-zone roll button + optional simple roll button + description + optional action button + "tap to dismiss" hint; `.show` reveals it
@@ -1395,7 +1395,7 @@ The session variable `rosterActiveId` (string) holds the currently loaded charac
 
 ### AI / SRD Import functions
 
-The **⇓ Import** button in the header bar opens `#importHubPanel`, which routes to item import (`#aiImportPanel`), character import (`#charImportPanel`), or informations import (`#descEnrichPanel`).
+The **⇓ Import** button in the header bar opens `#importHubPanel`, which routes to item import (`#aiImportPanel`), character import (`#charImportPanel`), or information import (`#descEnrichPanel`).
 
 #### AI mode
 Generates a copy-ready LLM prompt containing the exact JSON schema and the names of items already on the sheet; the user pastes the LLM's JSON array response into Step 2 and clicks Import.
@@ -1500,7 +1500,7 @@ Edition availability is detected automatically on modal open via `_srd24Detect()
 | `enrichAllFromSrd(opts)` | Async; SRD-based description enrichment for spells/features/traits/items. `opts.includeExisting=true` refreshes all entries, otherwise only fills missing descriptions |
 | `openDescEnrichPanel()` | Opens `#descEnrichPanel` with default mode AI + scope Missing-only |
 | `dismissDescEnrichPanel()` | Hides `#descEnrichPanel` and its backdrop |
-| `setDescImportMode(mode)` | Toggles informations import mode between `'ai'` and `'srd'` |
+| `setDescImportMode(mode)` | Toggles information import mode between `'ai'` and `'srd'` |
 | `setDescImportScope(scope)` | Toggles scope between `'missing'` and `'all'` |
 | `runDescImportSrd()` | Runs SRD enrichment from `#descEnrichPanel` using the selected scope |
 | `generateDescEnrichPrompt()` | Builds and copies an AI prompt from selected scope (Missing-only or All-entries) |

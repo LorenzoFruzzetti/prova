@@ -4982,22 +4982,22 @@
 <!-- ── AI / SRD Import Modal ── -->
 <div id="importHubBackdrop" onclick="dismissImportHub()"></div>
 <div id="importHubPanel">
-  <div class="sp-mode-badge" style="color:var(--gold-light);margin-bottom:10px">Import</div>
+  <div class="sp-mode-badge" style="color:var(--gold-light);margin-bottom:10px" data-i18n="import.hub_title">Import</div>
   <div class="import-hub-grid">
     <button class="import-hub-card" onclick="openAIImportFromHub('spells')">
-      <div class="import-hub-title">1) AI / SRD Import</div>
-      <div class="import-hub-desc">Import spells, features, traits, and items with AI prompts or direct SRD search.</div>
+      <div class="import-hub-title" data-i18n="import.option_items_title">1) AI / SRD Import</div>
+      <div class="import-hub-desc" data-i18n="import.option_items_desc">Import spells, features, traits, and items with AI prompts or direct SRD search.</div>
     </button>
     <button class="import-hub-card" onclick="openCharImportFromHub()">
-      <div class="import-hub-title">2) Import Character</div>
-      <div class="import-hub-desc">Choose AI import from photos or JSON file import for a full character payload.</div>
+      <div class="import-hub-title" data-i18n="import.option_character_title">2) Import Character</div>
+      <div class="import-hub-desc" data-i18n="import.option_character_desc">Choose AI import from photos or JSON file import for a full character payload.</div>
     </button>
     <button class="import-hub-card" onclick="openDescEnrichFromHub()">
-      <div class="import-hub-title">3) Import Informations</div>
-      <div class="import-hub-desc">Fill or refresh descriptions for your sheet using AI or SRD, on missing-only or all items.</div>
+      <div class="import-hub-title" data-i18n="import.option_info_title">3) Import Information</div>
+      <div class="import-hub-desc" data-i18n="import.option_info_desc">Fill or refresh descriptions for your sheet using AI or SRD, on missing-only or all items.</div>
     </button>
   </div>
-  <button class="hp-dlg-btn" onclick="dismissImportHub()" style="width:100%;margin-top:8px">Cancel</button>
+  <button class="hp-dlg-btn" onclick="dismissImportHub()" style="width:100%;margin-top:8px" data-i18n="btn.cancel">Cancel</button>
 </div>
 
 <div id="aiImportBackdrop" onclick="dismissAIImport()"></div>
@@ -5093,7 +5093,7 @@
 <input type="file" id="charSchemaInput" accept=".md,.txt" style="display:none" onchange="loadSchemaFromFile(this)">
 <div id="charImportBackdrop" onclick="dismissCharImport()"></div>
 <div id="charImportPanel">
-  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px">Import Character</div>
+  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px" data-i18n="import.char_title">Import Character</div>
 
   <div class="ai-mode-row">
     <button class="ai-mode-btn active" id="charModeAI" onclick="setCharImportMode('ai')">&#129302; AI</button>
@@ -5102,7 +5102,7 @@
 
   <div id="charImportAiContent">
     <div class="ai-step">
-      <div class="ai-step-label">Step 1 &#8212; Copy the prompt</div>
+      <div class="ai-step-label" data-i18n="import.step1">Step 1 &#8212; Copy the prompt</div>
       <div class="ci-schema-status" id="ciSchemaStatus"></div>
       <div id="ciSchemaFilePicker" class="ci-file-picker" style="display:none">
         <button class="attack-edit-btn" style="width:100%;padding:7px 0;font-size:0.82rem"
@@ -5111,36 +5111,36 @@
         <button class="attack-edit-btn" style="width:100%;padding:7px 0;font-size:0.82rem"
                 onclick="useBuiltinSchema()">Use built-in schema</button>
       </div>
-      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px" data-i18n="import.char_ai_hint">
         Send this prompt + photos of your character sheet to Claude, ChatGPT, or Gemini.
       </div>
-      <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateCharImportPrompt()">Copy prompt to clipboard</button>
+      <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateCharImportPrompt()" data-i18n="import.copy_prompt">Copy prompt to clipboard</button>
       <div class="ai-copy-notice" id="ciCopyNotice"></div>
     </div>
 
     <div class="ai-step" style="margin-top:16px">
-      <div class="ai-step-label">Step 2 &#8212; Paste the AI&#8217;s response</div>
-      <textarea class="ai-prompt-box" id="ciResponsePaste" placeholder="Paste the full character JSON here&#8230;"></textarea>
+      <div class="ai-step-label" data-i18n="import.step2">Step 2 &#8212; Paste the AI&#8217;s response</div>
+      <textarea class="ai-prompt-box" id="ciResponsePaste" placeholder="Paste the full character JSON here&#8230;" data-i18n-ph="import.char_paste_ph"></textarea>
     </div>
-    <button class="settings-full-btn" onclick="importCharFromAI()" style="margin-bottom:8px">Import Character</button>
+    <button class="settings-full-btn" onclick="importCharFromAI()" style="margin-bottom:8px" data-i18n="import.char_action_import">Import Character</button>
   </div>
 
   <div id="charImportJsonContent" style="display:none">
     <div class="ai-step">
-      <div class="ai-step-label">Import from JSON file</div>
-      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px">
+      <div class="ai-step-label" data-i18n="import.char_json_title">Import from JSON file</div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px" data-i18n="import.char_json_hint">
         Load a full {form,state} character JSON exported from this sheet or generated with the documented schema.
       </div>
-      <button class="settings-full-btn" onclick="openJsonImportFromCharPanel()">Choose JSON File</button>
+      <button class="settings-full-btn" onclick="openJsonImportFromCharPanel()" data-i18n="import.char_json_choose">Choose JSON File</button>
     </div>
   </div>
 
-  <button class="hp-dlg-btn" onclick="dismissCharImport()" style="width:100%;margin-top:8px">Cancel</button>
+  <button class="hp-dlg-btn" onclick="dismissCharImport()" style="width:100%;margin-top:8px" data-i18n="btn.cancel">Cancel</button>
 </div>
 
 <div id="descEnrichBackdrop" onclick="dismissDescEnrichPanel()"></div>
 <div id="descEnrichPanel">
-  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px">Import Informations</div>
+  <div class="sp-mode-badge" style="color:var(--spell-light);margin-bottom:10px" data-i18n="import.info_title">Import Information</div>
 
   <div class="ai-mode-row">
     <button class="ai-mode-btn active" id="deModeAI" onclick="setDescImportMode('ai')">&#129302; AI</button>
@@ -5148,40 +5148,40 @@
   </div>
 
   <div class="ai-type-toggle" style="margin-bottom:10px">
-    <button class="ai-type-btn active" id="deScopeMissing" onclick="setDescImportScope('missing')">Missing Only</button>
-    <button class="ai-type-btn" id="deScopeAll" onclick="setDescImportScope('all')">All Entries</button>
+    <button class="ai-type-btn active" id="deScopeMissing" onclick="setDescImportScope('missing')" data-i18n="import.scope_missing">Missing Only</button>
+    <button class="ai-type-btn" id="deScopeAll" onclick="setDescImportScope('all')" data-i18n="import.scope_all">All Entries</button>
   </div>
 
   <div class="ai-copy-notice" id="deScopeHint" style="margin-bottom:10px"></div>
 
   <div id="descEnrichAiContent">
     <div class="ai-step">
-      <div class="ai-step-label">Step 1 &#8212; Copy the prompt</div>
-      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">
+      <div class="ai-step-label" data-i18n="import.step1">Step 1 &#8212; Copy the prompt</div>
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px" data-i18n="import.info_ai_hint">
         Generate a prompt to fill descriptions with AI using your selected scope.
       </div>
-      <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateDescEnrichPrompt()">Copy prompt to clipboard</button>
+      <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateDescEnrichPrompt()" data-i18n="import.copy_prompt">Copy prompt to clipboard</button>
       <div class="ai-copy-notice" id="deCopyNotice"></div>
     </div>
     <div class="ai-step" style="margin-top:16px">
-      <div class="ai-step-label">Step 2 &#8212; Paste the AI&#8217;s response</div>
-      <textarea class="ai-prompt-box" id="deResponsePaste" placeholder="Paste the JSON array here&#8230;"></textarea>
+      <div class="ai-step-label" data-i18n="import.step2">Step 2 &#8212; Paste the AI&#8217;s response</div>
+      <textarea class="ai-prompt-box" id="deResponsePaste" placeholder="Paste the JSON array here&#8230;" data-i18n-ph="import.info_paste_ph"></textarea>
     </div>
-    <button class="settings-full-btn" onclick="applyDescEnrichResponse()" style="margin-bottom:8px">Apply Descriptions</button>
+    <button class="settings-full-btn" onclick="applyDescEnrichResponse()" style="margin-bottom:8px" data-i18n="import.info_apply">Apply Descriptions</button>
   </div>
 
   <div id="descEnrichSrdContent" style="display:none">
     <div class="ai-step">
-      <div class="ai-step-label">SRD Search</div>
-      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px">
+      <div class="ai-step-label" data-i18n="import.info_srd_title">SRD Search</div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px" data-i18n="import.info_srd_hint">
         Search SRD descriptions for sheet entries using their names. This can fill missing descriptions or refresh all existing descriptions.
       </div>
-      <button class="settings-full-btn" id="srdEnrichRunBtn" onclick="runDescImportSrd()">Run SRD Import</button>
+      <button class="settings-full-btn" id="srdEnrichRunBtn" onclick="runDescImportSrd()" data-i18n="import.info_run_srd">Run SRD Import</button>
       <div class="ai-copy-notice" id="deSrdNotice"></div>
     </div>
   </div>
 
-  <button class="hp-dlg-btn" onclick="dismissDescEnrichPanel()" style="width:100%;margin-top:8px">Cancel</button>
+  <button class="hp-dlg-btn" onclick="dismissDescEnrichPanel()" style="width:100%;margin-top:8px" data-i18n="btn.cancel">Cancel</button>
 </div>
 
 <script src="shared.js"></script>
@@ -11288,15 +11288,15 @@ function setDescImportScope(scope) {
   document.getElementById('deScopeMissing').classList.toggle('active', !all);
   document.getElementById('deScopeAll').classList.toggle('active', all);
   document.getElementById('deScopeHint').textContent = all
-    ? 'Scope: update all current spell/feature/trait/item descriptions from AI or SRD.'
-    : 'Scope: only entries with empty descriptions will be targeted.';
+    ? (_t('import.scope_hint_all') ?? 'Scope: update all current spell/feature/trait/item descriptions from AI or SRD.')
+    : (_t('import.scope_hint_missing') ?? 'Scope: only entries with empty descriptions will be targeted.');
 }
 
 function runDescImportSrd() {
   const includeExisting = descImportScope === 'all';
   document.getElementById('deSrdNotice').textContent = includeExisting
-    ? 'Running SRD import for all entries...'
-    : 'Running SRD import for missing descriptions...';
+    ? (_t('import.srd_running_all') ?? 'Running SRD import for all entries...')
+    : (_t('import.srd_running_missing') ?? 'Running SRD import for missing descriptions...');
   enrichAllFromSrd({ includeExisting, buttonEl: document.getElementById('srdEnrichRunBtn') });
 }
 
@@ -11340,10 +11340,12 @@ Output the JSON array now:`;
 
   navigator.clipboard.writeText(prompt).then(() => {
     document.getElementById('deCopyNotice').textContent =
-      `Copied. ${items.length} item(s) listed (${includeExisting ? 'all entries' : 'missing only'}). Paste into Claude, ChatGPT, or Gemini, then paste the response below.`;
+      (_t('import.info_copy_success') ?? 'Copied. {count} item(s) listed ({scope}). Paste into Claude, ChatGPT, or Gemini, then paste the response below.')
+        .replace('{count}', String(items.length))
+        .replace('{scope}', includeExisting ? (_t('import.scope_all_short') ?? 'all entries') : (_t('import.scope_missing_short') ?? 'missing only'));
   }).catch(() => {
     document.getElementById('deCopyNotice').textContent =
-      'Could not auto-copy — the prompt is shown below; copy it manually, then clear and paste the AI response.';
+      _t('import.copy_fail_long') ?? 'Could not auto-copy — the prompt is shown below; copy it manually, then clear and paste the AI response.';
     document.getElementById('deResponsePaste').value = prompt;
     document.getElementById('deResponsePaste').focus();
     document.getElementById('deResponsePaste').select();
@@ -11518,7 +11520,7 @@ function openCharImport() {
   document.getElementById('ciCopyNotice').textContent = '';
   document.getElementById('ciSchemaFilePicker').style.display = 'none';
   const status = document.getElementById('ciSchemaStatus');
-  status.textContent = 'Looking for JSONGeneration.md…';
+  status.textContent = _t('import.char_schema_searching') ?? 'Looking for JSONGeneration.md…';
   status.className = 'ci-schema-status';
   document.getElementById('charImportBackdrop').classList.add('show');
   document.getElementById('charImportPanel').classList.add('show');
@@ -11556,7 +11558,7 @@ async function _tryLoadCharSchema() {
     document.getElementById('ciSchemaFilePicker').style.display = 'none';
   } catch(e) {
     const el = document.getElementById('ciSchemaStatus');
-    el.textContent = 'Schema not auto-loaded — select it or use the built-in one.';
+    el.textContent = _t('import.char_schema_missing') ?? 'Schema not auto-loaded — select it or use the built-in one.';
     el.className = 'ci-schema-status';
     document.getElementById('ciSchemaFilePicker').style.display = '';
   }
@@ -11579,7 +11581,7 @@ function loadSchemaFromFile(input) {
 function useBuiltinSchema() {
   _charImportSchema = _BUILTIN_CHAR_SCHEMA;
   const el = document.getElementById('ciSchemaStatus');
-  el.textContent = '✓ Using built-in schema';
+  el.textContent = _t('import.char_schema_builtin') ?? '✓ Using built-in schema';
   el.className = 'ci-schema-status ok';
   document.getElementById('ciSchemaFilePicker').style.display = 'none';
 }
@@ -11610,7 +11612,7 @@ Output the complete character JSON now:`;
   navigator.clipboard.writeText(prompt).then(() => {
     document.getElementById('ciCopyNotice').textContent = '✓ Copied! Paste into Claude, ChatGPT, or Gemini along with your character sheet photos.';
   }).catch(() => {
-    document.getElementById('ciCopyNotice').textContent = 'Could not auto-copy — the prompt is shown below; copy it manually, then clear and paste the AI response.';
+    document.getElementById('ciCopyNotice').textContent = _t('import.copy_fail_long') ?? 'Could not auto-copy — the prompt is shown below; copy it manually, then clear and paste the AI response.';
     document.getElementById('ciResponsePaste').value = prompt;
     document.getElementById('ciResponsePaste').focus();
     document.getElementById('ciResponsePaste').select();
