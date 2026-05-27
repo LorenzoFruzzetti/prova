@@ -23,6 +23,10 @@ The prompt embedded in the app already includes the full schema below, so you do
   "source": string,
   "portrait": null,
   "notes": string,
+  "initiative": string,
+  "habitat": string,
+  "treasure": string,
+  "lairDescription": string,
   "size": string,
   "type": string,
   "subtype": string,
@@ -66,7 +70,16 @@ The prompt embedded in the app already includes the full schema below, so you do
 | `name` | string | Creature name |
 | `source` | string | `"manual"`, `"srd2024"`, `"srd2014"`, or any string |
 | `portrait` | null or base64 data URL | Set by the user; always `null` in generated JSON |
-| `notes` | string | Free-form encounter notes |
+| `notes` | string | Free-form description / lore (shown in the **Info** tab) |
+
+### Metadata (Info tab)
+
+| Field | Type | Notes |
+|---|---|---|
+| `initiative` | string | Initiative modifier, e.g. `"+5"` or `"+12 (22)"`. Empty string if not specified |
+| `habitat` | string | Typical environment, e.g. `"Swamp"`, `"Underdark"`, `"Forest"`. Empty string if none |
+| `treasure` | string | Treasure type, e.g. `"Relics"`, `"Coins"`, `"Art Objects"`. Empty string if none |
+| `lairDescription` | string | Narrative description of the lair and its regional effects (shown in the **Lair** tab) |
 
 ### Type and Alignment
 
