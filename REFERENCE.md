@@ -31,7 +31,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 | Stats | `abilities` | `#panel-abilities` | Ability Scores & Saving Throws, Skills, Passive Perception |
 | Combat | `combat` | `#panel-combat` | Hit Points, Combat Stats, Hit Dice, Resistances & Vulnerabilities, Inspiration & Death Saves, Turn block, Conditions |
 | Spells | `spells` | `#panel-spells` | Spellcasting ability, Spells Known (collapsible, with prep counter + max), Spell Slots, Spells Prepared |
-| Features | `features` | `#panel-features` | Class Features (dot trackers), Featured Spells |
+| Features | `features` | `#panel-features` | Class Features & Featured Entries (dot trackers for all entries with `showInFeatures:true`) |
 | Gear | `inventory` | `#panel-inventory` | Currency, Equipment, All Proficiencies (collapsible dot list), Your Proficiencies (active items with descriptions), Languages, Notes |
 | Dice | `dice` | `#panel-dice` | Free-form Dice Roller |
 | Logs | `rolls` | `#panel-rolls` | Roll Log (session history) |
@@ -54,9 +54,12 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 ### Key data distinctions
 
-**Info traits vs class features** — Two separate arrays with different purposes:
-- `state.infoTraits` — descriptive traits and features shown in the Info tab's "Features & Traits" section. No slot tracking. Optional damage roll, saving throw display, and combat-block visibility. Edited via the Trait panel (`#traitPanel`).
-- `state.classFeatures` — limited-use class abilities in the Features tab, each with `max`, `used`, `step`, and `recharge` fields and a visual dot tracker. Edited via the Feature panel (`#featurePanel`).
+**Unified entries model** — All spells, class features, and info traits are stored in `state.entries[]`. Each entry is a single object with `showIn*` flags controlling where it appears:
+- `showInSpells: true` → Spells tab (Known/Prepared lists). Spell-specific fields (`level`, `school`, `castingTime`, etc.) are used.
+- `showInFeatures: true` → Features tab with a dot tracker using `max`, `used`, `step`, `recharge`.
+- `showInTraits: true` → Info tab's "Features & Traits" section. No tracking shown there.
+- `showInCombat: true` → Turn block on the Combat tab (in the sub-section given by `combatActionType`).
+An entry may have any combination of these flags set — for example a healing spell that also tracks uses as a feature. The edit panel that opens (spell/feature/trait) is routed based on the entry's dominant `showIn*` flag.
 
 **Stats tab vs Skills tab** — There is no separate Skills tab. The tab labelled **Stats** (`#panel-abilities`) contains three sections: Ability Scores & Saving Throws, Skills, and Passive Perception — all on the same panel.
 
@@ -66,7 +69,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 ### Combat tab concepts
 
-**Turn block** — The section titled "Turn" inside `#panel-combat`. Renders `state.attacks` alongside spells, info traits, and class features that have `showInCombat: true`, grouped into three always-visible sub-sections: **Actions**, **Bonus Actions**, and **Reactions**. An **Other** sub-section appears only when items use `actionType: 'other'`. The section title is holdable (500 ms) and opens an info panel explaining the anatomy of a D&D turn. Previously called "Attacks" / "combat block" in older documentation; "Turn block" is now the correct term.
+**Turn block** — The section titled "Turn" inside `#panel-combat`. Renders `state.attacks` alongside entries from `state.entries[]` that have `showInCombat: true`, grouped into three always-visible sub-sections: **Actions**, **Bonus Actions**, and **Reactions**. An **Other** sub-section appears only when items use `actionType: 'other'`. The section title is holdable (500 ms) and opens an info panel explaining the anatomy of a D&D turn. Previously called "Attacks" / "combat block" in older documentation; "Turn block" is now the correct term.
 
 **Default Actions** — A collapsible list inside the Turn block (collapsed by default), showing the standard D&D 5e actions available to any character (Dash, Dodge, Disengage, Grapple, etc.). Each row follows the standard tap/hold model: tap opens a generic info panel immediately; hold (500 ms) shows `.holding` feedback then opens the same panel. Populated from the `DEFAULT_ACTIONS` constant.
 
@@ -74,9 +77,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **Dot tracker** — The row of circular `.slot-dot` elements used to track limited-use resources. Gold dots = available, grey dots = used. Appears for spell slots, class features, and hit dice. Tapping a dot uses or restores from that point.
 
-**Featured Spells** — Spells with `showInFeatures: true` that appear in the Features tab alongside class features, using the same dot-tracker layout. Set per spell in the spell edit panel.
-
-**Featured Traits** — `infoTraits` entries with `showInFeatures: true` that appear in the Features tab in a "Featured Traits" section, using the same dot-tracker layout as Featured Spells. Set per trait in the trait edit panel.
+**Featured Entries** — Entries in `state.entries[]` with `showInFeatures: true` that appear in the Features tab with the dot-tracker layout (`max`, `used`, `step`, `recharge`). All such entries appear together, sorted spells first then others. There are no longer separate "Featured Spells" or "Featured Traits" sections — all featured entries share a unified list. Set per entry in the spell/feature/trait edit panel.
 
 ---
 
@@ -100,7 +101,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 
 **Stat modifier dialog (`#statModDialog`)** — Bottom-sheet for entering a custom numeric bonus for one combat stat (AC, Speed, Initiative, Spell Atk, or Spell DC). Opened via the Edit button inside the stat pill's info panel. The bonus is stored in `state.statMods[key]` and displayed as a `.stat-pill-mod` badge inside the pill.
 
-**Settings sheet (`#settingsMenu`)** — Bottom-sheet opened by the ⚙ header button. Contains Save to file, creature stat block shortcut, font size control, lefty mode toggle, and theme/language controls.
+**Settings sheet (`#settingsMenu`)** — Bottom-sheet opened by the ⚙ header button. Contains Save to file, creature stat block shortcut, font size control, lefty mode toggle, theme/language controls, and a "📋 All Entries" button that opens `#entryManagerPanel`.
 
 **Import hub (`#importHubPanel`)** — Modal opened by the ⇓ Import header button. Contains three entry points: **AI / SRD Import**, **Import Character**, and **Import Information**.
 
@@ -111,6 +112,8 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 **Character Import panel (`#charImportPanel`)** — Modal opened from the Import hub → Import Character. Two modes: **AI** (schema-rich prompt workflow for photo-to-JSON import, then paste response) and **JSON** (opens file picker and imports a `{form,state}` file via `importFromJSON`).
 
 **Information Import panel (`#descEnrichPanel`)** — Modal opened from the Import hub → Import Information. Two modes: **AI** (generate prompt and paste JSON descriptions) and **SRD** (auto-search by existing entry names). Scope toggle supports **Missing Only** or **All Entries** (refresh existing descriptions too).
+
+**Entry Manager (`#entryManagerPanel`)** — Bottom-sheet opened from Settings → 📋 All Entries. Lists all `state.entries[]` alphabetically. Tap an entry row to open its view panel (generic info panel); hold 500 ms to open the matching edit panel (routed to spell/feature/trait panel based on which `showIn*` flag is set). Backdrop: `#entryManagerBackdrop`.
 
 **Character Grid (`#charGridOverlay`)** — Full-screen overlay opened by the 🎭 header button. Displays one card per saved character; supports switching, creating, and deleting characters.
 
