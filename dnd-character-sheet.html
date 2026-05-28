@@ -4188,7 +4188,7 @@
   <div class="hp-dlg-title" data-i18n="settings.title">Settings</div>
   <div style="height:16px"></div>
   <button class="settings-full-btn" onclick="exportToJSON(); dismissSettings()" data-i18n="btn.save_character">&#128190; Save Character</button>
-  <button class="settings-full-btn" onclick="dismissSettings();openEntryManager()">&#128203; All Entries</button>
+  <button class="settings-full-btn" onclick="switchToEntryManager()">&#128203; All Entries</button>
   <button class="settings-full-btn" onclick="dismissSettings();openCreatureStatBlocks()" style="color:var(--gold-light)">&#128009; Creature Stat Blocks &#8594;</button>
   <hr class="settings-divider">
   <div class="settings-row">
@@ -8619,6 +8619,18 @@ function openEntryManager() {
   document.getElementById('entryManagerBackdrop').classList.add('show');
   document.getElementById('entryManagerPanel').classList.add('show');
   pushModalHistory();
+}
+
+function switchToEntryManager() {
+  // Swap settings → entry manager without touching the history stack:
+  // settings already holds one pushState entry; we reuse it so the
+  // async popstate from dismissSettings can't race and close the manager.
+  document.getElementById('settingsBackdrop').classList.remove('show');
+  document.getElementById('settingsMenu').classList.remove('show');
+  buildEntryManager();
+  document.getElementById('entryManagerBackdrop').classList.add('show');
+  document.getElementById('entryManagerPanel').classList.add('show');
+  // _modalStatePushed remains true from when settings was opened
 }
 
 function dismissEntryManager() {
