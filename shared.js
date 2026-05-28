@@ -177,12 +177,16 @@ function setupSwipe(tabs, shouldBlock) {
   // our preventDefault() call lands before the browser has started scrolling.
   let gestureDecided  = false;
   let swipeAxisLocked = false;
+  // Set in touchend when any axis was committed; consumed by the capturing pointerup
+  // listener below to stop accidental tap actions at the gesture's endpoint.
+  let _blockNextPointerUp = false;
 
   document.body.addEventListener('touchstart', e => {
     suppressNextTabClick = false;
     gestureDecided       = false;
     swipeAxisLocked      = false;
     _gestureScrollLocked = false;
+    _blockNextPointerUp  = false;
     x0    = e.touches[0].clientX;
     y0    = e.touches[0].clientY;
     xLast = x0;
@@ -205,21 +209,28 @@ function setupSwipe(tabs, shouldBlock) {
       xLast = e.touches[0].clientX;
       yLast = e.touches[0].clientY;
     }
-    const dx = xLast - x0;
-    const dy = yLast - y0;
+    const dx   = xLast - x0;
+    const dy   = yLast - y0;
+    const dist = Math.hypot(dx, dy);
 
-    // Hold state: while a hold gesture is pending, block scroll within the dead zone.
-    // Beyond the dead zone the browser fires pointercancel, which cancels the hold timer.
-    if (document.querySelector('.holding')) {
+    // Hold state: finger is on a hold-enabled element.
+    const holdEl = document.querySelector('.holding');
+    if (holdEl) {
       const panelOpen = document.getElementById('infoPanel')?.classList.contains('show');
-      if (!panelOpen && Math.hypot(dx, dy) < 12) e.preventDefault();
-      return; // never interpret an active hold as a swipe
+      if (panelOpen) return; // info panel already open — don't interfere
+      if (dist < 12) {
+        e.preventDefault(); // dead zone: keep hold alive, block scroll
+        return;
+      }
+      // Beyond the dead zone: fire a synthetic pointercancel to clear the hold timer
+      // on the element, then fall through so the gesture resolves as swipe or scroll.
+      holdEl.dispatchEvent(new PointerEvent('pointercancel', {bubbles: true, cancelable: false}));
     }
 
     // Swiped / scroll state: commit to an axis once cumulative movement exceeds 3 px.
     // This is intentionally below the browser scroll-slop so preventDefault() wins
     // the race against the browser's native scroll handler.
-    if (!gestureDecided && !startedOnTabBar && Math.hypot(dx, dy) > 3) {
+    if (!gestureDecided && !startedOnTabBar && dist > 3) {
       gestureDecided = true;
       if (Math.abs(dx) > Math.abs(dy) && !(shouldBlock && shouldBlock())) {
         swipeAxisLocked      = true;  // horizontal → panel swipe
@@ -257,15 +268,28 @@ function setupSwipe(tabs, shouldBlock) {
     return true;
   }
 
-  // non-passive so we can call preventDefault() and cancel the click that
-  // would otherwise fire on whichever tab button the finger landed on.
+  // Prevent tap actions on whichever entry the finger lands on at gesture end.
+  // Fires before the element's own pointerup handler (capture phase).
+  document.body.addEventListener('pointerup', e => {
+    if (_blockNextPointerUp) {
+      _blockNextPointerUp = false;
+      e.stopPropagation();
+    }
+  }, {capture: true});
+
+  // non-passive so we can call preventDefault() and cancel the click / pointerup
+  // that would otherwise fire on whichever element the finger lifts from.
   document.body.addEventListener('touchend', e => {
     if (tabBarDrag) {
       suppressNextTabClick = true;
       e.preventDefault();
     }
+    const wasDecided = gestureDecided; // capture before applySwipe resets it
     const swipe = applySwipe(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-    if (swipe) e.preventDefault();
+    if (swipe || wasDecided) {
+      e.preventDefault();           // suppress synthetic click for any committed gesture
+      _blockNextPointerUp = true;   // block accidental tap at gesture endpoint
+    }
   });
   // touchcancel: browser took over the gesture (e.g. scroll); use last tracked position.
   document.body.addEventListener('touchcancel', () => {
