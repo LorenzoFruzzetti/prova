@@ -167,8 +167,11 @@ function setupSwipe(tabs, shouldBlock) {
   let startedOnTabButton = false;
   let tabBarDrag = false;
   let suppressNextTabClick = false;
+  let swipeAxisLocked = false; // true once touch is confirmed as a horizontal panel swipe
+
   document.body.addEventListener('touchstart', e => {
     suppressNextTabClick = false;
+    swipeAxisLocked = false;
     x0    = e.touches[0].clientX;
     y0    = e.touches[0].clientY;
     xLast = x0;
@@ -183,15 +186,36 @@ function setupSwipe(tabs, shouldBlock) {
       startedOnTabBar = false;
     }
   }, {passive: true});
+
+  // Non-passive so we can call preventDefault() to block scroll during swipes and holds.
   document.body.addEventListener('touchmove', e => {
+    if (x0 === null) return;
     if (e.touches.length > 0) {
       xLast = e.touches[0].clientX;
       yLast = e.touches[0].clientY;
-      if (!tabBarDrag && startedOnTabBar && startedOnTabButton && Math.abs(xLast - x0) > 10) {
-        tabBarDrag = true;
-      }
     }
-  }, {passive: true});
+    const dx = xLast - x0;
+    const dy = yLast - y0;
+
+    // Hold state: while a hold gesture is pending, block scroll within the dead zone.
+    // Beyond the dead zone the browser fires pointercancel, which cancels the hold timer.
+    if (document.querySelector('.holding')) {
+      const panelOpen = document.getElementById('infoPanel')?.classList.contains('show');
+      if (!panelOpen && Math.hypot(dx, dy) < 12) e.preventDefault();
+      return; // never interpret an active hold as a swipe
+    }
+
+    // Swiped state: once the touch is confirmed horizontal, lock the axis and block scroll.
+    if (!swipeAxisLocked && !startedOnTabBar && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+      if (!(shouldBlock && shouldBlock())) swipeAxisLocked = true;
+    }
+    if (swipeAxisLocked) e.preventDefault();
+
+    if (!tabBarDrag && startedOnTabBar && startedOnTabButton && Math.abs(dx) > 10) {
+      tabBarDrag = true;
+    }
+  }, {passive: false});
+
   function applySwipe(endX, endY) {
     if (x0 === null) return false;
     const wasOnTabBar = startedOnTabBar;
@@ -201,6 +225,7 @@ function setupSwipe(tabs, shouldBlock) {
     startedOnTabBar = false;
     startedOnTabButton = false;
     tabBarDrag = false;
+    swipeAxisLocked = false;
     if (shouldBlock && shouldBlock()) return false;
     if (wasOnTabBar) return false;
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return false;
@@ -209,6 +234,7 @@ function setupSwipe(tabs, shouldBlock) {
     if (next !== cur) switchTab(tabs[next]);
     return true;
   }
+
   // non-passive so we can call preventDefault() and cancel the click that
   // would otherwise fire on whichever tab button the finger landed on.
   document.body.addEventListener('touchend', e => {
