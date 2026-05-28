@@ -94,6 +94,13 @@ body{background:var(--bg);color:var(--text);font-family:Georgia,serif;-webkit-ta
 .ability-grid{grid-template-columns:repeat(3,1fr);padding:6px 8px}
 /* Creature ability cards: score display (not editable input) */
 .ability-card .ability-score-val{font-size:13px;font-family:sans-serif;color:var(--text)}
+/* Compact sizing for creature ability cards */
+.ability-card{padding:4px 6px 0}
+.ability-mod{font-size:20px;margin:0 0 3px}
+.ability-save{padding:5px 4px;gap:5px}
+.ability-save .save-mod{font-size:14px;min-width:24px}
+.ability-save .save-label{font-size:9px}
+.ability-save .prof-dot{width:12px;height:12px}
 
 /* ── Stat rows ── */
 .cs-rows{padding:0 8px}
@@ -959,39 +966,61 @@ function _buildCombatPanel(panel, c, pb, xp) {
       </div>`;
 
     let holdTimer = null;
+    let holdFired = false;
     card.addEventListener('pointerdown', () => {
+      holdFired = false;
       card.classList.add('holding');
       holdTimer = setTimeout(() => {
-        holdTimer = null;
+        holdTimer = null; holdFired = true;
+        card.classList.remove('holding');
         openCreatureAbilityInfoPanel(ab, score, m, saveVal, sv !== undefined);
       }, 500);
     });
     card.addEventListener('pointerup', () => {
-      if (holdTimer !== null) {
-        clearTimeout(holdTimer);
-        holdTimer = null;
-        card.classList.remove('holding');
-        const r = d20Roll('normal');
-        const total = r.roll + m;
-        showRoll(`${ab} Check`, `${r.breakdown} ${fmtMod(m)}`, total, natMsg(r.roll));
-      }
+      if (holdTimer !== null) { clearTimeout(holdTimer); holdTimer = null; }
+      card.classList.remove('holding');
     });
     card.addEventListener('pointercancel', () => {
-      clearTimeout(holdTimer); holdTimer = null; card.classList.remove('holding');
+      clearTimeout(holdTimer); holdTimer = null; holdFired = false; card.classList.remove('holding');
+    });
+    card.addEventListener('click', () => {
+      if (holdFired) { holdFired = false; return; }
+      const r = d20Roll('normal');
+      showRoll(`${ab} Check`, `${r.breakdown} ${fmtMod(m)}`, r.roll + m, natMsg(r.roll));
     });
     card.addEventListener('contextmenu', e => e.preventDefault());
 
     const saveRow = card.querySelector('.ability-save');
-    saveRow.addEventListener('pointerdown', e => e.stopPropagation());
-    saveRow.addEventListener('pointerup', e => {
+    let saveHoldTimer = null;
+    let saveHoldFired = false;
+    saveRow.addEventListener('pointerdown', e => {
       e.stopPropagation();
       if (holdTimer !== null) { clearTimeout(holdTimer); holdTimer = null; }
       card.classList.remove('holding');
-      const r = d20Roll('normal');
-      const total = r.roll + saveVal;
-      showRoll(`${ab} Save`, `${r.breakdown} ${fmtMod(saveVal)}`, total, natMsg(r.roll));
+      saveHoldFired = false;
+      saveRow.classList.add('holding');
+      saveHoldTimer = setTimeout(() => {
+        saveHoldTimer = null; saveHoldFired = true;
+        saveRow.classList.remove('holding');
+        openCreatureAbilityInfoPanel(ab, score, m, saveVal, sv !== undefined);
+      }, 500);
     });
-    saveRow.addEventListener('pointercancel', e => e.stopPropagation());
+    saveRow.addEventListener('pointerup', e => {
+      e.stopPropagation();
+      if (saveHoldTimer !== null) { clearTimeout(saveHoldTimer); saveHoldTimer = null; }
+      saveRow.classList.remove('holding');
+    });
+    saveRow.addEventListener('pointercancel', e => {
+      e.stopPropagation();
+      clearTimeout(saveHoldTimer); saveHoldTimer = null; saveHoldFired = false;
+      saveRow.classList.remove('holding');
+    });
+    saveRow.addEventListener('click', e => {
+      e.stopPropagation();
+      if (saveHoldFired) { saveHoldFired = false; return; }
+      const r = d20Roll('normal');
+      showRoll(`${ab} Save`, `${r.breakdown} ${fmtMod(saveVal)}`, r.roll + saveVal, natMsg(r.roll));
+    });
 
     abDiv.appendChild(card);
   });
