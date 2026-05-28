@@ -154,6 +154,10 @@ function switchTab(id) {
   if (btn) { btn.classList.add('active'); btn.scrollIntoView({inline: 'center', block: 'nearest'}); }
 }
 
+// True while the current touch sequence has been committed to vertical scroll.
+// Written by setupSwipe; read by setupTabBarExpansion to skip overlay activation.
+let _gestureScrollLocked = false;
+
 /**
  * Attaches horizontal touch-swipe listeners to document.body so the user can
  * swipe left/right to move between tabs.
@@ -176,8 +180,9 @@ function setupSwipe(tabs, shouldBlock) {
 
   document.body.addEventListener('touchstart', e => {
     suppressNextTabClick = false;
-    gestureDecided  = false;
-    swipeAxisLocked = false;
+    gestureDecided       = false;
+    swipeAxisLocked      = false;
+    _gestureScrollLocked = false;
     x0    = e.touches[0].clientX;
     y0    = e.touches[0].clientY;
     xLast = x0;
@@ -211,13 +216,15 @@ function setupSwipe(tabs, shouldBlock) {
       return; // never interpret an active hold as a swipe
     }
 
-    // Swiped state: commit to an axis once cumulative movement exceeds 3 px.
+    // Swiped / scroll state: commit to an axis once cumulative movement exceeds 3 px.
     // This is intentionally below the browser scroll-slop so preventDefault() wins
     // the race against the browser's native scroll handler.
     if (!gestureDecided && !startedOnTabBar && Math.hypot(dx, dy) > 3) {
       gestureDecided = true;
       if (Math.abs(dx) > Math.abs(dy) && !(shouldBlock && shouldBlock())) {
-        swipeAxisLocked = true;
+        swipeAxisLocked      = true;  // horizontal → panel swipe
+      } else {
+        _gestureScrollLocked = true;  // vertical → scroll; freeze out swipe for this sequence
       }
     }
     if (swipeAxisLocked) e.preventDefault();
@@ -229,17 +236,20 @@ function setupSwipe(tabs, shouldBlock) {
 
   function applySwipe(endX, endY) {
     if (x0 === null) return false;
-    const wasOnTabBar = startedOnTabBar;
+    const wasOnTabBar     = startedOnTabBar;
+    const wasScrollLocked = _gestureScrollLocked; // capture before reset
     const dx = endX - x0;
     const dy = endY - y0;
     x0 = null; xLast = null; yLast = null;
-    startedOnTabBar = false;
-    startedOnTabButton = false;
-    tabBarDrag = false;
-    gestureDecided  = false;
-    swipeAxisLocked = false;
+    startedOnTabBar      = false;
+    startedOnTabButton   = false;
+    tabBarDrag           = false;
+    gestureDecided       = false;
+    swipeAxisLocked      = false;
+    _gestureScrollLocked = false;
     if (shouldBlock && shouldBlock()) return false;
     if (wasOnTabBar) return false;
+    if (wasScrollLocked) return false; // axis committed to scroll → never switch panels
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return false;
     const cur = tabs.indexOf(document.querySelector('.tab-btn.active')?.dataset.tab ?? tabs[0]);
     const next = Math.max(0, Math.min(tabs.length - 1, cur + (dx < 0 ? 1 : -1)));
