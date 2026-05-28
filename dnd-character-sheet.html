@@ -8732,13 +8732,13 @@ function openEmEdit(idx) {
   if (!e) return;
   if (e.showInSpells) {
     spellPanelEditIdx = idx;
-    openSpellPanel(idx);
+    openSpellPanel(idx, true);
   } else if (e.showInFeatures) {
     featurePanelIdx = idx;
-    openFeaturePanel(idx);
+    openFeaturePanel(idx, true);
   } else {
     traitPanelEditIdx = idx;
-    openTraitPanel(idx);
+    openTraitPanel(idx, true);
   }
 }
 
