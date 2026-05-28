@@ -8570,7 +8570,13 @@ function popModalHistory() {
   }
 }
 window.addEventListener('popstate', () => {
-  if (!_modalStatePushed) return;
+  const entryMgrEl2 = document.getElementById('entryManagerPanel');
+  if (!_modalStatePushed) {
+    // Entry manager may still be open if it was opened via CSS swap (no push)
+    // or if the back button already consumed the pushed state for the info panel.
+    if (entryMgrEl2?.classList.contains('show')) dismissEntryManager();
+    return;
+  }
   _modalStatePushed = false;
   const rollEl         = document.getElementById('rollResult');
   const spellEl        = document.getElementById('spellPanel');
@@ -8690,11 +8696,26 @@ function openEmView(idx) {
   if (e.showInFeatures) sections.push('Features');
   if (e.showInTraits)   sections.push('Traits');
   if (e.showInCombat)   sections.push('Combat');
+
+  // Block entry row taps while info panel is on top
+  const emPanel = document.getElementById('entryManagerPanel');
+  emPanel.style.pointerEvents = 'none';
+  const ipEl = document.getElementById('infoPanel');
+  const _emObserver = new MutationObserver(() => {
+    if (!ipEl.classList.contains('show')) {
+      _emObserver.disconnect();
+      emPanel.style.pointerEvents = '';
+    }
+  });
+  _emObserver.observe(ipEl, { attributes: true, attributeFilter: ['class'] });
+
   openInfoPanel({
     title:       e.name || '',
     meta:        sections.join(' · ') || 'No section',
     description: e.description || '',
     editFn: () => {
+      _emObserver.disconnect();
+      emPanel.style.pointerEvents = '';
       // Swap: hide info panel via CSS without popModalHistory so the edit
       // panel opens cleanly with no popstate race. Entry manager stays visible.
       document.getElementById('infoPanelBackdrop').classList.remove('show');
