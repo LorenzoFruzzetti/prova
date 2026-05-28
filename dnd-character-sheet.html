@@ -8666,8 +8666,7 @@ function startEmPress(ev, idx) {
   _emPressIdx = idx;
   _emPressTimer = setTimeout(() => {
     _emPressTimer = null;
-    dismissEntryManager();
-    openEmView(idx);
+    _switchEmToView(idx);
   }, 500);
 }
 
@@ -8675,7 +8674,14 @@ function endEmPress(ev, idx) {
   if (!_emPressTimer) return;
   clearTimeout(_emPressTimer);
   _emPressTimer = null;
-  dismissEntryManager();
+  _switchEmToView(idx);
+}
+
+function _switchEmToView(idx) {
+  // Hide entry manager without touching history — reuse its history entry
+  // for the info panel so no popstate race can close the panel.
+  document.getElementById('entryManagerBackdrop').classList.remove('show');
+  document.getElementById('entryManagerPanel').classList.remove('show');
   openEmView(idx);
 }
 
