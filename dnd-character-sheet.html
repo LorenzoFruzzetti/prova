@@ -3898,8 +3898,11 @@
           <div class="ica-status">Copy this prompt, paste into an AI, then paste the response below.</div>
           <button class="attack-edit-btn" style="width:100%;margin:4px 0 2px" onclick="icaCopyPrompt('tr','traits')">Copy AI Prompt</button>
           <div class="ica-copy-notice" id="trIcaCopyNotice"></div>
-          <textarea class="ica-paste-area" id="trIcaPaste" placeholder="Paste AI response (plain text)…"></textarea>
-          <button class="attack-edit-btn" style="color:var(--spell);border-color:var(--spell)" onclick="icaApplyAIDesc('tr')">Apply Description</button>
+          <textarea class="ica-paste-area" id="trIcaPaste" placeholder="Paste AI response (JSON)…"></textarea>
+          <div style="display:flex;gap:6px">
+            <button class="attack-edit-btn" style="flex:1;color:var(--spell);border-color:var(--spell)" onclick="icaApplyAI('tr','traits')">Apply All Fields</button>
+            <button class="attack-edit-btn" style="flex:0 0 auto" onclick="icaApplyAIDesc('tr')">Desc Only</button>
+          </div>
         </div>
       </div>
       <textarea id="trEditDescription" placeholder="Describe the feature or trait…" style="min-height:110px"></textarea>
@@ -4110,8 +4113,11 @@
           <div class="ica-status">Copy this prompt, paste into an AI, then paste the response below.</div>
           <button class="attack-edit-btn" style="width:100%;margin:4px 0 2px" onclick="icaCopyPrompt('fp','features')">Copy AI Prompt</button>
           <div class="ica-copy-notice" id="fpIcaCopyNotice"></div>
-          <textarea class="ica-paste-area" id="fpIcaPaste" placeholder="Paste AI response (plain text)…"></textarea>
-          <button class="attack-edit-btn" style="color:var(--spell);border-color:var(--spell)" onclick="icaApplyAIDesc('fp')">Apply Description</button>
+          <textarea class="ica-paste-area" id="fpIcaPaste" placeholder="Paste AI response (JSON)…"></textarea>
+          <div style="display:flex;gap:6px">
+            <button class="attack-edit-btn" style="flex:1;color:var(--spell);border-color:var(--spell)" onclick="icaApplyAI('fp','features')">Apply All Fields</button>
+            <button class="attack-edit-btn" style="flex:0 0 auto" onclick="icaApplyAIDesc('fp')">Desc Only</button>
+          </div>
         </div>
       </div>
       <textarea id="fpEditDescription" placeholder="Describe this feature…" style="min-height:100px"></textarea>
@@ -4530,7 +4536,7 @@
     <div class="ai-step">
       <div class="ai-step-label" data-i18n="import.step1">Step 1 &#8212; Copy the prompt</div>
       <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px" data-i18n="import.info_ai_hint">
-        Generate a prompt to fill descriptions with AI using your selected scope.
+        Generate a prompt to fill descriptions and metadata (range, recharge, damage, etc.) with AI using your selected scope.
       </div>
       <button class="settings-full-btn" style="margin-bottom:8px" onclick="generateDescEnrichPrompt()" data-i18n="import.copy_prompt">Copy prompt to clipboard</button>
       <div class="ai-copy-notice" id="deCopyNotice"></div>
@@ -4539,7 +4545,7 @@
       <div class="ai-step-label" data-i18n="import.step2">Step 2 &#8212; Paste the AI&#8217;s response</div>
       <textarea class="ai-prompt-box" id="deResponsePaste" placeholder="Paste the JSON array here&#8230;" data-i18n-ph="import.info_paste_ph"></textarea>
     </div>
-    <button class="settings-full-btn" onclick="applyDescEnrichResponse()" style="margin-bottom:8px" data-i18n="import.info_apply">Apply Descriptions</button>
+    <button class="settings-full-btn" onclick="applyDescEnrichResponse()" style="margin-bottom:8px" data-i18n="import.info_apply">Apply Information</button>
   </div>
 
   <div id="descEnrichSrdContent" style="display:none">
@@ -10441,6 +10447,44 @@ function icaCopyPrompt(p, type) {
   let prompt;
   if (type === 'spells') {
     prompt = `I'm building a D&D ${_srdEditionLabel()} character sheet. Provide full details for the spell "${name}".\n\nReturn ONLY a JSON object with these exact fields (no markdown, no extra text):\n{\n  "description": "full spell description",\n  "level": 0,\n  "school": "e.g. Evocation",\n  "castingTime": "e.g. 1 action",\n  "range": "e.g. 60 ft",\n  "components": "e.g. V, S, M (material if any)",\n  "duration": "e.g. Instantaneous",\n  "saveAbility": "WIS or empty string if no save",\n  "concentration": false,\n  "ritual": false\n}`;
+  } else if (type === 'features') {
+    prompt = `I'm building a D&D ${_srdEditionLabel()} character sheet. My character has a class feature called "${name}".
+
+Return ONLY a JSON object with these exact fields (no markdown, no extra text):
+{
+  "description": "2-4 sentences describing what this feature does, including mechanics",
+  "max": integer (number of uses; use 1 if unlimited/passive, 0 if purely passive with no tracking),
+  "recharge": "Short Rest" | "Long Rest" | "Dawn" | "" (empty if passive or unlimited),
+  "step": integer (1 in almost all cases; use 5 for Lay on Hands),
+  "attackRoll": boolean (true if the feature involves an attack roll),
+  "attackMod": "" | "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA" | "SPELL" (empty if no attack roll),
+  "attackProficient": boolean (true if proficiency applies to the attack roll),
+  "rolls": array of roll objects or [] if no roll. Each entry: {"dice":"2d8","type":"radiant","mod":"SPELLMOD"}
+    - "type": slashing|piercing|bludgeoning|fire|cold|lightning|thunder|acid|poison|necrotic|radiant|force|psychic|healing|not_damage|other
+    - "mod": "" | ability key "STR"-"CHA" | "SPELLMOD" (spellcasting ability modifier only) | "SPELL" (full spell attack bonus)
+    Set "mod":"SPELLMOD" whenever the feature adds your spellcasting ability modifier to a roll,
+  "saveAbility": "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA" | "" (empty if no saving throw),
+  "saveDC": integer or 0 (0 = use character spell save DC),
+  "showInCombat": boolean (true if this feature is used in combat),
+  "combatActionType": "action" | "bonus" | "reaction" | "other"
+}
+
+Output ONLY the JSON object.`;
+  } else if (type === 'traits') {
+    prompt = `I'm building a D&D ${_srdEditionLabel()} character sheet. My character has a trait called "${name}".
+
+Return ONLY a JSON object with these exact fields (no markdown, no extra text):
+{
+  "description": "2-4 sentences describing this trait, including any mechanical effects",
+  "damage": "dice expression e.g. 2d6 fire" or "" (empty if the trait deals no direct damage),
+  "rollDamage": boolean (true if there is a damage roll to display),
+  "saveAbility": "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA" | "" (empty if no saving throw),
+  "saveDC": integer or 0 (0 = use character spell save DC),
+  "showInCombat": boolean (true if this trait is used in combat),
+  "combatActionType": "action" | "bonus" | "reaction" | "other"
+}
+
+Output ONLY the JSON object.`;
   } else {
     const cfg = ICA_CFG[p];
     prompt = `I'm building a D&D ${_srdEditionLabel()} character sheet. My character has a ${cfg.label} called "${name}".\n\nWrite a concise description (2–4 sentences) explaining what this ${cfg.label} does, including any mechanical effects and relevant flavor text. Return only the description text, no extra commentary.`;
@@ -10472,6 +10516,49 @@ function icaApplyAI(p, type) {
         if (data.concentration !== undefined) document.getElementById('spEditConc').checked  = !!data.concentration;
         if (data.ritual !== undefined)    document.getElementById('spEditRitual').checked    = !!data.ritual;
         document.getElementById('spEditDescription').value = data.description;
+        document.getElementById(p + 'Ica').style.display = 'none';
+        return;
+      }
+    } catch(e) { /* not JSON — fall through to plain text */ }
+  } else if (type === 'features') {
+    try {
+      const cleaned = raw.replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();
+      const data = JSON.parse(cleaned);
+      if (typeof data.description === 'string') {
+        if (data.max       !== undefined) document.getElementById('fpEditMax').value         = String(data.max ?? 1);
+        if (data.recharge  !== undefined) document.getElementById('fpEditRecharge').value    = data.recharge || '';
+        if (data.step      !== undefined) document.getElementById('fpEditStep').value        = String(data.step ?? 1);
+        if (data.attackRoll !== undefined) document.getElementById('fpEditAttackRoll').checked = !!data.attackRoll;
+        if (data.attackMod !== undefined) {
+          document.getElementById('fpEditAttackMod').value = data.attackMod || '';
+          toggleFpAtkBonusFields();
+        }
+        if (data.attackProficient !== undefined) document.getElementById('fpEditProficient').checked = !!data.attackProficient;
+        if (data.saveAbility !== undefined) document.getElementById('fpEditSaveAbility').value = data.saveAbility || '';
+        if (data.saveDC    !== undefined) document.getElementById('fpEditSaveDC').value      = String(data.saveDC ?? 0);
+        if (data.showInCombat !== undefined) {
+          document.getElementById('fpEditShowInCombat').checked = !!data.showInCombat;
+          document.getElementById('fpEditCombatTypeRow').style.display = data.showInCombat ? '' : 'none';
+        }
+        if (data.combatActionType) document.getElementById('fpEditCombatType').value = data.combatActionType;
+        if (Array.isArray(data.rolls) && data.rolls.length) renderRollRows('fpRollRows', data.rolls);
+        document.getElementById('fpEditDescription').value = data.description;
+        document.getElementById(p + 'Ica').style.display = 'none';
+        return;
+      }
+    } catch(e) { /* not JSON — fall through to plain text */ }
+  } else if (type === 'traits') {
+    try {
+      const cleaned = raw.replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();
+      const data = JSON.parse(cleaned);
+      if (typeof data.description === 'string') {
+        if (data.damage    !== undefined) document.getElementById('trEditDamage').value      = data.damage || '';
+        if (data.rollDamage !== undefined) document.getElementById('trEditRollDamage').checked = !!data.rollDamage;
+        if (data.saveAbility !== undefined) document.getElementById('trEditSaveAbility').value = data.saveAbility || '';
+        if (data.saveDC    !== undefined) document.getElementById('trEditSaveDC').value      = String(data.saveDC ?? 0);
+        if (data.showInCombat !== undefined) document.getElementById('trEditShowInCombat').checked = !!data.showInCombat;
+        if (data.combatActionType) document.getElementById('trEditCombatType').value = data.combatActionType;
+        document.getElementById('trEditDescription').value = data.description;
         document.getElementById(p + 'Ica').style.display = 'none';
         return;
       }
@@ -10667,14 +10754,22 @@ function runDescImportSrd() {
 
 function _collectDescImportItems(includeExisting) {
   const items = [];
-  const include = (obj, type) => {
-    const desc = String(obj.description || '').trim();
-    if (includeExisting || !desc) items.push({ type, name: obj.name });
-  };
-  (state.spells || []).forEach(s => include(s, 'spell'));
-  (state.classFeatures || []).forEach(f => include(f, 'feature'));
-  (state.infoTraits || []).forEach(t => include(t, 'trait'));
-  (state.equipmentItems || []).forEach(e => include(e, 'equipment'));
+  (state.spells || []).forEach(s => {
+    if (includeExisting || !String(s.description || '').trim())
+      items.push({ type: 'spell', name: s.name });
+  });
+  (state.classFeatures || []).forEach(f => {
+    if (includeExisting || !String(f.description || '').trim())
+      items.push({ type: 'feature', name: f.name });
+  });
+  (state.infoTraits || []).forEach(t => {
+    if (includeExisting || !String(t.description || '').trim())
+      items.push({ type: 'trait', name: t.name });
+  });
+  (state.equipmentItems || []).forEach(e => {
+    if (includeExisting || !String(e.description || '').trim())
+      items.push({ type: 'equipment', name: e.name });
+  });
   return items;
 }
 
@@ -10689,16 +10784,22 @@ function generateDescEnrichPrompt() {
 
   const prompt =
 `You are a D&D 5e rules expert. The following items are from my character sheet.
-${includeExisting ? 'For each item, write a concise and complete D&D 5e description (2–5 sentences), replacing existing text when needed.' : 'The listed items are missing descriptions. For each item, write a concise but complete D&D 5e description (2–5 sentences).'}
+${includeExisting ? 'For each item, fill or update all fields listed in the schema below.' : 'The listed items are missing descriptions. Fill all fields for each item.'}
 
 Rules:
 - Output ONLY a raw JSON array — no markdown code fences, no explanation.
-- Each element must have exactly three keys: "type", "name", "description".
+- Each element must include "type" and "name" exactly as given, plus all schema fields for that type.
 - Valid types: "spell", "feature", "trait", "equipment".
 - Do not invent items not in the list below.
 - Begin your response with [ and end with ]
 
-Items needing descriptions:
+Schemas:
+- spell:     { type, name, description, castingTime, range, components, duration, saveAbility ("STR"|"DEX"|"CON"|"INT"|"WIS"|"CHA"|""), concentration (bool), ritual (bool) }
+- feature:   { type, name, description, max (int uses; 1 if unlimited/passive), recharge ("Short Rest"|"Long Rest"|"Dawn"|""), step (int, default 1), saveAbility, saveDC (int, 0=spell DC), showInCombat (bool), combatActionType ("action"|"bonus"|"reaction"|"other") }
+- trait:     { type, name, description, damage ("2d6 fire" or ""), rollDamage (bool), saveAbility, saveDC (int, 0=spell DC), showInCombat (bool), combatActionType ("action"|"bonus"|"reaction"|"other") }
+- equipment: { type, name, description }
+
+Items to fill:
 ${JSON.stringify(items, null, 2)}
 
 Output the JSON array now:`;
@@ -10732,34 +10833,71 @@ function applyDescEnrichResponse() {
 
   let updated = 0;
   for (const item of arr) {
-    if (!item.name || !item.description) continue;
+    if (!item.name) continue;
     const name = item.name.toLowerCase();
-    const desc = String(item.description).trim();
-    if (!desc) continue;
-    const applyTo = list => {
-      const match = list.find(x => (x.name || '').toLowerCase() === name);
-      if (!match) return false;
+    const desc = String(item.description || '').trim();
+
+    if (item.type === 'spell') {
+      const match = (state.spells || []).find(x => (x.name || '').toLowerCase() === name);
+      if (!match) continue;
       const prev = String(match.description || '').trim();
-      if (!includeExisting && prev) return false;
-      if (prev === desc) return false;
-      match.description = desc;
-      updated++;
-      return true;
-    };
-    if      (item.type === 'spell')     applyTo(state.spells        || []);
-    else if (item.type === 'feature')   applyTo(state.classFeatures || []);
-    else if (item.type === 'trait')     applyTo(state.infoTraits    || []);
-    else if (item.type === 'equipment') applyTo(state.equipmentItems|| []);
+      if (!includeExisting && prev) continue;
+      let changed = false;
+      if (desc && desc !== prev) { match.description = desc; changed = true; }
+      if (item.castingTime  !== undefined && item.castingTime  !== match.castingTime)  { match.castingTime  = item.castingTime;  changed = true; }
+      if (item.range        !== undefined && item.range        !== match.range)        { match.range        = item.range;        changed = true; }
+      if (item.components   !== undefined && item.components   !== match.components)   { match.components   = item.components;   changed = true; }
+      if (item.duration     !== undefined && item.duration     !== match.duration)     { match.duration     = item.duration;     changed = true; }
+      if (item.saveAbility  !== undefined && item.saveAbility  !== match.saveAbility)  { match.saveAbility  = item.saveAbility;  changed = true; }
+      if (item.concentration!== undefined && !!item.concentration !== !!match.concentration) { match.concentration = !!item.concentration; changed = true; }
+      if (item.ritual       !== undefined && !!item.ritual      !== !!match.ritual)    { match.ritual       = !!item.ritual;     changed = true; }
+      if (changed) updated++;
+    } else if (item.type === 'feature') {
+      const match = (state.classFeatures || []).find(x => (x.name || '').toLowerCase() === name);
+      if (!match) continue;
+      const prev = String(match.description || '').trim();
+      if (!includeExisting && prev) continue;
+      let changed = false;
+      if (desc && desc !== prev) { match.description = desc; changed = true; }
+      if (item.max          !== undefined && item.max          !== match.max)          { match.max          = item.max;          changed = true; }
+      if (item.recharge     !== undefined && item.recharge     !== match.recharge)     { match.recharge     = item.recharge;     changed = true; }
+      if (item.step         !== undefined && item.step         !== match.step)         { match.step         = item.step;         changed = true; }
+      if (item.saveAbility  !== undefined && item.saveAbility  !== match.saveAbility)  { match.saveAbility  = item.saveAbility;  changed = true; }
+      if (item.saveDC       !== undefined && item.saveDC       !== match.saveDC)       { match.saveDC       = item.saveDC;       changed = true; }
+      if (item.showInCombat !== undefined && !!item.showInCombat !== !!match.showInCombat) { match.showInCombat = !!item.showInCombat; changed = true; }
+      if (item.combatActionType !== undefined && item.combatActionType !== match.combatActionType) { match.combatActionType = item.combatActionType; changed = true; }
+      if (changed) updated++;
+    } else if (item.type === 'trait') {
+      const match = (state.infoTraits || []).find(x => (x.name || '').toLowerCase() === name);
+      if (!match) continue;
+      const prev = String(match.description || '').trim();
+      if (!includeExisting && prev) continue;
+      let changed = false;
+      if (desc && desc !== prev) { match.description = desc; changed = true; }
+      if (item.damage       !== undefined && item.damage       !== match.damage)       { match.damage       = item.damage;       changed = true; }
+      if (item.rollDamage   !== undefined && !!item.rollDamage  !== !!match.rollDamage)  { match.rollDamage   = !!item.rollDamage;  changed = true; }
+      if (item.saveAbility  !== undefined && item.saveAbility  !== match.saveAbility)  { match.saveAbility  = item.saveAbility;  changed = true; }
+      if (item.saveDC       !== undefined && item.saveDC       !== match.saveDC)       { match.saveDC       = item.saveDC;       changed = true; }
+      if (item.showInCombat !== undefined && !!item.showInCombat !== !!match.showInCombat) { match.showInCombat = !!item.showInCombat; changed = true; }
+      if (item.combatActionType !== undefined && item.combatActionType !== match.combatActionType) { match.combatActionType = item.combatActionType; changed = true; }
+      if (changed) updated++;
+    } else if (item.type === 'equipment') {
+      const match = (state.equipmentItems || []).find(x => (x.name || '').toLowerCase() === name);
+      if (!match) continue;
+      const prev = String(match.description || '').trim();
+      if (!includeExisting && prev) continue;
+      if (desc && desc !== prev) { match.description = desc; updated++; }
+    }
   }
 
   if (updated > 0) {
     buildSpellsKnown(); buildSpellsPrepared();
     buildInfoTraits(); buildFeatures(); buildEquipmentItems();
     saveData();
-    toast(`${updated} description(s) applied`);
+    toast(`${updated} item(s) updated`);
     dismissDescEnrichPanel();
   } else {
-    toast('No descriptions matched or applied');
+    toast('No items matched or updated');
   }
 }
 
