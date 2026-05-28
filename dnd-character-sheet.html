@@ -8695,12 +8695,10 @@ function openEmView(idx) {
     meta:        sections.join(' · ') || 'No section',
     description: e.description || '',
     editFn: () => {
-      // Swap: hide info panel + entry manager via CSS without popModalHistory,
-      // so the edit panel opens cleanly with no popstate race.
+      // Swap: hide info panel via CSS without popModalHistory so the edit
+      // panel opens cleanly with no popstate race. Entry manager stays visible.
       document.getElementById('infoPanelBackdrop').classList.remove('show');
       document.getElementById('infoPanel').classList.remove('show');
-      document.getElementById('entryManagerBackdrop').classList.remove('show');
-      document.getElementById('entryManagerPanel').classList.remove('show');
       if (typeof infoPanelCfg !== 'undefined') infoPanelCfg = {};
       document.querySelectorAll('.holding').forEach(el => el.classList.remove('holding'));
       openEmEdit(idx);
