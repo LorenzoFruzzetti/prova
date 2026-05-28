@@ -254,13 +254,11 @@ These are the structured, typed values in the `state` object. They are persisted
 | `inspiration` | `boolean` | Whether the character currently has Inspiration |
 | `hpCurrent` | `integer` | Current hit points; clamped to `[0, hpMax]` |
 | `spellSlots` | `object[]` | Nine spell slot levels; each entry: `{level, max, used}` |
-| `spells` | `object[]` | All spells on the sheet; each entry includes `prepared` and `alwaysPrepared` booleans in addition to the core spell fields (see nested fields below) |
+| `entries` | `object[]` | All spells, class features, and traits; each carries `showIn*` flags (see Unified entry fields) |
 | `maxSpellsPrepared` | `integer` | Daily preparation limit for P-marked spells; `0` = no limit enforced; always-prepared spells (∞) never count toward this |
 | `attacks` | `object[]` | All weapon / ability attacks in the Turn block (see nested fields below) |
 | `conditions` | `string[]` | Names of active conditions (e.g. `['Poisoned','Frightened']`) |
 | `hitDiceUsed` | `integer` | Number of hit dice expended; max equals `charLevel` |
-| `classFeatures` | `object[]` | Limited-use class abilities in the Features tab (see nested fields below) |
-| `infoTraits` | `object[]` | Descriptive traits in the Info tab's Features & Traits section (see nested fields below) |
 | `diceRoller` | `{sides,count}[]|null` | Free-form dice roller configuration; `null` means use defaults (d4/d6/d8/d10/d12/d20/d100, count 1 each) |
 | `portrait` | `string|null` | Base64 data URL for the character portrait, or `null` |
 | `statMods` | `{ac,speed,initiative,spellatk,spelldc}` | Custom numeric bonuses added on top of the base stat values |
@@ -269,50 +267,62 @@ These are the structured, typed values in the `state` object. They are persisted
 
 ---
 
-### Nested field names (fields shared across state arrays)
+### Unified entry fields (`state.entries[]` items)
 
-These field names appear inside `state.spells`, `state.attacks`, `state.classFeatures`, and/or `state.infoTraits`. This table defines each name once.
+All entries in `state.entries[]` share the same full schema regardless of whether they represent a spell, feature, or trait. Irrelevant fields default to empty/false/0.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | `string` | Display name of the entry |
+| `description` | `string` | Free-text description; newlines are preserved |
+| `showInSpells` | `boolean` | True if entry appears in the Spells tab (Known/Prepared lists) |
+| `showInFeatures` | `boolean` | True if entry appears in the Features tab with a dot tracker |
+| `showInTraits` | `boolean` | True if entry appears in the Info tab's Features & Traits section |
+| `showInCombat` | `boolean` | True if entry appears as a row in the Turn block in the Combat tab |
+| `combatActionType` | `'action'\|'bonus'\|'reaction'\|'other'` | Which Turn sub-section the entry appears in when `showInCombat` is true (default `'action'`) |
+| `level` | `integer` | Spell level 0–9 (`0` = cantrip); `0` for non-spell entries |
+| `school` | `string` | Magic school (e.g. `"Evocation"`); empty for non-spells |
+| `castingTime` | `string` | Casting time string (e.g. `"1 action"`); empty for non-spells |
+| `range` | `string` | Range string (e.g. `"60 ft"`); empty for non-spells |
+| `components` | `string` | Components string (e.g. `"V, S, M (a drop of blood)"`); empty for non-spells |
+| `duration` | `string` | Duration string (e.g. `"Concentration, up to 1 minute"`); empty for non-spells |
+| `concentration` | `boolean` | True if the spell requires concentration; `false` for non-spells |
+| `ritual` | `boolean` | True if the spell can be cast as a ritual; `false` for non-spells |
+| `prepared` | `boolean` | True if the spell is prepared for the day (counts toward `maxSpellsPrepared`); mutually exclusive with `alwaysPrepared`; `false` for non-spells |
+| `alwaysPrepared` | `boolean` | True if always prepared (e.g. domain spells); never counts toward `maxSpellsPrepared`; mutually exclusive with `prepared`; `false` for non-spells |
+| `attackRoll` | `boolean` | True if the entry uses an attack roll (shows a tappable d20 card) |
+| `attackMod` | `string` | Ability key for the attack roll: `''`, ability key (`'STR'`…`'CHA'`), `'SPELL'`, or `'manual'` |
+| `attackBonus` | `string` | Manual to-hit string used when `attackMod === 'manual'` (e.g. `"+7"`) |
+| `attackProficient` | `boolean` | Add proficiency bonus to the computed attack roll |
+| `rolls` | `object[]` | Array of roll objects: `{dice, type, label?, mod?}`; `dice` is a string expression like `"2d6"` |
+| `saveAbility` | `string` | Ability key for a saving throw (`'STR'`…`'CHA'`), or empty string for none |
+| `saveDC` | `integer` | Saving throw DC override; `0` means use the character's current Spell Save DC |
+| `max` | `integer` | Maximum number of uses / pool size for dot-tracked entries; `0` = no tracker shown |
+| `used` | `integer` | How many uses have been expended; reset to `0` on Long Rest |
+| `step` | `integer` | How many "uses" one dot on the tracker represents (default `1`) |
+| `recharge` | `string` | When the entry recharges (e.g. `'Long Rest'`, `'Short Rest'`, `'Dawn'`); empty for none |
+| `damage` | `string` | Legacy damage expression field (e.g. `"1d8+3 necrotic"`); prefer `rolls` for new entries |
+| `rollDamage` | `boolean` | True if tapping the trait row should roll the `damage` expression directly |
+
+### Attack fields (`state.attacks[]` items)
+
+Attacks remain a separate array and are NOT part of `state.entries[]`.
 
 | Field | Used in | Type | Meaning |
 |---|---|---|---|
-| `name` | all | `string` | Display name of the item |
-| `description` | all | `string` | Free-text description; newlines are preserved |
-| `actionType` | `attacks` | `'action'|'bonus'|'reaction'|'other'` | Which Turn sub-section the attack appears in (default `'action'`) |
-| `combatActionType` | `spells`, `classFeatures`, `infoTraits` | `'action'|'bonus'|'reaction'|'other'` | Which Turn sub-section the item appears in when `showInCombat` is true (default `'action'`) |
-| `showInCombat` | `spells`, `classFeatures`, `infoTraits` | `boolean` | Whether the item appears as a row in the Turn block in the Combat tab |
-| `showInFeatures` | `spells`, `infoTraits` | `boolean` | Whether the item appears in the "Featured Spells" / "Featured Traits" block in the Features tab |
-| `featureMax` | `spells`, `infoTraits` | `integer` | Maximum number of uses to track in the Featured block (dot count × `featureStep`) |
-| `featureUsed` | `spells`, `infoTraits` | `integer` | Number of uses already expended in the Featured block (runtime state; reset on Long Rest) |
-| `featureStep` | `spells`, `infoTraits` | `integer` | How many uses one dot represents (default `1`); same semantics as `classFeatures[].step` |
-| `featureRecharge` | `spells`, `infoTraits` | `string` | Recharge label shown next to the restore button (e.g. `'Long Rest'`); empty string for none |
-| `rolls` | `spells`, `attacks`, `classFeatures` | `object[]` | Array of roll objects: `{dice, type, label?, mod?}`; `dice` is a string expression like `"2d6"` |
-| `saveAbility` | `spells`, `attacks`, `classFeatures`, `infoTraits` | `string` | Ability key for a saving throw (`'STR'`…`'CHA'`), or empty string for none |
-| `saveDC` | `spells`, `attacks`, `classFeatures`, `infoTraits` | `integer` | Saving throw DC override; `0` means use the character's current Spell Save DC |
-| `attackRoll` | `spells`, `classFeatures` | `boolean` | True if the item uses a spell attack roll (d20 + spell attack bonus) |
-| `rollDamage` | `infoTraits` | `boolean` | True if tapping the trait row should roll the `damage` expression directly |
-| `damage` | `infoTraits` | `string` | Free-form damage expression shown in the combat block (e.g. `"1d8+3 necrotic"`) |
+| `name` | `attacks` | `string` | Display name of the attack |
+| `description` | `attacks` | `string` | Free-text description; newlines are preserved |
+| `actionType` | `attacks` | `'action'\|'bonus'\|'reaction'\|'other'` | Which Turn sub-section the attack appears in (default `'action'`) |
+| `rolls` | `attacks` | `object[]` | Array of roll objects: `{dice, type, label?, mod?}`; `dice` is a string expression like `"2d6"` |
+| `saveAbility` | `attacks` | `string` | Ability key for a saving throw (`'STR'`…`'CHA'`), or empty string for none |
+| `saveDC` | `attacks` | `integer` | Saving throw DC override; `0` = no save DC displayed |
 | `hidden` | `attacks` | `boolean` | When true the attack row appears faded; tapping opens the edit panel rather than rolling |
 | `abilityMod` | `attacks` | `string` | Ability used for the attack roll: `''` (no roll), ability key (`'STR'`…`'CHA'`), `'SPELL'`, or `'manual'` |
 | `proficient` | `attacks` | `boolean` | Add proficiency bonus to the computed attack roll |
 | `flatBonus` | `attacks` | `integer` | Additional flat bonus added on top of the computed modifier |
 | `bonus` | `attacks` | `string` | Manual to-hit string used only when `abilityMod === 'manual'` (e.g. `"+5"`) |
-| `attackMod` | `classFeatures` | `string` | Same set of values as `abilityMod` on attacks |
-| `attackBonus` | `classFeatures` | `string` | Manual to-hit string used when `attackMod === 'manual'` |
-| `attackProficient` | `classFeatures` | `boolean` | Add proficiency bonus to the feature attack roll |
-| `max` | `classFeatures`, `spellSlots` | `integer` | Maximum number of uses / available slots |
-| `used` | `classFeatures`, `spellSlots` | `integer` | How many uses / slots have been expended |
-| `step` | `classFeatures` | `integer` | How many "uses" one dot on the tracker represents (default `1`) |
-| `recharge` | `classFeatures` | `string` | When the feature recharges (e.g. `'Long Rest'`, `'Short Rest'`, `'Dawn'`) |
-| `prepared` | `spells` | `boolean` | True if the spell is prepared for the day; prepared spells appear in the Spells Prepared section and count toward `state.maxSpellsPrepared`; mutually exclusive with `alwaysPrepared` |
-| `alwaysPrepared` | `spells` | `boolean` | True if the spell is always prepared (e.g. domain spells); always-prepared spells appear in Spells Prepared but never count toward `maxSpellsPrepared`; mutually exclusive with `prepared` |
-| `level` | `spells`, `spellSlots` | `integer` | Spell level 0–9 (`0` = cantrip) or slot level 1–9 |
-| `school` | `spells` | `string` | Magic school (e.g. `"Evocation"`) |
-| `castingTime` | `spells` | `string` | Casting time string (e.g. `"1 action"`) |
-| `range` | `spells` | `string` | Range string (e.g. `"60 ft"`) |
-| `components` | `spells` | `string` | Components string (e.g. `"V, S, M (a drop of blood)"`) |
-| `duration` | `spells` | `string` | Duration string (e.g. `"Concentration, up to 1 minute"`) |
-| `concentration` | `spells` | `boolean` | True if the spell requires concentration |
-| `ritual` | `spells` | `boolean` | True if the spell can be cast as a ritual |
+| `max` | `spellSlots` | `integer` | Maximum number of available slots |
+| `used` | `spellSlots` | `integer` | How many slots have been expended |
 
 ---
 
@@ -338,9 +348,11 @@ Not persisted. Reset on page reload or character switch.
 | `rollLog` | Array of roll history entries (max 50) shown in the Rolls tab |
 | `infoPanelCfg` | **`shared.js`** — Object holding the `rollFn`, `simpleRollFn`, `editFn`, `actionFn` closures for the currently-open `#infoPanel` |
 | `attackPanelIdx` | Index into `state.attacks` for the attack panel currently open; `-1` = new attack being created |
-| `spellPanelEditIdx` | Index into `state.spells`; `-1` = new spell |
-| `traitPanelEditIdx` | Index into `state.infoTraits`; `-1` = new trait |
-| `featurePanelIdx` | Index into `state.classFeatures`; `-1` = new feature |
+| `spellPanelEditIdx` | Index into `state.entries[]`; `-1` = new spell |
+| `traitPanelEditIdx` | Index into `state.entries[]`; `-1` = new trait |
+| `featurePanelIdx` | Index into `state.entries[]`; `-1` = new feature |
+| `_emPressIdx` | Index into `state.entries[]` for the entry row currently being pressed in `#entryManagerPanel`; `-1` when none |
+| `_emPressTimer` | `setTimeout` handle for the hold timer on an entry row in `#entryManagerPanel` |
 | `equipItemPanelIdx` | Index into `state.equipmentItems`; `-1` = new item |
 | `statModDialogKey` | Key string (`'ac'`\|`'speed'`\|`'initiative'`\|`'spellatk'`\|`'spelldc'`) for the stat modifier dialog currently open |
 | `fontSizeIdx` | Current index into `FONT_SIZES`; persisted separately in `localStorage` as `dnd5e_fontsize` |
@@ -415,14 +427,14 @@ These are the discrete string values used in state fields. When the code falls b
 | Field | Valid values | Default | Where used |
 |---|---|---|---|
 | `actionType` | `'action'`, `'bonus'`, `'reaction'`, `'other'` | `'action'` | `attacks[i].actionType` — Turn block sub-section |
-| `combatActionType` | `'action'`, `'bonus'`, `'reaction'`, `'other'` | `'action'` | `spells[i]`, `classFeatures[i]`, `infoTraits[i]` — same sub-section logic |
+| `combatActionType` | `'action'`, `'bonus'`, `'reaction'`, `'other'` | `'action'` | `entries[i].combatActionType` — same sub-section logic |
 | `abilityMod` | `''`, `'STR'`, `'DEX'`, `'CON'`, `'INT'`, `'WIS'`, `'CHA'`, `'SPELL'`, `'manual'` | `''` | `attacks[i].abilityMod` — `''` = no attack roll; `'manual'` = use `bonus` string; otherwise computed |
-| `attackMod` | same set as `abilityMod` | `''` | `classFeatures[i].attackMod` — same semantics |
+| `attackMod` | same set as `abilityMod` | `''` | `entries[i].attackMod` — same semantics |
 | `rolls[].type` | `'slashing'`, `'piercing'`, `'bludgeoning'`, `'fire'`, `'cold'`, `'lightning'`, `'thunder'`, `'acid'`, `'poison'`, `'necrotic'`, `'radiant'`, `'force'`, `'psychic'`, `'healing'`, `'not_damage'`, `'other'` | — | Damage type for a roll entry; `'not_damage'` for non-damage rolls; `'other'` uses `label` field |
 | `rolls[].mod` | `''`, `'STR'`, `'DEX'`, `'CON'`, `'INT'`, `'WIS'`, `'CHA'`, `'SPELLMOD'`, `'SPELL'` | `''` | Modifier added to a roll result (`'SPELLMOD'` = spellcasting ability mod only; `'SPELL'` = full spell attack bonus) |
 | `spellAbility` (form input) | `'STR'`, `'DEX'`, `'CON'`, `'INT'`, `'WIS'`, `'CHA'`, or blank | blank | Drives spell attack bonus and spell save DC |
 | `DEFAULT_ACTIONS[i].type` | `'action'`, `'bonus'`, `'reaction'`, `'free'` | — | Categorises default D&D actions in the collapsible Default Actions list |
-| `recharge` | `'Long Rest'`, `'Short Rest'`, `'Dawn'`, `'Turn'`, or any custom string | — | `classFeatures[i].recharge` — shown as a label; no mechanical enforcement |
+| `recharge` | `'Long Rest'`, `'Short Rest'`, `'Dawn'`, `'Turn'`, or any custom string | — | `entries[i].recharge` — shown as a label; no mechanical enforcement |
 | `currentTheme` | `'gold'`, `'dark'`, `'red'`, `'forest'`, `'ocean'` | `'gold'` | Persisted in `localStorage` as `dnd5e_theme`; applied as `data-theme` on `<html>` |
 
 ---
@@ -616,10 +628,12 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `#featurePanel` | Fixed centered card (≤500 px, scrollable) for viewing or editing a class feature; gold border in view mode, blue border in edit mode; `.edit-mode` toggles `.fp-view-section` / `.fp-edit-section` |
 | `.fp-view-section` | Wrapper for all feature panel view-mode content; hidden when `#featurePanel.edit-mode` |
 | `.fp-edit-section` | Wrapper for all feature panel edit form; hidden by default, shown when `#featurePanel.edit-mode` |
-| `#featuredSpellsSection` | Block in the Features tab showing spells with `showInFeatures: true`; hidden when empty |
-| `#featuredSpellsBody` | Container for spell rows inside `#featuredSpellsSection` |
-| `#featuredTraitsSection` | Block in the Features tab showing `infoTraits` entries with `showInFeatures: true`; hidden when empty |
-| `#featuredTraitsBody` | Container for trait rows inside `#featuredTraitsSection` |
+| `#entryManagerBackdrop` | Fixed full-screen dim layer behind `#entryManagerPanel`; tap to dismiss |
+| `#entryManagerPanel` | Bottom-sheet opened from Settings → 📋 All Entries; lists all `state.entries[]` alphabetically; `.em-entry-row` rows with `.em-entry-name` and `.em-entry-tags`; tap = view info panel, hold 500 ms = open matching edit panel |
+| `.em-entry-row` | One row in `#entryManagerPanel`; flex layout with name on the left and tag pills on the right; `.holding` applied during 500 ms hold |
+| `.em-entry-name` | Bold entry name text inside `.em-entry-row` |
+| `.em-entry-tags` | Flex container for badge pills on the right of `.em-entry-row` |
+| `.em-entry-tag` | Small badge pill (e.g. "Spell", "Feature", "Trait", "Combat") inside `.em-entry-tags` |
 | `.attack-row` | 3-column grid: name / bonus / damage; `cursor:pointer`; tap to view/roll |
 | `.attack-row.spell-atk` | Spell variant of `.attack-row`; blue left-border tint; tap rolls the spell directly (same logic as spell list rows); hold 500 ms opens info panel |
 | `.attack-row.atk-hidden` | Hidden attack row shown faded (`opacity: 0.4`); always visible in the list |
@@ -805,30 +819,41 @@ let state = {
   inspiration:        false,
   hpCurrent:          10,
   spellSlots:         [ { level, max, used } ],  // 9 entries; levels with max=0 render as collapsed rows
-  spells:             [ {                        // structured spell list (all fields optional except name and level)
-                          name, level,           //   name: string; level: 0 (cantrip) – 9
-                          school,                //   e.g. "Evocation"
-                          castingTime,           //   e.g. "1 action"
-                          range,                 //   e.g. "120 ft"
-                          components,            //   e.g. "V, S, M (a pinch of sulfur)"
-                          duration,              //   e.g. "Instantaneous"
-                          saveAbility,           //   ability key ("STR"|"DEX"|"CON"|"INT"|"WIS"|"CHA") or ""
-                          concentration,         //   boolean
-                          ritual,                //   boolean
-                          attackRoll,            //   boolean — true if spell uses a spell attack roll (d20 + spell atk bonus)
+  entries:            [ {                        // unified array: all spells, class features, and traits
+                          name,                  //   string — display name
+                          description,           //   free text (newlines preserved)
+                          showInSpells,          //   boolean — true → appears in Spells tab lists
+                          showInFeatures,        //   boolean — true → appears in Features tab with dot tracker
+                          showInTraits,          //   boolean — true → appears in Info tab Features & Traits
+                          showInCombat,          //   boolean — true → appears in Turn block (Combat tab)
+                          combatActionType,      //   'action' | 'bonus' | 'reaction' | 'other' (default: 'action')
+                          level,                 //   spell level 0–9 (0 = cantrip); 0 for non-spells
+                          school,                //   e.g. "Evocation"; "" for non-spells
+                          castingTime,           //   e.g. "1 action"; "" for non-spells
+                          range,                 //   e.g. "120 ft"; "" for non-spells
+                          components,            //   e.g. "V, S, M (...)"; "" for non-spells
+                          duration,              //   e.g. "Instantaneous"; "" for non-spells
+                          concentration,         //   boolean (false for non-spells)
+                          ritual,                //   boolean (false for non-spells)
+                          prepared,              //   boolean — true if prepared for the day (counts toward maxSpellsPrepared)
+                          alwaysPrepared,        //   boolean — true if always prepared (does NOT count toward maxSpellsPrepared); mutually exclusive with prepared
+                          attackRoll,            //   boolean — true if entry uses an attack roll
+                          attackMod,             //   '' | 'manual' | 'STR'|…|'CHA'|'SPELL'
+                          attackBonus,           //   string — manual bonus string; only used when attackMod='manual'
+                          attackProficient,      //   boolean — add proficiency bonus to computed attack roll
                           rolls,                 //   array of roll objects: [{dice, type, label?, mod?}]
                                                  //     dice:  string — dice expression e.g. "4d6"
                                                  //     type:  damage type key (see ROLL_TYPES) or 'not_damage' or 'other'
                                                  //     label: string — custom label when type='other'
                                                  //     mod:   modifier key ('STR'|…|'CHA'|'SPELLMOD'|'SPELL'|'')
-                          description,           //   free text (newlines preserved)
                           saveAbility,           //   ability key for saving throw or ''
                           saveDC,                //   integer override DC; 0 = use character's spell save DC
-                          showInCombat,          //   boolean — true if spell appears in the combat attack block
-                          combatActionType,      //   'action' | 'bonus' | 'reaction' | 'other' — sub-section in the combat block (default: 'action')
-                          showInFeatures,        //   boolean — true if spell appears in the Featured Spells block in the Features tab
-                          prepared,              //   boolean — true if spell is prepared for the day (counts toward maxSpellsPrepared)
-                          alwaysPrepared,        //   boolean — true if spell is always prepared (does NOT count toward maxSpellsPrepared); mutually exclusive with prepared
+                          max,                   //   integer — total uses / pool for tracked entries; 0 = no tracker
+                          used,                  //   integer — uses already expended (reset on Long Rest)
+                          step,                  //   integer — uses per dot (default 1)
+                          recharge,              //   string — recharge label (e.g. 'Long Rest') or ''
+                          damage,                //   legacy damage expression; prefer rolls[] for new entries
+                          rollDamage,            //   boolean — true if tap should roll the damage expression
                         } ],
   attacks:            [ {
                           name,                  //   string — weapon or ability name
@@ -837,7 +862,7 @@ let state = {
                           proficient,            //   boolean — add proficiency bonus to computed attack roll
                           flatBonus,             //   integer — additional flat modifier added to computed roll
                           bonus,                 //   string — manual attack roll modifier (only used when abilityMod='manual')
-                          rolls,                 //   array of roll objects: [{dice, type, label?, mod?}] — same shape as spells.rolls
+                          rolls,                 //   array of roll objects: [{dice, type, label?, mod?}]
                           actionType,            //   'action' | 'bonus' | 'reaction' | 'other' (default: 'action')
                           hidden,                //   boolean — shows row faded in the combat list; toggled via the edit panel checkbox
                           saveAbility,           //   ability key for a saving throw option, or ''
@@ -846,31 +871,6 @@ let state = {
                       } ],
   conditions:         [],   // condition name strings
   hitDiceUsed:        0,    // number of hit dice expended; max = charLevel
-  classFeatures:      [ {   // Features tab trackers
-                          name, max, used, recharge, step,
-                          description,           //   optional — shown in feature view panel
-                          attackRoll,            //   boolean — true if feature has an attack roll (e.g. Divine Smite)
-                          attackMod,             //   ability key ('STR'|…|'SPELL'|'manual'|'') — '' means no roll
-                          attackBonus,           //   string — manual bonus string (e.g. "+7"); only used when attackMod='manual'
-                          attackProficient,      //   boolean — add proficiency bonus to computed feature attack roll
-                          rolls,                 //   array of roll objects: [{dice, type, label?, mod?}] — same shape as spells.rolls
-                          saveAbility,           //   ability key or ""
-                          saveDC,                //   integer, 0 = use current Spell Save DC
-                          showInCombat,          //   boolean — true if feature appears in the combat attack block
-                          combatActionType,      //   'action' | 'bonus' | 'reaction' | 'other' — sub-section in the combat block (default: 'action')
-                        } ],
-  infoTraits:         [ {   // Features & Traits shown in the Info tab
-                          name, description,
-                          damage, rollDamage,    //   optional damage roll support
-                          saveAbility, saveDC,   //   optional saving throw display
-                          showInCombat,          //   boolean — show as row in the combat block
-                          combatActionType,      //   'action' | 'bonus' | 'reaction' | 'other' (default: 'action')
-                          showInFeatures,        //   boolean — true if trait appears in Featured Traits block in Features tab
-                          featureMax,            //   integer — total uses to track (dot count × featureStep)
-                          featureUsed,           //   integer — uses already expended (reset on Long Rest)
-                          featureStep,           //   integer — uses per dot (default 1)
-                          featureRecharge,       //   string — recharge label (e.g. 'Long Rest') or ''
-                        } ],
   diceRoller:         null, // null = use defaults [{sides:4,count:1},…,{sides:100,count:1}]; array when customised
   portrait:           null, // base64 data URL string (e.g. "data:image/png;base64,...") or null
   statMods:           {     // custom numeric bonuses added on top of each combat stat
@@ -900,10 +900,10 @@ longPressTimer      // setTimeout handle for attack long-press
 longPressActive     // boolean — suppresses roll on release after long-press
 spellPressTimer     // setTimeout handle for spell long-press (500 ms → edit mode)
 spellPressActive    // boolean — true during and after a held spell press
-spellPanelEditIdx   // index into state.spells currently being edited; −1 = new spell
+spellPanelEditIdx   // index into state.entries[] currently being edited in the spell panel; −1 = new spell
 traitPressTimer     // setTimeout handle for trait row long-press (500 ms → edit mode)
 traitPressActive    // boolean — true during and after a held trait press
-traitPanelEditIdx   // index into state.infoTraits currently being edited; −1 = new trait
+traitPanelEditIdx   // index into state.entries[] currently being edited in the trait panel; −1 = new trait
 attackPanelIdx      // index into state.attacks currently being edited; −1 = new attack
 abilityUndoTimers   // {[ab]: timerId} — debounce timers for ability undo entries
 hpHoldTimer/Interval       // hold-to-repeat timers for HP +/− buttons
@@ -917,7 +917,9 @@ featTraitHoldTimer/featTraitHoldInterval/featTraitHoldPending  // hold-to-repeat
 hitDiceHoldTimer/Interval  // hold-to-repeat timers for hit dice +/− buttons
 featureNamePressTimer      // setTimeout handle for feature name long-press (500 ms → edit mode)
 featureNamePressActive     // boolean — true during and after a held feature name press
-featurePanelEditIdx        // index into state.classFeatures currently being edited; −1 = new feature
+featurePanelEditIdx        // index into state.entries[] currently being edited in the feature panel; −1 = new feature
+_emPressIdx                // index into state.entries[] for the entry row being pressed in #entryManagerPanel; −1 when none
+_emPressTimer              // setTimeout handle for the hold timer on an entry row in #entryManagerPanel
 infoPanelCfg        // shared.js — object holding the rollFn, simpleRollFn, editFn, actionFn closures for the currently-open #infoPanel
 skillPressTimer / skillPressActive / skillPanelCurrentName  // skill row hold detection + current skill name
 equipProfPressTimer / equipProfPressActive  // equipment proficiency row hold detection (tap = info panel, hold 500 ms = same)
@@ -960,10 +962,8 @@ DOMContentLoaded
        ├─ buildSpellsKnown()   inject spell rows with P/∞ dots into #spellsKnownBody (collapsed by default); levels with max=0 appear only as pills
        ├─ buildSpellsPrepared() inject prepared+always-prepared spell rows into #spellsPreparedBody; calls updatePreparedCount()
        ├─ buildSpellSlots()   inject pill strip + active rows into #spellSlotsBody; levels with max=0 appear only as pills
-       ├─ buildFeatures()       inject class feature rows into #featuresBody
-       ├─ buildFeaturedSpells() inject featured spell rows into #featuredSpellsBody (Features tab)
-       ├─ buildFeaturedTraits() inject featured trait rows into #featuredTraitsBody (Features tab)
-       ├─ buildInfoTraits()         inject features & traits rows into #infoTraitsBody
+       ├─ buildFeatures()       inject all entries with showInFeatures:true into #featuresBody (sorted spells-first)
+       ├─ buildInfoTraits()         inject all entries with showInTraits:true into #infoTraitsBody
        ├─ buildDiceRoller()         inject die rows into #diceRollerBody
        ├─ renderHitDice()           inject hit dice dots into #hitDiceDots
        ├─ buildDamageResistances() inject resistance/vulnerability dots into #dmgResistGrid
@@ -976,7 +976,7 @@ DOMContentLoaded
   └─ set inspiration button state
 ```
 
-`applyPayload(payload)` runs the same sequence (minus `loadData` and `setupAutoSave`) and is used for JSON import. It calls `buildFeaturedSpells()`, `buildFeaturedTraits()`, and `buildInfoTraits()` as part of that sequence.
+`applyPayload(payload)` runs the same sequence (minus `loadData` and `setupAutoSave`) and is used for JSON import. It calls `buildFeatures()` and `buildInfoTraits()` as part of that sequence. It also auto-migrates old-format payloads that contain `spells`, `classFeatures`, or `infoTraits` arrays by merging them into `state.entries[]`.
 
 ---
 
@@ -993,17 +993,19 @@ DOMContentLoaded
 | `buildSpellSlots()` | Renders `#spellSlotsBody`: a pill strip of hidden levels (max=0) at the top, then one row per active level (max>0) with dots and mini +/− tracker | `state.spellSlots` |
 | `expandSpellLevel(i)` | Sets `state.spellSlots[i].max` to 1 and rebuilds spell slots (moves that level from the pill strip into the active rows) | `state.spellSlots[i]` |
 | `renderSlotDots(i)` | Dot row + counter for one spell level (gold left = available, grey right = used); counter shows `(max − used)/max` | `state.spellSlots[i]` |
-| `buildSpellsKnown()` | Renders all spells grouped by level into `#spellsKnownBody`; each row includes a P dot (prepared toggle) and a ∞ dot (always-prepared toggle); P dots are dimmed with `.at-max` when the preparation limit is full; collapses body and rotates chevron when `spellsKnownCollapsed` is true; shows placeholder when empty | `state.spells`, `state.maxSpellsPrepared` |
-| `buildSpellsPrepared()` | Renders spells with `prepared:true` or `alwaysPrepared:true` into `#spellsPreparedBody`; always-prepared entries show a ∞ badge; calls `updatePreparedCount()`; shows placeholder when no spells are prepared | `state.spells` |
-| `updatePreparedCount()` | Refreshes the `#spellPrepCountDisplay` number and the `#maxPreparedInput` value; applies `.at-max` to the count span when the prepared count equals `state.maxSpellsPrepared` | `state.spells`, `state.maxSpellsPrepared` |
-| `buildFeatures()` | Class feature rows in `#featuresBody`; each row has a left column (clickable name area + dots below) and a right column (recharge label, ⏻ restore, EDIT button, mini tracker); pts/dot hint shown below the name when `step > 1`; empty-state placeholder when no features | `state.classFeatures` |
-| `buildFeaturedSpells()` | "Featured Spells" block in `#featuredSpellsBody`; uses the same two-column layout as `buildFeatures()`; hidden when no spells have `showInFeatures: true` | `state.spells` |
-| `buildFeaturedTraits()` | "Featured Traits" block in `#featuredTraitsBody`; same two-column dot-tracker layout as `buildFeatures()`; hidden when no `infoTraits` entries have `showInFeatures: true` | `state.infoTraits` |
-| `buildInfoTraits()` | Features & Traits rows in `#infoTraitsBody`, or empty-state placeholder | `state.infoTraits` |
-| `renderFeatureDots(i)` | Dot row + counter for one feature, scaled by `step` | `state.classFeatures[i]` |
+| `buildSpellsKnown()` | Renders all entries with `showInSpells: true` grouped by level into `#spellsKnownBody`; each row includes a P dot (prepared toggle) and a ∞ dot (always-prepared toggle); P dots are dimmed with `.at-max` when the preparation limit is full; collapses body and rotates chevron when `spellsKnownCollapsed` is true; shows placeholder when empty | `state.entries`, `state.maxSpellsPrepared` |
+| `buildSpellsPrepared()` | Renders entries with `showInSpells: true` and `prepared:true` or `alwaysPrepared:true` into `#spellsPreparedBody`; always-prepared entries show a ∞ badge; calls `updatePreparedCount()`; shows placeholder when no spells are prepared | `state.entries` |
+| `updatePreparedCount()` | Refreshes the `#spellPrepCountDisplay` number and the `#maxPreparedInput` value; applies `.at-max` to the count span when the prepared count equals `state.maxSpellsPrepared` | `state.entries`, `state.maxSpellsPrepared` |
+| `buildFeatures()` | All entries with `showInFeatures: true` rendered into `#featuresBody`; sorted spells-first then others; each row has a left column (clickable name area + dots below) and a right column (recharge label, ⏻ restore, EDIT button, mini tracker); pts/dot hint shown below the name when `step > 1`; empty-state placeholder when no entries | `state.entries` |
+| `buildInfoTraits()` | Features & Traits rows in `#infoTraitsBody` (entries with `showInTraits: true`), or empty-state placeholder | `state.entries` |
+| `buildEntryManager()` | Alphabetical list of all `state.entries[]` in `#entryManagerPanel`; each row shows name and tags (Spell / Feature / Trait / Combat badges); tap = view, hold 500 ms = edit | `state.entries` |
+| `openEntryManager()` | Opens `#entryManagerPanel` and its backdrop; calls `buildEntryManager()` | — |
+| `dismissEntryManager()` | Hides `#entryManagerPanel` and its backdrop | — |
+| `switchToEntryManager()` | Saves current character and re-opens the Entry Manager (used after edit panel saves) | — |
+| `renderFeatureDots(i)` | Dot row + counter for one featured entry, scaled by `step` | `state.entries[i]` |
 | `renderHitDice()` | Hit dice dots in `#hitDiceDots`; max = character level | `state.hitDiceUsed`, `charLevel` input |
 | `buildDamageResistances()` | **`shared.js`** — Resistance/immunity/vulnerability dot grid in `#dmgResistGrid`; one dot per damage type (13 types); dot is empty (normal), green (resistant), black (immune), or red (vulnerable) | `state.damageResistances` |
-| `renderAttacks()` | Renders the Turn block: "Actions", "Bonus Actions", and "Reactions" sub-sections always rendered (with empty-state placeholders when empty); "Other" section rendered only when items exist; combat spells/traits/features (`showInCombat`) injected per section; hidden attacks faded (`atk-hidden`) | `state.attacks`, `state.spells`, `state.infoTraits`, `state.classFeatures` |
+| `renderAttacks()` | Renders the Turn block: "Actions", "Bonus Actions", and "Reactions" sub-sections always rendered (with empty-state placeholders when empty); "Other" section rendered only when items exist; entries with `showInCombat: true` injected per section; hidden attacks faded (`atk-hidden`) | `state.attacks`, `state.entries` |
 | `startTurnTitlePress(e)` | `pointerdown` on the "Turn" section title | Adds `.holding` class; starts 500 ms timer; on fire calls `openTurnInfoPanel()` |
 | `endTurnTitlePress(e)` / `cancelTurnTitlePress()` | `pointerup` / `pointercancel` on "Turn" title | Clears timer; removes `.holding` class |
 | `openTurnInfoPanel()` | Called on hold of "Turn" title | Opens info panel describing the parts of a turn (movement, action, bonus action, reaction, free interaction) |
@@ -1016,8 +1018,8 @@ DOMContentLoaded
 | `startFeatureCombatPress(e, i)` | `pointerdown` on a feature row in the combat block | Starts 500 ms timer; on fire opens feature panel (view mode) |
 | `clickFeatureCombatItem(e, i)` | `click` on a feature row in the combat block | Rolls attack (opens panel) or rolls damage if only rolls are set; opens panel if neither |
 | `cancelFeatureCombatPress()` | `pointercancel` on a feature row in the combat block | Clears timer |
-| `makeSpellRow(sp, spIdx)` | Returns HTML string for one spell row in the combat block; shows gold level pip for level > 0 | `state.spells[spIdx]` |
-| `makeTraitRow(t, tIdx)` | Returns HTML string for one trait row in the combat block (gold colour scheme) | `state.infoTraits[tIdx]` |
+| `makeSpellRow(sp, spIdx)` | Returns HTML string for one spell entry row in the combat block; shows gold level pip for level > 0 | `state.entries[spIdx]` |
+| `makeTraitRow(t, tIdx)` | Returns HTML string for one trait/feature entry row in the combat block (gold colour scheme) | `state.entries[tIdx]` |
 | `getSpellAtkBonus()` | Returns formatted spell attack bonus string (e.g. `"+5"`) from current spellcasting ability and proficiency bonus | form inputs, `state.abilities` |
 | `renderRollLog()` | Roll history entries in #panel-rolls | `rollLog` |
 
@@ -1135,15 +1137,15 @@ DOMContentLoaded
 | `switchToTraitEdit()` | Tap Save button in trait view mode (bottom button row) | Adds `.edit-mode` to `#traitPanel`; populates edit form; focuses the name field |
 | `openTraitPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `traitPanelEditIdx = i`; shows `#traitBackdrop` and `#traitPanel`; `i = -1` means new trait |
 | `addInfoTrait()` | Tap + Add in Features & Traits section header | Opens trait panel in edit mode with empty form; sets `traitPanelEditIdx = -1` |
-| `populateTraitEditForm(i)` | Internal | Fills edit form from `state.infoTraits[i]` including `showInCombat`, `combatActionType`, `showInFeatures`, `featureMax`, `featureStep`, `featureRecharge`; calls `toggleTrFeaturesTrack()`; blanks all fields when `i = -1` |
-| `saveTraitEdit()` | Tap Save in trait panel edit mode | Validates name; writes all fields including `showInFeatures`, `featureMax`, `featureUsed`, `featureStep`, `featureRecharge` to `state.infoTraits[idx]` or pushes new entry; calls `buildInfoTraits()` + `buildFeaturedTraits()` + `saveData()`; dismisses panel |
+| `populateTraitEditForm(i)` | Internal | Fills edit form from `state.entries[i]` including `showInCombat`, `combatActionType`, `showInFeatures`, `max`, `step`, `recharge`; calls `toggleTrFeaturesTrack()`; blanks all fields when `i = -1` |
+| `saveTraitEdit()` | Tap Save in trait panel edit mode | Validates name; writes all fields including `showInFeatures`, `max`, `used`, `step`, `recharge` to `state.entries[idx]` or pushes new entry; calls `buildInfoTraits()` + `buildFeatures()` + `saveData()`; dismisses panel |
 | `toggleTrFeaturesTrack(show)` | `onchange` on `#trEditShowInFeatures` checkbox | Shows or hides the `#trEditFeaturesTrack` block (Max Uses / Step / Recharge fields) |
-| `renderFeatTraitDots(traitIdx)` | Any featured trait use/restore | Updates dots and counter for `state.infoTraits[traitIdx]`; reads `featureMax`, `featureUsed`, `featureStep` |
-| `toggleFeatTraitDot(traitIdx, j)` | Tap dot in a featured trait row | Gold → use from here right; grey → restore that dot (respects `featureStep`) |
-| `featTraitAdjust(traitIdx, delta)` | Featured trait mini +/− buttons | Changes `t.featureUsed` by `±featureStep`; rerenders dots |
-| `startFeatTraitHold(traitIdx, delta)` / `stopFeatTraitHold()` / `cancelFeatTraitHold()` | `pointerdown` / `pointerup` / `pointercancel` on featured trait +/− | Hold-to-repeat at 80 ms |
-| `restoreFeatTrait(traitIdx)` | ⏻ button on a featured trait row | Sets `t.featureUsed = 0`; rerenders dots |
-| `deleteCurrentTrait()` | Tap Delete in trait panel (view or edit mode) | `confirm()` dialog → splices `state.infoTraits`; calls `buildInfoTraits()` + `buildFeaturedTraits()` + `saveData()`; dismisses panel |
+| `renderFeatTraitDots(traitIdx)` | Any featured entry use/restore | Updates dots and counter for `state.entries[traitIdx]`; reads `max`, `used`, `step` |
+| `toggleFeatTraitDot(traitIdx, j)` | Tap dot in a featured entry row | Gold → use from here right; grey → restore that dot (respects `step`) |
+| `featTraitAdjust(traitIdx, delta)` | Featured entry mini +/− buttons | Changes `entry.used` by `±step`; rerenders dots |
+| `startFeatTraitHold(traitIdx, delta)` / `stopFeatTraitHold()` / `cancelFeatTraitHold()` | `pointerdown` / `pointerup` / `pointercancel` on featured entry +/− | Hold-to-repeat at 80 ms |
+| `restoreFeatTrait(traitIdx)` | ⏻ button on a featured entry row | Sets `entry.used = 0`; rerenders dots |
+| `deleteCurrentTrait()` | Tap Delete in trait panel (view or edit mode) | `confirm()` dialog → splices `state.entries`; calls `buildInfoTraits()` + `buildFeatures()` + `saveData()`; dismisses panel |
 | `dismissTraitPanel()` | Backdrop tap or Cancel in panel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#traitPanel` |
 | `openSpellPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `spellPanelEditIdx = i` in both modes; shows backdrop + panel |
 | `toggleSpellPrepared(i)` | Tap P dot on a Spells Known row | If the spell is already prepared: unprepares it. If not: checks `maxSpellsPrepared`; shows toast and briefly pulses `.at-max` on the dot if the limit is full; otherwise sets `prepared:true`, clears `alwaysPrepared`; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `saveData()` |
@@ -1157,10 +1159,10 @@ DOMContentLoaded
 | `endSpellsPreparedTitlePress(e)` / `cancelSpellsPreparedTitlePress()` | `pointerup` / `pointercancel` on `#spellsPreparedTitle` | Clears timer; removes `.holding` |
 | `openSpellsPreparedInfoPanel()` | Internal (fired by hold on Spells Prepared title) | Opens info panel explaining spell slots, known vs prepared classes, the max prepared formula, and always-prepared spells |
 | `addSpell()` | Tap + Add button in Spells Known header | Opens spell panel in edit mode with empty form; sets `spellPanelEditIdx = -1` |
-| `populateSpellViewPanel(i)` | Internal | Fills view-mode elements from `state.spells[i]`; shows save DC box if `saveAbility` is set (uses per-spell `saveDC` override when > 0, otherwise character's spell DC); shows attack roll card if `attackRoll` is `true`; shows rolls box if `rolls` is non-empty and `attackRoll` is false |
-| `populateSpellEditForm(i)` | Internal | Fills edit form from `state.spells[i]` including `saveAbility`, `saveDC`, `attackRoll`, `rolls` (rendered via `renderRollRows`), `showInCombat`, `combatActionType`, and `showInFeatures`; blanks all fields when `i = -1` |
-| `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes all fields including `saveAbility`, `saveDC`, `showInCombat`, `combatActionType`, `showInFeatures`, and preserves `prepared`/`alwaysPrepared` from existing spell when editing; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
-| `deleteCurrentSpell()` | Tap Delete in spell panel (view or edit mode) | Confirms; splices from `state.spells`; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `buildFeaturedSpells()` + `renderAttacks()` + `saveData()`; dismisses panel |
+| `populateSpellViewPanel(i)` | Internal | Fills view-mode elements from `state.entries[i]`; shows save DC box if `saveAbility` is set (uses per-entry `saveDC` override when > 0, otherwise character's spell DC); shows attack roll card if `attackRoll` is `true`; shows rolls box if `rolls` is non-empty and `attackRoll` is false |
+| `populateSpellEditForm(i)` | Internal | Fills edit form from `state.entries[i]` including `saveAbility`, `saveDC`, `attackRoll`, `rolls` (rendered via `renderRollRows`), `showInCombat`, `combatActionType`, `showInFeatures`, and `showInTraits`; blanks all fields when `i = -1` |
+| `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes all fields including `saveAbility`, `saveDC`, `showInCombat`, `combatActionType`, `showInFeatures`, `showInTraits`, and preserves `prepared`/`alwaysPrepared` from existing entry when editing; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `buildFeatures()` + `renderAttacks()` + `saveData()`; dismisses panel |
+| `deleteCurrentSpell()` | Tap Delete in spell panel (view or edit mode) | Confirms; splices from `state.entries`; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `buildFeatures()` + `renderAttacks()` + `saveData()`; dismisses panel |
 | `dismissSpellPanel()` | Backdrop tap or Cancel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#spellPanel` |
 | `renderFeatureDots(i)` | Any feature use/restore | Updates dots and `n/max` counter for feature `i` |
 | `toggleFeatureDot(i, j)` | Tap feature dot | Gold → use dots from here right; grey → restore that dot (respects `step`) |
@@ -1170,18 +1172,23 @@ DOMContentLoaded
 | `editFeature(i)` | EDIT button on a feature row | Calls `openFeaturePanel(i, true)` to open the feature in edit mode |
 | `restoreFeature(i)` | ⏻ button on a feature row | Sets `f.used = 0`; rerenders dots; shows toast |
 | `restoreAllFeatures()` | ↺ All button in Features section | Sets all feature `used` to `0`; rerenders all dot rows |
+| `startEmPress(e, i)` | `pointerdown` on an entry row in `#entryManagerPanel` | Sets `_emPressIdx = i`; starts 500 ms timer; on fire adds `.holding`, calls `openEmEdit(i)` |
+| `endEmPress(e, i)` | `pointerup` on an entry row in `#entryManagerPanel` | If hold hadn't fired: calls `openEmView(i)`; always clears timer and removes `.holding` |
+| `cancelEmPress()` | `pointercancel` on an entry row in `#entryManagerPanel` | Clears timer; removes `.holding` |
+| `openEmView(i)` | Tap on entry row in Entry Manager | Opens the generic info panel (view) for `state.entries[i]` |
+| `openEmEdit(i)` | Hold on entry row in Entry Manager | Routes to `openSpellPanel(i)` / `openFeaturePanel(i)` / `openTraitPanel(i)` based on the entry's dominant `showIn*` flag |
 | `startFeatureNamePress(e, i)` | `pointerdown` on `.feature-name-area` | Starts 500 ms timer; adds `.holding` visual on fire; on fire opens feature info panel (view mode) |
 | `clickFeatureName(e, i)` | `click` on `.feature-name-area` | If timer hasn't fired: rolls damage if `rollDamage && damage`; opens info panel otherwise; clears timer |
 | `cancelFeatureNamePress()` | `pointercancel` on `.feature-name-area` | Clears timer and removes `.holding` class |
 | `switchToFeatureEdit()` | Tap Save button in feature view mode (bottom button row) | Adds `.edit-mode` to `#featurePanel`; populates edit form; focuses the name field |
 | `openFeaturePanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `featurePanelIdx = i`; shows `#featurePanelBackdrop` and `#featurePanel`; `i = -1` means new feature |
 | `addFeature()` | + Add button | Calls `openFeaturePanel(-1, true)` (new feature mode) |
-| `populateFeatureViewPanel(i)` | Internal | Fills view-mode elements from `state.classFeatures[i]`; shows attack roll card if `attackRoll` and `attackMod` are set; shows rolls box if `rolls` is non-empty; shows save DC box if `saveAbility` is set |
-| `populateFeatureEditForm(i)` | Internal | Fills edit form from `state.classFeatures[i]` including `attackRoll`, `attackMod`, `attackBonus`, `attackProficient`, `rolls` (via `renderRollRows`); calls `toggleFpAtkBonusFields()`; blanks all fields when `i = -1` |
-| `saveFeaturePanel()` | Tap Save in feature panel edit mode | Validates name; writes all fields including `attackRoll`, `attackMod`, `attackBonus`, `attackProficient`, `rolls` to `state.classFeatures[idx]` or pushes new entry; calls `buildFeatures()` + `saveData()`; dismisses panel |
+| `populateFeatureViewPanel(i)` | Internal | Fills view-mode elements from `state.entries[i]`; shows attack roll card if `attackRoll` and `attackMod` are set; shows rolls box if `rolls` is non-empty; shows save DC box if `saveAbility` is set |
+| `populateFeatureEditForm(i)` | Internal | Fills edit form from `state.entries[i]` including `attackRoll`, `attackMod`, `attackBonus`, `attackProficient`, `rolls` (via `renderRollRows`); calls `toggleFpAtkBonusFields()`; blanks all fields when `i = -1` |
+| `saveFeaturePanel()` | Tap Save in feature panel edit mode | Validates name; writes all fields including `attackRoll`, `attackMod`, `attackBonus`, `attackProficient`, `rolls` to `state.entries[idx]` or pushes new entry; calls `buildFeatures()` + `saveData()`; dismisses panel |
 | `rollFeatureDamage()` | Tap rolls box in feature panel view mode | Calls `showRollsOnly()` with feature's `rolls` array |
 | `rollFromFeaturePanel(mode)` | Tap attack roll card in feature panel view mode | Rolls d20 + computed feature attack bonus; shows all roll results in secondary |
-| `deleteFeatureFromPanel()` | Tap Delete in feature panel (view or edit mode) | `confirm()` dialog → splices `state.classFeatures`; calls `buildFeatures()` + `saveData()`; dismisses panel |
+| `deleteFeatureFromPanel()` | Tap Delete in feature panel (view or edit mode) | `confirm()` dialog → splices `state.entries`; calls `buildFeatures()` + `saveData()`; dismisses panel |
 | `dismissFeaturePanel()` | Backdrop tap or Cancel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#featurePanel` |
 | `renderHitDice()` | Any hit dice change or level change | Updates dots in #hitDiceDots; counter shows `(max − used)/max` |
 | `toggleHitDie(j)` | Tap hit dice dot | Gold → use from here right; grey → restore that die |
@@ -1340,7 +1347,7 @@ Undo is session-only and not persisted. The undo button (`#undoBtn`) is disabled
 | Function | Description |
 |---|---|
 | `collectFormData()` | Reads all 28 form input values by element ID into a plain object |
-| `buildPayload()` | Returns `{ form, state }` — the canonical serialisation format. `form` is from `collectFormData()`; `state` includes all keys: `abilities`, `saveProficiencies`, `skillProficiencies`, `skillExpertise`, `inspiration`, `hpCurrent`, `spellSlots`, `spells` (each entry now includes `prepared` and `alwaysPrepared`), `attacks`, `conditions`, `classFeatures`, `infoTraits`, `hitDiceUsed`, `diceRoller`, `portrait`, `statMods`, `damageResistances`, `maxSpellsPrepared` |
+| `buildPayload()` | Returns `{ form, state }` — the canonical serialisation format. `form` is from `collectFormData()`; `state` includes all keys: `abilities`, `saveProficiencies`, `skillProficiencies`, `skillExpertise`, `inspiration`, `hpCurrent`, `spellSlots`, `entries` (unified spells/features/traits array), `attacks`, `conditions`, `hitDiceUsed`, `diceRoller`, `portrait`, `statMods`, `damageResistances`, `maxSpellsPrepared` |
 | `saveData()` | Serialises the active character via `buildPayload()` and writes it into the roster entry in `localStorage` (`dnd5e_roster`) |
 | `loadData()` | Reads the roster from `localStorage`; migrates a legacy `dnd5e_sheet` entry if no roster exists; restores form fields and `state` for the active character (no UI rebuild) |
 | `exportToJSON()` | Downloads `buildPayload()` as `<charname>.json` via a temporary `<a>` element |
@@ -1415,10 +1422,10 @@ Generates a copy-ready LLM prompt containing the exact JSON schema and the names
 | `setModalMode(mode)` | Switches between `'ai'` and `'srd'` content areas; also shows/hides `#srdResultsArea` (the detached results section below `.import-upper`); calls `_srdInitForType()` when switching to SRD |
 | `setAIImportType(type)` | Updates active state on type-tab buttons; calls `_srdInitForType()` if currently in SRD mode |
 | `generateAndCopyAIPrompt()` | Builds the prompt for the active type via `_buildSpellPrompt`, `_buildFeaturePrompt`, or `_buildTraitPrompt`; writes to clipboard via `navigator.clipboard` with `execCommand` fallback |
-| `_buildSpellPrompt(what)` | Returns a prompt string with the spell JSON schema (uses `rolls` array, not legacy `damage` field) and the list of already-present spell names; instructs the AI to set `"mod":"SPELL"` when the spell text says "add your spellcasting ability modifier" |
-| `_buildFeaturePrompt(what)` | Returns a prompt string with the classFeature JSON schema (uses `rolls` array) and existing feature names; instructs the AI to set `"mod":"SPELL"` when the feature text says "add your spellcasting ability modifier" |
-| `_buildTraitPrompt(what)` | Returns a prompt string with the infoTrait JSON schema and existing trait names |
-| `importAIResponse()` | Parses the pasted text (strips markdown fences); merges into `state.spells`, `state.classFeatures`, or `state.infoTraits` depending on active type; deduplicates by lowercase name; rebuilds the relevant list |
+| `_buildSpellPrompt(what)` | Returns a prompt string with the unified entry JSON schema (spell fields; uses `rolls` array, not legacy `damage` field) and the list of already-present spell names; instructs the AI to set `"mod":"SPELL"` when the spell text says "add your spellcasting ability modifier" |
+| `_buildFeaturePrompt(what)` | Returns a prompt string with the unified entry JSON schema (feature fields; uses `rolls` array) and existing feature names; instructs the AI to set `"mod":"SPELL"` when the feature text says "add your spellcasting ability modifier" |
+| `_buildTraitPrompt(what)` | Returns a prompt string with the unified entry JSON schema (trait fields) and existing trait names |
+| `importAIResponse()` | Parses the pasted text (strips markdown fences); merges new entries into `state.entries[]` with the appropriate `showIn*` flags set based on active type; deduplicates by lowercase name; rebuilds the relevant lists |
 
 #### AI Character Import (full sheet from photos)
 Full-character import modal (`#charImportPanel`) opened from Import hub → Import Character. It has AI mode (photo-to-JSON prompt workflow) and JSON mode (file picker for direct character import).
@@ -1481,13 +1488,13 @@ Edition availability is detected automatically on modal open via `_srd24Detect()
 
 | Function | Source format | Target |
 |---|---|---|
-| `_mapSrdSpell(sp)` | 2014 API spell object | `state.spells` entry; sets `rolls[].mod = 'SPELL'` when the description mentions "spellcasting ability modifier" or "spellcasting modifier" |
-| `_mapSrdTrait(tr)` | 2014 API trait object | `state.infoTraits` entry |
-| `_mapSrdFeature(feat)` | 2014 API feature object | `state.classFeatures` entry |
+| `_mapSrdSpell(sp)` | 2014 API spell object | `state.entries` entry with `showInSpells:true`; sets `rolls[].mod = 'SPELL'` when the description mentions "spellcasting ability modifier" or "spellcasting modifier" |
+| `_mapSrdTrait(tr)` | 2014 API trait object | `state.entries` entry with `showInTraits:true` |
+| `_mapSrdFeature(feat)` | 2014 API feature object | `state.entries` entry with `showInFeatures:true` |
 | `_mapSrdEquipment(eq)` | 2014 API equipment object | `state.equipmentItems` entry |
-| `_mapSrd24Spell(sp)` | 2024 local `spells.json` entry | `state.spells` entry; sets `rolls[].mod = 'SPELL'` when the description mentions "spellcasting ability modifier" or "spellcasting modifier" |
-| `_mapSrd24Trait(tr)` | 2024 local species trait (`description` field) | `state.infoTraits` entry |
-| `_mapSrd24Feature(f)` | 2024 local class feature (`description` field) | `state.classFeatures` entry |
+| `_mapSrd24Spell(sp)` | 2024 local `spells.json` entry | `state.entries` entry with `showInSpells:true`; sets `rolls[].mod = 'SPELL'` when the description mentions "spellcasting ability modifier" or "spellcasting modifier" |
+| `_mapSrd24Trait(tr)` | 2024 local species trait (`description` field) | `state.entries` entry with `showInTraits:true` |
+| `_mapSrd24Feature(f)` | 2024 local class feature (`description` field) | `state.entries` entry with `showInFeatures:true` |
 | `_mapSrd24Equipment(eq)` | 2024 local `equipment.json` entry | `state.equipmentItems` entry |
 | `_nameToSrdIdx(name)` | Display name | SRD index slug (lowercase, hyphens) |
 
@@ -1505,7 +1512,7 @@ Edition availability is detected automatically on modal open via `_srd24Detect()
 | `icaApplyAI(p, type)` | Parses pasted JSON for spells; falls through to `icaApplyAIDesc` otherwise |
 | `icaApplyAIDesc(p)` | Writes paste area raw text to description textarea and closes ICA block |
 | `_enrichEquipDescriptions(items)` | Async; fills missing equipment fields from SRD (2014 or 2024 path); called after AI import |
-| `enrichAllFromSrd(opts)` | Async; SRD-based description enrichment for spells/features/traits/items. `opts.includeExisting=true` refreshes all entries, otherwise only fills missing descriptions |
+| `enrichAllFromSrd(opts)` | Async; SRD-based description enrichment for `state.entries[]` (spells/features/traits) and `state.equipmentItems`. `opts.includeExisting=true` refreshes all entries, otherwise only fills missing descriptions |
 | `openDescEnrichPanel()` | Opens `#descEnrichPanel` with default mode AI + scope Missing-only |
 | `dismissDescEnrichPanel()` | Hides `#descEnrichPanel` and its backdrop |
 | `setDescImportMode(mode)` | Toggles information import mode between `'ai'` and `'srd'` |
