@@ -2145,7 +2145,7 @@
   #entryManagerBackdrop {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.5);
-    z-index: 400;
+    z-index: 294;
     opacity: 0; pointer-events: none;
     transition: opacity 0.2s;
   }
@@ -2161,7 +2161,7 @@
     border-top: 2px solid var(--gold);
     border-radius: 20px 20px 0 0;
     padding: 24px 20px 40px;
-    z-index: 401;
+    z-index: 295;
     transform: translateY(100%);
     transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
     overflow-y: auto;
@@ -8666,7 +8666,7 @@ function startEmPress(ev, idx) {
   _emPressIdx = idx;
   _emPressTimer = setTimeout(() => {
     _emPressTimer = null;
-    _switchEmToView(idx);
+    openEmView(idx);
   }, 500);
 }
 
@@ -8674,14 +8674,6 @@ function endEmPress(ev, idx) {
   if (!_emPressTimer) return;
   clearTimeout(_emPressTimer);
   _emPressTimer = null;
-  _switchEmToView(idx);
-}
-
-function _switchEmToView(idx) {
-  // Hide entry manager without touching history — reuse its history entry
-  // for the info panel so no popstate race can close the panel.
-  document.getElementById('entryManagerBackdrop').classList.remove('show');
-  document.getElementById('entryManagerPanel').classList.remove('show');
   openEmView(idx);
 }
 
@@ -8702,7 +8694,17 @@ function openEmView(idx) {
     title:       e.name || '',
     meta:        sections.join(' · ') || 'No section',
     description: e.description || '',
-    editFn:      () => { dismissInfoPanel(); openEmEdit(idx); },
+    editFn: () => {
+      // Swap: hide info panel + entry manager via CSS without popModalHistory,
+      // so the edit panel opens cleanly with no popstate race.
+      document.getElementById('infoPanelBackdrop').classList.remove('show');
+      document.getElementById('infoPanel').classList.remove('show');
+      document.getElementById('entryManagerBackdrop').classList.remove('show');
+      document.getElementById('entryManagerPanel').classList.remove('show');
+      if (typeof infoPanelCfg !== 'undefined') infoPanelCfg = {};
+      document.querySelectorAll('.holding').forEach(el => el.classList.remove('holding'));
+      openEmEdit(idx);
+    },
   });
 }
 
