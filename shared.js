@@ -167,10 +167,16 @@ function setupSwipe(tabs, shouldBlock) {
   let startedOnTabButton = false;
   let tabBarDrag = false;
   let suppressNextTabClick = false;
-  let swipeAxisLocked = false; // true once touch is confirmed as a horizontal panel swipe
+  // gestureDecided: true once we've committed to an axis for this touch sequence.
+  // swipeAxisLocked: true when we committed to horizontal (panel swipe) specifically.
+  // Deciding at 3 px beats the browser's ~10 px scroll-slop threshold, ensuring
+  // our preventDefault() call lands before the browser has started scrolling.
+  let gestureDecided  = false;
+  let swipeAxisLocked = false;
 
   document.body.addEventListener('touchstart', e => {
     suppressNextTabClick = false;
+    gestureDecided  = false;
     swipeAxisLocked = false;
     x0    = e.touches[0].clientX;
     y0    = e.touches[0].clientY;
@@ -205,9 +211,14 @@ function setupSwipe(tabs, shouldBlock) {
       return; // never interpret an active hold as a swipe
     }
 
-    // Swiped state: once the touch is confirmed horizontal, lock the axis and block scroll.
-    if (!swipeAxisLocked && !startedOnTabBar && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
-      if (!(shouldBlock && shouldBlock())) swipeAxisLocked = true;
+    // Swiped state: commit to an axis once cumulative movement exceeds 3 px.
+    // This is intentionally below the browser scroll-slop so preventDefault() wins
+    // the race against the browser's native scroll handler.
+    if (!gestureDecided && !startedOnTabBar && Math.hypot(dx, dy) > 3) {
+      gestureDecided = true;
+      if (Math.abs(dx) > Math.abs(dy) && !(shouldBlock && shouldBlock())) {
+        swipeAxisLocked = true;
+      }
     }
     if (swipeAxisLocked) e.preventDefault();
 
@@ -225,6 +236,7 @@ function setupSwipe(tabs, shouldBlock) {
     startedOnTabBar = false;
     startedOnTabButton = false;
     tabBarDrag = false;
+    gestureDecided  = false;
     swipeAxisLocked = false;
     if (shouldBlock && shouldBlock()) return false;
     if (wasOnTabBar) return false;
