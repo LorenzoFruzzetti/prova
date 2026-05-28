@@ -136,57 +136,102 @@ Contains structured game data that cannot be expressed as plain form inputs.
     { "level": "9th", "max": 0, "used": 0 }
   ],
 
-  "spells": [
+  "entries": [
     {
-      "name":        "Fire Bolt",
-      "level":       0,
-      "school":      "Evocation",
-      "castingTime": "1 action",
-      "range":       "120 ft",
-      "components":  "V, S",
-      "duration":    "Instantaneous",
-      "saveAbility": "",
-      "concentration": false,
-      "ritual":      false,
-      "attackRoll":  true,
-      "damage":      "2d10 fire",
+      "name": "Fire Bolt",
       "description": "You hurl a mote of fire at a creature or object within range.",
+      "showInSpells": true,
+      "showInFeatures": false,
+      "showInTraits": false,
       "showInCombat": true,
-      "combatActionType": "action"
-    },
-    {
-      "name":        "Shield",
-      "level":       1,
-      "school":      "Abjuration",
-      "castingTime": "1 reaction",
-      "range":       "Self",
-      "components":  "V, S",
-      "duration":    "1 round",
-      "saveAbility": "",
-      "concentration": false,
-      "ritual":      false,
-      "attackRoll":  false,
-      "damage":      "",
-      "description": "+5 bonus to AC until the start of your next turn.",
-      "showInCombat": false,
-      "combatActionType": "action"
-    },
-    {
-      "name":        "Hypnotic Pattern",
-      "level":       3,
-      "school":      "Illusion",
+      "combatActionType": "action",
+      "level": 0,
+      "school": "Evocation",
       "castingTime": "1 action",
-      "range":       "120 ft",
-      "components":  "S, M (a glowing stick of incense or a crystal vial filled with phosphorescent material)",
-      "duration":    "1 minute",
-      "saveAbility": "WIS",
-      "concentration": true,
-      "ritual":      false,
-      "attackRoll":  false,
-      "damage":      "",
-      "description": "Each creature in a 30-foot cube originating from a point you choose makes a WIS save or becomes charmed.",
-      "showInCombat": true,
-      "combatActionType": "action"
+      "range": "120 ft",
+      "components": "V, S",
+      "duration": "Instantaneous",
+      "concentration": false,
+      "ritual": false,
+      "prepared": false,
+      "alwaysPrepared": false,
+      "attackRoll": true,
+      "attackMod": "",
+      "attackBonus": "—",
+      "attackProficient": false,
+      "rolls": [{"dice": "2d10", "type": "fire", "mod": ""}],
+      "saveAbility": "",
+      "saveDC": 0,
+      "max": 0,
+      "used": 0,
+      "step": 1,
+      "recharge": "",
+      "damage": "",
+      "rollDamage": false
+    },
+    {
+      "name": "Lay on Hands",
+      "description": "Touch a creature to restore HP from a pool of 25 HP per Long Rest. Can spend 5 HP to cure a disease or neutralize a poison.",
+      "showInSpells": false,
+      "showInFeatures": true,
+      "showInTraits": false,
+      "showInCombat": false,
+      "combatActionType": "action",
+      "level": 0,
+      "school": "",
+      "castingTime": "",
+      "range": "",
+      "components": "",
+      "duration": "",
+      "concentration": false,
+      "ritual": false,
+      "prepared": false,
+      "alwaysPrepared": false,
+      "attackRoll": false,
+      "attackMod": "",
+      "attackBonus": "—",
+      "attackProficient": false,
+      "rolls": [],
+      "saveAbility": "",
+      "saveDC": 0,
+      "max": 25,
+      "used": 5,
+      "step": 5,
+      "recharge": "Long Rest",
+      "damage": "",
+      "rollDamage": false
+    },
+    {
+      "name": "Sneak Attack",
+      "description": "Once per turn, deal extra 4d6 damage when you have advantage or an ally is adjacent to the target.",
+      "showInSpells": false,
+      "showInFeatures": false,
+      "showInTraits": true,
+      "showInCombat": false,
+      "combatActionType": "action",
+      "level": 0,
+      "school": "",
+      "castingTime": "",
+      "range": "",
+      "components": "",
+      "duration": "",
+      "concentration": false,
+      "ritual": false,
+      "prepared": false,
+      "alwaysPrepared": false,
+      "attackRoll": false,
+      "attackMod": "",
+      "attackBonus": "—",
+      "attackProficient": false,
+      "rolls": [],
+      "saveAbility": "",
+      "saveDC": 0,
+      "max": 0,
+      "used": 0,
+      "step": 1,
+      "recharge": "",
+      "damage": "",
+      "rollDamage": false
     }
   ],
 
@@ -206,17 +251,6 @@ Contains structured game data that cannot be expressed as plain form inputs.
   "damageResistances": { "fire": 1, "poison": -1 },
 
   "diceRoller": null,
-
-  "classFeatures": [
-    { "name": "Channel Divinity", "max": 2,  "used": 1, "recharge": "Short Rest", "step": 1 },
-    { "name": "Lay on Hands",     "max": 25, "used": 5, "recharge": "Long Rest",  "step": 5 }
-  ],
-
-  "infoTraits": [
-    { "name": "Sneak Attack", "description": "Once per turn, deal extra 4d6 damage when you have advantage or an ally is adjacent to the target." },
-    { "name": "Cunning Action", "description": "As a bonus action, Dash, Disengage, or Hide." },
-    { "name": "Uncanny Dodge", "description": "When an attacker you can see hits you, use your reaction to halve the attack's damage." }
-  ],
 
   "portrait": null
 }
@@ -328,85 +362,179 @@ Each object:
 
 Non-casters can set all `max` values to `0`.
 
-#### `spells`
-Array of spell objects stored in the character's spell list. Can be empty (`[]`).
+#### `entries`
+Array of unified entry objects covering all spells, class features, and info traits on the sheet. Can be empty (`[]`). Each entry carries `showIn*` boolean flags that determine which sections of the UI display it. Old-format payloads with separate `spells`, `classFeatures`, and `infoTraits` arrays are automatically migrated to `entries` on load, so existing saves continue to work.
 
-Each object:
+All fields below exist on every entry object; set irrelevant ones to their defaults.
 
 | Key | Type | Description |
 |---|---|---|
-| `name` | string | Spell name (required) |
-| `level` | integer | `0` = Cantrip; `1`–`9` = spell level |
-| `school` | string | Magic school, e.g. `"Evocation"`, `"Illusion"` (optional) |
-| `castingTime` | string | e.g. `"1 action"`, `"1 bonus action"`, `"1 minute"` (optional) |
-| `range` | string | e.g. `"120 ft"`, `"Self"`, `"Touch"` (optional) |
-| `components` | string | e.g. `"V, S"`, `"V, S, M (a pinch of sulfur)"` (optional) |
-| `duration` | string | e.g. `"Instantaneous"`, `"1 hour"` (optional) |
-| `saveAbility` | string | Ability for the saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` if the spell has no save |
-| `saveDC` | integer | Override save DC for this spell (e.g. from a magic item); `0` or omitted means use the character's current Spell Save DC |
-| `concentration` | boolean | `true` if the spell requires concentration |
-| `ritual` | boolean | `true` if the spell can be cast as a ritual |
-| `attackRoll` | boolean | `true` if the spell requires a ranged/melee spell attack roll (shows a tappable d20 roll card in the view panel) |
-| `rolls` | array | Array of roll objects `[{dice, type, label?, mod?}]`. Each entry: `dice` = expression (`"4d6"`); `type` = damage type key or `"not_damage"` or `"other"`; `label` = custom label when `type="other"`; `mod` = modifier to add — ability key (`"STR"`/`"DEX"`/…/`"CHA"`), `"SPELLMOD"` (spellcasting ability modifier only), `"SPELL"` (full spell attack bonus = ability mod + proficiency), or `""` for none. **Use `"SPELLMOD"` whenever the spell or feature text says "add your spellcasting ability modifier"** — e.g. Healing Word `"1d4 + your spellcasting ability modifier"` → `{"dice":"1d4","type":"healing","mod":"SPELLMOD"}`. Use `"SPELL"` only for rolls that explicitly add the full spell attack bonus. The SRD import mappers detect the "spellcasting modifier" phrasing automatically; the AI import prompts enforce both distinctions. |
-| `description` | string | Full spell description; newlines are preserved |
-| `showInCombat` | boolean | `true` to show the spell as a row in the combat attack block. Use this instead of duplicating the spell in `state.attacks[]` |
-| `combatActionType` | string | `"action"` (default), `"bonus"`, `"reaction"`, or `"other"` — which sub-section of the combat block the spell appears in when `showInCombat` is `true` |
-| `showInFeatures` | boolean | `true` to show the spell in the "Featured Spells" block inside the Features tab — useful for spells that function like limited-use class features |
-| `prepared` | boolean | `true` if the spell is prepared for the day; prepared spells appear in the Spells Prepared section and count toward `state.maxSpellsPrepared`; mutually exclusive with `alwaysPrepared` (default `false`) |
-| `alwaysPrepared` | boolean | `true` if the spell is always prepared (e.g. domain spells, class feature spells); always-prepared spells appear in Spells Prepared but do **not** count toward `maxSpellsPrepared`; mutually exclusive with `prepared` (default `false`) |
+| `name` | string | Display name (required) |
+| `description` | string | Full description text; newlines are preserved |
+| `showInSpells` | boolean | `true` → appears in the Spells tab Known/Prepared lists |
+| `showInFeatures` | boolean | `true` → appears in the Features tab with a dot tracker |
+| `showInTraits` | boolean | `true` → appears in the Features & Traits section on the Info tab |
+| `showInCombat` | boolean | `true` → appears as a row in the Turn block on the Combat tab |
+| `combatActionType` | string | `"action"` (default), `"bonus"`, `"reaction"`, or `"other"` — which Turn sub-section the entry appears in when `showInCombat` is `true` |
+| `level` | integer | Spell level: `0` = Cantrip; `1`–`9` = spell level; `0` for non-spells |
+| `school` | string | Magic school (e.g. `"Evocation"`); empty for non-spells |
+| `castingTime` | string | e.g. `"1 action"`, `"1 bonus action"`; empty for non-spells |
+| `range` | string | e.g. `"120 ft"`, `"Touch"`; empty for non-spells |
+| `components` | string | e.g. `"V, S, M (a pinch of sulfur)"`; empty for non-spells |
+| `duration` | string | e.g. `"Instantaneous"`, `"1 hour"`; empty for non-spells |
+| `concentration` | boolean | `true` if the spell requires concentration; `false` for non-spells |
+| `ritual` | boolean | `true` if the spell can be cast as a ritual; `false` for non-spells |
+| `prepared` | boolean | `true` if the spell is prepared for the day (counts toward `maxSpellsPrepared`); mutually exclusive with `alwaysPrepared`; `false` for non-spells |
+| `alwaysPrepared` | boolean | `true` if always prepared (e.g. domain spells); does **not** count toward `maxSpellsPrepared`; mutually exclusive with `prepared`; `false` for non-spells |
+| `attackRoll` | boolean | `true` if the entry uses a spell/feature attack roll (shows a tappable d20 card in view panel) |
+| `attackMod` | string | Ability key for the attack roll: `"STR"`/`"DEX"`/`"CON"`/`"INT"`/`"WIS"`/`"CHA"`/`"SPELL"`/`"manual"` or `""` |
+| `attackBonus` | string | Manual attack modifier string (e.g. `"+7"`); only used when `attackMod` is `"manual"` |
+| `attackProficient` | boolean | Add proficiency bonus to the computed attack roll; ignored when `attackMod` is `"manual"` |
+| `rolls` | array | Roll objects `[{dice, type, label?, mod?}]`. `dice` = expression (`"4d6"`); `type` = damage type key or `"not_damage"` or `"other"`; `label` = custom label when `type="other"`; `mod` = ability key, `"SPELLMOD"` (spellcasting ability modifier only), `"SPELL"` (full spell attack bonus), or `""`. **Use `"SPELLMOD"` when text says "add your spellcasting ability modifier"**; use `"SPELL"` only for rolls that add the full spell attack bonus. |
+| `saveAbility` | string | Ability for the saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` for none |
+| `saveDC` | integer | Override save DC; `0` or omitted means use the character's current Spell Save DC |
+| `max` | integer | Total uses / pool size for dot-tracked entries (`showInFeatures: true`); `0` for entries with no tracking |
+| `used` | integer | Uses already expended; must be `≤ max`; reset to `0` on Long Rest for tracked entries |
+| `step` | integer | How many uses one dot represents (default `1`); set to e.g. `5` for a resource like Lay on Hands |
+| `recharge` | string | When the entry recharges, e.g. `"Short Rest"`, `"Long Rest"`, or `""` |
+| `damage` | string | Legacy damage expression field (e.g. `"2d6 fire"`); prefer `rolls` for new entries |
+| `rollDamage` | boolean | `true` to make the trait row roll the `damage` expression directly on tap |
 
-When a spell has a `saveAbility` set, the view panel shows the current **Spell Save DC** prominently. The view panel contains a tappable attack-roll card (when `attackRoll` is `true`) and a tappable rolls card (when `rolls` is non-empty and `attackRoll` is `false`).
+**Tap/hold behaviour:** tapping a spell entry row rolls d20 + spell attack bonus if `attackRoll` is `true` (secondary shows rolls); rolls all `rolls` dice if only `rolls` is set; opens the info panel otherwise. Holding (500 ms) always opens the info/view panel.
 
-**Tap/hold behaviour on spell rows:** tapping a spell row rolls directly — d20 + spell attack bonus if `attackRoll` is `true` (rolls are shown in secondary); all `rolls` dice if `rolls` is non-empty and `attackRoll` is `false`; opens the info panel when neither is set. Holding (500 ms) always opens the info panel.
+Entries in the Features tab (`showInFeatures: true`) share the same two-column dot-tracker layout regardless of whether they are spells, features, or traits. `max`, `used`, `step`, and `recharge` control the tracker. Entries with `max: 0` display no tracking dots but still show a tappable name area.
 
-Spells with `showInCombat: true` appear in the combat attack block under "Actions", "Bonus Actions", "Reactions", or "Other" depending on `combatActionType`. The same tap/hold rules apply there. The spell level is shown as a gold circle badge (level 1–9); cantrips (level 0) show no badge. **Do not duplicate a spell in `state.attacks[]` — set `showInCombat: true` on the spell object instead.**
+**Do not duplicate a spell or feature in `state.attacks[]`** — set `showInCombat: true` on the entry instead.
 
 ```json
-"spells": [
+"entries": [
   {
-    "name": "Fireball", "level": 3, "school": "Evocation",
-    "castingTime": "1 action", "range": "150 ft",
+    "name": "Fireball",
+    "description": "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame.",
+    "showInSpells": true,
+    "showInFeatures": false,
+    "showInTraits": false,
+    "showInCombat": true,
+    "combatActionType": "action",
+    "level": 3,
+    "school": "Evocation",
+    "castingTime": "1 action",
+    "range": "150 ft",
     "components": "V, S, M (a tiny ball of bat guano and sulfur)",
-    "duration": "Instantaneous", "saveAbility": "DEX",
-    "concentration": false, "ritual": false,
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "prepared": true,
+    "alwaysPrepared": false,
     "attackRoll": false,
+    "attackMod": "",
+    "attackBonus": "—",
+    "attackProficient": false,
     "rolls": [{"dice": "8d6", "type": "fire", "mod": ""}],
-    "description": "A bright streak flashes from your pointing finger...",
-    "showInCombat": true, "combatActionType": "action", "showInFeatures": false,
-    "prepared": true, "alwaysPrepared": false
+    "saveAbility": "DEX",
+    "saveDC": 0,
+    "max": 0,
+    "used": 0,
+    "step": 1,
+    "recharge": "",
+    "damage": "",
+    "rollDamage": false
   },
   {
-    "name": "Guiding Bolt", "level": 1, "school": "Evocation",
-    "castingTime": "1 action", "range": "120 feet",
-    "components": "V, S", "duration": "1 round",
-    "saveAbility": "", "concentration": false, "ritual": false,
-    "attackRoll": true,
-    "rolls": [{"dice": "4d6", "type": "radiant", "mod": ""}],
-    "description": "A flash of light streaks toward a creature...",
-    "showInCombat": true, "combatActionType": "action", "showInFeatures": false,
-    "prepared": true, "alwaysPrepared": false
-  },
-  {
-    "name": "Guidance", "level": 0, "school": "Divination",
-    "castingTime": "1 action", "range": "Touch",
-    "components": "V, S", "duration": "Concentration, 1 minute",
-    "saveAbility": "", "concentration": true, "ritual": false,
+    "name": "Channel Divinity",
+    "description": "Expend to use Sacred Weapon (imbue a weapon with holy power) or Turn the Unholy (turn undead and fiends).",
+    "showInSpells": false,
+    "showInFeatures": true,
+    "showInTraits": false,
+    "showInCombat": false,
+    "combatActionType": "action",
+    "level": 0,
+    "school": "",
+    "castingTime": "",
+    "range": "",
+    "components": "",
+    "duration": "",
+    "concentration": false,
+    "ritual": false,
+    "prepared": false,
+    "alwaysPrepared": false,
     "attackRoll": false,
-    "rolls": [{"dice": "1d4", "type": "not_damage", "mod": ""}],
-    "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice.",
-    "showInCombat": false, "combatActionType": "action", "showInFeatures": false,
-    "prepared": false, "alwaysPrepared": false
+    "attackMod": "",
+    "attackBonus": "—",
+    "attackProficient": false,
+    "rolls": [],
+    "saveAbility": "",
+    "saveDC": 0,
+    "max": 1,
+    "used": 0,
+    "step": 1,
+    "recharge": "Short Rest",
+    "damage": "",
+    "rollDamage": false
   },
   {
-    "name": "Healing Word", "level": 1, "school": "Evocation",
-    "castingTime": "1 bonus action", "range": "60 ft",
-    "components": "V", "duration": "Instantaneous",
-    "saveAbility": "", "concentration": false, "ritual": false,
-    "attackRoll": false,
-    "rolls": [{"dice": "1d4", "type": "healing", "mod": "SPELLMOD"}],
+    "name": "Healing Word",
     "description": "A creature of your choice regains HP equal to 1d4 + your spellcasting modifier.",
-    "showInCombat": true, "combatActionType": "bonus", "showInFeatures": false,
-    "prepared": false, "alwaysPrepared": true
+    "showInSpells": true,
+    "showInFeatures": true,
+    "showInTraits": false,
+    "showInCombat": true,
+    "combatActionType": "bonus",
+    "level": 1,
+    "school": "Evocation",
+    "castingTime": "1 bonus action",
+    "range": "60 ft",
+    "components": "V",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "prepared": false,
+    "alwaysPrepared": true,
+    "attackRoll": false,
+    "attackMod": "",
+    "attackBonus": "—",
+    "attackProficient": false,
+    "rolls": [{"dice": "1d4", "type": "healing", "mod": "SPELLMOD"}],
+    "saveAbility": "",
+    "saveDC": 0,
+    "max": 0,
+    "used": 0,
+    "step": 1,
+    "recharge": "",
+    "damage": "",
+    "rollDamage": false
+  },
+  {
+    "name": "Darkvision",
+    "description": "You can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light.",
+    "showInSpells": false,
+    "showInFeatures": false,
+    "showInTraits": true,
+    "showInCombat": false,
+    "combatActionType": "action",
+    "level": 0,
+    "school": "",
+    "castingTime": "",
+    "range": "",
+    "components": "",
+    "duration": "",
+    "concentration": false,
+    "ritual": false,
+    "prepared": false,
+    "alwaysPrepared": false,
+    "attackRoll": false,
+    "attackMod": "",
+    "attackBonus": "—",
+    "attackProficient": false,
+    "rolls": [],
+    "saveAbility": "",
+    "saveDC": 0,
+    "max": 0,
+    "used": 0,
+    "step": 1,
+    "recharge": "",
+    "damage": "",
+    "rollDamage": false
   }
 ]
 ```
@@ -443,84 +571,6 @@ All fields except `name` are optional and default gracefully when absent.
     "saveAbility": "STR", "saveDC": 14, "description": "Contested Strength (Athletics) check." },
   { "name": "Eldritch Blast", "abilityMod": "SPELL", "proficient": true, "flatBonus": 0,
     "rolls": [{"dice": "1d10", "type": "force", "mod": "CHA"}], "actionType": "action" }
-]
-```
-
-#### `classFeatures`
-Array of limited-use class feature objects. Can be empty (`[]`).
-
-Each object:
-
-| Key | Type | Description |
-|---|---|---|
-| `name` | string | Display name, e.g. `"Channel Divinity"` (required) |
-| `max` | integer | Total uses / pool size (`0`–`999`) (required) |
-| `used` | integer | Amount already expended; must be `≤ max` (required) |
-| `recharge` | string | When it recharges, e.g. `"Short Rest"`, `"Long Rest"`, or `""` |
-| `step` | integer | Points per dot and per +/− tap (default `1`); set to e.g. `5` for Lay on Hands |
-| `description` | string | Full description shown in the feature view panel (optional) |
-| `attackRoll` | boolean | `true` if the feature has an attack roll (e.g. Divine Smite) — shows a tappable d20 roll card |
-| `attackMod` | string | Ability key for the attack roll: `"STR"`/`"DEX"`/`"CON"`/`"INT"`/`"WIS"`/`"CHA"`/`"SPELL"`/`"manual"` or `""` (empty = no attack roll) |
-| `attackBonus` | string | Manual attack roll modifier string (e.g. `"+7"`); only used when `attackMod` is `"manual"` |
-| `attackProficient` | boolean | Add proficiency bonus to the computed feature attack roll (ignored when `attackMod` is `"manual"`) |
-| `rolls` | array | Roll objects `[{dice, type, label?, mod?}]` — same structure as `spells.rolls` |
-| `saveAbility` | string | Ability key for a saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` |
-| `saveDC` | integer | Override DC; if `0` or omitted, the sheet's current Spell Save DC is used |
-| `showInCombat` | boolean | `true` to show the feature as a row in the combat attack block (default `false`) |
-| `combatActionType` | string | `"action"` (default), `"bonus"`, `"reaction"`, or `"other"` — sub-section in the combat block when `showInCombat` is `true` |
-
-**Tap/hold behaviour on feature rows:** tapping the feature name area runs rolls directly if `rolls` is non-empty (opens panel first if `attackRoll` is also `true`); otherwise opens the info panel. Holding (500 ms) always opens the info panel.
-
-```json
-"classFeatures": [
-  { "name": "Channel Divinity", "max": 2, "used": 0, "recharge": "Short Rest", "step": 1,
-    "attackRoll": false, "attackMod": "", "attackBonus": "—", "attackProficient": false, "rolls": [],
-    "description": "Sacred Weapon: imbue a weapon with your holy symbol for 1 minute." },
-  { "name": "Lay on Hands", "max": 40, "used": 0, "recharge": "Long Rest", "step": 5,
-    "attackRoll": false, "attackMod": "", "attackBonus": "—", "attackProficient": false, "rolls": [],
-    "description": "Restore HP by touching a creature (pool of 40 HP per Long Rest)." },
-  { "name": "Divine Smite", "max": 0, "used": 0, "recharge": "", "step": 1,
-    "attackRoll": true, "attackMod": "STR", "attackBonus": "—", "attackProficient": true,
-    "rolls": [{"dice": "2d8", "type": "radiant", "mod": ""}],
-    "description": "Expend a spell slot on a melee hit to deal radiant damage." }
-]
-```
-
-With `step: 5` the sheet shows 8 dots (40 ÷ 5) and each +/− tap or dot click moves the counter by 5. Omitting `step` defaults to `1`. Features with `max: 0` display no tracking dots but still show a tappable name area.
-
-Non-ability-using characters can omit this key or set it to `[]`.
-
-#### `infoTraits`
-Array of feature and trait objects displayed in the Info tab (Features & Traits section). Can be empty (`[]`).
-
-Each object:
-
-| Key | Type | Description |
-|---|---|---|
-| `name` | string | Feature or trait name (required) |
-| `description` | string | Full description text; newlines are preserved (optional) |
-| `damage` | string | Damage expression, e.g. `"2d6 fire"` — shown as a rollable card in the view panel (optional) |
-| `rollDamage` | boolean | `true` to enable a tappable damage roll button in the view panel |
-| `saveAbility` | string | Ability key for a saving throw: `"STR"`, `"DEX"`, `"CON"`, `"INT"`, `"WIS"`, `"CHA"`, or `""` |
-| `saveDC` | integer | Override DC; if `0` or omitted, the sheet's current Spell Save DC is used |
-| `showInCombat` | boolean | `true` to show this trait as a row in the combat attack block |
-| `combatActionType` | string | `"action"` (default), `"bonus"`, `"reaction"`, or `"other"` — which sub-section of the combat block it appears in |
-| `showInFeatures` | boolean | `true` to show this trait in the "Featured Traits" block in the Features tab — use for limited-use racial or class traits (e.g. Breath Weapon, Lay on Hands) |
-| `featureMax` | integer | Total number of uses to track when `showInFeatures` is `true`; dot count = `ceil(featureMax / featureStep)` |
-| `featureUsed` | integer | Uses already expended; defaults to `0`; reset to `0` on Long Rest |
-| `featureStep` | integer | How many uses one dot represents (default `1`); set to `5` for resources like Lay on Hands HP pool |
-| `featureRecharge` | string | Recharge label shown next to the restore button (e.g. `"Long Rest"`, `"Short Rest"`); omit or use `""` for no label |
-
-**Tap/hold behaviour on trait rows:** tapping rolls the damage expression directly if `rollDamage` is `true`; otherwise it opens the info panel (description + optional damage roll card + save DC display). Holding (500 ms) always opens the info panel. An **Edit** button in the top-right of the info panel switches to edit mode within the same modal. The same rules apply when a trait appears in the combat attack block via `showInCombat` or in the Featured Traits block via `showInFeatures`.
-
-```json
-"infoTraits": [
-  { "name": "Darkvision",   "description": "See in darkness as dim light, dim light as bright light within 60 ft." },
-  { "name": "Fey Ancestry", "description": "Advantage on saves against being charmed; magic cannot put you to sleep." },
-  { "name": "Breath Weapon", "description": "Exhale destructive energy (5 ft × 30 ft line).",
-    "damage": "2d6 fire", "rollDamage": true, "saveAbility": "DEX", "saveDC": 0,
-    "showInCombat": true, "combatActionType": "action",
-    "showInFeatures": true, "featureMax": 1, "featureUsed": 0, "featureStep": 1, "featureRecharge": "Short Rest" }
 ]
 ```
 
@@ -780,9 +830,10 @@ The example uses a level-5 Paladin (Oath of Devotion) to demonstrate `classFeatu
 | `used > max` on a spell slot | Dots render correctly (capped to max) but the value is misleading | Keep `used ≤ max` |
 | Misspelled skill or condition name | Entry is silently ignored | Use exact names from the lists above |
 | `attacks[].actionType` set to `"Action"` (capital A) | Attack appears under "Actions" only if the check is case-insensitive, but may silently fall through | Use lowercase `"action"` or `"bonus"` |
-| Spell in `state.spells` with `showInCombat: true` but no `spellAbility` set in `form` | Spell attack bonus shows as `+0`; roll still works | Set `form.spellAbility` to the correct ability key |
-| Spell duplicated in both `state.spells` and `state.attacks[]` | The spell appears twice in the combat block | Remove the `attacks[]` entry; set `showInCombat: true` on the spell object instead |
-| `prepared: true` and `alwaysPrepared: true` both set on the same spell | Only `alwaysPrepared` is meaningful; the spell shows in Spells Prepared but the P dot renders incorrectly | Set exactly one to `true`; the app enforces mutual exclusivity when toggling via the UI |
+| Entry in `state.entries` with `showInCombat: true` but no `spellAbility` set in `form` | Spell attack bonus shows as `+0`; roll still works | Set `form.spellAbility` to the correct ability key |
+| Spell/feature/trait duplicated in both `state.entries` and `state.attacks[]` | The item appears twice in the combat block | Remove the `attacks[]` entry; set `showInCombat: true` on the entry instead |
+| `prepared: true` and `alwaysPrepared: true` both set on the same entry | Only `alwaysPrepared` is meaningful; the spell shows in Spells Prepared but the P dot renders incorrectly | Set exactly one to `true`; the app enforces mutual exclusivity when toggling via the UI |
 | `maxSpellsPrepared` omitted on a class that uses preparation (Wizard, Cleric, etc.) | The prepared-count display shows `0 / 0` and no limit is enforced | Set `"maxSpellsPrepared"` to the character's daily preparation limit (e.g. `5` for a level 3 Wizard with INT 14) |
 | `attacks[].saveDC` as a string (`"15"`) | DC displays correctly but numeric comparison may fail in future | Use an integer: `15` not `"15"` |
-| `form.features` present in file | Field is silently ignored (the textarea no longer exists); data is lost | Move features to `state.infoTraits` as `{ name, description }` objects |
+| Separate `spells`, `classFeatures`, or `infoTraits` arrays in new files | Old format still loads (auto-migrated on load), but is not the canonical format | Use `state.entries[]` with `showIn*` flags instead; set `showInSpells: true` for spells, `showInFeatures: true` for dot-tracked features, `showInTraits: true` for info traits |
+| `form.features` present in file | Field is silently ignored (the textarea no longer exists); data is lost | Move features to `state.entries` as objects with `showInTraits: true` |
