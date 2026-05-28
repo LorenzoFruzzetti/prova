@@ -319,6 +319,30 @@
     border-bottom-color: var(--gold);
   }
 
+  /* ── Tab bar full-view overlay (appears over content on swipe/drag) ── */
+  #tabExpOverlay {
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 105;
+    display: none;
+    flex-wrap: wrap;
+    background: var(--tabbar-bg);
+    border-bottom: 2px solid var(--gold);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+  }
+  #tabExpOverlay.show { display: flex; }
+  #tabExpOverlay .tab-btn {
+    flex: 1 1 19%;
+    min-width: 0;
+    border-bottom: 2px solid transparent;
+  }
+  #tabExpOverlay .tab-btn.active {
+    color: var(--gold);
+    background: var(--tab-active);
+    border-bottom-color: var(--gold);
+  }
+
   /* ── Panels ── */
   .panel { display: none; padding: 16px; }
   .panel.active { display: block; }
@@ -4738,6 +4762,7 @@ function init() {
     document.getElementById('spellPanel')?.classList.contains('show') ||
     document.getElementById('attackPanel')?.classList.contains('show')
   );
+  setupTabBarExpansion();
 }
 
 // ── Undo stack ─────────────────────────────────────────────────────────
@@ -9330,6 +9355,72 @@ function _applyPayloadData(payload) {
 function applyPayload(payload) {
   _applyPayloadData(payload);
   _rebuildAll();
+}
+
+function setupTabBarExpansion() {
+  const overlay = document.createElement('div');
+  overlay.id = 'tabExpOverlay';
+  document.body.appendChild(overlay);
+
+  // Build overlay buttons once (mirrors tab bar)
+  document.querySelectorAll('.tab-bar .tab-btn').forEach(src => {
+    const b = document.createElement('button');
+    b.className = 'tab-btn';
+    b.dataset.tab = src.dataset.tab;
+    b.innerHTML = src.innerHTML;
+    b.addEventListener('click', () => { switchTab(b.dataset.tab); syncActive(); });
+    overlay.appendChild(b);
+  });
+
+  function syncActive() {
+    const activeTab = document.querySelector('.tab-bar .tab-btn.active')?.dataset.tab;
+    overlay.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === activeTab);
+    });
+  }
+
+  let timer = null;
+
+  function showOverlay() {
+    const tb = document.querySelector('.tab-bar');
+    if (!tb) return;
+    overlay.style.top = tb.getBoundingClientRect().top + 'px';
+    syncActive();
+    overlay.classList.add('show');
+    clearTimeout(timer);
+  }
+
+  function scheduleHide() {
+    clearTimeout(timer);
+    timer = setTimeout(() => overlay.classList.remove('show'), 1000);
+  }
+
+  let startX = null, startY = null;
+
+  document.body.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.body.addEventListener('touchmove', e => {
+    if (startX === null) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (Math.abs(dx) > 15 && Math.abs(dx) > Math.abs(dy)) {
+      showOverlay();
+      clearTimeout(timer);
+    }
+  }, { passive: true });
+
+  document.body.addEventListener('touchend', () => {
+    startX = null; startY = null;
+    scheduleHide();
+  }, { passive: true });
+
+  document.body.addEventListener('touchcancel', () => {
+    startX = null; startY = null;
+    scheduleHide();
+  }, { passive: true });
 }
 
 function setupAutoSave() {
