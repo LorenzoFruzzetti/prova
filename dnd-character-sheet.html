@@ -342,6 +342,12 @@
     background: var(--tab-active);
     border-bottom-color: var(--gold);
   }
+  .tab-exp-divider {
+    flex-basis: 100%;
+    height: 0;
+    border-top: 1px solid var(--gold);
+    opacity: 0.35;
+  }
 
   /* ── Panels ── */
   .panel { display: none; padding: 16px; }
@@ -9362,8 +9368,13 @@ function setupTabBarExpansion() {
   overlay.id = 'tabExpOverlay';
   document.body.appendChild(overlay);
 
-  // Build overlay buttons once (mirrors tab bar)
-  document.querySelectorAll('.tab-bar .tab-btn').forEach(src => {
+  // Build overlay buttons once (mirrors tab bar); insert row divider after 5th button
+  document.querySelectorAll('.tab-bar .tab-btn').forEach((src, i) => {
+    if (i === 5) {
+      const div = document.createElement('div');
+      div.className = 'tab-exp-divider';
+      overlay.appendChild(div);
+    }
     const b = document.createElement('button');
     b.className = 'tab-btn';
     b.dataset.tab = src.dataset.tab;
@@ -9392,7 +9403,7 @@ function setupTabBarExpansion() {
 
   function scheduleHide() {
     clearTimeout(timer);
-    timer = setTimeout(() => overlay.classList.remove('show'), 1000);
+    timer = setTimeout(() => overlay.classList.remove('show'), 500);
   }
 
   let startX = null, startY = null;
