@@ -90,30 +90,17 @@ body{background:var(--bg);color:var(--text);font-family:Georgia,serif;-webkit-ta
   font-size:12px;font-family:sans-serif;font-weight:bold;color:var(--gold);padding:1px 7px;
 }
 
-/* ── Defence pills ── */
-.defence-pills{display:flex;flex-wrap:wrap;gap:8px;padding:6px 8px}
-.defence-pill{
-  flex:1;min-width:60px;background:var(--surface);border:1px solid var(--border);
-  border-radius:8px;padding:6px 10px;text-align:center;font-family:sans-serif;
-}
-.defence-pill-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:2px}
-.defence-pill-value{font-size:16px;font-weight:bold;color:var(--text)}
-.defence-pill-sub{font-size:10px;color:var(--text-muted)}
-
-/* ── Ability grid ── */
-.ability-grid{display:flex;gap:4px;padding:8px 6px;justify-content:space-between}
-.ability-col{
-  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
-  background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 4px;
-  min-width:0;
-}
-.ability-key{font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--gold);font-family:sans-serif;font-weight:bold}
-.ability-score{font-size:18px;font-weight:bold;color:var(--text);line-height:1}
-.ability-mod-badge{
-  font-size:12px;font-weight:bold;font-family:sans-serif;color:var(--gold-light);
-  background:rgba(var(--accent-rgb),0.12);border-radius:4px;padding:1px 5px;
-}
-.save-badge{font-size:9px;color:var(--text-muted);font-family:sans-serif}
+/* ── Ability grid — 3-column layout for 6 abilities ── */
+.ability-grid{grid-template-columns:repeat(3,1fr);padding:6px 8px}
+/* Creature ability cards: score display (not editable input) */
+.ability-card .ability-score-val{font-size:13px;font-family:sans-serif;color:var(--text)}
+/* Compact sizing for creature ability cards */
+.ability-card{padding:4px 6px 0}
+.ability-mod{font-size:20px;margin:0 0 3px}
+.ability-save{padding:5px 4px;gap:5px}
+.ability-save .save-mod{font-size:14px;min-width:24px}
+.ability-save .save-label{font-size:9px}
+.ability-save .prof-dot{width:12px;height:12px}
 
 /* ── Stat rows ── */
 .cs-rows{padding:0 8px}
@@ -888,45 +875,158 @@ function _buildInfoPanel(panel, c, pb, xp) {
 }
 
 function _buildCombatPanel(panel, c, pb, xp) {
-  const speedStr = _speedStr(c.speed);
-
-  // Defence pills
+  // ── HP Tracker ──
   panel.appendChild(_divider());
-  const pillsDiv = document.createElement('div');
-  pillsDiv.className = 'defence-pills';
-  pillsDiv.innerHTML = `
-    ${_pill('AC', c.ac, c.acDetail || '')}
-    ${_pill('HP', c.hp, c.hitDice || '')}
-    ${_pill('Speed', speedStr, '')}
-    ${_pill('CR', crDisplay(c.cr), `XP ${(xp||0).toLocaleString()}`)}
-  `;
-  panel.appendChild(pillsDiv);
+  const hpWrap = document.createElement('div');
+  hpWrap.style.cssText = 'padding:4px 8px 10px';
+  const maxHp = c.hp || 1;
+  const curHp = c.hpCurrent ?? maxHp;
+  const barPct = Math.max(0, Math.min(100, (curHp / maxHp) * 100));
+  const hpCls = curHp <= 0 ? ' danger' : curHp < maxHp * 0.25 ? ' danger' : curHp < maxHp * 0.5 ? ' warning' : '';
+  const barBg = curHp <= 0 ? 'var(--red)' : curHp < maxHp * 0.25 ? 'var(--red-light)' : curHp < maxHp * 0.5 ? '#e67e22' : 'var(--green)';
+  hpWrap.innerHTML = `
+    <div class="hp-tracker">
+      <button class="hp-btn minus"
+              onpointerdown="startCreatureHpHold(-1)"
+              onpointerup="stopCreatureHpHold()"
+              onpointercancel="cancelCreatureHpHold()">−</button>
+      <div class="hp-display" onclick="openCreatureHpDialog()">
+        <div class="hp-display-row">
+          <span class="hp-current${hpCls}" id="creatureHpCurrent">${curHp}</span>
+          <span class="hp-max-label">/ <span id="creatureHpMaxLabel">${maxHp}</span> HP</span>
+        </div>
+        <div class="hp-bar"><div class="hp-bar-fill" id="creatureHpBarFill" style="width:${barPct}%;background:${barBg}"></div></div>
+        ${c.hitDice ? `<div style="font-size:10px;color:var(--text-muted);font-family:sans-serif;margin-top:2px">${escHtml(c.hitDice)}</div>` : ''}
+      </div>
+      <button class="hp-btn plus"
+              onpointerdown="startCreatureHpHold(+1)"
+              onpointerup="stopCreatureHpHold()"
+              onpointercancel="cancelCreatureHpHold()">+</button>
+    </div>`;
+  panel.appendChild(hpWrap);
 
-  // Initiative (editable row)
-  const initDiv = document.createElement('div');
-  initDiv.className = 'cs-rows';
-  _addEditableRow(initDiv, 'Initiative', c.initiative || '', v => { creature.initiative = v; saveRoster(); }, '+0');
-  panel.appendChild(initDiv);
+  // ── Stat pills: AC / Speed / CR ──
+  const pillsWrap = document.createElement('div');
+  pillsWrap.style.cssText = 'padding:0 8px 4px';
+  const initMod = _creatureInitMod(c);
+  pillsWrap.innerHTML = `
+    <div class="stat-pills">
+      <div class="stat-pill" onclick="clickCreatureStatPill('ac')">
+        <div class="stat-pill-value">${escHtml(String(c.ac))}</div>
+        ${c.acDetail ? `<div style="font-size:9px;color:var(--text-muted);font-family:sans-serif">${escHtml(c.acDetail)}</div>` : ''}
+        <div class="stat-pill-label">Armor Class</div>
+      </div>
+      <div class="stat-pill" onclick="clickCreatureStatPill('speed')">
+        <div class="stat-pill-value">${escHtml(c.speed?.walk ? c.speed.walk + 'ft' : '—')}</div>
+        <div class="stat-pill-label">Speed</div>
+      </div>
+      <div class="stat-pill" onclick="clickCreatureStatPill('cr')">
+        <div class="stat-pill-value">${escHtml(crDisplay(c.cr))}</div>
+        <div class="stat-pill-label">Challenge</div>
+      </div>
+    </div>
+    <div class="stat-pills" style="margin-top:8px">
+      <div class="stat-pill rollable" onclick="clickCreatureStatPill('initiative')">
+        <div class="stat-pill-value">${escHtml(fmtMod(initMod))}</div>
+        <div class="stat-pill-label">Initiative</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-value">${escHtml(fmtMod(pb))}</div>
+        <div class="stat-pill-label">Prof Bonus</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-value" style="font-size:16px">${escHtml((xp||0).toLocaleString())}</div>
+        <div class="stat-pill-label">XP</div>
+      </div>
+    </div>`;
+  panel.appendChild(pillsWrap);
 
-  // Ability grid
+  // ── Ability grid (card style, clickable) ──
   const abDiv = document.createElement('div');
   abDiv.className = 'ability-grid';
   ABILITIES.forEach(ab => {
-    const score = c.abilities[ab] || 10;
-    const m     = mod(score);
-    const sv    = c.savingThrows[ab];
-    const svTxt = (sv !== undefined) ? `Save ${fmtMod(sv)}` : '';
-    abDiv.innerHTML += `
-      <div class="ability-col">
-        <div class="ability-key">${ab}</div>
-        <div class="ability-score">${score}</div>
-        <div class="ability-mod-badge">${fmtMod(m)}</div>
-        ${svTxt ? `<div class="save-badge">${escHtml(svTxt)}</div>` : ''}
+    const score   = c.abilities[ab] || 10;
+    const m       = mod(score);
+    const sv      = c.savingThrows[ab];
+    const saveVal = sv !== undefined ? sv : m;
+    const profCls = sv !== undefined ? ' proficient' : '';
+
+    const card = document.createElement('div');
+    card.className = 'ability-card';
+    card.innerHTML = `
+      <div class="ability-header">
+        <span class="ability-name">${ab}</span>
+        <span class="ability-score-val">${score}</span>
+      </div>
+      <div class="ability-mod">${fmtMod(m)}</div>
+      <div class="ability-save${profCls}">
+        <div class="prof-dot"></div>
+        <span class="save-mod">${fmtMod(saveVal)}</span>
+        <span class="save-label">Save</span>
       </div>`;
+
+    let holdTimer = null;
+    let holdFired = false;
+    card.addEventListener('pointerdown', () => {
+      holdFired = false;
+      card.classList.add('holding');
+      holdTimer = setTimeout(() => {
+        holdTimer = null; holdFired = true;
+        card.classList.remove('holding');
+        openCreatureAbilityInfoPanel(ab, score, m, saveVal, sv !== undefined);
+      }, 500);
+    });
+    card.addEventListener('pointerup', () => {
+      if (holdTimer !== null) { clearTimeout(holdTimer); holdTimer = null; }
+      card.classList.remove('holding');
+    });
+    card.addEventListener('pointercancel', () => {
+      clearTimeout(holdTimer); holdTimer = null; holdFired = false; card.classList.remove('holding');
+    });
+    card.addEventListener('click', () => {
+      if (holdFired) { holdFired = false; return; }
+      const r = d20Roll('normal');
+      showRoll(`${ab} Check`, `${r.breakdown} ${fmtMod(m)}`, r.roll + m, natMsg(r.roll));
+    });
+    card.addEventListener('contextmenu', e => e.preventDefault());
+
+    const saveRow = card.querySelector('.ability-save');
+    let saveHoldTimer = null;
+    let saveHoldFired = false;
+    saveRow.addEventListener('pointerdown', e => {
+      e.stopPropagation();
+      if (holdTimer !== null) { clearTimeout(holdTimer); holdTimer = null; }
+      card.classList.remove('holding');
+      saveHoldFired = false;
+      saveRow.classList.add('holding');
+      saveHoldTimer = setTimeout(() => {
+        saveHoldTimer = null; saveHoldFired = true;
+        saveRow.classList.remove('holding');
+        openCreatureAbilityInfoPanel(ab, score, m, saveVal, sv !== undefined);
+      }, 500);
+    });
+    saveRow.addEventListener('pointerup', e => {
+      e.stopPropagation();
+      if (saveHoldTimer !== null) { clearTimeout(saveHoldTimer); saveHoldTimer = null; }
+      saveRow.classList.remove('holding');
+    });
+    saveRow.addEventListener('pointercancel', e => {
+      e.stopPropagation();
+      clearTimeout(saveHoldTimer); saveHoldTimer = null; saveHoldFired = false;
+      saveRow.classList.remove('holding');
+    });
+    saveRow.addEventListener('click', e => {
+      e.stopPropagation();
+      if (saveHoldFired) { saveHoldFired = false; return; }
+      const r = d20Roll('normal');
+      showRoll(`${ab} Save`, `${r.breakdown} ${fmtMod(saveVal)}`, r.roll + saveVal, natMsg(r.roll));
+    });
+
+    abDiv.appendChild(card);
   });
   panel.appendChild(abDiv);
 
-  // Stat rows (saves, skills, damage types, condition immunities, proficiency bonus)
+  // ── Stat rows (skills, damage types, condition immunities) ──
   const rowsDiv = document.createElement('div');
   rowsDiv.className = 'cs-rows';
   panel.appendChild(rowsDiv);
@@ -939,7 +1039,6 @@ function _buildCombatPanel(panel, c, pb, xp) {
   // Damage interactions — interactive cycling grid
   _buildDamageInteractionsGrid(rowsDiv, c);
   if (c.conditionImmunities?.length) _addRow(rowsDiv, 'Condition Immunities', c.conditionImmunities.join(', '));
-  _addRow(rowsDiv, 'Proficiency Bonus', fmtMod(pb));
 
   // Traits (special abilities)
   panel.appendChild(_divider());
@@ -1045,13 +1144,6 @@ function _sectionTitle(label, sectionKey) {
   div.appendChild(btns);
   return div;
 }
-function _pill(label, value, sub) {
-  return `<div class="defence-pill">
-    <div class="defence-pill-label">${escHtml(label)}</div>
-    <div class="defence-pill-value">${escHtml(String(value))}</div>
-    ${sub ? `<div class="defence-pill-sub">${escHtml(sub)}</div>` : ''}
-  </div>`;
-}
 function _addRow(container, label, value) {
   const div = document.createElement('div');
   div.className = 'cs-row';
@@ -1079,6 +1171,143 @@ function _addEditableRow(container, label, value, onchange, placeholder) {
   div.appendChild(labelEl);
   div.appendChild(input);
   container.appendChild(div);
+}
+
+// ── Creature HP tracker ───────────────────────────────────────────────
+let _creatureHpHoldTimer = null;
+let _creatureHpHoldInterval = null;
+
+function _creatureInitMod(c) {
+  if (c.initiative !== undefined && c.initiative !== '') {
+    const p = parseInt(c.initiative);
+    if (!isNaN(p)) return p;
+  }
+  return mod(c.abilities?.DEX || 10);
+}
+
+function startCreatureHpHold(delta) {
+  adjustCreatureHP(delta);
+  _creatureHpHoldTimer = setTimeout(() => {
+    _creatureHpHoldInterval = setInterval(() => adjustCreatureHP(delta), 80);
+  }, 400);
+}
+
+function stopCreatureHpHold() {
+  clearTimeout(_creatureHpHoldTimer);
+  clearInterval(_creatureHpHoldInterval);
+}
+
+function cancelCreatureHpHold() {
+  clearTimeout(_creatureHpHoldTimer);
+  clearInterval(_creatureHpHoldInterval);
+}
+
+function adjustCreatureHP(delta) {
+  const maxHp = creature.hp || 1;
+  const cur = creature.hpCurrent ?? maxHp;
+  creature.hpCurrent = Math.max(0, Math.min(maxHp, cur + delta));
+  saveRoster();
+  updateCreatureHP();
+}
+
+function updateCreatureHP() {
+  const maxHp = creature.hp || 1;
+  const cur = creature.hpCurrent ?? maxHp;
+  const curEl = document.getElementById('creatureHpCurrent');
+  const barEl = document.getElementById('creatureHpBarFill');
+  const maxEl = document.getElementById('creatureHpMaxLabel');
+  if (!curEl) return;
+  curEl.textContent = cur;
+  curEl.className = 'hp-current' +
+    (cur <= 0 ? ' danger' : cur < maxHp * 0.25 ? ' danger' : cur < maxHp * 0.5 ? ' warning' : '');
+  if (maxEl) maxEl.textContent = maxHp;
+  if (barEl) {
+    const pct = Math.max(0, Math.min(100, (cur / maxHp) * 100));
+    barEl.style.width = pct + '%';
+    barEl.style.background = cur <= 0 ? 'var(--red)' : cur < maxHp * 0.25 ? 'var(--red-light)' :
+      cur < maxHp * 0.5 ? '#e67e22' : 'var(--green)';
+  }
+}
+
+function openCreatureHpDialog() {
+  const maxHp = creature.hp || 1;
+  const cur = creature.hpCurrent ?? maxHp;
+  const input = prompt(`Set HP (0–${maxHp}):`, String(cur));
+  if (input === null) return;
+  const val = parseInt(input);
+  if (!isNaN(val)) {
+    creature.hpCurrent = Math.max(0, Math.min(maxHp, val));
+    saveRoster();
+    updateCreatureHP();
+  }
+}
+
+// ── Creature stat pill interactions ───────────────────────────────────
+
+function clickCreatureStatPill(stat) {
+  const c = creature;
+  if (stat === 'ac') {
+    openInfoPanel({
+      badge: 'DEFENSE',
+      title: `AC ${c.ac}`,
+      meta: c.acDetail || '',
+      description: 'Armor Class — the target number for attacks to hit this creature.',
+    });
+  } else if (stat === 'speed') {
+    openInfoPanel({
+      badge: 'SPEED',
+      title: 'Speed',
+      description: _speedStr(c.speed),
+    });
+  } else if (stat === 'cr') {
+    const xp = crXP(c.cr);
+    openInfoPanel({
+      badge: 'CR',
+      title: `Challenge ${crDisplay(c.cr)}`,
+      description: `XP: ${xp.toLocaleString()}\nProficiency Bonus: ${fmtMod(crProfBonus(c.cr))}`,
+    });
+  } else if (stat === 'initiative') {
+    const initMod = _creatureInitMod(c);
+    const dexMod = mod(c.abilities?.DEX || 10);
+    openInfoPanel({
+      badge: 'INITIATIVE',
+      title: 'Initiative',
+      meta: `DEX modifier ${fmtMod(dexMod)}`,
+      description: `Roll initiative at the start of combat to determine turn order.`,
+      rollLabel: 'Initiative',
+      rollBonus: fmtMod(initMod),
+      rollFn: (mode) => {
+        const r = d20Roll(mode);
+        const total = r.roll + initMod;
+        showRoll('Initiative', `${r.breakdown} ${fmtMod(initMod)}`, total, natMsg(r.roll));
+      },
+    });
+  }
+}
+
+// ── Creature ability info panel ───────────────────────────────────────
+
+function openCreatureAbilityInfoPanel(ab, score, m, saveVal, hasProf) {
+  openInfoPanel({
+    badge: 'ABILITY',
+    title: `${ab} — ${score}`,
+    meta: hasProf ? `Proficient in ${ab} saves` : '',
+    description: `Modifier: ${fmtMod(m)}\nSave: ${fmtMod(saveVal)}`,
+    rollLabel: `${ab} Check`,
+    rollBonus: fmtMod(m),
+    rollFn: (mode) => {
+      const r = d20Roll(mode);
+      const total = r.roll + m;
+      showRoll(`${ab} Check`, `${r.breakdown} ${fmtMod(m)}`, total, natMsg(r.roll));
+    },
+    simpleRollLabel: `${ab} Save — tap to roll`,
+    simpleRollBonus: fmtMod(saveVal),
+    simpleRollFn: () => {
+      const r = d20Roll('normal');
+      const total = r.roll + saveVal;
+      showRoll(`${ab} Save`, `${r.breakdown} ${fmtMod(saveVal)}`, total, natMsg(r.roll));
+    },
+  });
 }
 
 // ── Skill rows (individual, collapsible) ──────────────────────────────
