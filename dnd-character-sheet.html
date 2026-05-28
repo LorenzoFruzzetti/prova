@@ -349,6 +349,28 @@
     opacity: 0.35;
   }
 
+  /* ── Tab bar push row (in-flow, shifts content, for tab bar drag) ── */
+  #tabPushExp {
+    background: var(--tabbar-bg);
+    border-top: 2px solid var(--gold);
+    display: flex;
+    overflow: hidden;
+    max-height: 0;
+    position: sticky;
+    z-index: 97;
+  }
+  #tabPushExp.show { max-height: 50px; }
+  #tabPushExp .tab-btn {
+    flex: 1;
+    min-width: 0;
+    border-bottom: 2px solid transparent;
+  }
+  #tabPushExp .tab-btn.active {
+    color: var(--gold);
+    background: var(--tab-active);
+    border-bottom-color: var(--gold);
+  }
+
   /* ── Panels ── */
   .panel { display: none; padding: 16px; }
   .panel.active { display: block; }
@@ -9364,53 +9386,80 @@ function applyPayload(payload) {
 }
 
 function setupTabBarExpansion() {
+  const tabBar = document.querySelector('.tab-bar');
+  const allBtns = [...document.querySelectorAll('.tab-bar .tab-btn')];
+
+  // ── Fixed overlay for content swipes (500 ms, no layout shift) ──
   const overlay = document.createElement('div');
   overlay.id = 'tabExpOverlay';
   document.body.appendChild(overlay);
-
-  // Build overlay buttons once (mirrors tab bar); insert row divider after 5th button
-  document.querySelectorAll('.tab-bar .tab-btn').forEach((src, i) => {
+  allBtns.forEach((src, i) => {
     if (i === 5) {
-      const div = document.createElement('div');
-      div.className = 'tab-exp-divider';
-      overlay.appendChild(div);
+      const sep = document.createElement('div');
+      sep.className = 'tab-exp-divider';
+      overlay.appendChild(sep);
     }
     const b = document.createElement('button');
-    b.className = 'tab-btn';
-    b.dataset.tab = src.dataset.tab;
-    b.innerHTML = src.innerHTML;
+    b.className = 'tab-btn'; b.dataset.tab = src.dataset.tab; b.innerHTML = src.innerHTML;
     b.addEventListener('click', () => { switchTab(b.dataset.tab); syncActive(); });
     overlay.appendChild(b);
   });
 
+  // ── In-flow push row for tab bar drag (1000 ms, shifts content) ──
+  const pushRow = document.createElement('div');
+  pushRow.id = 'tabPushExp';
+  pushRow.style.top = tabBar.offsetHeight + 'px';
+  tabBar.insertAdjacentElement('afterend', pushRow);
+  allBtns.slice(5).forEach(src => {
+    const b = document.createElement('button');
+    b.className = 'tab-btn'; b.dataset.tab = src.dataset.tab; b.innerHTML = src.innerHTML;
+    b.addEventListener('click', () => { switchTab(b.dataset.tab); syncActive(); });
+    pushRow.appendChild(b);
+  });
+
   function syncActive() {
     const activeTab = document.querySelector('.tab-bar .tab-btn.active')?.dataset.tab;
-    overlay.querySelectorAll('.tab-btn').forEach(b => {
+    [overlay, pushRow].forEach(c => c.querySelectorAll('.tab-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.tab === activeTab);
-    });
+    }));
   }
 
-  let timer = null;
+  let overlayTimer = null, pushTimer = null;
 
   function showOverlay() {
-    const tb = document.querySelector('.tab-bar');
-    if (!tb) return;
-    overlay.style.top = tb.getBoundingClientRect().top + 'px';
+    overlay.style.top = tabBar.getBoundingClientRect().top + 'px';
     syncActive();
     overlay.classList.add('show');
-    clearTimeout(timer);
+    clearTimeout(overlayTimer);
+  }
+  function scheduleHideOverlay() {
+    clearTimeout(overlayTimer);
+    overlayTimer = setTimeout(() => overlay.classList.remove('show'), 500);
   }
 
-  function scheduleHide() {
-    clearTimeout(timer);
-    timer = setTimeout(() => overlay.classList.remove('show'), 500);
+  function showPushRow() {
+    pushRow.style.transition = 'max-height 0.22s ease-out';
+    syncActive();
+    pushRow.classList.add('show');
+    clearTimeout(pushTimer);
+  }
+  function scheduleHidePushRow() {
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(() => {
+      pushRow.style.transition = 'max-height 0.18s ease-in';
+      pushRow.classList.remove('show');
+    }, 1000);
   }
 
-  let startX = null, startY = null;
+  let startX = null, startY = null, startedOnTabBar = false;
+  let overlayActive = false, pushActive = false;
 
   document.body.addEventListener('touchstart', e => {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
+    overlayActive = false; pushActive = false;
+    const r = tabBar.getBoundingClientRect();
+    startedOnTabBar = startY >= r.top && startY <= r.bottom;
   }, { passive: true });
 
   document.body.addEventListener('touchmove', e => {
@@ -9418,19 +9467,26 @@ function setupTabBarExpansion() {
     const dx = e.touches[0].clientX - startX;
     const dy = e.touches[0].clientY - startY;
     if (Math.abs(dx) > 15 && Math.abs(dx) > Math.abs(dy)) {
-      showOverlay();
-      clearTimeout(timer);
+      if (startedOnTabBar) {
+        if (!pushActive) { pushActive = true; showPushRow(); }
+        clearTimeout(pushTimer);
+      } else {
+        if (!overlayActive) { overlayActive = true; showOverlay(); }
+        clearTimeout(overlayTimer);
+      }
     }
   }, { passive: true });
 
   document.body.addEventListener('touchend', () => {
     startX = null; startY = null;
-    scheduleHide();
+    if (pushActive) scheduleHidePushRow();
+    if (overlayActive) scheduleHideOverlay();
   }, { passive: true });
 
   document.body.addEventListener('touchcancel', () => {
     startX = null; startY = null;
-    scheduleHide();
+    if (pushActive) scheduleHidePushRow();
+    if (overlayActive) scheduleHideOverlay();
   }, { passive: true });
 }
 
