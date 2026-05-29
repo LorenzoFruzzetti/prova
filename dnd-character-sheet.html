@@ -320,9 +320,9 @@
   }
 
   /* Carousel mode: fixed-width tabs so the (clone-padded) strip scrolls and
-     wraps seamlessly. ~4 tabs visible at a time. Set by setupTabCarousel(). */
+     wraps seamlessly. ~5 tabs visible at a time. Set by setupTabCarousel(). */
   .tab-bar.carousel .tab-btn {
-    flex: 0 0 25%;
+    flex: 0 0 20%;
     min-width: 0;
   }
 
@@ -330,24 +330,30 @@
      Shows every tab in a 2-row grid for direct tapping. */
   #tabPushExp {
     background: var(--tabbar-bg);
-    border-top: 2px solid var(--gold);
+    border-top: 3px solid var(--gold);
+    border-bottom: 3px solid var(--gold);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
     display: flex;
     flex-wrap: wrap;
     overflow: hidden;
     max-height: 0;
     position: sticky;
     z-index: 97;
+    transition: max-height 0.22s ease-out;
   }
   #tabPushExp.show { max-height: 150px; }
+  /* Row divider: bottom border on the first 4 tabs (row 1 of 2) */
+  #tabPushExp .tab-btn:nth-child(-n+4) {
+    border-bottom: 1px solid var(--border);
+  }
   #tabPushExp .tab-btn {
     flex: 1 1 25%;
     min-width: 0;
-    border-bottom: 2px solid transparent;
   }
   #tabPushExp .tab-btn.active {
     color: var(--gold);
     background: var(--tab-active);
-    border-bottom-color: var(--gold);
+    border-bottom: 2px solid var(--gold);
   }
 
   /* ── Panels ── */
@@ -9396,17 +9402,13 @@ function setupTabBarExpansion() {
   let pushTimer = null;
 
   function showPushRow() {
-    pushRow.style.transition = 'max-height 0.22s ease-out';
     syncActive();
     pushRow.classList.add('show');
     clearTimeout(pushTimer);
   }
   function scheduleHidePushRow() {
     clearTimeout(pushTimer);
-    pushTimer = setTimeout(() => {
-      pushRow.style.transition = 'max-height 0.18s ease-in';
-      pushRow.classList.remove('show');
-    }, 1000);
+    pushTimer = setTimeout(() => pushRow.classList.remove('show'), 1000);
   }
 
   let startX = null, startY = null, startedOnTabBar = false, pushActive = false;
@@ -9464,25 +9466,32 @@ function setupTabCarousel() {
   tabBar.classList.add('carousel');
 
   const all = [...tabBar.querySelectorAll('.tab-btn')]; // 3n buttons
-  let setWidth = 0, programmatic = false, animTimer = null;
+  let setWidth = 0, loThresh = 0, hiThresh = 0, programmatic = false, animTimer = null;
   let prevIndex = Math.max(0, TABS.indexOf(
     document.querySelector('.tab-bar .tab-btn.active')?.dataset.tab ?? TABS[0]));
 
-  function measure() { setWidth = tabBar.scrollWidth / 3; }
+  function measure() {
+    setWidth = tabBar.scrollWidth / 3;
+    if (setWidth > 0) {
+      // Thresholds = midpoint between the outermost real-tab centre and the
+      // adjacent clone-tab centre. Computed from actual layout so they stay
+      // correct regardless of the tab-width percentage in CSS.
+      const tabW = setWidth / n;
+      const lo = all[n].offsetLeft     - (tabBar.clientWidth - all[n].offsetWidth)     / 2;
+      const hi = all[2*n-1].offsetLeft - (tabBar.clientWidth - all[2*n-1].offsetWidth) / 2;
+      loThresh = lo - tabW * 0.5;
+      hiThresh = hi + tabW * 0.5;
+    }
+  }
   function centerChild(child, smooth) {
     if (!child) return;
     const target = child.offsetLeft - (tabBar.clientWidth - child.offsetWidth) / 2;
     tabBar.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
   }
-  // Keep the scroll position inside the middle (real) set. Thresholds are the
-  // midpoints between the outermost real-tab centres and the adjacent clone-tab
-  // centres, so normalisation fires only after leaving the real set — this
-  // prevents spurious triggers while the user is on Logs or Dice (whose centres
-  // sit at ~1.69 × setWidth, above the old 1.5 threshold).
   function normalize() {
     if (setWidth <= 0) return;
-    if (tabBar.scrollLeft < setWidth * 0.75) tabBar.scrollLeft += setWidth;
-    else if (tabBar.scrollLeft > setWidth * 1.75) tabBar.scrollLeft -= setWidth;
+    if (tabBar.scrollLeft < loThresh) tabBar.scrollLeft += setWidth;
+    else if (tabBar.scrollLeft > hiThresh) tabBar.scrollLeft -= setWidth;
   }
 
   // Mirrors switchTab's panel activation but owns horizontal scrolling itself —
