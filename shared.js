@@ -167,8 +167,17 @@ function setupSwipe(tabs, shouldBlock) {
   let startedOnTabButton = false;
   let tabBarDrag = false;
   let suppressNextTabClick = false;
+  // gestureDecided: true once we've committed to an axis for this touch sequence.
+  // swipeAxisLocked: true when we committed to horizontal (panel swipe) specifically.
+  // Deciding at 3 px beats the browser's ~10 px scroll-slop threshold, ensuring
+  // our preventDefault() call lands before the browser has started scrolling.
+  let gestureDecided  = false;
+  let swipeAxisLocked = false;
+
   document.body.addEventListener('touchstart', e => {
     suppressNextTabClick = false;
+    gestureDecided  = false;
+    swipeAxisLocked = false;
     x0    = e.touches[0].clientX;
     y0    = e.touches[0].clientY;
     xLast = x0;
@@ -183,15 +192,41 @@ function setupSwipe(tabs, shouldBlock) {
       startedOnTabBar = false;
     }
   }, {passive: true});
+
+  // Non-passive so we can call preventDefault() to block scroll during swipes and holds.
   document.body.addEventListener('touchmove', e => {
+    if (x0 === null) return;
     if (e.touches.length > 0) {
       xLast = e.touches[0].clientX;
       yLast = e.touches[0].clientY;
-      if (!tabBarDrag && startedOnTabBar && startedOnTabButton && Math.abs(xLast - x0) > 10) {
-        tabBarDrag = true;
+    }
+    const dx = xLast - x0;
+    const dy = yLast - y0;
+
+    // Hold state: while a hold gesture is pending, block scroll within the dead zone.
+    // Beyond the dead zone the browser fires pointercancel, which cancels the hold timer.
+    if (document.querySelector('.holding')) {
+      const panelOpen = document.getElementById('infoPanel')?.classList.contains('show');
+      if (!panelOpen && Math.hypot(dx, dy) < 12) e.preventDefault();
+      return; // never interpret an active hold as a swipe
+    }
+
+    // Swiped state: commit to an axis once cumulative movement exceeds 3 px.
+    // This is intentionally below the browser scroll-slop so preventDefault() wins
+    // the race against the browser's native scroll handler.
+    if (!gestureDecided && !startedOnTabBar && Math.hypot(dx, dy) > 3) {
+      gestureDecided = true;
+      if (Math.abs(dx) > Math.abs(dy) && !(shouldBlock && shouldBlock())) {
+        swipeAxisLocked = true;
       }
     }
-  }, {passive: true});
+    if (swipeAxisLocked) e.preventDefault();
+
+    if (!tabBarDrag && startedOnTabBar && startedOnTabButton && Math.abs(dx) > 10) {
+      tabBarDrag = true;
+    }
+  }, {passive: false});
+
   function applySwipe(endX, endY) {
     if (x0 === null) return false;
     const wasOnTabBar = startedOnTabBar;
@@ -201,6 +236,8 @@ function setupSwipe(tabs, shouldBlock) {
     startedOnTabBar = false;
     startedOnTabButton = false;
     tabBarDrag = false;
+    gestureDecided  = false;
+    swipeAxisLocked = false;
     if (shouldBlock && shouldBlock()) return false;
     if (wasOnTabBar) return false;
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return false;
@@ -209,6 +246,7 @@ function setupSwipe(tabs, shouldBlock) {
     if (next !== cur) switchTab(tabs[next]);
     return true;
   }
+
   // non-passive so we can call preventDefault() and cancel the click that
   // would otherwise fire on whichever tab button the finger landed on.
   document.body.addEventListener('touchend', e => {
