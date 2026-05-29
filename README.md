@@ -1,12 +1,12 @@
 # D&D 5e Character Sheet
 
-A mobile-first, single-file D&D 5th Edition character sheet. No server, no build step, no dependencies — just open the HTML file in any browser.
+A mobile-first, single-file D&D 5th Edition character sheet. No build step, no dependencies — just open the HTML file in any browser. Companion files in the same directory unlock optional features when served.
 
 ---
 
 ## How to run
 
-**From the file system (recommended)**
+**From the file system (recommended for core use)**
 
 ```
 open dnd-character-sheet.html        # macOS
@@ -14,33 +14,52 @@ xdg-open dnd-character-sheet.html   # Linux
 start dnd-character-sheet.html       # Windows
 ```
 
-Or drag `dnd-character-sheet.html` into any browser window. Everything runs locally; no internet connection is needed for core functionality.
+Or drag `dnd-character-sheet.html` into any browser window. All core functionality runs locally with no internet required.
 
-> **SRD Browse** (the 📖 SRD tab in the Import modal) fetches live data from [dnd5eapi.co](https://www.dnd5eapi.co) and requires an internet connection. Results are cached in `localStorage` after the first fetch so subsequent searches work offline.
-
-**From a local server (optional, e.g. for mobile testing on the same network)**
+**From a local server (enables SRD 2024 data + mobile testing)**
 
 ```bash
 python3 -m http.server 8080
 # then open http://localhost:8080/dnd-character-sheet.html
 ```
 
+Serving the files makes the `srd2024/` data available (spells, species, classes, equipment). This also enables Netlify-style deployments — `index.html` redirects automatically to `dnd-character-sheet.html`.
+
+> **SRD Browse (2014)** fetches live data from [dnd5eapi.co](https://www.dnd5eapi.co) and requires an internet connection. Results are cached in `localStorage` after the first fetch so subsequent lookups work offline.
+
+---
+
+## Feature tiers
+
+| Tier | Requirement | Available features |
+|---|---|---|
+| **Standalone** | `dnd-character-sheet.html` only | All core sheet features: character editing, spells, attacks, features, dice rolling, conditions, companions, localStorage save/load, JSON export/import |
+| **Served** | HTML + companion files in same directory | Everything above, plus: 2024 SRD lookups (`srd2024/*.json`), 2014 SRD lookups (internet required) |
+
 ---
 
 ## Features
 
-| Area | What you can do |
+| Tab | What you can do |
 |---|---|
-| **Info** | Name, class, subclass, race, level, background, alignment, XP, personality traits |
-| **Stats** | Ability scores with auto-calculated modifiers and saving throws |
-| **Skills** | 18 skills with proficiency / expertise dot tracking |
-| **Combat** | HP tracker (tap to edit, hold +/− to fast-change), AC, Speed, Initiative, spell attack, death saves, hit dice |
+| **Info** | Name, class, subclass, race, level, background, alignment, XP, portrait, personality traits |
+| **Stats** | Ability scores with auto-calculated modifiers, saving throws, skills (18 skills with proficiency/expertise dot tracking) |
+| **Combat** | HP tracker (tap to edit, hold +/− to fast-change), AC, Speed, Initiative, spell attack/save DC, death saves, hit dice, conditions, damage resistances/immunities/vulnerabilities |
 | **Spells** | Spell slot tracking (1st–9th), full spell library with Concentration / Ritual / attack roll support |
-| **Features** | Class features with dot trackers, recharge types, and custom step sizes |
-| **Import** | ⇓ Import button opens a 3-option hub: **AI / SRD Import** (spells/features/traits/items), **Import Character** (AI from photos or JSON file), and **Import Information** (AI or SRD description fill with Missing-only or All-entries scope) |
-| **Gear** | Currency (CP/SP/EP/GP/PP), equipment, proficiencies, languages, notes |
-| **Rolls** | Session roll history; swipe left/right to change tabs |
-| **Long Rest** | Restores HP, spell slots, hit dice, and all feature uses in one tap |
+| **Features** | Class features with dot trackers, recharge types (Short/Long Rest), custom step sizes |
+| **Gear** | Currency (CP/SP/EP/GP/PP), equipment list, proficiencies, languages, notes |
+| **Dice** | Custom dice roller (d4–d100 + custom expressions) with modifier support |
+| **Logs** | Session roll history |
+| **Companions** | Linked creature stat blocks; tap to open in `creature-stat-block.html` |
+
+**Additional tools:**
+- `character-creator.html` — step-by-step character creation wizard; exports a JSON payload loadable by the main sheet
+- `creature-stat-block.html` — standalone creature stat block viewer and editor; creatures can be linked to a character as companions
+
+**Import hub (⇓ button in the header):**
+- **AI / SRD Import** — fill spells, features, traits, or items from AI or SRD data
+- **Import Character** — load a character from a JSON file, or generate one from a photo via AI
+- **Import Information** — AI or SRD description fill with Missing-only or All-entries scope
 
 ---
 
@@ -49,22 +68,24 @@ python3 -m http.server 8080
 | Setting | Description |
 |---|---|
 | **Save** | Export current character as a JSON file |
+| **Load Character** | Import a character JSON file |
+| **New Character** | Add a blank character to the roster |
 | **Font Size** | 6 zoom levels (75 % – 150 %) |
 | **Lefty Mode** | Moves +/− tracker buttons to the left side |
 | **Theme** | 5 colour themes — Gold (default), Dark, Red, Forest, Ocean |
+| **Language** | UI language (currently: English, Italian) |
 
-Character loading and AI character import are now under ⇓ Import → **Import Character**.
+All settings persist in `localStorage` between sessions.
 
-All settings are saved in `localStorage` and persist between sessions.
+---
+
+## Multi-character roster
+
+The header shows the active character name. Tap it to open the roster, where you can switch between characters, add new ones, or delete existing ones. Each character is saved independently under the `dnd5e_roster` key.
 
 ---
 
 ## Expected input
-
-The sheet reads from and writes to:
-
-- **`localStorage` key `dnd5e_sheet`** — auto-saved on every input change; restored on page load.
-- **JSON import file** — produced by "Save Character" or any compatible tool; must follow the schema in `JSONGeneration.md`.
 
 ### JSON file format (brief)
 
@@ -82,13 +103,15 @@ The sheet reads from and writes to:
     "skillProficiencies": ["Arcana", "History"],
     "skillExpertise": [],
     "conditions": [],
+    "companions": [],
+    "portrait": "",
     "hitDiceUsed": 0,
     "inspiration": false
   }
 }
 ```
 
-See `JSONGeneration.md` for the full field reference and valid values.
+See `JSONGeneration.md` for the full field reference, valid values, and annotated examples.
 
 ---
 
@@ -96,10 +119,25 @@ See `JSONGeneration.md` for the full field reference and valid values.
 
 | Output | Location | When |
 |---|---|---|
-| Auto-save | `localStorage` (`dnd5e_sheet`) | Every input change |
-| JSON export | `<charname>.json` download | "Save Character" in Settings |
+| Auto-save | `localStorage` (`dnd5e_roster`) | Every input change |
+| JSON export | `<charname>.json` download | ⚙ → Save |
 
 The app produces no server-side output and writes no files to disk except via the browser's download mechanism.
+
+---
+
+## localStorage keys
+
+| Key | Contents |
+|---|---|
+| `dnd5e_roster` | Full roster: `{ chars: { [id]: { name, payload } }, activeId }` |
+| `dnd5e_fontsize` | Font size index (integer) |
+| `dnd5e_lefty` | Lefty mode flag (`"1"` / absent) |
+| `dnd5e_theme` | Active theme key (string) |
+| `dnd5e_lang` | UI language code (string, e.g. `"en"`, `"it"`) |
+| `srd_v1_*` | 2014 SRD API response cache entries |
+| `srd24_v1_*` | 2024 SRD response cache entries |
+| `dnd5e_pending_import` | Transient: payload written by `character-creator.html`; consumed and removed on next load |
 
 ---
 
@@ -107,30 +145,50 @@ The app produces no server-side output and writes no files to disk except via th
 
 ```
 prova/
-├── dnd-character-sheet.html   ← open this in your browser
-├── CLAUDE.md                  ← project instructions for AI assistants
-├── REFERENCE.md               ← developer reference: CSS tokens, JS functions, state shape
-├── JSONGeneration.md          ← JSON import/export schema
-├── .env/
-│   ├── environment.yml        ← Conda environment (Python tooling, not required for the sheet)
-│   ├── requirements.txt
-│   ├── .envVariables
-│   └── ENVIRONMENT_SETUP.md
-├── src/                       ← production source code (classes, utilities, packages)
-├── tests/                     ← unit and integration tests
-├── examples/
-│   ├── README.md
-│   └── data/                  ← sample JSON files for import testing
-├── temp_image/                ← transient images (not project output)
-├── temporary_files/           ← transient scratch files
-└── debugging_scripts/         ← experimental / diagnostic scripts
+├── dnd-character-sheet.html              ← core app (open this in your browser)
+├── character-creator.html                ← character creation wizard
+├── creature-stat-block.html              ← creature stat block viewer/editor
+├── index.html                            ← redirects to dnd-character-sheet.html (Netlify)
+├── shared.js                             ← shared utilities (dice, roll overlay, info panel, toast, theme)
+├── shared.css                            ← shared CSS tokens, themes, and component classes
+├── netlify.toml                          ← Netlify deployment config
+├── build-srd2024.js                      ← build script for srd2024/bundle.js
+├── CLAUDE.md                             ← project instructions for AI assistants
+├── REFERENCE.md                          ← developer reference: CSS tokens, JS functions, state shape
+├── REFERENCE-character-creator.md        ← developer reference for character-creator.html
+├── JSONGeneration.md                     ← JSON import/export schema for character sheets
+├── stat-blockJsongeneration.md           ← JSON import/export schema for creature stat blocks
+├── languages/
+│   └── it.json                           ← Italian UI translation
+├── srd2024/                              ← 2024 SRD data files (requires serving)
+│   ├── translation.json                  ←   terminology map: 2014↔2024 field names
+│   ├── bundle.js
+│   ├── spells.json
+│   ├── species.json
+│   ├── classes.json
+│   ├── equipment.json
+│   ├── creatures.json
+│   ├── conditions.json
+│   ├── feats.json
+│   ├── magic-items.json
+│   ├── backgrounds.json
+│   └── weapon-properties.json
+└── examples/
+    └── data/
+        ├── ernenegilia-warlock.json      ← sample: Aasimar Warlock lv1
+        └── seraphina-dawnblade.json      ← sample: Human Paladin lv8
 ```
 
 ---
 
 ## Examples
 
-Sample character JSON files live in `examples/data/`. See `examples/README.md` for what each file demonstrates and how to load it.
+Sample character JSON files live in `examples/data/`.
+
+| File | Character | Demonstrates |
+|---|---|---|
+| `ernenegilia-warlock.json` | Ernenegilia, Aasimar Warlock lv1 | Cantrips with `attackRoll`/`rollDamage`, Hex with concentration + bonus-action combat, Pact of the Chain trait, minimal currency |
+| `seraphina-dawnblade.json` | Seraphina Dawnblade, Human Paladin lv8 | Multi-slot spellcasting, `classFeatures` with `step`, `infoTraits` with `showInCombat`, portrait field, full proficiency/expertise setup |
 
 To load a sample:
 1. Open `dnd-character-sheet.html` in your browser.
