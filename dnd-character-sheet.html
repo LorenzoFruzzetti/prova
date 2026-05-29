@@ -8557,6 +8557,7 @@ const TABS = ['overview','abilities','combat','spells','features','inventory','d
 
 // ── Back-button / swipe-back (Android & iOS Safari) ───────────────────
 let _modalStatePushed = false;
+let _suppressNextPopstate = false;
 function pushModalHistory() {
   _modalStatePushed = true;
   document.documentElement.classList.add('panel-open');
@@ -8566,14 +8567,18 @@ function popModalHistory() {
   document.documentElement.classList.remove('panel-open');
   if (_modalStatePushed) {
     _modalStatePushed = false;
+    _suppressNextPopstate = true;
     history.back();
   }
 }
 window.addEventListener('popstate', () => {
+  // popModalHistory triggers history.back() which fires popstate. Suppress that
+  // event so programmatic closes don't cascade into closing the panel underneath.
+  if (_suppressNextPopstate) { _suppressNextPopstate = false; return; }
   const entryMgrEl2 = document.getElementById('entryManagerPanel');
   if (!_modalStatePushed) {
-    // Entry manager may still be open if it was opened via CSS swap (no push)
-    // or if the back button already consumed the pushed state for the info panel.
+    // Entry manager may still be open after its info panel's history entry was
+    // consumed (e.g. user pressed back after info panel was already closed).
     if (entryMgrEl2?.classList.contains('show')) dismissEntryManager();
     return;
   }
