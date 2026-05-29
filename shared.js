@@ -238,8 +238,12 @@ function setupSwipe(tabs, shouldBlock) {
       gestureDecided = true;
       if (Math.abs(dx) > Math.abs(dy) && !(shouldBlock && shouldBlock())) {
         swipeAxisLocked = true;  // horizontal → panel swipe
-        // Cancel any pending hold timer on the touched element so that the info
-        // panel never opens as a side-effect of a swipe gesture.
+        // Suppress openInfoPanel for the full hold-timer window (500 ms) counted
+        // from this moment, so any pending timer cannot open a stale panel after
+        // the swipe lands. Add 100 ms margin for event-dispatch latency.
+        _swipeSuppressUntil = Date.now() + 600;
+        // Also dispatch pointercancel to the touch target to cancel the timer
+        // proactively (works when the element has an onpointercancel handler).
         if (touchTarget) {
           touchTarget.dispatchEvent(new PointerEvent('pointercancel', {bubbles: true, cancelable: false}));
         }
@@ -365,6 +369,11 @@ function dismissRollResult() {
 
 // ── Unified Info Panel ────────────────────────────────────────────────────────
 
+// Timestamp set by setupSwipe when a horizontal swipe axis is committed.
+// openInfoPanel ignores calls that arrive while this is in the future so that
+// any hold timer that fires after a swipe does not open a stale info panel.
+let _swipeSuppressUntil = 0;
+
 let infoPanelCfg = {};
 
 /**
@@ -390,6 +399,7 @@ let infoPanelCfg = {};
  *   actionFn       {function} – called when action button is tapped
  */
 function openInfoPanel(cfg) {
+  if (Date.now() < _swipeSuppressUntil) return;
   const {
     badge          = 'Info',
     borderColor    = 'var(--gold)',
