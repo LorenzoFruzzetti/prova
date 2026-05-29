@@ -9474,13 +9474,15 @@ function setupTabCarousel() {
     const target = child.offsetLeft - (tabBar.clientWidth - child.offsetWidth) / 2;
     tabBar.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
   }
-  // Keep the scroll position inside the middle (real) set. Because the clone in
-  // the destination position is pixel-identical, this shift is invisible and lets
-  // the user free-scroll forever.
+  // Keep the scroll position inside the middle (real) set. Thresholds are the
+  // midpoints between the outermost real-tab centres and the adjacent clone-tab
+  // centres, so normalisation fires only after leaving the real set — this
+  // prevents spurious triggers while the user is on Logs or Dice (whose centres
+  // sit at ~1.69 × setWidth, above the old 1.5 threshold).
   function normalize() {
     if (setWidth <= 0) return;
-    if (tabBar.scrollLeft < setWidth * 0.5) tabBar.scrollLeft += setWidth;
-    else if (tabBar.scrollLeft > setWidth * 1.5) tabBar.scrollLeft -= setWidth;
+    if (tabBar.scrollLeft < setWidth * 0.75) tabBar.scrollLeft += setWidth;
+    else if (tabBar.scrollLeft > setWidth * 1.75) tabBar.scrollLeft -= setWidth;
   }
 
   // Mirrors switchTab's panel activation but owns horizontal scrolling itself —
@@ -9493,19 +9495,33 @@ function setupTabCarousel() {
 
     const i = TABS.indexOf(id);
     if (i < 0) return;
-    let childIdx = n + i, jumpAfter = 0;
-    if (prevIndex === n - 1 && i === 0)      { childIdx = 2 * n + i; jumpAfter = -setWidth; } // forward wrap (last→first)
-    else if (prevIndex === 0 && i === n - 1) { childIdx = i;         jumpAfter =  setWidth; } // backward wrap (first→last)
+
+    const from = prevIndex;
     prevIndex = i;
 
     programmatic = true;
     clearTimeout(animTimer);
-    centerChild(all[childIdx], true);
-    animTimer = setTimeout(() => {
-      if (jumpAfter) tabBar.scrollLeft += jumpAfter; // silent reset onto the real instance
-      programmatic = false;
-      normalize();
-    }, 380);
+
+    const forwardWrap  = from === n - 1 && i === 0;
+    const backwardWrap = from === 0     && i === n - 1;
+
+    if (forwardWrap || backwardWrap) {
+      // "Jump then animate" pattern: instantly reposition to a visually identical
+      // clone, then smoothly scroll one tab in the correct direction to the real
+      // target. The instant jump is invisible; the 1-tab scroll shows the wrap.
+      //   forward  (Logs→Info): jump to left-clone Logs  → scroll right to real Info
+      //   backward (Info→Logs): jump to right-clone Info → scroll left  to real Logs
+      const jumpTarget = forwardWrap ? all[n - 1] : all[2 * n];
+      centerChild(jumpTarget, false);
+      // Double-rAF ensures the instant reposition paints before the smooth scroll starts.
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        centerChild(all[n + i], true);
+        animTimer = setTimeout(() => { programmatic = false; normalize(); }, 380);
+      }));
+    } else {
+      centerChild(all[n + i], true);
+      animTimer = setTimeout(() => { programmatic = false; normalize(); }, 380);
+    }
   }
 
   tabBar.addEventListener('scroll', () => { if (!programmatic) normalize(); }, { passive: true });
