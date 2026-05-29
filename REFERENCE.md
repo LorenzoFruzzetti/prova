@@ -36,7 +36,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 | Dice | `dice` | `#panel-dice` | Free-form Dice Roller |
 | Logs | `rolls` | `#panel-rolls` | Roll Log (session history) |
 
-> The `TABS` constant defines swipe order: `['overview','abilities','combat','spells','features','inventory','dice','rolls']`.
+> The `TABS` constant defines swipe order: `['overview','abilities','combat','spells','features','inventory','dice','rolls']`. Swipe navigation **wraps**: swiping past the last panel loops back to the first, and vice versa.
 
 ---
 
@@ -1389,7 +1389,7 @@ The session variable `rosterActiveId` (string) holds the currently loaded charac
 |---|---|
 | `updateHeader()` | Reads name/class/race/level inputs → updates header display |
 | `switchTab(id)` | **`shared.js`** — Deactivates all panels/buttons; activates the target; scrolls its tab button into view |
-| `setupSwipe()` | **`shared.js`** — Attaches passive `touchstart`/`touchend` listeners to `document.body`; horizontal swipe ≥ 50 px (and greater than vertical movement) advances or retreats through `TABS`; ignored when roll result overlay is open |
+| `setupSwipe(tabs, shouldBlock?, switchFn?, getActiveFn?)` | **`shared.js`** — Attaches `touchstart`/`touchend` listeners to `document.body`; horizontal swipe ≥ 50 px (and greater than vertical movement) cycles through `tabs` with wrap-around. `shouldBlock` suppresses navigation when it returns true. `switchFn` overrides `switchTab()` (used by `creature-stat-block.html` to call `switchDetailTab()` instead). `getActiveFn` overrides reading `.tab-btn.active[data-tab]` to find the current tab (used when tabs don't use `.tab-btn` class). |
 | `toast(msg)` | **`shared.js`** — Shows floating message for 2 seconds; used for non-roll feedback (proficiency changes, inspiration, file ops) |
 | `_applyTheme()` | **`shared.js`** — Reads `dnd5e_theme` from `localStorage` and applies as `data-theme` on `<html>`; called at page init |
 | `setupAutoSave()` | Attaches `saveData` as `input` + `change` listener to every form element |

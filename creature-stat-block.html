@@ -2246,6 +2246,14 @@ function init() {
     renderGrid();
     showGrid();
   }
+
+  setupSwipe(
+    ['info', 'combat', 'lair'],
+    () => document.getElementById('detailView').style.display === 'none' ||
+          document.getElementById('infoPanel')?.classList.contains('show'),
+    switchDetailTab,
+    () => _activeDetailTab
+  );
 }
 
 document.addEventListener('DOMContentLoaded', init);
