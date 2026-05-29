@@ -180,6 +180,9 @@ function setupSwipe(tabs, shouldBlock) {
   // Set in touchend when any axis was committed; consumed by the capturing pointerup
   // listener below to stop accidental tap actions at the gesture's endpoint.
   let _blockNextPointerUp = false;
+  // The element that received the initial touchstart; used to cancel pending hold
+  // timers (via pointercancel) the moment a horizontal swipe is committed.
+  let touchTarget = null;
 
   document.body.addEventListener('touchstart', e => {
     suppressNextTabClick = false;
@@ -191,6 +194,7 @@ function setupSwipe(tabs, shouldBlock) {
     y0    = e.touches[0].clientY;
     xLast = x0;
     yLast = y0;
+    touchTarget = e.touches[0].target;
     tabBarDrag = false;
     startedOnTabButton = !!e.target.closest('.tab-btn');
     const tb = document.querySelector('.tab-bar');
@@ -233,7 +237,16 @@ function setupSwipe(tabs, shouldBlock) {
     if (!gestureDecided && !startedOnTabBar && dist > 3) {
       gestureDecided = true;
       if (Math.abs(dx) > Math.abs(dy) && !(shouldBlock && shouldBlock())) {
-        swipeAxisLocked      = true;  // horizontal → panel swipe
+        swipeAxisLocked = true;  // horizontal → panel swipe
+        // Suppress openInfoPanel for the full hold-timer window (500 ms) counted
+        // from this moment, so any pending timer cannot open a stale panel after
+        // the swipe lands. Add 100 ms margin for event-dispatch latency.
+        _swipeSuppressUntil = Date.now() + 600;
+        // Also dispatch pointercancel to the touch target to cancel the timer
+        // proactively (works when the element has an onpointercancel handler).
+        if (touchTarget) {
+          touchTarget.dispatchEvent(new PointerEvent('pointercancel', {bubbles: true, cancelable: false}));
+        }
       } else {
         _gestureScrollLocked = true;  // vertical → scroll; freeze out swipe for this sequence
       }
@@ -258,6 +271,7 @@ function setupSwipe(tabs, shouldBlock) {
     gestureDecided       = false;
     swipeAxisLocked      = false;
     _gestureScrollLocked = false;
+    touchTarget          = null;
     if (shouldBlock && shouldBlock()) return false;
     if (wasOnTabBar) return false;
     if (wasScrollLocked) return false; // axis committed to scroll → never switch panels
@@ -355,6 +369,11 @@ function dismissRollResult() {
 
 // ── Unified Info Panel ────────────────────────────────────────────────────────
 
+// Timestamp set by setupSwipe when a horizontal swipe axis is committed.
+// openInfoPanel ignores calls that arrive while this is in the future so that
+// any hold timer that fires after a swipe does not open a stale info panel.
+let _swipeSuppressUntil = 0;
+
 let infoPanelCfg = {};
 
 /**
@@ -380,6 +399,7 @@ let infoPanelCfg = {};
  *   actionFn       {function} – called when action button is tapped
  */
 function openInfoPanel(cfg) {
+  if (Date.now() < _swipeSuppressUntil) return;
   const {
     badge          = 'Info',
     borderColor    = 'var(--gold)',
