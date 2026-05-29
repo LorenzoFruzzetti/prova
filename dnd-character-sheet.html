@@ -4828,10 +4828,15 @@ function init() {
   recalcAll();
   applyPortrait();
   setupAutoSave();
-  setupSwipe(TABS, () =>
-    document.getElementById('rollResult').classList.contains('show') ||
-    document.getElementById('spellPanel')?.classList.contains('show') ||
-    document.getElementById('attackPanel')?.classList.contains('show')
+  setupSwipe(
+    [...TABS, 'creatures'],
+    () =>
+      document.getElementById('rollResult').classList.contains('show') ||
+      document.getElementById('spellPanel')?.classList.contains('show') ||
+      document.getElementById('attackPanel')?.classList.contains('show'),
+    (tab) => tab === 'creatures'
+      ? (window.location.href = 'creature-stat-block.html')
+      : switchTab(tab)
   );
   setupTabBarExpansion();
 }

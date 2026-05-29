@@ -36,7 +36,7 @@ This section is the authoritative vocabulary for conversations, issues, and pull
 | Dice | `dice` | `#panel-dice` | Free-form Dice Roller |
 | Logs | `rolls` | `#panel-rolls` | Roll Log (session history) |
 
-> The `TABS` constant defines swipe order: `['overview','abilities','combat','spells','features','inventory','dice','rolls']`. Swipe navigation **wraps**: swiping past the last panel loops back to the first, and vice versa.
+> The `TABS` constant defines swipe order: `['overview','abilities','combat','spells','features','inventory','dice','rolls']`. Swipe navigation **wraps**: swiping past the last panel loops back to the first, and vice versa. The `setupSwipe` call extends the list with a virtual `'creatures'` entry; swiping past 'rolls' (or back from 'overview') navigates to `creature-stat-block.html`. Returning to the character sheet from the creature page (by swiping in the grid view) completes the cross-page loop.
 
 ---
 
