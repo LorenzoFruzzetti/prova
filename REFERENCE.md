@@ -448,16 +448,17 @@ dnd-character-sheet.html
 ├── <body>
 │   ├── .header      Top bar (title, Undo/Save/Load buttons, character name, meta); scrolls with page content
 │   ├── input#jsonFileInput   Hidden file picker for JSON import
-│   ├── .tab-bar     Eight tab buttons (Info / Stats / Skills / Combat / Spells / Features / Gear / Rolls); sticky at viewport top during scroll
+│   ├── .tab-bar     Eight tab buttons (Info / Stats / Combat / Spells / Features / Gear / Dice / Logs); sticky at viewport top during scroll
 │   │                Each button carries data-tab="<id>" for programmatic activation
+│   │                Rendered as an infinite-loop carousel by setupTabCarousel() (clone-padded strip, ~4 tabs visible, wraps both directions). Dragging horizontally on the bar drops a 2-row grid of every tab (#tabPushExp, built by setupTabBarExpansion()).
 │   ├── #panel-overview    Tab: character info + features & traits (structured list, tap = roll or info panel, hold = info panel) + personality + Long Rest button
-│   ├── #panel-abilities   Tab: ability scores + saving throws + passive perception + conditions
-│   ├── #panel-skills      Tab: 18 skills with proficiency/expertise dots
+│   ├── #panel-abilities   Tab: ability scores + saving throws + passive perception + 18 skills (proficiency/expertise dots) + conditions
 │   ├── #panel-combat      Tab: HP tracker + combat stats + hit dice tracker + inspiration + death saves + attacks
 │   ├── #panel-spells      Tab: Spellcasting ability · Spells Known (collapsible; hold title = info panel; each row has P dot and ∞ dot; header shows prepared-count/max with editable max input) · Spell Slots (hidden levels as "+ Nth" pills; active levels show dot rows) · Spells Prepared (hold title = info panel; lists all prepared + always-prepared spells)
 │   ├── #panel-features    Tab: limited-use class features with dot trackers and +/− controls
 │   ├── #panel-inventory   Tab: currency + equipment + proficiencies + notes
-│   ├── #panel-rolls       Tab: session roll history log with Clear button
+│   ├── #panel-dice        Tab: custom dice roller (d4–d100 + custom expressions)
+│   ├── #panel-rolls       Tab (label "Logs"): session roll history log with Clear button
 │   ├── #hpBackdrop  Fixed backdrop for HP dialog
 │   ├── #hpDialog    Bottom-sheet for setting HP to a specific value
 │   ├── #stepBackdrop  Fixed backdrop for feature editor sheet
@@ -538,8 +539,10 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.header` | Top bar section; `z-index: 100` |
 | `.header-top` | Flex row inside header (title left, buttons right) |
 | `.header-btn` | Undo / Save / Load buttons in the header; `:disabled` reduces opacity |
-| `.tab-bar` | Sticky tab strip; `z-index: 99`; horizontally scrollable; pinned at `top:0` |
+| `.tab-bar` | Sticky tab strip; `z-index: 99`; horizontally scrollable; pinned at `top:0`. Gets `.carousel` added by `setupTabCarousel()` |
+| `.tab-bar.carousel .tab-btn` | Carousel sizing: fixed-width tabs (`flex: 0 0 25%`, ~4 visible) so the clone-padded strip scrolls and loops |
 | `.tab-btn` | Individual tab button; `.active` adds gold underline |
+| `#tabPushExp` | In-flow push grid (sticky) revealed by dragging the tab bar; shows every tab in a wrapped 2-row grid; `.show` animates `max-height` open |
 | `.panel` | Tab content area; hidden by default; `.active` shows it |
 | `.section` | Grouped content card (border + radius) |
 | `.section-title` | Dark strip title bar inside a `.section` |
@@ -969,7 +972,9 @@ DOMContentLoaded
        ├─ buildDamageResistances() inject resistance/vulnerability dots into #dmgResistGrid
        ├─ recalcAll()         compute all derived values (modifiers, DC, etc.)
        ├─ setupAutoSave()     attach input/change listeners → saveData()
-       └─ setupSwipe()        attach touchstart/touchend listeners for tab swiping
+       ├─ setupSwipe()        attach touchstart/touchend listeners for content-swipe tab navigation (wraps around)
+       ├─ setupTabBarExpansion()  build #tabPushExp grid; drag on the tab bar reveals all tabs in a 2-row grid (must run before setupTabCarousel)
+       └─ setupTabCarousel()  clone-pad the tab bar into an infinite-loop carousel; wraps switchTab to keep the active tab centred and animate end-to-end wraps
   └─ updateHeader()
   └─ updateHP()
   └─ renderAttacks()
@@ -1388,7 +1393,7 @@ The session variable `rosterActiveId` (string) holds the currently loaded charac
 | Function | Description |
 |---|---|
 | `updateHeader()` | Reads name/class/race/level inputs → updates header display |
-| `switchTab(id)` | **`shared.js`** — Deactivates all panels/buttons; activates the target; scrolls its tab button into view |
+| `switchTab(id)` | **`shared.js`** — Deactivates all panels/buttons; activates the target; scrolls its tab button into view. Note: `dnd-character-sheet.html` reassigns this global to `carouselActivate` inside `setupTabCarousel()`, which activates the panel and centres the tab in the infinite carousel instead of calling `scrollIntoView` |
 | `setupSwipe(tabs, shouldBlock?, switchFn?, getActiveFn?)` | **`shared.js`** — Attaches `touchstart`/`touchend` listeners to `document.body`; horizontal swipe ≥ 50 px (and greater than vertical movement) cycles through `tabs` with wrap-around. `shouldBlock` suppresses navigation when it returns true. `switchFn` overrides `switchTab()` for callers that manage panels differently. `getActiveFn` overrides reading `.tab-btn.active[data-tab]` to find the current tab. |
 | `toast(msg)` | **`shared.js`** — Shows floating message for 2 seconds; used for non-roll feedback (proficiency changes, inspiration, file ops) |
 | `_applyTheme()` | **`shared.js`** — Reads `dnd5e_theme` from `localStorage` and applies as `data-theme` on `<html>`; called at page init |

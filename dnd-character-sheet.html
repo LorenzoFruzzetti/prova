@@ -319,49 +319,28 @@
     border-bottom-color: var(--gold);
   }
 
-  /* ── Tab bar full-view overlay (appears over content on swipe/drag) ── */
-  #tabExpOverlay {
-    position: fixed;
-    left: 0;
-    right: 0;
-    z-index: 105;
-    display: none;
-    flex-wrap: wrap;
-    background: var(--tabbar-bg);
-    border-bottom: 2px solid var(--gold);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.45);
-  }
-  #tabExpOverlay.show { display: flex; }
-  #tabExpOverlay .tab-btn {
-    flex: 1 1 19%;
+  /* Carousel mode: fixed-width tabs so the (clone-padded) strip scrolls and
+     wraps seamlessly. ~4 tabs visible at a time. Set by setupTabCarousel(). */
+  .tab-bar.carousel .tab-btn {
+    flex: 0 0 25%;
     min-width: 0;
-    border-bottom: 2px solid transparent;
-  }
-  #tabExpOverlay .tab-btn.active {
-    color: var(--gold);
-    background: var(--tab-active);
-    border-bottom-color: var(--gold);
-  }
-  .tab-exp-divider {
-    flex-basis: 100%;
-    height: 0;
-    border-top: 1px solid var(--gold);
-    opacity: 0.35;
   }
 
-  /* ── Tab bar push row (in-flow, shifts content, for tab bar drag) ── */
+  /* ── Tab bar push grid (in-flow, shifts content, for tab bar drag) ──
+     Shows every tab in a 2-row grid for direct tapping. */
   #tabPushExp {
     background: var(--tabbar-bg);
     border-top: 2px solid var(--gold);
     display: flex;
+    flex-wrap: wrap;
     overflow: hidden;
     max-height: 0;
     position: sticky;
     z-index: 97;
   }
-  #tabPushExp.show { max-height: 50px; }
+  #tabPushExp.show { max-height: 150px; }
   #tabPushExp .tab-btn {
-    flex: 1;
+    flex: 1 1 25%;
     min-width: 0;
     border-bottom: 2px solid transparent;
   }
@@ -2801,7 +2780,6 @@
   <button class="tab-btn"        data-tab="inventory" onclick="switchTab('inventory')">Gear</button>
   <button class="tab-btn"        data-tab="dice"      onclick="switchTab('dice')">Dice</button>
   <button class="tab-btn"        data-tab="rolls"      onclick="switchTab('rolls')">Logs</button>
-  <button class="tab-btn"        data-tab="companions" onclick="switchTab('companions')">&#128009;</button>
 </div>
 
 <!-- ════════ OVERVIEW ════════ -->
@@ -3510,19 +3488,6 @@
     </div>
     <div class="section-body" id="rollLogList">
       <div class="roll-log-empty" data-i18n="hint.no_rolls">No rolls yet this session</div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════ COMPANIONS ════════ -->
-<div id="panel-companions" class="panel">
-  <div class="section">
-    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
-      Companions &amp; Forms
-      <button class="attack-edit-btn" onclick="openCreatureStatBlocks()">Open Creature Page &#8594;</button>
-    </div>
-    <div class="section-body" id="companionsBody">
-      <div style="color:var(--text-muted);font-size:12px;font-style:italic;font-family:sans-serif;padding:4px 0">No companions linked. Open the Creature page and creatures linked to this character will appear here.</div>
     </div>
   </div>
 </div>
@@ -4805,7 +4770,6 @@ let state = {
   damageResistances: {},
   maxSpellsPrepared: 0,
   equipmentItems: [],
-  companions: [],   // [{ creatureId, alias }]
 };
 
 // ── Init ───────────────────────────────────────────────────────────────
@@ -4824,7 +4788,6 @@ function init() {
   buildDiceRoller();
   renderHitDice();
   buildDamageResistances();
-  buildCompanions();
   recalcAll();
   applyPortrait();
   setupAutoSave();
@@ -4834,6 +4797,7 @@ function init() {
     document.getElementById('attackPanel')?.classList.contains('show')
   );
   setupTabBarExpansion();
+  setupTabCarousel();
 }
 
 // ── Undo stack ─────────────────────────────────────────────────────────
@@ -8759,67 +8723,6 @@ function openCreatureStatBlocks(creatureId) {
   window.location.href = 'creature-stat-block.html';
 }
 
-// ── Companions panel ──────────────────────────────────────────────────
-function buildCompanions() {
-  const body = document.getElementById('companionsBody');
-  if (!body) return;
-  const companions = state.companions || [];
-  // Load creature roster to display card data
-  let creatureRoster = null;
-  try {
-    const raw = localStorage.getItem('dnd5e_creatures');
-    creatureRoster = raw ? JSON.parse(raw) : null;
-  } catch(e) {}
-  const creatures = creatureRoster?.creatures || {};
-
-  if (!companions.length) {
-    body.innerHTML = '<div style="color:var(--text-muted);font-size:12px;font-style:italic;font-family:sans-serif;padding:4px 0">No companions linked yet. Use the Creature page to create stat blocks.</div>';
-    // Show a grid of ALL creatures from the roster as quick links
-    const ids = Object.keys(creatures);
-    if (ids.length) {
-      body.innerHTML += '<div style="color:var(--text-muted);font-size:11px;font-family:sans-serif;margin-top:10px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">All Creatures</div>';
-      body.innerHTML += '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-        ids.map(id => {
-          const e = creatures[id];
-          const p = e.payload || {};
-          const cr = p.cr !== undefined ? (p.cr === 0.125 ? '1/8' : p.cr === 0.25 ? '1/4' : p.cr === 0.5 ? '1/2' : String(p.cr)) : '?';
-          const portrait = e.portrait || p.portrait;
-          return `<div onclick="openCreatureStatBlocks('${id}')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;font-family:sans-serif;font-size:12px;transition:border-color 0.15s" onmouseenter="this.style.borderColor='var(--gold)'" onmouseleave="this.style.borderColor='var(--border)'">
-            ${portrait ? `<img src="${portrait}" style="width:30px;height:30px;border-radius:4px;object-fit:cover">` : '<span style="font-size:20px">🐉</span>'}
-            <div>
-              <div style="color:var(--text);font-weight:600">${escHtml(p.name || e.name || 'Unknown')}</div>
-              <div style="color:var(--text-muted);font-size:10px">CR ${cr} ${escHtml(p.type||'')}</div>
-            </div>
-          </div>`;
-        }).join('') + '</div>';
-    }
-    return;
-  }
-
-  body.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-    companions.map((comp, i) => {
-      const e = creatures[comp.creatureId];
-      const p = e?.payload || {};
-      const name = comp.alias || p.name || e?.name || 'Unknown';
-      const portrait = e?.portrait || p.portrait;
-      return `<div onclick="openCreatureStatBlocks('${comp.creatureId}')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;font-family:sans-serif;font-size:12px;transition:border-color 0.15s;position:relative" onmouseenter="this.style.borderColor='var(--gold)'" onmouseleave="this.style.borderColor='var(--border)'">
-        ${portrait ? `<img src="${portrait}" style="width:30px;height:30px;border-radius:4px;object-fit:cover">` : '<span style="font-size:20px">🐉</span>'}
-        <div>
-          <div style="color:var(--text);font-weight:600">${escHtml(name)}</div>
-          <div style="color:var(--text-muted);font-size:10px">${escHtml(p.type||'')}</div>
-        </div>
-        <button onclick="event.stopPropagation();unlinkCompanion(${i})" style="position:absolute;top:4px;right:4px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:1px 4px">✕</button>
-      </div>`;
-    }).join('') + '</div>';
-}
-
-function unlinkCompanion(index) {
-  if (!state.companions) return;
-  state.companions.splice(index, 1);
-  buildCompanions();
-  saveData();
-}
-
 // ── Font size ──────────────────────────────────────────────────────────
 const FONT_SIZES = [75, 85, 100, 110, 125, 150];
 let fontSizeIdx = 2; // default 100%
@@ -9139,7 +9042,7 @@ function clearSheet() {
 function _rebuildAll() {
   buildAbilityGrid(); buildSkillsList(); buildEquipProfList(); buildConditions();
   buildSpellSlots(); buildSpellsKnown(); buildSpellsPrepared(); buildFeatures();
-  buildInfoTraits(); buildEquipmentItems(); buildDiceRoller(); renderHitDice(); buildDamageResistances(); renderAttacks(); buildCompanions();
+  buildInfoTraits(); buildEquipmentItems(); buildDiceRoller(); renderHitDice(); buildDamageResistances(); renderAttacks();
   recalcAll(); updateHeader(); updateHP(); applyPortrait();
   document.getElementById('inspirationBtn').classList.toggle('active', state.inspiration);
 }
@@ -9455,7 +9358,6 @@ function _applyPayloadData(payload) {
     if (!Array.isArray(state.equipProficiencies)) state.equipProficiencies = [];
     if (!Array.isArray(state.customEquipProfRows)) state.customEquipProfRows = [];
     if (!Array.isArray(state.equipmentItems)) state.equipmentItems = [];
-    if (!Array.isArray(state.companions)) state.companions = [];
   }
 }
 
@@ -9464,32 +9366,20 @@ function applyPayload(payload) {
   _rebuildAll();
 }
 
+// Drag horizontally on the tab bar to drop down a 2-row grid of every tab for
+// direct tapping. The carousel itself still scrolls natively underneath the
+// drag (see setupTabCarousel). Must run BEFORE setupTabCarousel so it reads the
+// original tab buttons, not the carousel clones.
 function setupTabBarExpansion() {
   const tabBar = document.querySelector('.tab-bar');
   const allBtns = [...document.querySelectorAll('.tab-bar .tab-btn')];
 
-  // ── Fixed overlay for content swipes (500 ms, no layout shift) ──
-  const overlay = document.createElement('div');
-  overlay.id = 'tabExpOverlay';
-  document.body.appendChild(overlay);
-  allBtns.forEach((src, i) => {
-    if (i === 5) {
-      const sep = document.createElement('div');
-      sep.className = 'tab-exp-divider';
-      overlay.appendChild(sep);
-    }
-    const b = document.createElement('button');
-    b.className = 'tab-btn'; b.dataset.tab = src.dataset.tab; b.innerHTML = src.innerHTML;
-    b.addEventListener('click', () => { switchTab(b.dataset.tab); syncActive(); });
-    overlay.appendChild(b);
-  });
-
-  // ── In-flow push row for tab bar drag (1000 ms, shifts content) ──
+  // ── In-flow push grid for tab-bar drag (1000 ms, shifts content) ──
   const pushRow = document.createElement('div');
   pushRow.id = 'tabPushExp';
   pushRow.style.top = tabBar.offsetHeight + 'px';
   tabBar.insertAdjacentElement('afterend', pushRow);
-  allBtns.slice(5).forEach(src => {
+  allBtns.forEach(src => {
     const b = document.createElement('button');
     b.className = 'tab-btn'; b.dataset.tab = src.dataset.tab; b.innerHTML = src.innerHTML;
     b.addEventListener('click', () => { switchTab(b.dataset.tab); syncActive(); });
@@ -9498,23 +9388,12 @@ function setupTabBarExpansion() {
 
   function syncActive() {
     const activeTab = document.querySelector('.tab-bar .tab-btn.active')?.dataset.tab;
-    [overlay, pushRow].forEach(c => c.querySelectorAll('.tab-btn').forEach(b => {
+    pushRow.querySelectorAll('.tab-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.tab === activeTab);
-    }));
+    });
   }
 
-  let overlayTimer = null, pushTimer = null;
-
-  function showOverlay() {
-    overlay.style.top = tabBar.getBoundingClientRect().top + 'px';
-    syncActive();
-    overlay.classList.add('show');
-    clearTimeout(overlayTimer);
-  }
-  function scheduleHideOverlay() {
-    clearTimeout(overlayTimer);
-    overlayTimer = setTimeout(() => overlay.classList.remove('show'), 500);
-  }
+  let pushTimer = null;
 
   function showPushRow() {
     pushRow.style.transition = 'max-height 0.22s ease-out';
@@ -9530,45 +9409,121 @@ function setupTabBarExpansion() {
     }, 1000);
   }
 
-  let startX = null, startY = null, startedOnTabBar = false;
-  let overlayActive = false, pushActive = false;
+  let startX = null, startY = null, startedOnTabBar = false, pushActive = false;
 
   document.body.addEventListener('touchstart', e => {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
-    overlayActive = false; pushActive = false;
+    pushActive = false;
     const r = tabBar.getBoundingClientRect();
     startedOnTabBar = startY >= r.top && startY <= r.bottom;
   }, { passive: true });
 
   document.body.addEventListener('touchmove', e => {
     if (startX === null) return;
-    if (document.querySelector('.holding')) return; // don't show overlay during a hold gesture
-    if (_gestureScrollLocked) return; // don't show overlay while scrolling
+    if (!startedOnTabBar) return;                    // grid opens only from a tab-bar drag
+    if (document.querySelector('.holding')) return;  // don't show grid during a hold gesture
+    if (_gestureScrollLocked) return;                // don't show grid while scrolling
     const dx = e.touches[0].clientX - startX;
     const dy = e.touches[0].clientY - startY;
     if (Math.abs(dx) > 15 && Math.abs(dx) > Math.abs(dy)) {
-      if (startedOnTabBar) {
-        if (!pushActive) { pushActive = true; showPushRow(); }
-        clearTimeout(pushTimer);
-      } else {
-        if (!overlayActive) { overlayActive = true; showOverlay(); }
-        clearTimeout(overlayTimer);
-      }
+      if (!pushActive) { pushActive = true; showPushRow(); }
+      clearTimeout(pushTimer);
     }
   }, { passive: true });
 
   document.body.addEventListener('touchend', () => {
     startX = null; startY = null;
     if (pushActive) scheduleHidePushRow();
-    if (overlayActive) scheduleHideOverlay();
   }, { passive: true });
 
   document.body.addEventListener('touchcancel', () => {
     startX = null; startY = null;
     if (pushActive) scheduleHidePushRow();
-    if (overlayActive) scheduleHideOverlay();
   }, { passive: true });
+}
+
+// Turn the tab bar into a seamless infinite (looping) carousel. A full clone
+// set is added on each side — DOM order [left clones ×n][real ×n][right clones ×n]
+// — so scrolling/looping past either end shows continuous content. switchTab is
+// wrapped to keep the active tab centred and to animate end-to-end wraps in the
+// natural direction (so the loop is visible) rather than jumping across the strip.
+// Must run AFTER setupTabBarExpansion (which needs the un-cloned buttons).
+function setupTabCarousel() {
+  const tabBar = document.querySelector('.tab-bar');
+  if (!tabBar) return;
+  const reals = [...tabBar.querySelectorAll('.tab-btn')];
+  const n = reals.length;
+  if (!n) return;
+
+  // Clone a full set on each side (cloneNode copies the inline onclick so clones
+  // are tappable too). Right clone of tab i sits just after the last real tab,
+  // and left clone of tab i just before the first — giving continuous wrap.
+  reals.map(b => b.cloneNode(true)).forEach(c => tabBar.insertBefore(c, reals[0]));
+  reals.map(b => b.cloneNode(true)).forEach(c => tabBar.appendChild(c));
+  tabBar.classList.add('carousel');
+
+  const all = [...tabBar.querySelectorAll('.tab-btn')]; // 3n buttons
+  let setWidth = 0, programmatic = false, animTimer = null;
+  let prevIndex = Math.max(0, TABS.indexOf(
+    document.querySelector('.tab-bar .tab-btn.active')?.dataset.tab ?? TABS[0]));
+
+  function measure() { setWidth = tabBar.scrollWidth / 3; }
+  function centerChild(child, smooth) {
+    if (!child) return;
+    const target = child.offsetLeft - (tabBar.clientWidth - child.offsetWidth) / 2;
+    tabBar.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
+  }
+  // Keep the scroll position inside the middle (real) set. Because the clone in
+  // the destination position is pixel-identical, this shift is invisible and lets
+  // the user free-scroll forever.
+  function normalize() {
+    if (setWidth <= 0) return;
+    if (tabBar.scrollLeft < setWidth * 0.5) tabBar.scrollLeft += setWidth;
+    else if (tabBar.scrollLeft > setWidth * 1.5) tabBar.scrollLeft -= setWidth;
+  }
+
+  // Mirrors switchTab's panel activation but owns horizontal scrolling itself —
+  // calling the original switchTab would scrollIntoView the wrong (clone) instance.
+  function carouselActivate(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById('panel-' + id);
+    if (panel) panel.classList.add('active');
+    all.forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+
+    const i = TABS.indexOf(id);
+    if (i < 0) return;
+    let childIdx = n + i, jumpAfter = 0;
+    if (prevIndex === n - 1 && i === 0)      { childIdx = 2 * n + i; jumpAfter = -setWidth; } // forward wrap (last→first)
+    else if (prevIndex === 0 && i === n - 1) { childIdx = i;         jumpAfter =  setWidth; } // backward wrap (first→last)
+    prevIndex = i;
+
+    programmatic = true;
+    clearTimeout(animTimer);
+    centerChild(all[childIdx], true);
+    animTimer = setTimeout(() => {
+      if (jumpAfter) tabBar.scrollLeft += jumpAfter; // silent reset onto the real instance
+      programmatic = false;
+      normalize();
+    }, 380);
+  }
+
+  tabBar.addEventListener('scroll', () => { if (!programmatic) normalize(); }, { passive: true });
+  window.addEventListener('resize', () => {
+    measure();
+    programmatic = true;
+    centerChild(all[n + prevIndex], false);
+    requestAnimationFrame(() => { programmatic = false; });
+  });
+
+  // Install the wrapper and hard-centre the initial active tab (no animation).
+  switchTab = carouselActivate;
+  measure();
+  const initId = TABS[prevIndex] ?? TABS[0];
+  all.forEach(b => b.classList.toggle('active', b.dataset.tab === initId));
+  programmatic = true;
+  centerChild(all[n + prevIndex], false);
+  requestAnimationFrame(() => { programmatic = false; });
 }
 
 function setupAutoSave() {

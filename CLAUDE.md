@@ -76,7 +76,9 @@ Both are serialised together by `buildPayload()` → `{ form, state }` and store
 ### Tab panels
 
 Eight tabs in order (used by swipe navigation and `switchTab()`):
-`overview` → `abilities` → `skills` → `combat` → `spells` → `features` → `inventory` → `rolls`
+`overview` → `abilities` → `combat` → `spells` → `features` → `inventory` → `dice` → `rolls`
+
+The tab bar is an infinite-loop carousel (`setupTabCarousel()`): content swipes navigate with wrap-around, and dragging the tab bar reveals a 2-row grid of all tabs (`setupTabBarExpansion()` → `#tabPushExp`).
 
 ### Key entry points
 

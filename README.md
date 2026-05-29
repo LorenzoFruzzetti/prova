@@ -37,7 +37,7 @@ Dragging `dnd-character-sheet.html` into a browser also works as long as `shared
 
 | Tier | Requirement | Available features |
 |---|---|---|
-| **File system** | Whole folder open in browser | All core sheet features: character editing, spells, attacks, features, dice rolling, conditions, companions, localStorage save/load, JSON export/import |
+| **File system** | Whole folder open in browser | All core sheet features: character editing, spells, attacks, features, dice rolling, conditions, localStorage save/load, JSON export/import |
 | **Served** | Whole folder served (local server or Netlify) | Everything above, plus: 2024 SRD lookups (`srd2024/*.json`), 2014 SRD lookups (internet required) |
 
 ---
@@ -54,11 +54,10 @@ Dragging `dnd-character-sheet.html` into a browser also works as long as `shared
 | **Gear** | Currency (CP/SP/EP/GP/PP), equipment list, proficiencies, languages, notes |
 | **Dice** | Custom dice roller (d4–d100 + custom expressions) with modifier support |
 | **Logs** | Session roll history |
-| **Companions** | Linked creature stat blocks; tap to open in `creature-stat-block.html` |
 
 **Additional tools:**
 - `character-creator.html` — step-by-step character creation wizard; exports a JSON payload loadable by the main sheet
-- `creature-stat-block.html` — standalone creature stat block viewer and editor; creatures can be linked to a character as companions
+- `creature-stat-block.html` — standalone creature stat block viewer and editor
 
 **Import hub (⇓ button in the header):**
 - **AI / SRD Import** — fill spells, features, traits, or items from AI or SRD data
@@ -107,7 +106,6 @@ The header shows the active character name. Tap it to open the roster, where you
     "skillProficiencies": ["Arcana", "History"],
     "skillExpertise": [],
     "conditions": [],
-    "companions": [],
     "portrait": "",
     "hitDiceUsed": 0,
     "inspiration": false
