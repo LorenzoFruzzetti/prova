@@ -180,6 +180,9 @@ function setupSwipe(tabs, shouldBlock) {
   // Set in touchend when any axis was committed; consumed by the capturing pointerup
   // listener below to stop accidental tap actions at the gesture's endpoint.
   let _blockNextPointerUp = false;
+  // The element that received the initial touchstart; used to cancel pending hold
+  // timers (via pointercancel) the moment a horizontal swipe is committed.
+  let touchTarget = null;
 
   document.body.addEventListener('touchstart', e => {
     suppressNextTabClick = false;
@@ -191,6 +194,7 @@ function setupSwipe(tabs, shouldBlock) {
     y0    = e.touches[0].clientY;
     xLast = x0;
     yLast = y0;
+    touchTarget = e.touches[0].target;
     tabBarDrag = false;
     startedOnTabButton = !!e.target.closest('.tab-btn');
     const tb = document.querySelector('.tab-bar');
@@ -233,7 +237,12 @@ function setupSwipe(tabs, shouldBlock) {
     if (!gestureDecided && !startedOnTabBar && dist > 3) {
       gestureDecided = true;
       if (Math.abs(dx) > Math.abs(dy) && !(shouldBlock && shouldBlock())) {
-        swipeAxisLocked      = true;  // horizontal → panel swipe
+        swipeAxisLocked = true;  // horizontal → panel swipe
+        // Cancel any pending hold timer on the touched element so that the info
+        // panel never opens as a side-effect of a swipe gesture.
+        if (touchTarget) {
+          touchTarget.dispatchEvent(new PointerEvent('pointercancel', {bubbles: true, cancelable: false}));
+        }
       } else {
         _gestureScrollLocked = true;  // vertical → scroll; freeze out swipe for this sequence
       }
@@ -258,6 +267,7 @@ function setupSwipe(tabs, shouldBlock) {
     gestureDecided       = false;
     swipeAxisLocked      = false;
     _gestureScrollLocked = false;
+    touchTarget          = null;
     if (shouldBlock && shouldBlock()) return false;
     if (wasOnTabBar) return false;
     if (wasScrollLocked) return false; // axis committed to scroll → never switch panels
