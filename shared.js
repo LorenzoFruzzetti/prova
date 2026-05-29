@@ -160,12 +160,17 @@ let _gestureScrollLocked = false;
 
 /**
  * Attaches horizontal touch-swipe listeners to document.body so the user can
- * swipe left/right to move between tabs.
+ * swipe left/right to move between tabs. Navigation wraps around: swiping past
+ * the last tab loops back to the first, and vice versa.
  * @param {string[]}           tabs          Ordered list of tab IDs to cycle through.
  * @param {function():boolean} [shouldBlock] Optional. Called before each swipe attempt;
  *                                           return true to suppress the navigation.
+ * @param {function(string)}   [switchFn]    Optional. Called with the target tab ID to
+ *                                           perform the switch; defaults to switchTab().
+ * @param {function():string}  [getActiveFn] Optional. Returns the currently active tab ID;
+ *                                           defaults to reading .tab-btn.active[data-tab].
  */
-function setupSwipe(tabs, shouldBlock) {
+function setupSwipe(tabs, shouldBlock, switchFn, getActiveFn) {
   let x0 = null, y0 = null, xLast = null, yLast = null;
   let startedOnTabBar = false;
   let startedOnTabButton = false;
@@ -276,9 +281,10 @@ function setupSwipe(tabs, shouldBlock) {
     if (wasOnTabBar) return false;
     if (wasScrollLocked) return false; // axis committed to scroll → never switch panels
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return false;
-    const cur = tabs.indexOf(document.querySelector('.tab-btn.active')?.dataset.tab ?? tabs[0]);
-    const next = Math.max(0, Math.min(tabs.length - 1, cur + (dx < 0 ? 1 : -1)));
-    if (next !== cur) switchTab(tabs[next]);
+    const activeId = getActiveFn ? getActiveFn() : document.querySelector('.tab-btn.active')?.dataset.tab;
+    const cur = tabs.indexOf(activeId ?? tabs[0]);
+    const next = (cur + (dx < 0 ? 1 : -1) + tabs.length) % tabs.length;
+    if (next !== cur) (switchFn || switchTab)(tabs[next]);
     return true;
   }
 
