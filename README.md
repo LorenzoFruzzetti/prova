@@ -1,12 +1,25 @@
 # D&D 5e Character Sheet
 
-A mobile-first, single-file D&D 5th Edition character sheet. No build step, no dependencies — just open the HTML file in any browser. Companion files in the same directory unlock optional features when served.
+A mobile-first D&D 5th Edition character sheet. No build step required — serve or open the whole folder in a browser. `shared.js` and `shared.css` must be in the same directory as the HTML files.
 
 ---
 
 ## How to run
 
-**From the file system (recommended for core use)**
+**Minimum requirement: the whole folder**
+
+`dnd-character-sheet.html` loads `shared.css` and `shared.js` from the same directory. Opening just the HTML file on its own will not work — you need the full project folder.
+
+**From a local server (recommended)**
+
+```bash
+python3 -m http.server 8080
+# then open http://localhost:8080/dnd-character-sheet.html
+```
+
+This is the simplest way to get everything working, including the `srd2024/` data files, and makes it easy to test on mobile devices on the same network.
+
+**From the file system**
 
 ```
 open dnd-character-sheet.html        # macOS
@@ -14,16 +27,7 @@ xdg-open dnd-character-sheet.html   # Linux
 start dnd-character-sheet.html       # Windows
 ```
 
-Or drag `dnd-character-sheet.html` into any browser window. All core functionality runs locally with no internet required.
-
-**From a local server (enables SRD 2024 data + mobile testing)**
-
-```bash
-python3 -m http.server 8080
-# then open http://localhost:8080/dnd-character-sheet.html
-```
-
-Serving the files makes the `srd2024/` data available (spells, species, classes, equipment). This also enables Netlify-style deployments — `index.html` redirects automatically to `dnd-character-sheet.html`.
+Dragging `dnd-character-sheet.html` into a browser also works as long as `shared.css` and `shared.js` are in the same folder. Core sheet functionality (character editing, dice rolling, localStorage save/load, JSON import/export) works this way. The `srd2024/` data files require a server.
 
 > **SRD Browse (2014)** fetches live data from [dnd5eapi.co](https://www.dnd5eapi.co) and requires an internet connection. Results are cached in `localStorage` after the first fetch so subsequent lookups work offline.
 
@@ -33,8 +37,8 @@ Serving the files makes the `srd2024/` data available (spells, species, classes,
 
 | Tier | Requirement | Available features |
 |---|---|---|
-| **Standalone** | `dnd-character-sheet.html` only | All core sheet features: character editing, spells, attacks, features, dice rolling, conditions, companions, localStorage save/load, JSON export/import |
-| **Served** | HTML + companion files in same directory | Everything above, plus: 2024 SRD lookups (`srd2024/*.json`), 2014 SRD lookups (internet required) |
+| **File system** | Whole folder open in browser | All core sheet features: character editing, spells, attacks, features, dice rolling, conditions, companions, localStorage save/load, JSON export/import |
+| **Served** | Whole folder served (local server or Netlify) | Everything above, plus: 2024 SRD lookups (`srd2024/*.json`), 2014 SRD lookups (internet required) |
 
 ---
 
