@@ -4828,15 +4828,10 @@ function init() {
   recalcAll();
   applyPortrait();
   setupAutoSave();
-  setupSwipe(
-    [...TABS, 'creatures'],
-    () =>
-      document.getElementById('rollResult').classList.contains('show') ||
-      document.getElementById('spellPanel')?.classList.contains('show') ||
-      document.getElementById('attackPanel')?.classList.contains('show'),
-    (tab) => tab === 'creatures'
-      ? (window.location.href = 'creature-stat-block.html')
-      : switchTab(tab)
+  setupSwipe(TABS, () =>
+    document.getElementById('rollResult').classList.contains('show') ||
+    document.getElementById('spellPanel')?.classList.contains('show') ||
+    document.getElementById('attackPanel')?.classList.contains('show')
   );
   setupTabBarExpansion();
 }
@@ -11448,6 +11443,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     </div>
     <div class="char-grid-footer">
       <a class="char-menu-wizard-btn" href="character-creator.html" target="_blank" rel="noopener">⚔ Create with Character Wizard</a>
+      <button class="char-menu-wizard-btn" onclick="closeCharMenu(); openCreatureStatBlocks()">🐉 Creature Stat Blocks</button>
       <button class="char-menu-new-btn" onclick="newCharacter()">+ New Blank Character</button>
     </div>
   </div>

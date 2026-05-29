@@ -2257,27 +2257,6 @@ function init() {
     switchDetailTab,
     () => _activeDetailTab
   );
-  _setupGridNavSwipe();
-}
-
-// Swipe left/right in grid view navigates back to the character sheet,
-// completing the cross-page panel loop (rolls ↔ creatures ↔ overview).
-function _setupGridNavSwipe() {
-  let sx = null, sy = null;
-  document.body.addEventListener('touchstart', e => {
-    sx = e.touches[0].clientX;
-    sy = e.touches[0].clientY;
-  }, {passive: true});
-  document.body.addEventListener('touchend', e => {
-    if (sx === null || _showingDetail) { sx = null; return; }
-    if (document.getElementById('rollResult')?.classList.contains('show')) { sx = null; return; }
-    if (document.getElementById('infoPanel')?.classList.contains('show'))  { sx = null; return; }
-    const dx = e.changedTouches[0].clientX - sx;
-    const dy = e.changedTouches[0].clientY - sy;
-    sx = null;
-    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
-    window.location.href = 'dnd-character-sheet.html';
-  }, {passive: true});
 }
 
 document.addEventListener('DOMContentLoaded', init);
