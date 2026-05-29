@@ -1389,7 +1389,7 @@ The session variable `rosterActiveId` (string) holds the currently loaded charac
 |---|---|
 | `updateHeader()` | Reads name/class/race/level inputs → updates header display |
 | `switchTab(id)` | **`shared.js`** — Deactivates all panels/buttons; activates the target; scrolls its tab button into view |
-| `setupSwipe(tabs, shouldBlock?, switchFn?, getActiveFn?)` | **`shared.js`** — Attaches `touchstart`/`touchend` listeners to `document.body`; horizontal swipe ≥ 50 px (and greater than vertical movement) cycles through `tabs` with wrap-around. `shouldBlock` suppresses navigation when it returns true. `switchFn` overrides `switchTab()` (used by `creature-stat-block.html` to call `switchDetailTab()` instead). `getActiveFn` overrides reading `.tab-btn.active[data-tab]` to find the current tab (used when tabs don't use `.tab-btn` class). |
+| `setupSwipe(tabs, shouldBlock?, switchFn?, getActiveFn?)` | **`shared.js`** — Attaches `touchstart`/`touchend` listeners to `document.body`; horizontal swipe ≥ 50 px (and greater than vertical movement) cycles through `tabs` with wrap-around. `shouldBlock` suppresses navigation when it returns true. `switchFn` overrides `switchTab()` for callers that manage panels differently. `getActiveFn` overrides reading `.tab-btn.active[data-tab]` to find the current tab. |
 | `toast(msg)` | **`shared.js`** — Shows floating message for 2 seconds; used for non-roll feedback (proficiency changes, inspiration, file ops) |
 | `_applyTheme()` | **`shared.js`** — Reads `dnd5e_theme` from `localStorage` and applies as `data-theme` on `<html>`; called at page init |
 | `setupAutoSave()` | Attaches `saveData` as `input` + `change` listener to every form element |

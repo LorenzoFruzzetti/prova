@@ -327,7 +327,7 @@ select.ep-input{cursor:pointer}
       <button class="icon-btn" onclick="openCreatureSettings()">⚙</button>
     </div>
   </div>
-  <div id="detailTabBar" class="detail-tab-bar tab-bar">
+  <div id="detailTabBar" class="detail-tab-bar">
     <button class="detail-tab-btn" data-tab="info" onclick="switchDetailTab('info')">📋 Info</button>
     <button class="detail-tab-btn" data-tab="combat" onclick="switchDetailTab('combat')">⚔️ Combat</button>
     <button class="detail-tab-btn" data-tab="lair" onclick="switchDetailTab('lair')">🏰 Lair</button>
@@ -667,17 +667,13 @@ function crXP(cr) {
 }
 
 // ── View management ────────────────────────────────────────────────────
-let _showingDetail = false; // true while detail view is visible; used by swipe guard
-
 function showGrid() {
-  _showingDetail = false;
   document.getElementById('gridView').style.display = '';
   document.getElementById('detailView').style.display = 'none';
   renderGrid();
 }
 
 function showDetail() {
-  _showingDetail = true;
   document.getElementById('gridView').style.display = 'none';
   document.getElementById('detailView').style.display = '';
   document.getElementById('detailHeaderTitle').textContent = creature.name || 'Creature';
@@ -2250,13 +2246,6 @@ function init() {
     renderGrid();
     showGrid();
   }
-
-  setupSwipe(
-    ['info', 'combat', 'lair'],
-    () => !_showingDetail || !!document.getElementById('infoPanel')?.classList.contains('show'),
-    switchDetailTab,
-    () => _activeDetailTab
-  );
 }
 
 document.addEventListener('DOMContentLoaded', init);
