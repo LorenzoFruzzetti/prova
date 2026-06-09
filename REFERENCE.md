@@ -593,6 +593,7 @@ Themes are applied by setting `data-theme` on `<html>`. Each theme overrides the
 | `.spell-prep-count-group` | Flex container (`gap:2px`) wrapping the count label, the `"/"` span, and the max input in the Spells Known header, so they read as a single `"3 / 5"` unit |
 | `.prep-max-input` | 28 px number `<input>` in the Spells Known section header; edits `state.maxSpellsPrepared`; styled to match dark palette with no browser spin buttons |
 | `.spell-known-chevron` | Inline chevron indicator (`▾`) inside the Spells Known section title; rotated −90 ° (via `.collapsed`) when the section is collapsed |
+| `.ritual-spells-count` | Small gold count badge (e.g. `"(3)"`) shown inline next to the chevron in the Ritual Spells section header; empty string when there are no ritual spells |
 | `.trait-item` | One Features & Traits row in the Info tab; tap rolls damage directly if `rollDamage` is set, otherwise opens trait view panel; hold 500 ms opens trait view panel (with Delete/Cancel/Save footer); `.holding` class added during hold |
 | `.trait-item-name` | Bold feature/trait name inside a `.trait-item` |
 | `.trait-item-preview` | Truncated first line of the description (muted, small text, `text-overflow:ellipsis`) |
@@ -964,6 +965,7 @@ DOMContentLoaded
        ├─ buildConditions()   inject condition chips into #conditionsGrid
        ├─ buildSpellsKnown()   inject spell rows with P/∞ dots into #spellsKnownBody (collapsed by default); levels with max=0 appear only as pills
        ├─ buildSpellsPrepared() inject prepared+always-prepared spell rows into #spellsPreparedBody; calls updatePreparedCount()
+       ├─ buildRitualSpells()  inject ritual-flagged spell rows into #ritualSpellsBody (collapsed by default); updates #ritualSpellsCount badge
        ├─ buildSpellSlots()   inject pill strip + active rows into #spellSlotsBody; levels with max=0 appear only as pills
        ├─ buildFeatures()       inject all entries with showInFeatures:true into #featuresBody (sorted spells-first)
        ├─ buildInfoTraits()         inject all entries with showInTraits:true into #infoTraitsBody
@@ -1000,6 +1002,7 @@ DOMContentLoaded
 | `renderSlotDots(i)` | Dot row + counter for one spell level (gold left = available, grey right = used); counter shows `(max − used)/max` | `state.spellSlots[i]` |
 | `buildSpellsKnown()` | Renders all entries with `showInSpells: true` grouped by level into `#spellsKnownBody`; each row includes a P dot (prepared toggle) and a ∞ dot (always-prepared toggle); P dots are dimmed with `.at-max` when the preparation limit is full; collapses body and rotates chevron when `spellsKnownCollapsed` is true; shows placeholder when empty | `state.entries`, `state.maxSpellsPrepared` |
 | `buildSpellsPrepared()` | Renders entries with `showInSpells: true` and `prepared:true` or `alwaysPrepared:true` into `#spellsPreparedBody`; always-prepared entries show a ∞ badge; calls `updatePreparedCount()`; shows placeholder when no spells are prepared | `state.entries` |
+| `buildRitualSpells()` | Renders entries with `showInSpells: true` and `ritual:true` into `#ritualSpellsBody` grouped by level; collapses when `ritualSpellsCollapsed` is true; updates the `#ritualSpellsCount` count badge; shows placeholder when no ritual spells exist | `state.entries` |
 | `updatePreparedCount()` | Refreshes the `#spellPrepCountDisplay` number and the `#maxPreparedInput` value; applies `.at-max` to the count span when the prepared count equals `state.maxSpellsPrepared` | `state.entries`, `state.maxSpellsPrepared` |
 | `buildFeatures()` | All entries with `showInFeatures: true` rendered into `#featuresBody`; sorted spells-first then others; each row has a left column (clickable name area + dots below) and a right column (recharge label, ⏻ restore, EDIT button, mini tracker); pts/dot hint shown below the name when `step > 1`; empty-state placeholder when no entries | `state.entries` |
 | `buildInfoTraits()` | Features & Traits rows in `#infoTraitsBody` (entries with `showInTraits: true`), or empty-state placeholder | `state.entries` |
@@ -1153,8 +1156,8 @@ DOMContentLoaded
 | `deleteCurrentTrait()` | Tap Delete in trait panel (view or edit mode) | `confirm()` dialog → splices `state.entries`; calls `buildInfoTraits()` + `buildFeatures()` + `saveData()`; dismisses panel |
 | `dismissTraitPanel()` | Backdrop tap or Cancel in panel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#traitPanel` |
 | `openSpellPanel(i, editMode)` | Internal | Calls `pushModalHistory()`; populates view or edit form; sets `spellPanelEditIdx = i` in both modes; shows backdrop + panel |
-| `toggleSpellPrepared(i)` | Tap P dot on a Spells Known row | If the spell is already prepared: unprepares it. If not: checks `maxSpellsPrepared`; shows toast and briefly pulses `.at-max` on the dot if the limit is full; otherwise sets `prepared:true`, clears `alwaysPrepared`; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `saveData()` |
-| `toggleSpellAlwaysPrepared(i)` | Tap ∞ dot on a Spells Known row | Toggles `alwaysPrepared`; when activating, clears `prepared` (mutually exclusive); calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `saveData()` |
+| `toggleSpellPrepared(i)` | Tap P dot on a Spells Known row | If the spell is already prepared: unprepares it. If not: checks `maxSpellsPrepared`; shows toast and briefly pulses `.at-max` on the dot if the limit is full; otherwise sets `prepared:true`, clears `alwaysPrepared`; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `buildRitualSpells()` + `saveData()` |
+| `toggleSpellAlwaysPrepared(i)` | Tap ∞ dot on a Spells Known row | Toggles `alwaysPrepared`; when activating, clears `prepared` (mutually exclusive); calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `buildRitualSpells()` + `saveData()` |
 | `onMaxPreparedInput(val)` | Input event on `#maxPreparedInput` | Updates `state.maxSpellsPrepared`; calls `updatePreparedCount()` + `saveData()` |
 | `startSpellsKnownTitlePress(e)` | `pointerdown` on `#spellsKnownTitle` | Adds `.holding`; starts 500 ms timer; on fire calls `openSpellsKnownInfoPanel()` |
 | `endSpellsKnownTitlePress(e)` | `pointerup` on `#spellsKnownTitle` | Clears timer; removes `.holding`; if hold did NOT fire: toggles `spellsKnownCollapsed` and calls `buildSpellsKnown()` |
@@ -1163,11 +1166,15 @@ DOMContentLoaded
 | `startSpellsPreparedTitlePress(e)` | `pointerdown` on `#spellsPreparedTitle` | Adds `.holding`; starts 500 ms timer; on fire calls `openSpellsPreparedInfoPanel()` |
 | `endSpellsPreparedTitlePress(e)` / `cancelSpellsPreparedTitlePress()` | `pointerup` / `pointercancel` on `#spellsPreparedTitle` | Clears timer; removes `.holding` |
 | `openSpellsPreparedInfoPanel()` | Internal (fired by hold on Spells Prepared title) | Opens info panel explaining spell slots, known vs prepared classes, the max prepared formula, and always-prepared spells |
+| `startRitualSpellsTitlePress(e)` | `pointerdown` on `#ritualSpellsTitle` | Adds `.holding`; starts 500 ms timer; on fire calls `openRitualSpellsInfoPanel()` |
+| `endRitualSpellsTitlePress(e)` | `pointerup` on `#ritualSpellsTitle` | Clears timer; removes `.holding`; if hold did NOT fire: toggles `ritualSpellsCollapsed` and calls `buildRitualSpells()` |
+| `cancelRitualSpellsTitlePress()` | `pointercancel` on `#ritualSpellsTitle` | Clears timer; removes `.holding` |
+| `openRitualSpellsInfoPanel()` | Internal (fired by hold on Ritual Spells title) | Opens info panel explaining ritual casting rules |
 | `addSpell()` | Tap + Add button in Spells Known header | Opens spell panel in edit mode with empty form; sets `spellPanelEditIdx = -1` |
 | `populateSpellViewPanel(i)` | Internal | Fills view-mode elements from `state.entries[i]`; shows save DC box if `saveAbility` is set (uses per-entry `saveDC` override when > 0, otherwise character's spell DC); shows attack roll card if `attackRoll` is `true`; shows rolls box if `rolls` is non-empty and `attackRoll` is false |
 | `populateSpellEditForm(i)` | Internal | Fills edit form from `state.entries[i]` including `saveAbility`, `saveDC`, `attackRoll`, `rolls` (rendered via `renderRollRows`), `showInCombat`, `combatActionType`, `showInFeatures`, and `showInTraits`; blanks all fields when `i = -1` |
-| `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes all fields including `saveAbility`, `saveDC`, `showInCombat`, `combatActionType`, `showInFeatures`, `showInTraits`, and preserves `prepared`/`alwaysPrepared` from existing entry when editing; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `buildFeatures()` + `renderAttacks()` + `saveData()`; dismisses panel |
-| `deleteCurrentSpell()` | Tap Delete in spell panel (view or edit mode) | Confirms; splices from `state.entries`; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `buildFeatures()` + `renderAttacks()` + `saveData()`; dismisses panel |
+| `saveSpellEdit()` | Tap Save in edit mode | Validates name; writes all fields including `saveAbility`, `saveDC`, `showInCombat`, `combatActionType`, `showInFeatures`, `showInTraits`, and preserves `prepared`/`alwaysPrepared` from existing entry when editing; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `buildRitualSpells()` + `buildFeatures()` + `renderAttacks()` + `saveData()`; dismisses panel |
+| `deleteCurrentSpell()` | Tap Delete in spell panel (view or edit mode) | Confirms; splices from `state.entries`; calls `buildSpellsKnown()` + `buildSpellsPrepared()` + `buildRitualSpells()` + `buildFeatures()` + `renderAttacks()` + `saveData()`; dismisses panel |
 | `dismissSpellPanel()` | Backdrop tap or Cancel | Calls `popModalHistory()`; removes `.show` and `.edit-mode` from `#spellPanel` |
 | `renderFeatureDots(i)` | Any feature use/restore | Updates dots and `n/max` counter for feature `i` |
 | `toggleFeatureDot(i, j)` | Tap feature dot | Gold → use dots from here right; grey → restore that dot (respects `step`) |
