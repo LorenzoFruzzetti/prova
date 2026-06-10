@@ -263,6 +263,8 @@ All SRD data is normalized to a common internal shape immediately after fetching
 | `_parseAndApplyAI(raw, source)` | Strips code fences, parses JSON, populates `W` basic fields and ability scores, stores full payload in `W._aiPayload`, then navigates to step 6 |
 | `aiLoadSchemaFromFile(input)` | Loads a manually selected schema file, runs it through `extractAiPromptSchema()`, and stores the result in `_aiSchema` |
 | `aiUseBuiltinSchema()` | Sets `_aiSchema` to `_BUILTIN_AI_SCHEMA` |
+| `_BUILTIN_AI_SCHEMA` | `const` string — compact schema description used when `JSONGeneration.md` cannot be loaded; byte-identical to `_BUILTIN_CHAR_SCHEMA` (dnd-character-sheet.html) and to the `AI_SCHEMA_START`/`END` section of `JSONGeneration.md` |
+| `_aiSchema` | `let` variable — holds the active (compact) schema text; `null` until loaded |
 
 ### Utility
 

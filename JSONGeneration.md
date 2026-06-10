@@ -11,11 +11,14 @@ This document describes the exact structure of JSON files that can be loaded int
 `AI_SCHEMA_START`/`AI_SCHEMA_END` markers below into the AI prompt — not the whole
 document — so the prompt stays short. If this file cannot be fetched (e.g. opened via
 `file://`), the `_BUILTIN_CHAR_SCHEMA` / `_BUILTIN_AI_SCHEMA` constants in those files are
-used instead and should describe the same shape as the section below.
+used instead.
 
-**Keep this section, `_BUILTIN_CHAR_SCHEMA`, and `_BUILTIN_AI_SCHEMA` in sync** whenever
-the `state` shape changes — see the detailed field reference further down for the
-full description of each field.
+**`_BUILTIN_CHAR_SCHEMA` (dnd-character-sheet.html) and `_BUILTIN_AI_SCHEMA`
+(character-creator.html) are byte-identical to the fenced ` ```text ` block below**
+(everything between `AI_SCHEMA_START` and the closing ` ``` `, excluding the RULES
+list). Whenever the `state` shape changes, update the fenced block here first, then
+copy it verbatim into both `_BUILTIN_*` constants — see the detailed field reference
+further down for the full description of each field.
 
 <!-- AI_SCHEMA_START -->
 ```text
