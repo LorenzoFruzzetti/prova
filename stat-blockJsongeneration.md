@@ -13,6 +13,10 @@ This document describes the JSON schema used by `creature-stat-block.html` for i
 
 The prompt embedded in the app already includes the full schema below, so you do not need to quote this file to the AI.
 
+The generated prompt also includes these rules:
+- Every `desc` field (in `specialAbilities`, `actions`, `bonusActions`, `reactions`, `legendaryActions`, and `lairActions`) must be non-empty — the AI fills in a concise best-guess description from the entry's name and its D&D 5e knowledge if one isn't otherwise specified.
+- An ability, attack, or trait that isn't a standard D&D 5e mechanic is not dropped — the AI maps it to a reasonable `specialAbilities` (passive) or `actions` (active) entry instead.
+
 ---
 
 ## Top-level shape

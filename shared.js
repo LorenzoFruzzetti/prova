@@ -549,3 +549,23 @@ function _applyTheme() {
   if (t) document.documentElement.setAttribute('data-theme', t);
 }
 
+// ── AI prompt schema extraction ───────────────────────────────────────────────
+
+/**
+ * Pulls the compact AI-prompt schema out of a fetched/loaded JSONGeneration.md
+ * by extracting the text between the AI_SCHEMA_START/END markers (and stripping
+ * a surrounding ``` fence, if present), so AI prompts embed a short schema
+ * instead of the entire developer reference document. If the markers are not
+ * found (e.g. a custom schema file), returns the input unchanged.
+ */
+function extractAiPromptSchema(text) {
+  const startTag = '<!-- AI_SCHEMA_START -->';
+  const endTag = '<!-- AI_SCHEMA_END -->';
+  const start = text.indexOf(startTag);
+  const end = text.indexOf(endTag);
+  if (start === -1 || end === -1 || end <= start) return text;
+  return text.slice(start + startTag.length, end)
+    .replace(/^```[a-z]*$\n?/gm, '')
+    .trim();
+}
+

@@ -254,14 +254,17 @@ All SRD data is normalized to a common internal shape immediately after fetching
 | `openInSheet()` | Writes the payload to `localStorage` key `dnd5e_pending_import`, then navigates to `dnd-character-sheet.html`; the sheet picks it up on load and adds it as a new roster character |
 | `downloadJSON()` | Triggers a browser file download of the payload as `<name>.json` |
 | `copyJSON()` | Copies the payload JSON string to the clipboard via the Clipboard API |
-| `openAICreate()` | Opens the AI Character Generator modal; auto-fetches `JSONGeneration.md` for the schema |
+| `openAICreate()` | Opens the AI Character Generator modal; triggers `_tryLoadAISchema()` |
 | `dismissAICreate()` | Closes the AI modal |
+| `_tryLoadAISchema()` | Async; `fetch('./JSONGeneration.md')`; on success sets `_aiSchema` to `extractAiPromptSchema(text)` (the compact `AI_SCHEMA_START`/`END` section, not the whole file); on failure shows `#aiSchemaFilePicker` |
 | `generateAICreatePrompt()` | Builds an LLM prompt from the schema + optional character description; copies to clipboard |
 | `importAIFromFile(input)` | Reads a `.json` file chosen by the user and calls `_parseAndApplyAI()` |
 | `importAIFromPaste()` | Reads the pasted textarea and calls `_parseAndApplyAI()` |
 | `_parseAndApplyAI(raw, source)` | Strips code fences, parses JSON, populates `W` basic fields and ability scores, stores full payload in `W._aiPayload`, then navigates to step 6 |
-| `aiLoadSchemaFromFile(input)` | Loads a manually selected schema file into `_aiSchema` |
+| `aiLoadSchemaFromFile(input)` | Loads a manually selected schema file, runs it through `extractAiPromptSchema()`, and stores the result in `_aiSchema` |
 | `aiUseBuiltinSchema()` | Sets `_aiSchema` to `_BUILTIN_AI_SCHEMA` |
+| `_BUILTIN_AI_SCHEMA` | `const` string — compact schema description used when `JSONGeneration.md` cannot be loaded; byte-identical to `_BUILTIN_CHAR_SCHEMA` (dnd-character-sheet.html) and to the `AI_SCHEMA_START`/`END` section of `JSONGeneration.md` |
+| `_aiSchema` | `let` variable — holds the active (compact) schema text; `null` until loaded |
 
 ### Utility
 
@@ -272,6 +275,7 @@ All SRD data is normalized to a common internal shape immediately after fetching
 | `profBonus(level)` | `(integer) → integer` | `Math.ceil(level/4)+1` |
 | `el(id)` | `(string) → HTMLElement` | Shorthand for `document.getElementById` |
 | `classSlotTable(classIndex, edition)` | `(string, string) → number[][]` | Returns the correct spell-slot progression table for a given class and edition |
+| `extractAiPromptSchema(text)` | `(string) → string` | Returns the text between `<!-- AI_SCHEMA_START -->`/`<!-- AI_SCHEMA_END -->` markers (fence lines stripped); returns `text` unchanged if the markers are absent |
 
 ---
 

@@ -1876,6 +1876,10 @@ Use this exact JSON structure:
   "notes": ""
 }
 
+RULES:
+- Every "desc" field in specialAbilities, actions, bonusActions, reactions, legendaryActions, and lairActions must be non-empty — write a concise description based on the name and your D&D 5e knowledge if one is not obvious.
+- If the creature concept includes an ability, attack, or trait that is not a standard D&D 5e mechanic, make a reasonable assumption about what it represents and add it as a specialAbilities (passive) or actions (active) entry rather than omitting it.
+
 Output ONLY the JSON object.`;
   navigator.clipboard.writeText(prompt).then(() => {
     document.getElementById('aiCopyNotice').textContent = 'Copied! Paste into an AI assistant, then paste the JSON response below.';
