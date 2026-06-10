@@ -1725,31 +1725,79 @@ spellSlots — exactly 9 objects:
  {"level":"4th","max":0,"used":0},{"level":"5th","max":0,"used":0},{"level":"6th","max":0,"used":0},
  {"level":"7th","max":0,"used":0},{"level":"8th","max":0,"used":0},{"level":"9th","max":0,"used":0}]
 
-spells array — each spell:
-{ "name":"Fireball","level":3,"school":"Evocation","castingTime":"1 action","range":"150 ft",
-  "components":"V, S, M","duration":"Instantaneous","saveAbility":"DEX",
-  "concentration":false,"ritual":false,"attackRoll":false,
-  "rolls":[{"dice":"8d6","type":"fire","mod":""}],
-  "description":"8d6 fire damage, DEX save for half.",
-  "showInCombat":true,"combatActionType":"action","prepared":true,"alwaysPrepared":false }
-school: Abjuration|Conjuration|Divination|Enchantment|Evocation|Illusion|Necromancy|Transmutation
-rolls.type: slashing|piercing|bludgeoning|fire|cold|lightning|thunder|acid|poison|necrotic|radiant|force|psychic|healing|other
-rolls.mod: STR|DEX|CON|INT|WIS|CHA|SPELLMOD|SPELL|""
+entries array — UNIFIED array for ALL spells, class features, and passive species/racial traits.
+Every object uses the SAME schema; set irrelevant fields to their defaults
+(empty string / 0 / false). A single entry can set MULTIPLE showIn* flags true at once.
+
+Fields:
+  name, description: display name and full text (newlines preserved)
+  showInSpells: true → Spells tab Known/Prepared lists
+  showInFeatures: true → Features tab with a dot-tracker
+  showInTraits: true → Info tab "Features & Traits" section
+  showInCombat: true → row in the Turn block on Combat tab
+  combatActionType: "action"|"bonus"|"reaction"|"other" (default "action")
+  level: 0 (cantrip) – 9 for spells; 0 for non-spells
+  school: Abjuration|Conjuration|Divination|Enchantment|Evocation|Illusion|Necromancy|Transmutation; "" for non-spells
+  castingTime, range, components, duration: spell strings, e.g. "1 action","150 ft","V, S, M","Instantaneous"; "" for non-spells
+  concentration, ritual: booleans; false for non-spells
+  prepared: true if prepared today (counts toward maxSpellsPrepared); mutually exclusive with alwaysPrepared
+  alwaysPrepared: true if always prepared (e.g. domain spells, does not count toward maxSpellsPrepared); mutually exclusive with prepared
+  attackRoll: true if this entry has a tappable attack roll
+  attackMod: STR|DEX|CON|INT|WIS|CHA|SPELL|manual|"" — ability for the attack roll
+  attackBonus: manual bonus string (e.g. "+7"); only used when attackMod="manual"
+  attackProficient: add proficiency bonus to computed attack roll; ignored when attackMod="manual"
+  rolls: array of {dice, type, label?, mod?}, or [] if no roll
+    rolls.type: slashing|piercing|bludgeoning|fire|cold|lightning|thunder|acid|poison|necrotic|radiant|force|psychic|healing|not_damage|other
+    rolls.label: custom label, only used when type="other"
+    rolls.mod: ""|STR|DEX|CON|INT|WIS|CHA|SPELLMOD|SPELL
+      SPELLMOD = spellcasting ability modifier only (no proficiency) — use for healing/damage rolls
+      SPELL    = full spell attack bonus (ability mod + proficiency) — only for attack rolls
+      CRITICAL: use "SPELLMOD" when the text says "add your spellcasting ability modifier"
+      (e.g. Healing Word "1d4 + your spellcasting ability modifier" → "mod":"SPELLMOD")
+  saveAbility: STR|DEX|CON|INT|WIS|CHA|"" — saving throw ability, or "" for none
+  saveDC: integer override; 0 = use character's current Spell Save DC
+  max, used, step: dot-tracker for limited-use entries (relevant when showInFeatures=true); max=0 → no tracker. step = uses per dot (default 1; e.g. 5 for Lay on Hands)
+  recharge: "Short Rest"|"Long Rest"|"Dawn"|"" — when the entry recharges
+  damage: legacy damage expression (e.g. "2d6 fire"); prefer rolls for new entries
+  rollDamage: true to roll the damage expression directly on tap
+
+IMPORTANT: passive species/racial traits and always-on class features (e.g. Darkvision,
+Fey Ancestry) MUST set "showInTraits":true so they appear in the Info tab's "Features &
+Traits" section. An entry may combine showInTraits:true with showInFeatures:true and/or
+showInCombat:true.
+
+Example — prepared spell, shown in Spells tab and used in combat:
+{ "name":"Fireball","description":"8d6 fire damage, DEX save for half.",
+  "showInSpells":true,"showInFeatures":false,"showInTraits":false,"showInCombat":true,"combatActionType":"action",
+  "level":3,"school":"Evocation","castingTime":"1 action","range":"150 ft","components":"V, S, M","duration":"Instantaneous",
+  "concentration":false,"ritual":false,"prepared":true,"alwaysPrepared":false,
+  "attackRoll":false,"attackMod":"","attackBonus":"—","attackProficient":false,
+  "rolls":[{"dice":"8d6","type":"fire","mod":""}],"saveAbility":"DEX","saveDC":0,
+  "max":0,"used":0,"step":1,"recharge":"","damage":"","rollDamage":false }
+
+Example — limited-use class feature (Rage), dot-tracked in Features tab:
+{ "name":"Rage","description":"Bonus damage and resistance while raging.",
+  "showInSpells":false,"showInFeatures":true,"showInTraits":false,"showInCombat":true,"combatActionType":"bonus",
+  "level":0,"school":"","castingTime":"","range":"","components":"","duration":"",
+  "concentration":false,"ritual":false,"prepared":false,"alwaysPrepared":false,
+  "attackRoll":false,"attackMod":"","attackBonus":"—","attackProficient":false,
+  "rolls":[],"saveAbility":"","saveDC":0,
+  "max":2,"used":0,"step":1,"recharge":"Long Rest","damage":"","rollDamage":false }
+
+Example — passive species trait (Darkvision), shown only in Info tab Features & Traits:
+{ "name":"Darkvision","description":"See 60 ft in darkness as if it were dim light.",
+  "showInSpells":false,"showInFeatures":false,"showInTraits":true,"showInCombat":false,"combatActionType":"action",
+  "level":0,"school":"","castingTime":"","range":"","components":"","duration":"",
+  "concentration":false,"ritual":false,"prepared":false,"alwaysPrepared":false,
+  "attackRoll":false,"attackMod":"","attackBonus":"—","attackProficient":false,
+  "rolls":[],"saveAbility":"","saveDC":0,
+  "max":0,"used":0,"step":1,"recharge":"","damage":"","rollDamage":false }
 
 attacks array — each weapon:
 { "name":"Longsword","abilityMod":"STR","proficient":true,"flatBonus":0,
   "rolls":[{"dice":"1d8","type":"slashing","mod":"STR"}],
   "actionType":"action","saveAbility":"","saveDC":0,"description":"" }
-
-classFeatures array — limited-use abilities:
-{ "name":"Rage","max":2,"used":0,"recharge":"Long Rest","step":1,
-  "attackRoll":false,"attackMod":"","attackBonus":"—","attackProficient":false,
-  "rolls":[],"description":"Bonus damage and resistance while raging.",
-  "showInCombat":true,"combatActionType":"bonus action" }
-
-infoTraits array — passive traits and species features:
-{ "name":"Darkvision","description":"See 60 ft in darkness as dim light.",
-  "showInCombat":false,"combatActionType":"action" }
+abilityMod: STR|DEX|CON|INT|WIS|CHA|SPELL|manual|""; use "manual" with bonus:"+7"; "" for no attack roll
 
 equipmentItems array:
 { "name":"Longsword","quantity":1,"weight":"3 lb","cost":"15 gp","category":"Weapon","description":"" }

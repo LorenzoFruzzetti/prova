@@ -9390,8 +9390,11 @@ function _applyPayloadData(payload) {
     if (!Array.isArray(state.diceRoller)) state.diceRoller = null;
     if (typeof state.portrait !== 'string') state.portrait = null;
 
-    // Migrate old format (spells/classFeatures/infoTraits) to unified entries
-    if (!Array.isArray(state.entries)) {
+    // Migrate old format (spells/classFeatures/infoTraits) to unified entries.
+    // Check the INCOMING payload — state.entries on the live state object is
+    // always an array (initialized to [] and reset by clearSheet()), so checking
+    // it here would never detect a legacy payload.
+    if (!Array.isArray(payload.state.entries)) {
       state.entries = [];
       (state.spells || []).forEach(sp => {
         if (!sp.rolls) sp.rolls = sp.damage ? [{dice: sp.damage, type:'slashing', mod:''}] : [];
@@ -9446,6 +9449,10 @@ function _applyPayloadData(payload) {
           damage: t.damage||'', rollDamage: !!t.rollDamage,
         });
       });
+      // Drop stale legacy arrays now that their data lives in state.entries
+      delete state.spells;
+      delete state.classFeatures;
+      delete state.infoTraits;
     } else {
       // Ensure all entries have the required fields
       state.entries.forEach(e => {
@@ -11155,20 +11162,82 @@ spellSlots — exactly 9 objects, one per level:
  {"level":"4th","max":0,"used":0},{"level":"5th","max":0,"used":0},{"level":"6th","max":0,"used":0},
  {"level":"7th","max":0,"used":0},{"level":"8th","max":0,"used":0},{"level":"9th","max":0,"used":0}]
 
-spells array — each spell object:
+entries array — UNIFIED array covering ALL spells, class features, and passive traits.
+Every object below uses the SAME schema; set irrelevant fields to their defaults
+(empty string / 0 / false). A single entry can have MULTIPLE showIn* flags set true
+at once (e.g. a class feature that is both dot-tracked AND shown in Combat).
+
+Field reference (applies to EVERY entry, spell or not):
+  name: display name (required)
+  description: full text, newlines preserved
+  showInSpells: true → appears in Spells tab Known/Prepared lists
+  showInFeatures: true → appears in Features tab with a dot-tracker
+  showInTraits: true → appears in Info tab "Features & Traits" section
+  showInCombat: true → appears as a row in the Turn block on Combat tab
+  combatActionType: "action"|"bonus"|"reaction"|"other" (default "action")
+  level: 0 (cantrip) – 9 for spells; 0 for non-spells
+  school: Abjuration|Conjuration|Divination|Enchantment|Evocation|Illusion|Necromancy|Transmutation; "" for non-spells
+  castingTime, range, components, duration: spell strings (e.g. "1 action","150 ft","V, S, M (bat guano)","Instantaneous"); "" for non-spells
+  concentration, ritual: booleans; false for non-spells
+  prepared: true if prepared today (counts toward maxSpellsPrepared); mutually exclusive with alwaysPrepared; false for non-spells
+  alwaysPrepared: true if always prepared (e.g. domain spells, does NOT count toward maxSpellsPrepared); mutually exclusive with prepared; false for non-spells
+  attackRoll: true if this entry has a tappable attack roll (d20 + bonus)
+  attackMod: "STR"|"DEX"|"CON"|"INT"|"WIS"|"CHA"|"SPELL"|"manual"|"" — ability used for the attack roll
+  attackBonus: manual attack bonus string (e.g. "+7"); only used when attackMod="manual"
+  attackProficient: true to add proficiency bonus to the computed attack roll; ignored when attackMod="manual"
+  rolls: array of roll objects [{dice, type, label?, mod?}], or [] if no roll
+    rolls[].dice: dice expression, e.g. "8d6"
+    rolls[].type: slashing|piercing|bludgeoning|fire|cold|lightning|thunder|acid|poison|necrotic|radiant|force|psychic|healing|not_damage|other
+    rolls[].label: custom label string, only used when type="other"
+    rolls[].mod: ""(none) | STR|DEX|CON|INT|WIS|CHA | "SPELLMOD" (spellcasting ability modifier only) | "SPELL" (full spell attack bonus = ability mod + proficiency)
+      CRITICAL: use "SPELLMOD" when the spell or feature text says "add your spellcasting ability modifier"
+      (e.g. Healing Word "1d4 + your spellcasting ability modifier" → "mod":"SPELLMOD")
+      Only use "SPELL" if the roll explicitly adds the full spell attack bonus (rare)
+  saveAbility: "STR"|"DEX"|"CON"|"INT"|"WIS"|"CHA"|"" — ability for a saving throw, or "" for none
+  saveDC: integer override for save DC; 0 means use the character's current Spell Save DC
+  max: total uses / pool size for dot-tracked entries (relevant when showInFeatures=true); 0 = no tracker shown
+  used: uses already expended; must be ≤ max
+  step: how many uses one dot represents (default 1; e.g. 5 for a resource like Lay on Hands)
+  recharge: "Short Rest"|"Long Rest"|"Dawn"|... or "" — when the entry recharges
+  damage: legacy damage expression (e.g. "2d6 fire"); prefer rolls for new entries
+  rollDamage: true to make the row roll the damage expression directly on tap
+
+IMPORTANT: passive features and racial traits (anything that should appear in the Info
+tab's "Features & Traits" section, e.g. Darkvision, Fey Ancestry) MUST set
+"showInTraits":true. An entry can combine showInTraits:true with showInFeatures:true
+and/or showInCombat:true if it is also tracked or used in combat.
+
+Example — prepared spell, shown in Spells tab and used in combat:
 { "name":"Fireball","level":3,"school":"Evocation","castingTime":"1 action","range":"150 ft",
-  "components":"V, S, M (bat guano)","duration":"Instantaneous","saveAbility":"DEX",
-  "concentration":false,"ritual":false,"attackRoll":false,
+  "components":"V, S, M (bat guano)","duration":"Instantaneous",
+  "concentration":false,"ritual":false,"prepared":true,"alwaysPrepared":false,
+  "attackRoll":false,"attackMod":"","attackBonus":"—","attackProficient":false,
   "rolls":[{"dice":"8d6","type":"fire","mod":""}],
   "description":"8d6 fire in 20-ft radius, DEX save for half.",
-  "showInCombat":true,"combatActionType":"action","prepared":true,"alwaysPrepared":false }
-school values: Abjuration|Conjuration|Divination|Enchantment|Evocation|Illusion|Necromancy|Transmutation
-rolls type values: slashing|piercing|bludgeoning|fire|cold|lightning|thunder|acid|poison|necrotic|radiant|force|psychic|healing|not_damage|other
-rolls mod values: STR|DEX|CON|INT|WIS|CHA|SPELLMOD|SPELL|""
-  SPELLMOD = spellcasting ability modifier only (no proficiency) — use for healing/damage rolls
-  SPELL    = full spell attack bonus (ability mod + proficiency) — use only for attack rolls
-  CRITICAL: use "SPELLMOD" when the spell or feature text says "add your spellcasting ability modifier"
-  (e.g. Healing Word "1d4 + your spellcasting ability modifier" → "mod":"SPELLMOD")
+  "saveAbility":"DEX","saveDC":0,
+  "max":0,"used":0,"step":1,"recharge":"","damage":"","rollDamage":false,
+  "showInSpells":true,"showInFeatures":false,"showInTraits":false,
+  "showInCombat":true,"combatActionType":"action" }
+
+Example — limited-use class feature (Channel Divinity), dot-tracked in Features tab:
+{ "name":"Channel Divinity","level":0,"school":"","castingTime":"","range":"","components":"","duration":"",
+  "concentration":false,"ritual":false,"prepared":false,"alwaysPrepared":false,
+  "attackRoll":false,"attackMod":"","attackBonus":"—","attackProficient":false,
+  "rolls":[],"description":"Sacred Weapon: imbue a weapon with holy power for 1 minute.",
+  "saveAbility":"","saveDC":0,
+  "max":1,"used":0,"step":1,"recharge":"Short Rest","damage":"","rollDamage":false,
+  "showInSpells":false,"showInFeatures":true,"showInTraits":false,
+  "showInCombat":false,"combatActionType":"action" }
+
+Example — passive racial trait (Darkvision), shown ONLY in Info tab Features & Traits:
+{ "name":"Darkvision","level":0,"school":"","castingTime":"","range":"","components":"","duration":"",
+  "concentration":false,"ritual":false,"prepared":false,"alwaysPrepared":false,
+  "attackRoll":false,"attackMod":"","attackBonus":"—","attackProficient":false,
+  "rolls":[],"description":"You can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light.",
+  "saveAbility":"","saveDC":0,
+  "max":0,"used":0,"step":1,"recharge":"","damage":"","rollDamage":false,
+  "showInSpells":false,"showInFeatures":false,"showInTraits":true,
+  "showInCombat":false,"combatActionType":"action" }
 
 attacks array — each weapon/attack object:
 { "name":"Longsword","abilityMod":"STR","proficient":true,"flatBonus":0,
@@ -11176,16 +11245,6 @@ attacks array — each weapon/attack object:
   "actionType":"action","saveAbility":"","saveDC":0,"description":"" }
 abilityMod values: STR|DEX|CON|INT|WIS|CHA|SPELL|manual|""
 Use "manual" with "bonus":"+7" for fixed modifiers. Use "" for no attack roll.
-
-classFeatures array — limited-use abilities (Rage, Channel Divinity, etc.):
-{ "name":"Channel Divinity","max":1,"used":0,"recharge":"Short Rest","step":1,
-  "attackRoll":false,"attackMod":"","attackBonus":"—","attackProficient":false,
-  "rolls":[],"description":"Sacred Weapon: imbue for 1 minute.",
-  "showInCombat":false,"combatActionType":"action" }
-
-infoTraits array — passive features and racial traits:
-{ "name":"Darkvision","description":"See 60 ft in darkness as dim light.",
-  "showInCombat":false,"combatActionType":"action" }
 
 equipmentItems array:
 { "name":"Longsword","quantity":1,"weight":"3 lb","cost":"15 gp","category":"Weapon","description":"Versatile (1d10). Slashing." }
