@@ -1834,7 +1834,7 @@ async function _tryLoadAISchema() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     if (text.length < 200) throw new Error('too short');
-    _aiSchema = text;
+    _aiSchema = extractAiPromptSchema(text);
     el('aiSchemaStatus').textContent = '✓ JSONGeneration.md loaded';
     el('aiSchemaStatus').className = 'aic-schema-status ok';
     el('aiSchemaFilePicker').style.display = 'none';
@@ -1849,7 +1849,7 @@ function aiLoadSchemaFromFile(input) {
   const file = input.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    _aiSchema = e.target.result;
+    _aiSchema = extractAiPromptSchema(e.target.result);
     el('aiSchemaStatus').textContent = '✓ Schema loaded from ' + file.name;
     el('aiSchemaStatus').className = 'aic-schema-status ok';
     el('aiSchemaFilePicker').style.display = 'none';

@@ -481,7 +481,7 @@ dnd-character-sheet.html
 │   ├── #infoPanelBackdrop  Fixed full-screen dim layer behind the unified info panel; tap to dismiss
 │   ├── #infoPanel  Fixed centered card (≤500 px, scrollable) — the generic unified info panel used for skills, abilities, saving throws, combat stats, hit die, death saves, and conditions (NOT for spells, traits, attacks, or class features — those have their own dedicated panels); badge + title + optional meta + optional 3-zone roll button + optional simple roll button + description + optional action button + "tap to dismiss" hint; `.show` reveals it
 │   └── #toast       Floating feedback message (non-roll events only)
-├── <script src="shared.js">  Shared utilities: mod/fmtMod/profBonus, dice functions, toast, showRoll, dismissRollResult, _applyTheme, openInfoPanel, dismissInfoPanel, infoPanelRoll/SimpleRoll/Edit/Action, infoPanelCfg, switchTab, setupSwipe
+├── <script src="shared.js">  Shared utilities: mod/fmtMod/profBonus, dice functions, toast, showRoll, dismissRollResult, _applyTheme, openInfoPanel, dismissInfoPanel, infoPanelRoll/SimpleRoll/Edit/Action, infoPanelCfg, switchTab, setupSwipe, extractAiPromptSchema
 └── <script>         All page application logic (constants, state, build/calc/handler/persistence functions)
 ```
 
@@ -1448,13 +1448,14 @@ Full-character import modal (`#charImportPanel`) opened from Import hub → Impo
 | `dismissCharImport()` | Hides `#charImportPanel` and its backdrop |
 | `setCharImportMode(mode)` | Switches character import between `'ai'` and `'json'` sub-views |
 | `openJsonImportFromCharPanel()` | Closes `#charImportPanel` and opens hidden `#jsonFileInput` after a short delay |
-| `_tryLoadCharSchema()` | Async; `fetch('./JSONGeneration.md')`; on success sets `_charImportSchema`; on failure shows `#ciSchemaFilePicker` |
-| `loadSchemaFromFile(input)` | `FileReader` handler for the manual file picker; loads selected `.md`/`.txt` into `_charImportSchema` |
+| `_tryLoadCharSchema()` | Async; `fetch('./JSONGeneration.md')`; on success sets `_charImportSchema` to `extractAiPromptSchema(text)` (the compact `AI_SCHEMA_START`/`END` section, not the whole file); on failure shows `#ciSchemaFilePicker` |
+| `loadSchemaFromFile(input)` | `FileReader` handler for the manual file picker; loads selected `.md`/`.txt`, runs it through `extractAiPromptSchema()`, and stores the result in `_charImportSchema` |
 | `useBuiltinSchema()` | Sets `_charImportSchema` to the embedded `_BUILTIN_CHAR_SCHEMA` constant |
 | `generateCharImportPrompt()` | Builds and clipboard-copies a prompt embedding `_charImportSchema`; on clipboard failure falls back to showing the prompt in `#ciResponsePaste` |
 | `importCharFromAI()` | Strips markdown fences, parses JSON, validates shape (`{form,state}`), calls `applyPayload()` + `saveData()` |
-| `_BUILTIN_CHAR_SCHEMA` | `const` string — compact but complete schema description used when `JSONGeneration.md` cannot be loaded |
-| `_charImportSchema` | `let` variable — holds the active schema text; `null` until loaded |
+| `_BUILTIN_CHAR_SCHEMA` | `const` string — compact schema description used when `JSONGeneration.md` cannot be loaded; mirrors the `AI_SCHEMA_START`/`END` section of `JSONGeneration.md` |
+| `_charImportSchema` | `let` variable — holds the active (compact) schema text; `null` until loaded |
+| `extractAiPromptSchema(text)` | **`shared.js`** — Returns the text between `<!-- AI_SCHEMA_START -->`/`<!-- AI_SCHEMA_END -->` markers (with any ` ``` ` fence lines stripped); returns `text` unchanged if the markers are absent |
 
 #### SRD mode
 

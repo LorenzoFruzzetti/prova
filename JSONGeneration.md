@@ -4,6 +4,177 @@ This document describes the exact structure of JSON files that can be loaded int
 
 ---
 
+## AI Prompt Schema (compact)
+
+`generateCharImportPrompt()` (dnd-character-sheet.html) and `generateAICreatePrompt()`
+(character-creator.html) fetch this file and embed only the text between the
+`AI_SCHEMA_START`/`AI_SCHEMA_END` markers below into the AI prompt — not the whole
+document — so the prompt stays short. If this file cannot be fetched (e.g. opened via
+`file://`), the `_BUILTIN_CHAR_SCHEMA` / `_BUILTIN_AI_SCHEMA` constants in those files are
+used instead and should describe the same shape as the section below.
+
+**Keep this section, `_BUILTIN_CHAR_SCHEMA`, and `_BUILTIN_AI_SCHEMA` in sync** whenever
+the `state` shape changes — see the detailed field reference further down for the
+full description of each field.
+
+<!-- AI_SCHEMA_START -->
+```text
+COMPLETE CHARACTER JSON FORMAT: { "form": {...}, "state": {...} }
+
+FORM — all values must be strings, even numbers ("18" not 18):
+  charName: character name
+  charClass: Barbarian|Bard|Cleric|Druid|Fighter|Monk|Paladin|Ranger|Rogue|Sorcerer|Warlock|Wizard|Artificer|""
+  charSubclass: subclass name
+  charRace: race or species
+  charLevel: "1"–"20"
+  charBackground: background name
+  charAlignment: e.g. "Lawful Good", "Chaotic Neutral"
+  charXP: total XP as string ("6500")
+  personality, ideals, bonds, flaws: free text strings
+  hpMax: max HP ("47")
+  hpTemp: temp HP ("0")
+  statAC: Armor Class ("18")
+  statSpeed: speed in feet ("30")
+  statHitDice: hit dice ("5d10")
+  spellAbility: "INT"|"WIS"|"CHA"|"" (blank for non-casters)
+  languages: comma-separated ("Common, Elvish")
+  notes: free text
+  cp, sp, ep, gp, pp: currency as strings ("0")
+
+STATE:
+abilities (integers 1–30):
+  { "STR": 18, "DEX": 10, "CON": 16, "INT": 8, "WIS": 12, "CHA": 16 }
+
+saveProficiencies: array of ability keys with saving throw proficiency ["STR","CON"]
+
+skillProficiencies: array of skill names —
+  Acrobatics, Animal Handling, Arcana, Athletics, Deception, History,
+  Insight, Intimidation, Investigation, Medicine, Nature, Perception,
+  Performance, Persuasion, Religion, Sleight of Hand, Stealth, Survival
+
+skillExpertise: subset of skillProficiencies with double proficiency bonus
+
+equipProficiencies: ["Light Armor","Medium Armor","Heavy Armor","Shields","Simple Weapons","Martial Weapons","Thieves' Tools", ...]
+customEquipProfRows: []
+inspiration: false
+hpCurrent: integer (current HP)
+
+spellSlots — exactly 9 objects, one per level:
+[{"level":"1st","max":3,"used":0},{"level":"2nd","max":2,"used":0},{"level":"3rd","max":0,"used":0},
+ {"level":"4th","max":0,"used":0},{"level":"5th","max":0,"used":0},{"level":"6th","max":0,"used":0},
+ {"level":"7th","max":0,"used":0},{"level":"8th","max":0,"used":0},{"level":"9th","max":0,"used":0}]
+
+entries array — UNIFIED array covering ALL spells, class features, and passive traits.
+Every object below uses the SAME schema; set irrelevant fields to their defaults
+(empty string / 0 / false). A single entry can have MULTIPLE showIn* flags set true
+at once (e.g. a class feature that is both dot-tracked AND shown in Combat).
+
+Field reference (applies to EVERY entry, spell or not):
+  name: display name (required)
+  description: full text, newlines preserved
+  showInSpells: true → appears in Spells tab Known/Prepared lists
+  showInFeatures: true → appears in Features tab with a dot-tracker
+  showInTraits: true → appears in Info tab "Features & Traits" section
+  showInCombat: true → appears as a row in the Turn block on Combat tab
+  combatActionType: "action"|"bonus"|"reaction"|"other" (default "action")
+  level: 0 (cantrip) – 9 for spells; 0 for non-spells
+  school: Abjuration|Conjuration|Divination|Enchantment|Evocation|Illusion|Necromancy|Transmutation; "" for non-spells
+  castingTime, range, components, duration: spell strings (e.g. "1 action","150 ft","V, S, M (bat guano)","Instantaneous"); "" for non-spells
+  concentration, ritual: booleans; false for non-spells
+  prepared: true if prepared today (counts toward maxSpellsPrepared); mutually exclusive with alwaysPrepared; false for non-spells
+  alwaysPrepared: true if always prepared (e.g. domain spells, does NOT count toward maxSpellsPrepared); mutually exclusive with prepared; false for non-spells
+  attackRoll: true if this entry has a tappable attack roll (d20 + bonus)
+  attackMod: "STR"|"DEX"|"CON"|"INT"|"WIS"|"CHA"|"SPELL"|"manual"|"" — ability used for the attack roll
+  attackBonus: manual attack bonus string (e.g. "+7"); only used when attackMod="manual"
+  attackProficient: true to add proficiency bonus to the computed attack roll; ignored when attackMod="manual"
+  rolls: array of roll objects [{dice, type, label?, mod?}], or [] if no roll
+    rolls[].dice: dice expression, e.g. "8d6"
+    rolls[].type: slashing|piercing|bludgeoning|fire|cold|lightning|thunder|acid|poison|necrotic|radiant|force|psychic|healing|not_damage|other
+    rolls[].label: custom label string, only used when type="other"
+    rolls[].mod: ""(none) | STR|DEX|CON|INT|WIS|CHA | "SPELLMOD" (spellcasting ability modifier only) | "SPELL" (full spell attack bonus = ability mod + proficiency)
+      CRITICAL: use "SPELLMOD" when the spell or feature text says "add your spellcasting ability modifier"
+      (e.g. Healing Word "1d4 + your spellcasting ability modifier" → "mod":"SPELLMOD")
+      Only use "SPELL" if the roll explicitly adds the full spell attack bonus (rare)
+  saveAbility: "STR"|"DEX"|"CON"|"INT"|"WIS"|"CHA"|"" — ability for a saving throw, or "" for none
+  saveDC: integer override for save DC; 0 means use the character's current Spell Save DC
+  max: total uses / pool size for dot-tracked entries (relevant when showInFeatures=true); 0 = no tracker shown
+  used: uses already expended; must be ≤ max
+  step: how many uses one dot represents (default 1; e.g. 5 for a resource like Lay on Hands)
+  recharge: "Short Rest"|"Long Rest"|"Dawn"|... or "" — when the entry recharges
+  damage: legacy damage expression (e.g. "2d6 fire"); prefer rolls for new entries
+  rollDamage: true to make the row roll the damage expression directly on tap
+
+IMPORTANT: passive features and racial traits (anything that should appear in the Info
+tab's "Features & Traits" section, e.g. Darkvision, Fey Ancestry) MUST set
+"showInTraits":true. An entry can combine showInTraits:true with showInFeatures:true
+and/or showInCombat:true if it is also tracked or used in combat.
+
+Example — prepared spell, shown in Spells tab and used in combat:
+{ "name":"Fireball","level":3,"school":"Evocation","castingTime":"1 action","range":"150 ft",
+  "components":"V, S, M (bat guano)","duration":"Instantaneous",
+  "concentration":false,"ritual":false,"prepared":true,"alwaysPrepared":false,
+  "attackRoll":false,"attackMod":"","attackBonus":"—","attackProficient":false,
+  "rolls":[{"dice":"8d6","type":"fire","mod":""}],
+  "description":"8d6 fire in 20-ft radius, DEX save for half.",
+  "saveAbility":"DEX","saveDC":0,
+  "max":0,"used":0,"step":1,"recharge":"","damage":"","rollDamage":false,
+  "showInSpells":true,"showInFeatures":false,"showInTraits":false,
+  "showInCombat":true,"combatActionType":"action" }
+
+Example — limited-use class feature (Channel Divinity), dot-tracked in Features tab:
+{ "name":"Channel Divinity","level":0,"school":"","castingTime":"","range":"","components":"","duration":"",
+  "concentration":false,"ritual":false,"prepared":false,"alwaysPrepared":false,
+  "attackRoll":false,"attackMod":"","attackBonus":"—","attackProficient":false,
+  "rolls":[],"description":"Sacred Weapon: imbue a weapon with holy power for 1 minute.",
+  "saveAbility":"","saveDC":0,
+  "max":1,"used":0,"step":1,"recharge":"Short Rest","damage":"","rollDamage":false,
+  "showInSpells":false,"showInFeatures":true,"showInTraits":false,
+  "showInCombat":false,"combatActionType":"action" }
+
+Example — passive racial trait (Darkvision), shown ONLY in Info tab Features & Traits:
+{ "name":"Darkvision","level":0,"school":"","castingTime":"","range":"","components":"","duration":"",
+  "concentration":false,"ritual":false,"prepared":false,"alwaysPrepared":false,
+  "attackRoll":false,"attackMod":"","attackBonus":"—","attackProficient":false,
+  "rolls":[],"description":"You can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light.",
+  "saveAbility":"","saveDC":0,
+  "max":0,"used":0,"step":1,"recharge":"","damage":"","rollDamage":false,
+  "showInSpells":false,"showInFeatures":false,"showInTraits":true,
+  "showInCombat":false,"combatActionType":"action" }
+
+attacks array — each weapon/attack object:
+{ "name":"Longsword","abilityMod":"STR","proficient":true,"flatBonus":0,
+  "rolls":[{"dice":"1d8","type":"slashing","mod":"STR"}],
+  "actionType":"action","saveAbility":"","saveDC":0,"description":"" }
+abilityMod values: STR|DEX|CON|INT|WIS|CHA|SPELL|manual|""
+Use "manual" with "bonus":"+7" for fixed modifiers. Use "" for no attack roll.
+
+equipmentItems array:
+{ "name":"Longsword","quantity":1,"weight":"3 lb","cost":"15 gp","category":"Weapon","description":"Versatile (1d10). Slashing." }
+
+conditions: [] (from: Blinded|Charmed|Deafened|Exhausted|Frightened|Grappled|
+  Incapacitated|Invisible|Paralyzed|Petrified|Poisoned|Prone|Restrained|Stunned|Unconscious)
+hitDiceUsed: 0
+statMods: {"ac":0,"speed":0,"initiative":0,"spellatk":0,"spelldc":0}
+damageResistances: {} (e.g. {"fire":1,"necrotic":-1} — 1=resistant, -1=vulnerable)
+maxSpellsPrepared: 0 (daily prep limit for Wizard/Cleric etc.; 0=unlimited)
+diceRoller: null
+portrait: null
+```
+
+RULES (apply both when extracting from a sheet/photo and when generating a new character):
+- Output ONLY raw JSON — no markdown code fences, no explanation, no trailing text.
+- All form.* values must be strings, even numbers ("18" not 18).
+- state.abilities values are integers.
+- If something in the source material is not standard D&D 5e terminology, make a
+  reasonable assumption about its intended meaning and add it as an entries item
+  (set showInFeatures and/or showInTraits true as appropriate) instead of dropping it.
+- Every entries item, attack, and equipment item must have a non-empty description —
+  write a concise best-guess description based on its name and your D&D 5e knowledge
+  if one is not otherwise available.
+<!-- AI_SCHEMA_END -->
+
+---
+
 ## Top-level structure
 
 ```json

@@ -45,7 +45,7 @@ There is no build toolchain, no `src/` directory, no `tests/` directory, no `.en
 | `JSONGeneration.md` | JSON field names, types, valid values, full annotated example for **character sheets** |
 | `stat-blockJsongeneration.md` | JSON field names, types, valid values, full annotated example for **creature stat blocks** |
 | `README.md` | User-facing: how to open, features, input/output, directory map |
-| `shared.js` | Utilities shared by all HTML pages: `mod`, `fmtMod`, `profBonus`, spell slot tables, dice functions (`d20Roll`, `rollDiceExpr`, `natMsg`), `genId`, `escHtml`, `switchTab`, `setupSwipe`, `toast`, `showRoll`, `dismissRollResult`, `_applyTheme`, `openInfoPanel`, `dismissInfoPanel`, `infoPanelRoll`, `infoPanelSimpleRoll`, `infoPanelEdit`, `infoPanelAction`; global `infoPanelCfg` |
+| `shared.js` | Utilities shared by all HTML pages: `mod`, `fmtMod`, `profBonus`, spell slot tables, dice functions (`d20Roll`, `rollDiceExpr`, `natMsg`), `genId`, `escHtml`, `switchTab`, `setupSwipe`, `toast`, `showRoll`, `dismissRollResult`, `_applyTheme`, `openInfoPanel`, `dismissInfoPanel`, `infoPanelRoll`, `infoPanelSimpleRoll`, `infoPanelEdit`, `infoPanelAction`, `extractAiPromptSchema`; global `infoPanelCfg` |
 | `shared.css` | CSS shared by all HTML pages: `:root` design tokens, all 4 theme overrides, CSS reset, `.feature-row`, `.mini-tracker`, `.slot-dot`, `.spell-item-tag`, `.action-bonus-tag`, `.roll-tri`/`.rtz-*`, `.sp-save-dc-*`, `.sp-atk-*`, `#rollResult`, `#infoPanel`, `.rr-*`, `#toast`, `.hp-dlg-btn`, `.attack-edit-btn`, `.settings-full-btn`, `.cond-toggle-btn` |
 | `examples/data/` | Two sample characters for import testing |
 | `srd2024/translation.json` | Terminology map between 2014 API field names and 2024 SRD field names / UI labels |

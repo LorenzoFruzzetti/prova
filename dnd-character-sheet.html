@@ -11298,7 +11298,7 @@ async function _tryLoadCharSchema() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     if (text.length < 200) throw new Error('File too short');
-    _charImportSchema = text;
+    _charImportSchema = extractAiPromptSchema(text);
     const el = document.getElementById('ciSchemaStatus');
     el.textContent = '✓ JSONGeneration.md loaded';
     el.className = 'ci-schema-status ok';
@@ -11315,7 +11315,7 @@ function loadSchemaFromFile(input) {
   const file = input.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    _charImportSchema = e.target.result;
+    _charImportSchema = extractAiPromptSchema(e.target.result);
     const el = document.getElementById('ciSchemaStatus');
     el.textContent = '✓ Schema loaded from ' + file.name;
     el.className = 'ci-schema-status ok';
